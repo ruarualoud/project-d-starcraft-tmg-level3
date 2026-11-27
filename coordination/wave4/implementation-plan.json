@@ -29,7 +29,10 @@
       "dependsOn": [
         "T28-W4-02"
       ],
-      "exit": "Same release selected by manual Builder/import/export, lobby/room factory, map/mission/player query; new IDs have reviewed media and clear unavailable-source labels."
+      "exit": "Same release selected by manual Builder/import/export, lobby/room factory, map/mission/player query; new IDs have reviewed media and clear unavailable-source labels.",
+      "usabilityPending": [
+        "Replace opaque casualtySelectionHash options with readable model/casualty summaries in NativeActionForm"
+      ]
     },
     {
       "id": "T28-W4-04",
@@ -54,10 +57,10 @@
     "productionPublish": false
   },
   "next": [
-    "Detonation template/delegated/outside-activation/direct-removal consumers; Stukov9/9 scoped verified",
+    "Detonation delegated attacks, other external HITS owners and direct-removal consumers; template/Seeker outside verified",
     "Other admitted Wave4 units and factions",
     "Complete release/Builder/lobby/media",
     "Both Web scales"
   ],
-  "updatedAt": "2026-11-27T22:37:21.353Z"
+  "updatedAt": "2026-11-27T23:10:01.232Z"
 }

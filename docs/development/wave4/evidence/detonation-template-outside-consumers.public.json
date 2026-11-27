@@ -1,0 +1,138 @@
+{
+  "schema": "starcraft_tmg_wave4_detonation_template_outside_consumers_v1",
+  "status": "passed_scoped",
+  "definitions": [
+    {
+      "definitionId": "unit:infested_marine/detonation-any-phase@1",
+      "classification": "new_semantics_partial",
+      "requiredAtomId": "rule-atom:wave4/before-casualty-batch-detonation@1",
+      "allConsumersVerified": false,
+      "fullAtomAdmission": false,
+      "templateNativeCase": "main-first-use",
+      "templateNativeEvidence": "docs/development/wave4/evidence/detonation-template.public.json",
+      "seekerOutsideNativeVerified": true,
+      "seekerOutsideNativeCases": [
+        "use",
+        "decline"
+      ],
+      "sharedOutsideTimingContractVerified": true,
+      "directAbilityV3NativeVerified": true,
+      "consumerRefs": [
+        {
+          "file": "packages/product-composition/official-before-casualty-runtime-v1.mjs",
+          "exportName": "createOfficialBeforeCasualtyRuntimeV1"
+        },
+        {
+          "file": "packages/product-composition/official-blast-template-attack-runtime-v1.mjs",
+          "exportName": "createOfficialBlastTemplateAttackRuntimeV1"
+        },
+        {
+          "file": "packages/product-composition/official-automatic-hits-runtime-v1.mjs",
+          "exportName": "createOfficialAutomaticHitsRuntimeV1"
+        },
+        {
+          "file": "packages/product-composition/official-characteristic-status-component-runtime-v2.mjs",
+          "exportName": "createOfficialCharacteristicStatusComponentRuntimeV2"
+        },
+        {
+          "file": "packages/product-composition/official-current-product-match-runtime-v1.mjs",
+          "exportName": "createOfficialEngineeringScopedRoundRuntimeV1"
+        }
+      ],
+      "pendingConsumers": [
+        "delegated_attack_parents",
+        "other_external_hits_parents",
+        "disengage_forced_casualties",
+        "consume_sacrifice_payment"
+      ],
+      "evidenceRefs": [
+        "docs/development/wave4/evidence/detonation-template.public.json",
+        "docs/development/wave4/evidence/detonation-outside.public.json",
+        "docs/development/wave4/evidence/bio-kill-switch-before-casualty-v3.public.json",
+        "docs/development/wave4/evidence/detonation-outside-context.public.json",
+        "docs/development/wave4/evidence/detonation-v3-compat.public.json",
+        "docs/development/wave4/evidence/detonation-v3-current-cold.public.json",
+        "docs/development/wave4/evidence/detonation-template-web.public.json",
+        "docs/development/wave4/evidence/detonation-outside-web.public.json"
+      ],
+      "engineeringEstimatedUnitGeometry": true,
+      "fullMatchAdmission": false
+    },
+    {
+      "definitionId": "unit:infested_trooper/detonation-any-phase@1",
+      "classification": "new_semantics_partial",
+      "requiredAtomId": "rule-atom:wave4/before-casualty-batch-detonation@1",
+      "allConsumersVerified": false,
+      "fullAtomAdmission": false,
+      "templateNativeCase": "spillover-first-use",
+      "templateNativeEvidence": "docs/development/wave4/evidence/detonation-template.public.json",
+      "seekerOutsideNativeVerified": false,
+      "seekerOutsideNativeCases": [],
+      "sharedOutsideTimingContractVerified": true,
+      "directAbilityV3NativeVerified": false,
+      "consumerRefs": [
+        {
+          "file": "packages/product-composition/official-before-casualty-runtime-v1.mjs",
+          "exportName": "createOfficialBeforeCasualtyRuntimeV1"
+        },
+        {
+          "file": "packages/product-composition/official-blast-template-attack-runtime-v1.mjs",
+          "exportName": "createOfficialBlastTemplateAttackRuntimeV1"
+        },
+        {
+          "file": "packages/product-composition/official-automatic-hits-runtime-v1.mjs",
+          "exportName": "createOfficialAutomaticHitsRuntimeV1"
+        },
+        {
+          "file": "packages/product-composition/official-characteristic-status-component-runtime-v2.mjs",
+          "exportName": "createOfficialCharacteristicStatusComponentRuntimeV2"
+        }
+      ],
+      "pendingConsumers": [
+        "delegated_attack_parents",
+        "other_external_hits_parents",
+        "disengage_forced_casualties",
+        "consume_sacrifice_payment"
+      ],
+      "evidenceRefs": [
+        "docs/development/wave4/evidence/detonation-template.public.json",
+        "docs/development/wave4/evidence/detonation-outside.public.json",
+        "docs/development/wave4/evidence/bio-kill-switch-before-casualty-v3.public.json",
+        "docs/development/wave4/evidence/detonation-outside-context.public.json",
+        "docs/development/wave4/evidence/detonation-v3-compat.public.json",
+        "docs/development/wave4/evidence/detonation-v3-current-cold.public.json",
+        "docs/development/wave4/evidence/detonation-template-web.public.json",
+        "docs/development/wave4/evidence/detonation-outside-web.public.json"
+      ],
+      "engineeringEstimatedUnitGeometry": true,
+      "fullMatchAdmission": false
+    }
+  ],
+  "policyVersion": "1.2.0",
+  "rootRuntimeVersion": "3.232.0",
+  "hitsRuntimeVersion": "3.11.0",
+  "templateRuntimeVersion": "2.4.0",
+  "engineeringSeekerRoundContractVersion": "1.1.0",
+  "nativeCases": 6,
+  "nativeSignedActions": 83,
+  "nativeCompletedRounds": 2,
+  "webRooms": 3,
+  "webSignedActions": 16,
+  "readOnlyContextChecks": 5,
+  "legacyColdReplayCases": 5,
+  "legacyOriginalActions": 50,
+  "currentV3ColdReplayCases": 5,
+  "currentV3OriginalActions": 74,
+  "newGameAtomsImplemented": 0,
+  "implementedCumulativeAtoms": 6,
+  "partialNewSemantics": [
+    "rule-atom:wave4/before-casualty-batch-detonation@1"
+  ],
+  "sourceHeldDefinitions": 39,
+  "fullMatchAdmission": false,
+  "uiUsabilityPending": [
+    "readable_casualty_selection_hash_labels"
+  ],
+  "modelCalls": 0,
+  "trainingTruth": false
+}

@@ -1,0 +1,132 @@
+{
+  "schema": "starcraft_tmg_wave4_virus_web_verification_v1",
+  "status": "passed_scoped",
+  "runRef": "build/wave4-web/stukov-units/detonation-template-web-v2",
+  "results": [
+    {
+      "kind": "main-first-use",
+      "definitionId": "unit:infested_marine/detonation-any-phase@1",
+      "sourceRoomId": "wave4-detonation-template-main-first-use-0",
+      "sourceStateHash": "33f07c30d7229f4caff4b9003f01a8c5d457b5a2b1928e6500008a2823ccca1d",
+      "sourcePrefixReceipts": 3,
+      "trace": [
+        {
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:infested_marine/detonation-any-phase@1",
+          "sideKey": "player2",
+          "stateRevision": 1,
+          "stateHash": "195d60bddcd5a4ad13af1ebc38201af3a91ba8004ddd3679c47a835043cf5846"
+        },
+        {
+          "actionType": "roll_automatic_hits_armour_pool",
+          "definitionId": null,
+          "sideKey": "player2",
+          "stateRevision": 2,
+          "stateHash": "e1524e8b1285c3f5115c224a14bdcedbadb7c9bc806c0d6b27e977d842c7824f"
+        },
+        {
+          "actionType": "resolve_automatic_hits_evade_pool",
+          "definitionId": null,
+          "sideKey": "player2",
+          "stateRevision": 3,
+          "stateHash": "b2b99124da94ebabd6f4fbfdd29f3cb66930f1efc06852fe395704a42c33d611"
+        },
+        {
+          "actionType": "resolve_blast_template_batch",
+          "definitionId": null,
+          "sideKey": "player1",
+          "stateRevision": 4,
+          "stateHash": "955b68de5b174de746ca67ebd1cc741c6f66e724e13f15783bb8978d87c68cdf"
+        },
+        {
+          "actionType": "choose_blast_template_casualties",
+          "definitionId": null,
+          "sideKey": "player2",
+          "stateRevision": 5,
+          "stateHash": "8282bcf5b1201460207e161b3d63997da6b55235acaff114434308203d26237a"
+        },
+        {
+          "actionType": "resolve_blast_template_batch",
+          "definitionId": null,
+          "sideKey": "player1",
+          "stateRevision": 6,
+          "stateHash": "5602268c9ce10fd8568f0b40dd32b73c2ffd6d7cde7d207d99e83f4159d38f25"
+        }
+      ],
+      "signedActions": 6,
+      "twoSeatsVerified": true,
+      "explicitHumanConfirmation": true,
+      "previewReadOnly": true,
+      "replayMatchesCurrent": true,
+      "seatRecoveryReentryVerified": true,
+      "pageErrors": []
+    },
+    {
+      "kind": "spillover-first-use",
+      "definitionId": "unit:infested_trooper/detonation-any-phase@1",
+      "sourceRoomId": "wave4-detonation-template-spillover-first-use-0",
+      "sourceStateHash": "984f57a49996b88b2196c51fdd3fd12f5cb5404b27af239501c2394ea7a2b21d",
+      "sourcePrefixReceipts": 3,
+      "trace": [
+        {
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:infested_trooper/detonation-any-phase@1",
+          "sideKey": "player2",
+          "stateRevision": 1,
+          "stateHash": "3d8eabe337de1e11315ae6ec24b2b3360d32317157ed3cd6a1aa3d13d5155d19"
+        },
+        {
+          "actionType": "roll_automatic_hits_armour_pool",
+          "definitionId": null,
+          "sideKey": "player2",
+          "stateRevision": 2,
+          "stateHash": "4ff47b56e374f5847eca5525c909693f45b1dc8d8c41cba5ac0d83ac646b1718"
+        },
+        {
+          "actionType": "resolve_automatic_hits_evade_pool",
+          "definitionId": null,
+          "sideKey": "player2",
+          "stateRevision": 3,
+          "stateHash": "b38788d98e88dd14fa98cbe382e3f5fd9d539671353fa70d6113d740bec82566"
+        },
+        {
+          "actionType": "resolve_blast_template_batch",
+          "definitionId": null,
+          "sideKey": "player1",
+          "stateRevision": 4,
+          "stateHash": "5e062a099e5a11104396a979e43588bcf84ce057b7d31ba3b393b77700286240"
+        },
+        {
+          "actionType": "choose_blast_template_casualties",
+          "definitionId": null,
+          "sideKey": "player2",
+          "stateRevision": 5,
+          "stateHash": "41cc0b0f6965e7aa701f8a81e1c22e8dba670677a025e4f6cc677d8a6ea713c4"
+        },
+        {
+          "actionType": "resolve_blast_template_batch",
+          "definitionId": null,
+          "sideKey": "player1",
+          "stateRevision": 6,
+          "stateHash": "da782d8da46dc32ea151414990b1869e4108a9389975dce6ef766d06c698752d"
+        }
+      ],
+      "signedActions": 6,
+      "twoSeatsVerified": true,
+      "explicitHumanConfirmation": true,
+      "previewReadOnly": true,
+      "replayMatchesCurrent": true,
+      "seatRecoveryReentryVerified": true,
+      "pageErrors": []
+    }
+  ],
+  "signedActions": 12,
+  "conditionalTurretGeometryInRestorationCaseOnly": false,
+  "sourceHeldDefinitions": 39,
+  "engineeringEstimatedUnitGeometry": true,
+  "fullWave4LobbyBuilderAdmission": false,
+  "fullMatchAdmission": false,
+  "wave3PlayerRoomsTouched": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

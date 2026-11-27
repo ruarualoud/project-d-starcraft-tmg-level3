@@ -9,16 +9,22 @@ export const OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V1=Object.freeze({
  trainingTruth:false});
 export const OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V2=Object.freeze({...OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V1,
  version:'1.1.0',damageHosts:Object.freeze(['ranged','melee','automatic_hits']),allocationOnlyReservations:true});
+export const OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V3=Object.freeze({...OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V2,
+ version:'1.2.0',damageHosts:Object.freeze(['ranged','melee','automatic_hits','blast_template']),preserveOutsideActivationTiming:true,
+ sealedHostCompletionDeferred:true});
 const without=(x,k)=>Object.fromEntries(Object.entries(x).filter(([name])=>name!==k));
 const seal=(x,k)=>({...x,[k]:hash(x)});
 const digest=x=>/^[a-f0-9]{64}$/u.test(x||'');
 export function hasOfficialBeforeCasualtyBatchPolicyV1(state){
  const policy=state?.officialBeforeCasualtyBatchPolicy;if(policy===undefined)return false;
- if(!isDeepStrictEqual(policy,OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V1)&&!isDeepStrictEqual(policy,OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V2))
+ if(!isDeepStrictEqual(policy,OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V1)&&!isDeepStrictEqual(policy,OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V2)
+  &&!isDeepStrictEqual(policy,OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V3))
   throw Error('BEFORE_CASUALTY_BATCH_POLICY_INVALID');return true;
 }
 export function hasOfficialExtendedBeforeCasualtyPolicyV1(state){return hasOfficialBeforeCasualtyBatchPolicyV1(state)
- &&state.officialBeforeCasualtyBatchPolicy.version==='1.1.0';}
+ &&['1.1.0','1.2.0'].includes(state.officialBeforeCasualtyBatchPolicy.version);}
+export function hasOfficialTemplateBeforeCasualtyPolicyV1(state){return hasOfficialBeforeCasualtyBatchPolicyV1(state)
+ &&state.officialBeforeCasualtyBatchPolicy.version==='1.2.0';}
 function reservations(state,piece){
  const rows=piece.officialBeforeCasualtyReservations||[];
  if(!rows.length)return[];

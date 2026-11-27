@@ -1,5 +1,5 @@
 import {stageOfficialBeforeCasualtyContinuationV1} from './official-before-casualty-runtime-v1.mjs';
-import {hasOfficialExtendedBeforeCasualtyPolicyV1} from '../rule-atoms/official-before-casualty-batch-v1.mjs';
+import {hasOfficialExtendedBeforeCasualtyPolicyV1,hasOfficialTemplateBeforeCasualtyPolicyV1} from '../rule-atoms/official-before-casualty-batch-v1.mjs';
 import { planOfficialArmourThresholdV1, hasOfficialArmourThresholdPolicyV1 } from "../rule-atoms/official-armour-threshold-policy-v1.mjs";
 import { projectOfficialBattlefieldAssetFamilyModifiersV1 } from "./official-battlefield-asset-family-adapter-v1.mjs";
 import { recordOfficialArmourRollV1 } from "../rule-atoms/official-armour-roll-ordinal-v1.mjs";
@@ -67,7 +67,7 @@ export function createOfficialAutomaticHitsRuntimeV1({ sourceBundle, state, incl
     });
   }
   const beforeCasualty=hasOfficialExtendedBeforeCasualtyPolicyV1(state);
-  const runtimeVersion = infestationDamage ? '3.10.0' : beforeCasualty ? '3.9.0' : includeBeforeEvadeReaction ? '3.8.0' : resolvedDirectDamage ? '3.7.0' : externalEvadeGrant ? '3.6.0' : directSources.length ? '3.5.0' : includeEvadeEligibility ? '3.4.0' : includeDamageReceivedReaction ? '3.3.0' : otherTriggers.length ? (sourceAuthority ? '3.2.0' : '2.1.0')
+  const runtimeVersion = hasOfficialTemplateBeforeCasualtyPolicyV1(state) ? '3.11.0' : infestationDamage ? '3.10.0' : beforeCasualty ? '3.9.0' : includeBeforeEvadeReaction ? '3.8.0' : resolvedDirectDamage ? '3.7.0' : externalEvadeGrant ? '3.6.0' : directSources.length ? '3.5.0' : includeEvadeEligibility ? '3.4.0' : includeDamageReceivedReaction ? '3.3.0' : otherTriggers.length ? (sourceAuthority ? '3.2.0' : '2.1.0')
     : sourceAuthority?.reactionTiming === 'outside_activation' ? '3.1.0'
     : sourceAuthority ? '3.0.0' : includeArmourReactions ? '2.0.0' : '1.0.0';
   const descriptor = seal({ runtimeId, runtimeVersion, ruleAtomIds,
@@ -263,7 +263,9 @@ export function createOfficialAutomaticHitsRuntimeV1({ sourceBundle, state, incl
     if(beforeCasualty&&!resumedCasualties){
       const interrupted=stageOfficialBeforeCasualtyContinuationV1({state:current,action,hostKind:'automatic_hits',
         causePieceId:parent.pieceId,causeSideKey:parent.sourceSideKey??parent.sideKey,
-        activationContext:sourceAuthority?.owns(parent)?sourceAuthority.reactionContextFor?.(current,parent):undefined,
+        activationContext:sourceAuthority?.owns(parent)?sourceAuthority.reactionContextFor?.(current,parent)
+          ||(hasOfficialTemplateBeforeCasualtyPolicyV1(current)&&reactionTiming(parent)==='outside_activation'
+            ?{activeSideKey:parent.sideKey,activationId:null}:undefined):undefined,
         rows:parent.rows.map((row,index)=>({targetPieceId:row.targetUnitId,targetProfile:row.targetProfile,
           attackResolutionHash:row.resolution.resolutionHash,casualty:casualties[index]})),hostData:{parent}});
       if(interrupted)return interrupted;

@@ -1,0 +1,58 @@
+{
+  "schema": "starcraft_tmg_wave4_detonation_v3_compat_v1",
+  "status": "passed_scoped",
+  "results": [
+    {
+      "id": "main-first-use",
+      "roomId": "wave4-detonation-template-main-first-use-0",
+      "originalSignedActions": 9,
+      "runtimeVersion": "3.232.0",
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "stateHash": "7100f710f739af756e4e28163675e7462be79bfcea20052bc30f9fa34cfd340d",
+      "newActions": 0
+    },
+    {
+      "id": "spillover-first-use",
+      "roomId": "wave4-detonation-template-spillover-first-use-0",
+      "originalSignedActions": 9,
+      "runtimeVersion": "3.232.0",
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "stateHash": "3947cbee79ec7652aa27f8a888d767976fed35d6f374257f6e6450de12b0634e",
+      "newActions": 0
+    },
+    {
+      "id": "use",
+      "roomId": "wave4-detonation-outside-use",
+      "originalSignedActions": 26,
+      "runtimeVersion": "2.2.0",
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "stateHash": "691497a2383e84880b45ee5837d4fdc7f8327f1b8712664fed180021e8c43d58",
+      "newActions": 0
+    },
+    {
+      "id": "decline",
+      "roomId": "wave4-detonation-outside-decline",
+      "originalSignedActions": 24,
+      "runtimeVersion": "2.2.0",
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "stateHash": "2e46064ee761da963c22c61e75053110cf8ee750243919e8e1fc08eead8e3572",
+      "newActions": 0
+    },
+    {
+      "id": "v3-counter-detonation",
+      "roomId": "wave4-bio-kill-switch-v3-counter-detonation",
+      "originalSignedActions": 6,
+      "runtimeVersion": "3.232.0",
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "stateHash": "a625ebf41d61b8cacd6c86be314e14fcff8c7ff2360e681909daaed1c3700879",
+      "newActions": 0
+    }
+  ],
+  "modelCalls": 0,
+  "trainingTruth": false
+}

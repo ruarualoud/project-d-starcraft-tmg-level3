@@ -20,7 +20,7 @@ const webRoot=process.argv[4]?path.resolve(process.argv[4]):path.join(root,'apps
 if(process.argv[4])assert.ok(webRoot.startsWith(path.join(root,'build/wave4-web')+path.sep));
 const inputs=['starcraft_tmg_wave4_stukov_infestation_native_v1','starcraft_tmg_wave4_plagued_munitions_v1',
    'starcraft_tmg_wave4_infested_infantry_base_wiring_v1','starcraft_tmg_wave4_detonation_ranged_host_v1','starcraft_tmg_wave4_detonation_nested_host_v1',
-   'starcraft_tmg_wave4_bio_kill_switch_v1','starcraft_tmg_wave4_corrode_web_source_v1'].includes(sourceResult.schema)?await loadWave4StukovUnitInputs(root)
+   'starcraft_tmg_wave4_bio_kill_switch_v1','starcraft_tmg_wave4_corrode_web_source_v1','starcraft_tmg_wave4_detonation_template_v1','starcraft_tmg_wave4_detonation_outside_v1'].includes(sourceResult.schema)?await loadWave4StukovUnitInputs(root)
   :sourceResult.schema==='starcraft_tmg_wave4_virus_creep_native_v1'?await loadWave4VirusEffectsInputs(root):await loadWave4TurretInputs(root);
 const rooms=new Map();
 const service={liveEnabled:false,scope:'Wave4 source-bound Native successors; scoped local Web acceptance',rooms:[]};
@@ -45,7 +45,7 @@ for(const spec of specs) {  const proof=sourceResult.results.find(row=>row.id===
     await nativeSource.restoreDependencies(proof.roomId,sourceAuthority);
     const bundle=await nativeSource.store.loadReplayBundle(proof.roomId);
     const journal=bundle.privateJournal.filter(row=>row.payload.type==='accepted_transition').map(row=>row.payload.payload.receipt);
-    const hintedPrefix=spec.minimumContinuationDepth?proof.trace?.find(row=>row.stackDepth>=spec.minimumContinuationDepth)?.revision-1:0;
+    const hintedPrefix=spec.minimumSourceRevision??(spec.minimumContinuationDepth?proof.trace?.find(row=>row.stackDepth>=spec.minimumContinuationDepth)?.revision-1:0);
     for(let count=Number.isSafeInteger(hintedPrefix)?hintedPrefix:0;count<=journal.length;count++) {
       const replay=nativeSource.engine.replay({initialEnvelope:bundle.initialEnvelope,journal:journal.slice(0,count)});
       assert.equal(replay.ok,true);

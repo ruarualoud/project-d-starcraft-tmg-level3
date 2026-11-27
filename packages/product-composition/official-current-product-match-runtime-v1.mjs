@@ -480,6 +480,13 @@ export function createOfficialEngineeringScopedRoundRuntimeV1({ context, state, 
     definitions: definitionIds.map(definitionId => ({ definitionId })),
     sourceManifestHash: context.manifest.manifestHash, nativeRuntimeHash: nativeActions.descriptor.runtimeHash,
     fullMatchAdmission: false, trainingTruth: false };
+  if(state.officialSeekerAssaultTiming){
+    const policy=state.officialSeekerAssaultTiming,source=state.officialCharacteristicStatusFamilySourceBundle;
+    if(policy.sourceBundleHash!==source?.bundleHash||!source.definitionIds.includes(policy.definitionId)
+      ||nativeActions.descriptor.ravenSeekerMissileRules?.definitionId!==policy.definitionId
+      ||!nativeActions.descriptor.ravenSeekerMissileRules?.paidImpactQueryKind)fail('ENGINEERING_ROUND_SEEKER_CONSUMER_REQUIRED');
+    Object.assign(coverage,{contractVersion:'1.1.0',seekerAssaultTimingPolicy:clone(policy)});
+  }
   return createCurrentProductMatchRuntime({ state, dataset: context.dataset, wave3MissionSourceContext: context,
     releaseMatchVersion: '2.2.0', engineeringRoundScope: coverage, engineeringSourceDefinitionCount: sourceDefinitionCount },
   { scaleId: 'Standard', widthInches: 54, heightInches: 36 },
@@ -777,6 +784,7 @@ function createCurrentProductMatchRuntime(input, scale, releaseOpening) {
       ...(rosterIncrement.exclusiveRangedContinuation ? { releaseExclusiveRangedContinuation: true } : {}),
       ...(releaseArtefactDropScoring && artefactDrop ? { releaseArtefactDropScoring: true } : {}) } : {}),
     ...(input.engineeringRoundScope ? { engineeringRoundScope: input.engineeringRoundScope,
+      ...(input.engineeringRoundScope.seekerAssaultTimingPolicy?{releaseSeekerAssaultTiming:true}:{}),
       fullMatchAdmission: false, productionRoomEligible: false,
       currentProductAbilityPendingCount: input.engineeringSourceDefinitionCount - input.engineeringRoundScope.definitions.length,
       rulesTruth: 'source_bound_scoped_engineering_round_existing_match_owner' } : {}),
@@ -1362,7 +1370,8 @@ function createCurrentProductMatchRuntime(input, scale, releaseOpening) {
       }
     }
     if (descriptor.releaseSeekerAssaultTiming && currentState.officialDeferredSeekerAssaultRound === Number(currentState.round)
-      && action.sourceRuntimeKind === 'release_native' && !stateAfter.pendingOfficialRavenSeekerPhaseEnd) {
+      && action.sourceRuntimeKind === 'release_native' && !stateAfter.pendingOfficialRavenSeekerPhaseEnd
+      && !stateAfter.officialBeforeCasualtyContinuations?.length) {
       const group = pendingOfficialSeekerControllersV1(stateAfter);
       if (group?.controllerSideKey) stateAfter.activeSideKey = group.controllerSideKey;
       else {

@@ -1,0 +1,4 @@
+[
+ {"id":"main-first-use","definitionId":"unit:infested_marine/detonation-any-phase@1","flow":"detonation-template"},
+ {"id":"spillover-first-use","definitionId":"unit:infested_trooper/detonation-any-phase@1","flow":"detonation-template"}
+]

@@ -1,0 +1,656 @@
+{
+  "schema": "starcraft_tmg_wave4_detonation_outside_v1",
+  "status": "passed_scoped",
+  "runRef": "build/wave4-web/stukov-units/detonation-outside-50W7nv",
+  "results": [
+    {
+      "id": "use",
+      "use": true,
+      "roomId": "wave4-detonation-outside-use",
+      "directoryRef": "build/wave4-web/stukov-units/detonation-outside-50W7nv/use",
+      "signedActions": 26,
+      "stateHash": "691497a2383e84880b45ee5837d4fdc7f8327f1b8712664fed180021e8c43d58",
+      "trace": [
+        {
+          "revision": 1,
+          "round": 1,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "definitionId": null
+        },
+        {
+          "revision": 2,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "choose_first_actor",
+          "definitionId": null
+        },
+        {
+          "revision": 3,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "resolve_characteristic_status_ability",
+          "definitionId": "unit:raven/seeker-missile-movement-phase@1"
+        },
+        {
+          "revision": 4,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "finish_activation",
+          "definitionId": null
+        },
+        {
+          "revision": 5,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "definitionId": null
+        },
+        {
+          "revision": 6,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "definitionId": null
+        },
+        {
+          "revision": 7,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "choose_first_actor",
+          "definitionId": null
+        },
+        {
+          "revision": 8,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "definitionId": null
+        },
+        {
+          "revision": 9,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "definitionId": null
+        },
+        {
+          "revision": 10,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "resolve_raven_seeker_phase_end",
+          "definitionId": null
+        },
+        {
+          "revision": 11,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "roll_automatic_hits_armour_pool",
+          "definitionId": null
+        },
+        {
+          "revision": 12,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "resolve_automatic_hits_evade_pool",
+          "definitionId": null
+        },
+        {
+          "revision": 13,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "choose_automatic_hits_casualties",
+          "definitionId": null
+        },
+        {
+          "revision": 14,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:infested_marine/detonation-any-phase@1"
+        },
+        {
+          "revision": 15,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null
+        },
+        {
+          "revision": 16,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "roll_automatic_hits_armour_pool",
+          "definitionId": null
+        },
+        {
+          "revision": 17,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "resolve_automatic_hits_evade_pool",
+          "definitionId": null
+        },
+        {
+          "revision": 18,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "choose_first_actor",
+          "definitionId": null
+        },
+        {
+          "revision": 19,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "definitionId": null
+        },
+        {
+          "revision": 20,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "definitionId": null
+        },
+        {
+          "revision": 21,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "determine_current_product_mission_marker_control",
+          "definitionId": null
+        },
+        {
+          "revision": 22,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "score_mission",
+          "definitionId": null
+        },
+        {
+          "revision": 23,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "check_mission_end_game",
+          "definitionId": null
+        },
+        {
+          "revision": 24,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_end_of_round_effects",
+          "definitionId": null
+        },
+        {
+          "revision": 25,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_cleanup_refresh",
+          "definitionId": null
+        },
+        {
+          "revision": 26,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_next_round_initiative",
+          "definitionId": null
+        }
+      ],
+      "windows": [
+        {
+          "revision": 13,
+          "kind": "before_casualty_batch",
+          "timing": "outside_activation",
+          "activationId": null,
+          "prioritySideKeys": [
+            "player2",
+            "player1"
+          ]
+        }
+      ],
+      "frames": [
+        {
+          "hostKind": "automatic_hits",
+          "activationContext": {
+            "activeSideKey": "player1",
+            "activationId": null
+          },
+          "rows": [
+            {
+              "targetPieceId": "defender",
+              "targetProfile": {
+                "recordKey": "army_units:infested_marine",
+                "sourceRecordHash": "12e5f075acc27dd49959dbb084697a60fc50da8ae27f7f1574f518d09e803d20",
+                "payloadHash": "0a5124e81cdcdc61bcc4a52bd31bef1645b3b9b9d62cd4fbb64747a2aba1db87",
+                "unitId": "infested_marine",
+                "unitName": "Infested Marine",
+                "faction": "Zerg",
+                "combatTags": [
+                  "biological",
+                  "ground",
+                  "infested",
+                  "light"
+                ],
+                "armourThreshold": 4,
+                "evadeThreshold": 6,
+                "hitPoints": 2,
+                "shield": 0,
+                "squadProfile": [
+                  {
+                    "tier": 1,
+                    "minimumModels": 1,
+                    "maximumModels": 3,
+                    "supply": 1
+                  },
+                  {
+                    "tier": 2,
+                    "minimumModels": 4,
+                    "maximumModels": 6,
+                    "supply": 2
+                  },
+                  {
+                    "tier": 3,
+                    "minimumModels": null,
+                    "maximumModels": null,
+                    "supply": 0
+                  }
+                ],
+                "combatWeapons": [
+                  {
+                    "weaponName": "Strike",
+                    "linkedTo": "-",
+                    "costSmall": 0,
+                    "costLarge": 0,
+                    "range": "engagement",
+                    "targetTags": [
+                      "ground"
+                    ],
+                    "rateOfAttack": 1,
+                    "hitThreshold": 4,
+                    "damage": 1,
+                    "surge": null,
+                    "behaviorText": "",
+                    "sourceTextHash": "70daa49c72839e258072250089247bf5b0c1b5af201432420c3f02f5844443e2"
+                  },
+                  {
+                    "weaponName": "Wild Mutation",
+                    "linkedTo": "Infested C-14 Rifle",
+                    "costSmall": 1,
+                    "costLarge": 1,
+                    "range": "engagement",
+                    "targetTags": [
+                      "ground"
+                    ],
+                    "rateOfAttack": 2,
+                    "hitThreshold": 3,
+                    "damage": 1,
+                    "surge": "Armoured (D3+1)",
+                    "behaviorText": "",
+                    "sourceTextHash": "5835866f890df4296e8971d909a65062bb9e55a5e03656a8d1a773331ee50fb7"
+                  }
+                ],
+                "weaponlessCombatProfileAllowed": false
+              },
+              "attackResolutionHash": "b0627e01442be364ef0e0e38e9fd0716d69225bd2d9dd8b6f5ff5fa237bbb07c",
+              "casualty": {
+                "schema": "starcraft_tmg_official_current_product_casualty_resolution_v1",
+                "domainHash": "0fadf63369bb8e0928da3a85e5694361bf0427a076596dcedc6b09c65284be14",
+                "selectionHash": "",
+                "targetPieceId": "defender",
+                "casualtyModelIds": [
+                  "defender-model-1",
+                  "defender-model-2",
+                  "defender-model-3",
+                  "defender-model-4",
+                  "defender-model-5",
+                  "defender-model-6"
+                ],
+                "remainingModelIds": [],
+                "remainingEngagedEnemyUnitIds": [],
+                "postDamageMarker": 0,
+                "targetDestroyed": true,
+                "discardedOverflowDamage": 4,
+                "shieldedBefore": false,
+                "shieldedAfter": false,
+                "trainingTruth": false,
+                "resolutionHash": "8441f22915d4f3f481da91b577692ca4668da832a0c8014e2e2837472ccda0b3"
+              },
+              "reservationHash": "c0c1faf0af25bdb7b5439429176d02dae27fe0508f31611d2b55131f95a6f2ad"
+            }
+          ]
+        }
+      ],
+      "fullNativeRound": true,
+      "markerHolderPriorityVerified": true,
+      "nullActivationPreserved": true,
+      "originalDiceAndCasualtyOrderPreserved": true,
+      "supplyExactlyOnce": true,
+      "coldReplay": true,
+      "idempotencyVerified": true
+    },
+    {
+      "id": "decline",
+      "use": false,
+      "roomId": "wave4-detonation-outside-decline",
+      "directoryRef": "build/wave4-web/stukov-units/detonation-outside-50W7nv/decline",
+      "signedActions": 24,
+      "stateHash": "2e46064ee761da963c22c61e75053110cf8ee750243919e8e1fc08eead8e3572",
+      "trace": [
+        {
+          "revision": 1,
+          "round": 1,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "definitionId": null
+        },
+        {
+          "revision": 2,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "choose_first_actor",
+          "definitionId": null
+        },
+        {
+          "revision": 3,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "resolve_characteristic_status_ability",
+          "definitionId": "unit:raven/seeker-missile-movement-phase@1"
+        },
+        {
+          "revision": 4,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "finish_activation",
+          "definitionId": null
+        },
+        {
+          "revision": 5,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "definitionId": null
+        },
+        {
+          "revision": 6,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "definitionId": null
+        },
+        {
+          "revision": 7,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "choose_first_actor",
+          "definitionId": null
+        },
+        {
+          "revision": 8,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "definitionId": null
+        },
+        {
+          "revision": 9,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "definitionId": null
+        },
+        {
+          "revision": 10,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "resolve_raven_seeker_phase_end",
+          "definitionId": null
+        },
+        {
+          "revision": 11,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "roll_automatic_hits_armour_pool",
+          "definitionId": null
+        },
+        {
+          "revision": 12,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "resolve_automatic_hits_evade_pool",
+          "definitionId": null
+        },
+        {
+          "revision": 13,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "choose_automatic_hits_casualties",
+          "definitionId": null
+        },
+        {
+          "revision": 14,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null
+        },
+        {
+          "revision": 15,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null
+        },
+        {
+          "revision": 16,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "choose_first_actor",
+          "definitionId": null
+        },
+        {
+          "revision": 17,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "definitionId": null
+        },
+        {
+          "revision": 18,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "definitionId": null
+        },
+        {
+          "revision": 19,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "determine_current_product_mission_marker_control",
+          "definitionId": null
+        },
+        {
+          "revision": 20,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "score_mission",
+          "definitionId": null
+        },
+        {
+          "revision": 21,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "check_mission_end_game",
+          "definitionId": null
+        },
+        {
+          "revision": 22,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_end_of_round_effects",
+          "definitionId": null
+        },
+        {
+          "revision": 23,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_cleanup_refresh",
+          "definitionId": null
+        },
+        {
+          "revision": 24,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_next_round_initiative",
+          "definitionId": null
+        }
+      ],
+      "windows": [
+        {
+          "revision": 13,
+          "kind": "before_casualty_batch",
+          "timing": "outside_activation",
+          "activationId": null,
+          "prioritySideKeys": [
+            "player2",
+            "player1"
+          ]
+        },
+        {
+          "revision": 14,
+          "kind": "before_casualty_batch",
+          "timing": "outside_activation",
+          "activationId": null,
+          "prioritySideKeys": [
+            "player2",
+            "player1"
+          ]
+        }
+      ],
+      "frames": [
+        {
+          "hostKind": "automatic_hits",
+          "activationContext": {
+            "activeSideKey": "player1",
+            "activationId": null
+          },
+          "rows": [
+            {
+              "targetPieceId": "defender",
+              "targetProfile": {
+                "recordKey": "army_units:infested_marine",
+                "sourceRecordHash": "12e5f075acc27dd49959dbb084697a60fc50da8ae27f7f1574f518d09e803d20",
+                "payloadHash": "0a5124e81cdcdc61bcc4a52bd31bef1645b3b9b9d62cd4fbb64747a2aba1db87",
+                "unitId": "infested_marine",
+                "unitName": "Infested Marine",
+                "faction": "Zerg",
+                "combatTags": [
+                  "biological",
+                  "ground",
+                  "infested",
+                  "light"
+                ],
+                "armourThreshold": 4,
+                "evadeThreshold": 6,
+                "hitPoints": 2,
+                "shield": 0,
+                "squadProfile": [
+                  {
+                    "tier": 1,
+                    "minimumModels": 1,
+                    "maximumModels": 3,
+                    "supply": 1
+                  },
+                  {
+                    "tier": 2,
+                    "minimumModels": 4,
+                    "maximumModels": 6,
+                    "supply": 2
+                  },
+                  {
+                    "tier": 3,
+                    "minimumModels": null,
+                    "maximumModels": null,
+                    "supply": 0
+                  }
+                ],
+                "combatWeapons": [
+                  {
+                    "weaponName": "Strike",
+                    "linkedTo": "-",
+                    "costSmall": 0,
+                    "costLarge": 0,
+                    "range": "engagement",
+                    "targetTags": [
+                      "ground"
+                    ],
+                    "rateOfAttack": 1,
+                    "hitThreshold": 4,
+                    "damage": 1,
+                    "surge": null,
+                    "behaviorText": "",
+                    "sourceTextHash": "70daa49c72839e258072250089247bf5b0c1b5af201432420c3f02f5844443e2"
+                  },
+                  {
+                    "weaponName": "Wild Mutation",
+                    "linkedTo": "Infested C-14 Rifle",
+                    "costSmall": 1,
+                    "costLarge": 1,
+                    "range": "engagement",
+                    "targetTags": [
+                      "ground"
+                    ],
+                    "rateOfAttack": 2,
+                    "hitThreshold": 3,
+                    "damage": 1,
+                    "surge": "Armoured (D3+1)",
+                    "behaviorText": "",
+                    "sourceTextHash": "5835866f890df4296e8971d909a65062bb9e55a5e03656a8d1a773331ee50fb7"
+                  }
+                ],
+                "weaponlessCombatProfileAllowed": false
+              },
+              "attackResolutionHash": "dda0a12c3e8aa32519634f601b8d8b8091b8ad1d825e0eff1aed7a9affd779a6",
+              "casualty": {
+                "schema": "starcraft_tmg_official_current_product_casualty_resolution_v1",
+                "domainHash": "b431634ccc8038efce64014d6309ef6029eb45dcec8feeeec008e2d154f743ff",
+                "selectionHash": "",
+                "targetPieceId": "defender",
+                "casualtyModelIds": [
+                  "defender-model-1",
+                  "defender-model-2",
+                  "defender-model-3",
+                  "defender-model-4",
+                  "defender-model-5",
+                  "defender-model-6"
+                ],
+                "remainingModelIds": [],
+                "remainingEngagedEnemyUnitIds": [],
+                "postDamageMarker": 0,
+                "targetDestroyed": true,
+                "discardedOverflowDamage": 0,
+                "shieldedBefore": false,
+                "shieldedAfter": false,
+                "trainingTruth": false,
+                "resolutionHash": "1747fcaf82983d340519f0e1530e9fc56ce536c39e9ba069dff70b8912fe4bf8"
+              },
+              "reservationHash": "e85d059a2958535ff6aa90cd8907d2d8a4b901f80c52b04d1c82b61d3e2f84e0"
+            }
+          ]
+        }
+      ],
+      "fullNativeRound": true,
+      "markerHolderPriorityVerified": true,
+      "nullActivationPreserved": true,
+      "originalDiceAndCasualtyOrderPreserved": true,
+      "supplyExactlyOnce": true,
+      "coldReplay": true,
+      "idempotencyVerified": true
+    }
+  ],
+  "newGameAtomsImplemented": 0,
+  "implementedCumulativeAtoms": 6,
+  "otherRemovalHostsPending": true,
+  "fullMatchAdmission": false,
+  "sourceHeldDefinitions": 39,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

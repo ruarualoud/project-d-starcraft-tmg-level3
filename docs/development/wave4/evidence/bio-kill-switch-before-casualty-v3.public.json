@@ -1,0 +1,52 @@
+{
+  "schema": "starcraft_tmg_wave4_bio_kill_switch_v1",
+  "status": "passed_scoped",
+  "runRef": "build/wave4-web/stukov-units/bio-kill-switch-cgojJD",
+  "results": [
+    {
+      "id": "v3-counter-detonation",
+      "use": true,
+      "beforeCasualtyPolicyVersion": "1.2.0",
+      "roomId": "wave4-bio-kill-switch-v3-counter-detonation",
+      "directoryRef": "build/wave4-web/stukov-units/bio-kill-switch-cgojJD/v3-counter-detonation",
+      "signedActions": 6,
+      "stateHash": "a625ebf41d61b8cacd6c86be314e14fcff8c7ff2360e681909daaed1c3700879",
+      "casterDestroyed": true,
+      "trace": [
+        {
+          "revision": 2,
+          "actionType": "choose_direct_ability_damage_casualties",
+          "definitionId": null
+        },
+        {
+          "revision": 3,
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null
+        },
+        {
+          "revision": 4,
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:infested_marine/detonation-any-phase@1"
+        },
+        {
+          "revision": 5,
+          "actionType": "roll_automatic_hits_armour_pool",
+          "definitionId": null
+        },
+        {
+          "revision": 6,
+          "actionType": "resolve_automatic_hits_evade_pool",
+          "definitionId": null
+        }
+      ],
+      "coldReplay": true,
+      "idempotencyVerified": true
+    }
+  ],
+  "newGameAtomsImplemented": 0,
+  "implementedCumulativeAtoms": 6,
+  "fullMatchAdmission": false,
+  "sourceHeldDefinitions": 39,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

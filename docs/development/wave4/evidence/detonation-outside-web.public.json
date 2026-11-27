@@ -1,0 +1,60 @@
+{
+  "schema": "starcraft_tmg_wave4_virus_web_verification_v1",
+  "status": "passed_scoped",
+  "runRef": "build/wave4-web/stukov-units/detonation-outside-web-v1",
+  "results": [
+    {
+      "kind": "use",
+      "definitionId": "unit:infested_marine/detonation-any-phase@1",
+      "sourceRoomId": "wave4-detonation-outside-use",
+      "sourceStateHash": "b30fff04201228d2c42fe3de27ebfc7d93b8ad393c475dd91d106c3e6d602387",
+      "sourcePrefixReceipts": 13,
+      "trace": [
+        {
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:infested_marine/detonation-any-phase@1",
+          "sideKey": "player2",
+          "stateRevision": 1,
+          "stateHash": "714dab1f2ee7ca550e998044a7f21c2f1f08baacf285dc7889bd1b7683a31fbb"
+        },
+        {
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null,
+          "sideKey": "player1",
+          "stateRevision": 2,
+          "stateHash": "3c6033ab87f75e13a28261186c08adbe7c16747e5df2f282deb48a6db302d80f"
+        },
+        {
+          "actionType": "roll_automatic_hits_armour_pool",
+          "definitionId": null,
+          "sideKey": "player2",
+          "stateRevision": 3,
+          "stateHash": "0489b0fd1e39b8ec2c812fb02702b343f9b96f67c1f1344887fee0160366aa71"
+        },
+        {
+          "actionType": "resolve_automatic_hits_evade_pool",
+          "definitionId": null,
+          "sideKey": "player2",
+          "stateRevision": 4,
+          "stateHash": "19ed7d5e6482def3c1aba08b79ef38963bff2bd31ca99e087d63fef7f3d9a299"
+        }
+      ],
+      "signedActions": 4,
+      "twoSeatsVerified": true,
+      "explicitHumanConfirmation": true,
+      "previewReadOnly": true,
+      "replayMatchesCurrent": true,
+      "seatRecoveryReentryVerified": true,
+      "pageErrors": []
+    }
+  ],
+  "signedActions": 4,
+  "conditionalTurretGeometryInRestorationCaseOnly": false,
+  "sourceHeldDefinitions": 39,
+  "engineeringEstimatedUnitGeometry": true,
+  "fullWave4LobbyBuilderAdmission": false,
+  "fullMatchAdmission": false,
+  "wave3PlayerRoomsTouched": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

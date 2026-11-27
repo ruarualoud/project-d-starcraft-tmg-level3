@@ -1,7 +1,7 @@
 import {isDeepStrictEqual} from 'node:util';
 import {hashStarcraftTmgContract as hash} from '../authoritative-engine/referee-crypto-v1.mjs';
 import {resolveOfficialArmourRollActivationIdV1} from '../rule-atoms/official-armour-roll-ordinal-v1.mjs';
-import {hasOfficialBeforeCasualtyBatchPolicyV1,hasOfficialExtendedBeforeCasualtyPolicyV1,reserveOfficialBeforeCasualtyBatchV1,
+import {hasOfficialBeforeCasualtyBatchPolicyV1,hasOfficialExtendedBeforeCasualtyPolicyV1,hasOfficialTemplateBeforeCasualtyPolicyV1,reserveOfficialBeforeCasualtyBatchV1,
  consumeOfficialBeforeCasualtyReservationV1} from '../rule-atoms/official-before-casualty-batch-v1.mjs';
 import {createOfficialReactionFamilyAdapterV1,openOfficialReactionFamilyWindowV1,
  consumeOfficialReactionFamilyResolutionV1} from './official-reaction-family-adapter-v1.mjs';
@@ -22,6 +22,8 @@ function replaceTop(state,frame){state[key]=[...(state[key]||[]).slice(0,-1),sea
 export function stageOfficialBeforeCasualtyContinuationV1({state:input,action,hostKind,rows,hostData,activationContext:sourceContext,causePieceId=action.pieceId,causeSideKey=action.sideKey}){
  if(!hasOfficialBeforeCasualtyBatchPolicyV1(input))return null;
  const extended=hasOfficialExtendedBeforeCasualtyPolicyV1(input);
+ if(hasOfficialTemplateBeforeCasualtyPolicyV1(input)&&!input.officialBeforeCasualtyBatchPolicy.damageHosts.includes(hostKind))
+  throw Error('BEFORE_CASUALTY_HOST_NOT_ADMITTED');
  if(!extended&&hostKind!=='ranged')return null;
  const bundle=input.officialReactionFamilySourceBundle;
  const eligible=rows.filter(row=>row.casualty.casualtyModelIds.length&&bundle?.routes.some(route=>route.effectKind==='before_casualty_detonation'
@@ -53,7 +55,9 @@ export function stageOfficialBeforeCasualtyContinuationV1({state:input,action,ho
  if(extended){
   // These slots belong to the sealed host. Child HITS must own fresh slots.
   frame.suspendedHostSlots={};
-  for(const slot of ['pendingAction','pendingOfficialAutomaticHits'])if(next[slot]){frame.suspendedHostSlots[slot]=clone(next[slot]);delete next[slot];}
+  for(const slot of ['pendingAction','pendingOfficialAutomaticHits',...(hasOfficialTemplateBeforeCasualtyPolicyV1(input)
+    ?['pendingOfficialBlastTemplateAttack','pendingOfficialRavenSeekerPhaseEnd']:[])])
+    if(next[slot]){frame.suspendedHostSlots[slot]=clone(next[slot]);delete next[slot];}
  }
  next[key]=[...(next[key]||[]),seal(frame,'frameHash')];next.activeSideKey=first;
  const event={type:'before_casualty_batch_interrupted',continuationId:frame.continuationId,targetPieceId:piece.id,
@@ -63,7 +67,7 @@ export function stageOfficialBeforeCasualtyContinuationV1({state:input,action,ho
  return{ok:true,state:next,action:clone(action),events:[event],trainingTruth:false};
 }
 export function createOfficialBeforeCasualtyRuntimeV1({reactionBundle,policy}){
- const extended=policy?.version==='1.1.0';
+ const template=policy?.version==='1.2.0',extended=template||policy?.version==='1.1.0';
  const routes=reactionBundle.routes.filter(r=>r.effectKind==='before_casualty_detonation');
  if(!routes.length)throw Error('BEFORE_CASUALTY_DETONATION_SOURCE_REQUIRED');
  const pending=readOfficialBeforeCasualtyContinuationV1;
@@ -105,6 +109,7 @@ export function createOfficialBeforeCasualtyRuntimeV1({reactionBundle,policy}){
   state.pendingOfficialAutomaticHits=seal({schema:'starcraft_tmg_automatic_hits_source_checkpoint_v1',round:frame.round,phase:frame.phase,
    sideKey:effect.sideKey,pieceId:effect.sourceInstanceId,definitionId:route.definitionId,abilityName:route.abilityName,
    sourceFeatureHash:route.sourceFeatureHash,sourceRouteHash:route.routeHash,sourcePlanHash:frame.triggerHash,
+   ...(template?{reactionTiming:frame.activationContext.activationId===null?'outside_activation':'inside_activation'}:{}),
    detonationContinuationId:frame.continuationId,stage:'ready',automaticHits:{hits:effect.automaticHits,damagePerHit:effect.damagePerHit,targetUnitIds:facts.targetUnitIds},trainingTruth:false},'parentHash');
   return{...result,state};
  }
@@ -126,9 +131,10 @@ export function createOfficialBeforeCasualtyRuntimeV1({reactionBundle,policy}){
    const effect=receipt?.effects.find(e=>e.effectHash===frame?.effectHash),route=routes.find(r=>r.definitionId===p.definitionId);
    return Boolean(frame?.stage==='hits'&&effect&&route&&p.sourcePlanHash===frame.triggerHash&&p.pieceId===effect.sourceInstanceId
     &&p.sideKey===effect.sideKey&&p.sourceFeatureHash===route.sourceFeatureHash&&p.sourceRouteHash===route.routeHash
+    &&(!template||p.reactionTiming===(frame.activationContext.activationId===null?'outside_activation':'inside_activation'))
     &&isDeepStrictEqual(p.automaticHits,{hits:effect.automaticHits,damagePerHit:effect.damagePerHit,targetUnitIds:effect.detonationFacts.targetUnitIds}));},
-  timingFor:p=>'inside_activation',
+  timingFor:p=>template?p.reactionTiming:'inside_activation',
   reactionContextFor:(state,p)=>(state[key]||[]).find(f=>f.continuationId===p.detonationContinuationId)?.activationContext};
- return{pending,bindRootAction,afterReaction,takeResume,startNextEffect,sourceAuthority,descriptor:{runtimeId:'official-before-casualty-runtime-v1',runtimeVersion:extended?'1.1.0':'1.0.0',
-  sourceBundleHash:reactionBundle.bundleHash,hostKinds:extended?['ranged','melee','automatic_hits']:['ranged'],multiTargetHostAdmission:extended,trainingTruth:false}};
+ return{pending,bindRootAction,afterReaction,takeResume,startNextEffect,sourceAuthority,descriptor:{runtimeId:'official-before-casualty-runtime-v1',runtimeVersion:template?'1.2.0':extended?'1.1.0':'1.0.0',
+  sourceBundleHash:reactionBundle.bundleHash,hostKinds:template?policy.damageHosts:extended?['ranged','melee','automatic_hits']:['ranged'],multiTargetHostAdmission:extended,trainingTruth:false}};
 }

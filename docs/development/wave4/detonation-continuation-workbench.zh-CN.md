@@ -4,11 +4,13 @@
 
 已完成：精确两条Detonation来源与共用BM/反应限制；将移除模型留场几何；已分配模型从后继伤亡选择排除；保留原骰与原选择；多目标每行分配（含零伤亡）；逐来源reservation见证；HITS父槽保存/恢复；两层栈；原攻击者阵亡后完成原攻击。旧30动作与政策v1远程16动作当前冷重放一致。
 
+本批[模板与Seeker激活外](detonation-template-outside-wiring.zh-CN.md)完成：政策1.2/Root3.232，6原生分支83动作、2完整回合、Web3房16确认；当前V3五房74动作及早期五房50动作冷恢复通过。完整原子仍未登记。模板Web v1未计通过，v2修驱动后通过；伤亡hash的产品可读摘要列W4-03。Seeker完整回合已绑定来源延迟政策、保存父槽和空激活身份，当前标记持有者优先；双方全灭后的空军表菜单已修，从原签名断点续验到R2并冷恢复。
+
 接下来按实际消费者推进：
 
-0. Stukov Bio-Kill Switch及武器/冲锋四定义本批已验，见[战斗接线](stukov-combat-wiring.zh-CN.md)：全场感染敌军Damage(2)，结算后只清除实际受伤者INFESTATION。直接伤害恢复已跳过重新发动能力；Corrode Armor继续。
+0. Stukov Bio-Kill Switch及武器/冲锋四定义本批已验，见[战斗接线](stukov-combat-wiring.zh-CN.md)：全场感染敌军Damage(2)，结算后只清除实际受伤者INFESTATION。直接伤害恢复已跳过重新发动能力；Corrode Armor已验，见[攻击后接线](corrode-armour-wiring.zh-CN.md)。
 1. 委托攻击先核对各父所有者：Overwatch/Khassar/Attack Target/声明替代等拥有自己的行动守卫。子HITS期间保存并暂停其父槽，原批次恢复后再恢复并发布完成事件。不能只加一个beforeCasualty栈就认为这些守卫已经适配。
-2. 激活外HITS/直接伤害显式保留activationId:null和FAQ1.3的标记持有者优先权；现HITS阶段的Detonation子来源仍只证明普通激活内，后续应版本化扩展，不覆盖已冻结v1/v2房绑定。
+2. Seeker阶段末Marine接受/拒绝及实际子HITS已验证activationId:null和FAQ1.3当前标记持有者优先权；Trooper未执行Seeker分支。其他Bile/Drone/Storm/Photon父节点继续；政策1.2对这些组合先在构造时拒绝，下一版本逐所有者接入。
 3. Disengage失败模型、Defiler Consume祭献、其他直接移除。Consume须先支付/保留其他成本，子反应不能花掉承诺的费用；原施法者被反应杀死后继续封存后继。离场后备模型不能开在场反应，设置回合能力锁仍生效。
 4. 覆盖无BM、每激活反应已用、严格2英寸、多目标同批双方效果队列、对应完整回合和Web入口。仅普通攻击/HITS嵌套不能计完整Detonation原子。
 5. 工程发布切换releaseId后，进口Terran的转换政策还引用原Builder发布；需在新的工程发布中重编建军组件并独立验收。保留旧工程输入供历史冷重放，不能放宽FACTION_UNIT_CONVERSION_RELEASE_MISMATCH。本批零伤亡行用合法Queen+Hatchery，Goliath转换问题仍列为后续整版接线事项。

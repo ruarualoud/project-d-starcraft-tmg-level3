@@ -1,0 +1,76 @@
+{
+  "schema": "starcraft_tmg_wave4_detonation_outside_context_v1",
+  "status": "passed_scoped_read_only",
+  "checks": [
+    {
+      "id": "actual-child-hits-inherits-outside-context",
+      "signedPrefix": 15,
+      "prefixStateHash": "7e3a05cabf31bed577bdafb8c2ba0bee2df094e71285dd203e54583c54d95da1",
+      "context": {
+        "targets": [
+          {
+            "targetUnitId": "attacker",
+            "sideKey": "player1",
+            "armourThreshold": 5,
+            "tough": 0,
+            "precision": 0,
+            "layout": {
+              "hit": 0,
+              "surge": 0,
+              "armour": 6,
+              "evade": 0
+            }
+          }
+        ],
+        "reactionActivationContext": {
+          "activeSideKey": "player1",
+          "activationId": null
+        },
+        "reactionTiming": "outside_activation",
+        "precision": 0,
+        "automaticHits": {
+          "hits": 6,
+          "damagePerHit": 1,
+          "targetUnitIds": [
+            "attacker"
+          ]
+        },
+        "sourcePlanHash": "53297b5fbd7cc5a59b13d4474ce5e9968e825cf8ac30f47c590a5d735c7c6fc2"
+      }
+    },
+    {
+      "id": "resealed-wrong-child-timing-rejected",
+      "passed": true
+    },
+    {
+      "id": "use-marker-holder-priority",
+      "passed": true
+    },
+    {
+      "id": "decline-marker-holder-priority",
+      "passed": true
+    },
+    {
+      "id": "post-annihilation-round-and-score-cold-replay",
+      "originalSignedActions": 26,
+      "passed": true,
+      "finalPieces": [
+        {
+          "id": "attacker",
+          "isDestroyed": true,
+          "currentModels": 0,
+          "currentSupply": 0
+        },
+        {
+          "id": "defender",
+          "isDestroyed": true,
+          "currentModels": 0,
+          "currentSupply": 0
+        }
+      ]
+    }
+  ],
+  "nativeActionsAdded": 0,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

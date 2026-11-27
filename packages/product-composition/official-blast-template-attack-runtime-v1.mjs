@@ -1,3 +1,5 @@
+import {stageOfficialBeforeCasualtyContinuationV1} from './official-before-casualty-runtime-v1.mjs';
+import {hasOfficialTemplateBeforeCasualtyPolicyV1} from '../rule-atoms/official-before-casualty-batch-v1.mjs';
 import { hasOfficialRangedDeclarationPolicyV1, OFFICIAL_RANGED_DECLARATION_POLICY_V1 } from '../rule-atoms/official-ranged-declaration-keywords-v1.mjs';
 import { recordOfficialArmourRollV1 } from "../rule-atoms/official-armour-roll-ordinal-v1.mjs";
 import { hasOfficialIndomitableTemplateBatchPolicyV1, OFFICIAL_INDOMITABLE_RANGED_POLICY_V1 }
@@ -67,6 +69,7 @@ export function createOfficialBlastTemplateAttackRuntimeV1({ state: initialState
     fail('BLAST_TEMPLATE_ARMOUR_REACTION_CHOICES_REQUIRED');
   }
   const declarationKeywords = hasOfficialRangedDeclarationPolicyV1(initialState);
+  const beforeCasualty=hasOfficialTemplateBeforeCasualtyPolicyV1(initialState);
   const batchOrderChoice = hasOfficialTemplateBatchOrderPolicyV13(initialState);
   const adaptiveBatchOrder = allowsOfficialTemplateAdaptiveBatchOrderV13(initialState);
   const indomitableBatches = hasOfficialIndomitableTemplateBatchPolicyV1(initialState);
@@ -85,7 +88,7 @@ export function createOfficialBlastTemplateAttackRuntimeV1({ state: initialState
     ...(modeBoundTargeting ? [OFFICIAL_MODE_BOUND_RANGED_TARGET_POLICY_V1.ruleAtomId] : [])])].sort());
   const capturesLungeTarget = initialState.officialReactionFamilySourceBundle?.routes.some(route =>
     route.definitionId === OFFICIAL_HYDRALISK_LUNGE_DEFINITION_ID && route.requiresRangedTargetSnapshot) === true;
-  const runtimeVersion = capturesLungeTarget ? '2.3.0' : survivingDeclaredModels ? '2.2.0' : preservesTargetDeclaration ? '2.1.0' : declarationKeywords ? '2.0.0' : currentCoordinatedStrike ? '1.9.0' : coordinatedStrike ? '1.8.0' : indomitableBatches || modeBoundTargeting ? '1.7.0' : armourReactionSupported ? '1.6.0' : adaptiveBatchOrder ? '1.5.0' : batchOrderChoice ? '1.4.0' : armourChoiceSupported ? '1.3.0' : pointDefenseChoiceSupported ? '1.2.0' : precisionChoiceSupported ? '1.1.0' : '1.0.0';
+  const runtimeVersion = beforeCasualty ? '2.4.0' : capturesLungeTarget ? '2.3.0' : survivingDeclaredModels ? '2.2.0' : preservesTargetDeclaration ? '2.1.0' : declarationKeywords ? '2.0.0' : currentCoordinatedStrike ? '1.9.0' : coordinatedStrike ? '1.8.0' : indomitableBatches || modeBoundTargeting ? '1.7.0' : armourReactionSupported ? '1.6.0' : adaptiveBatchOrder ? '1.5.0' : batchOrderChoice ? '1.4.0' : armourChoiceSupported ? '1.3.0' : pointDefenseChoiceSupported ? '1.2.0' : precisionChoiceSupported ? '1.1.0' : '1.0.0';
   const asset = clone(initialState.officialBlastTemplateGeometryAsset);
   const routes = initialState.pieces.filter(piece => piece.officialUnitRecordKey === asset.scope.recordKey)
     .map(piece => ({ pieceId: piece.id, profileKey: piece.officialUnitRecordKey + '::assault::' + asset.scope.weaponName,
@@ -97,6 +100,7 @@ export function createOfficialBlastTemplateAttackRuntimeV1({ state: initialState
   const descriptor = freezeDeep(seal({ runtimeId, runtimeVersion, actions, ruleAtomIds: atomIds,
     routes, coverageRuntimeHash: coverageRuntime.descriptor.runtimeHash,
     reactionSourceBundleHash: initialState.officialReactionFamilySourceBundle?.bundleHash || null,
+    ...(beforeCasualty?{beforeCasualtyPolicyHash:hash(initialState.officialBeforeCasualtyBatchPolicy)}:{}),
     ...(indomitableBatches ? { indomitableBatchPolicy: clone(initialState.officialIndomitableRangedPolicy) } : {}),
     ...(modeBoundTargeting ? { modeBoundTargetPolicy: clone(initialState.officialModeBoundRangedTargetPolicy) } : {}),
     ...(coordinatedStrike ? { coordinatedStrikePolicy: clone(OFFICIAL_COORDINATED_STRIKE_POLICY_V1) } : {}),
@@ -397,10 +401,10 @@ export function createOfficialBlastTemplateAttackRuntimeV1({ state: initialState
     }
   }
 
-  function settle(stateInput, action, chance, parent, parameters, options, priorEvents = []) {
+  function settle(stateInput, action, chance, parent, parameters, options, priorEvents = [],resumedCasualty=null) {
     const domain = chance.casualtyDomain;
     const sole = domain.legalSelections.length === 1 ? domain.legalSelections[0].selectionHash : '';
-    if (!parameters && !sole) {
+    if (!resumedCasualty && !parameters && !sole) {
       const state = clone(stateInput);
       saveParent(state, { ...parent, stage: 'casualty', currentAction: clone(action), currentChance: clone(chance) });
       state.activeSideKey = state.pieces.find(row => row.id === action.targetId).sideKey;
@@ -408,8 +412,14 @@ export function createOfficialBlastTemplateAttackRuntimeV1({ state: initialState
         targetId: action.targetId, ownerSideKey: state.activeSideKey,
         resolutionHash: chance.resolution.resolutionHash, chanceReveals: chance.resolution.reveals }], options);
     }
-    const casualty = resolveOfficialCurrentProductCasualtyDomainV1(domain,
+    const casualty = resumedCasualty || resolveOfficialCurrentProductCasualtyDomainV1(domain,
       parameters?.casualtySelectionHash || sole, parameters?.casualtyModelIds || null);
+    if(beforeCasualty&&!resumedCasualty){
+      const interrupted=stageOfficialBeforeCasualtyContinuationV1({state:stateInput,action,hostKind:'blast_template',
+        rows:[{targetPieceId:action.targetId,targetProfile:chance.context.targetProfile,casualty,attackResolutionHash:chance.resolution.resolutionHash}],
+        hostData:{chance,parent,priorEvents}});
+      if(interrupted)return interrupted;
+    }
     const state = clone(stateInput);
     const target = state.pieces.find(row => row.id === action.targetId);
     const beforeSupply = target.currentSupply;
@@ -544,6 +554,10 @@ export function createOfficialBlastTemplateAttackRuntimeV1({ state: initialState
     return resolveOfficialSelectedRosterBatchChanceV1(state, action, options, context);
   }
   return Object.freeze({ descriptor, enumerate, instantiate, apply, query, resolveChance, inspectContext,
+    ...(beforeCasualty?{resumeBeforeCasualty:({state,frame,casualties,options={}})=>{
+      if(frame.hostKind!=='blast_template'||casualties.length!==1)fail('BLAST_TEMPLATE_BEFORE_CASUALTY_HOST_INVALID');
+      return settle(state,frame.originalAction,frame.hostData.chance,frame.hostData.parent,null,options,frame.hostData.priorEvents,casualties[0]);
+    }}:{}),
     captureTargetReactionDeclaration(state, action) {
       if (!preservesTargetDeclaration || pending(state)) fail('BLAST_TEMPLATE_TARGET_DECLARATION_OWNER_REQUIRED');
       const work = declarationWork(state, action.pieceId, action.canonicalParameters);

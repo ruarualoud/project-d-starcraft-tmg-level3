@@ -42,8 +42,11 @@ async function operate(page,item,choice,parameterized) {
     await card.getByRole('button',{name:'设置行动',exact:true}).click();
     const form=page.getByTestId('native-action-form');
     const parameterSchema=choice.sourceDomain?.parameterSchema||choice.parameterSchema;
+    if(parameterSchema?.required.includes('casualtySelectionHash'))
+      await form.getByRole('button',{name:parameterSchema.casualtySelectionHash.enum[0],exact:true}).click();
     if(parameterSchema?.required.includes('casualtyModelIds')){
-      const pending=before.envelope.state.pendingAction?.casualtyDomain?before.envelope.state.pendingAction:before.envelope.state.pendingOfficialAutomaticHits;
+      const s=before.envelope.state,pending=s.pendingAction?.casualtyDomain?s.pendingAction:s.pendingOfficialAutomaticHits
+       ||{targetPieceId:s.pendingOfficialBlastTemplateAttack?.currentAction.targetId,casualtyDomain:s.pendingOfficialBlastTemplateAttack?.currentChance.casualtyDomain};
       const contract=pending.casualtyDomain.selectionContract,ids=[];
       while(ids.length<contract.casualtyCount){
         const guidance=inspectOfficialMultiModelCasualtySelectionV1({targetPieceId:pending.targetPieceId,selectionContract:contract,casualtyModelIds:ids,complete:false});
@@ -141,7 +144,8 @@ try {
         const aggregate=await current(item);const state=aggregate.envelope.state;
         if(primaryUsed&&!state.pendingOfficialPlaguedMunitions&&!state.pendingOfficialUniversalCarrier&&!state.pendingOfficialReactionWindow&&!state.pendingOfficialAutoTurretOverwatch
           &&!state.pendingOfficialInfestationTransfer&&!state.pendingCurrentProductRangedCasualtyChoice&&!state.pendingOfficialAutomaticHits
-          &&!state.pendingOfficialHitsPoolChoice&&!state.officialBeforeCasualtyContinuations?.length)break;
+           &&!state.pendingOfficialHitsPoolChoice&&!state.officialBeforeCasualtyContinuations?.length
+           &&!state.pendingOfficialBlastTemplateAttack&&!state.pendingOfficialRavenSeekerPhaseEnd)break;
         const owner=state.activeSideKey;assert.ok(pages[owner]);
         const menu=await legal(pages[owner]);
         if(!primaryUsed&&item.id==='infected-ordinary-move'){assert.ok(!menu.parameterDomains.some(row=>['unit:stalker/blink-movement-phase@1','card:nexus/strategic-recall-any@1'].includes(row.definitionId)));}
@@ -154,7 +158,7 @@ try {
         }
         let choice;
         if(!primaryUsed)choice=menu.parameterDomains.find(row=>item.id==='infected-ordinary-move'?row.actionType==='move'&&row.pieceId==='enemy':item.id==='clean-blink'?row.definitionId==='unit:stalker/blink-movement-phase@1':item.id==='clean-recall'?row.definitionId==='card:nexus/strategic-recall-any@1':row.definitionId===item.definitionId);
-        else if(item.flow==='detonation-nested'||item.flow==='bio-kill-switch')choice=menu.parameterDomains.find(row=>row.effectKind==='before_casualty_detonation');
+        else if(['detonation-nested','bio-kill-switch','detonation-template','detonation-outside'].includes(item.flow))choice=menu.parameterDomains.find(row=>row.effectKind==='before_casualty_detonation');
         else if(item.flow==='corrode-restoration'&&!restorationUsed)choice=menu.parameterDomains.find(row=>row.definitionId==='unit:medic/restoration-any-phase@1');
         else if(item.kind==='ocular-use'&&!shotUsed)choice=menu.parameterDomains.find(row=>row.weaponName==='Firefly Missiles');
         else if((item.kind==='growing-restoration-exception'||item.flow==='carrier-restoration'||item.flow==='trooper-restoration')&&!restorationUsed)choice=menu.parameterDomains.find(row=>row.definitionId==='unit:medic/restoration-any-phase@1'||item.flow==='carrier-restoration'&&row.effectKind==='infestation_transfer');
@@ -186,6 +190,12 @@ try {
         assert.ok(!state.pieces.find(p=>p.id==='infected').statuses.some(s=>String(typeof s==='string'?s:s.statusName).toLowerCase()==='infestation'));
         assert.equal(state.log.flatMap(l=>l.events||[]).filter(e=>e.type==='ability_direct_damage').length,1);
         assert.ok(!state.pendingOfficialInfestationDamageCleanup);
+      } else if(['detonation-template','detonation-outside'].includes(item.flow)){
+        const state=final.envelope.state,events=state.log.flatMap(l=>l.events||[]);
+        assert.ok(!state.officialBeforeCasualtyContinuations?.length&&!state.pendingOfficialAutomaticHits&&!state.pendingOfficialBlastTemplateAttack&&!state.pendingOfficialRavenSeekerPhaseEnd);
+        assert.ok(!state.pieces.some(p=>p.officialBeforeCasualtyReservations?.length));
+        assert.equal(events.filter(e=>e.type===(item.flow==='detonation-template'?'ranged_weapon_completed':'raven_seeker_missile_complete')).length,1);
+        if(item.flow==='detonation-outside')assert.equal(state.officialRavenSeekerPhaseEndHistory.length,1);
       } else if(item.flow==='detonation-nested'){
         const state=final.envelope.state;assert.equal(Boolean(state.officialBeforeCasualtyContinuations?.length),false);
         assert.equal(state.fightActionHistory.length,1);assert.ok(state.pieces.every(p=>p.isDestroyed));
@@ -247,7 +257,7 @@ try {
 const result={schema:'starcraft_tmg_wave4_virus_web_verification_v1',status:'passed_scoped',
   runRef:path.relative(root,directory),results,signedActions:results.reduce((sum,row)=>sum+row.signedActions,0),
   conditionalTurretGeometryInRestorationCaseOnly:service.rooms.some(item=>item.id==='growing-restoration-exception'||item.flow==='carrier-restoration'),sourceHeldDefinitions:39,
-   engineeringEstimatedUnitGeometry:service.rooms.some(item=>['admiral-exchange','trooper-restoration','stukov-spread','munitions-support','infantry-burrow','detonation-ranged','detonation-nested','bio-kill-switch','corrode-armour','corrode-restoration'].includes(item.flow)),
+   engineeringEstimatedUnitGeometry:service.rooms.some(item=>['admiral-exchange','trooper-restoration','stukov-spread','munitions-support','infantry-burrow','detonation-ranged','detonation-nested','bio-kill-switch','corrode-armour','corrode-restoration','detonation-template','detonation-outside'].includes(item.flow)),
   fullWave4LobbyBuilderAdmission:false,fullMatchAdmission:false,wave3PlayerRoomsTouched:false,modelCalls:0,trainingTruth:false};
 await atomicWrite(path.join(directory,'web-result.public.json'),JSON.stringify(result,null,2)+'\n');
 await atomicWrite(path.join(root,'docs/development/wave4/evidence/'+(process.argv[3]||'virus-web.public.json')),JSON.stringify(result,null,2)+'\n');

@@ -7,7 +7,7 @@ import {OFFICIAL_FAQ_REACTION_POLICY_V13} from '../../packages/rule-atoms/offici
 export const BIO_KILL_SWITCH_ID='unit:stukov/bio-kill-switch-assault-phase@1';
 export const STUKOV_COMBAT_IDS=['unit:stukov/corrosive-blast-assault-phase@1','unit:stukov/infested-arm-combat-phase@1',
  'unit:stukov/devastating-charge-assault-phase@1'];
-export function createWave4BioKillSwitchScene(inputs,{empty=false,woundedCaster=true,combatWeapons=false,charge=false,phase='assault',targetKey='infested_marine',transfusion=false,farHidden=false,corrode=false,restoration=false,friendlyRifle=false,lunge=false,fullRound=false}={}){
+export function createWave4BioKillSwitchScene(inputs,{empty=false,woundedCaster=true,combatWeapons=false,charge=false,phase='assault',targetKey='infested_marine',transfusion=false,farHidden=false,corrode=false,restoration=false,friendlyRifle=false,lunge=false,fullRound=false,beforeCasualtyPolicyVersion='1.1.0'}={}){
  const template=createWave4StukovUnitScene(inputs,{phase,preactivateMarine:false});
  const characteristics=[BIO_KILL_SWITCH_ID,'unit:infested_marine/plagued-munitions-assault-phase@1'];
  const reactionIds=[...DETONATION_IDS,...(transfusion?['unit:queen/transfusion-any-phase@1']:[]),...(corrode?[OFFICIAL_CORRODE_ARMOUR_ID]:[]),
@@ -17,7 +17,7 @@ export function createWave4BioKillSwitchScene(inputs,{empty=false,woundedCaster=
  const unit=(id,key,upgrades=[])=>({unitInstanceId:id,recordKey:'army_units:'+key,compositionKind:'small',upgrades});
  const marine=id=>unit(id,'infested_marine',[{upgradeName:'Plagued Munitions'}]);
  const built=createOfficialReleaseRosterStateV2({context:inputs.context,sourceDefinitionIds,
-  includeBeforeCasualtyBatch:true,beforeCasualtyPolicyVersion:'1.1.0',reactionDefinitionIds:reactionIds,
+  includeBeforeCasualtyBatch:true,beforeCasualtyPolicyVersion,reactionDefinitionIds:reactionIds,
   characteristicDefinitionIds:characteristics,includeAbilitySourcePhases:true,includeCharacteristicConsumers:true,canonicalResourceTypes:true,includeMelee:true,
   ...(combatWeapons?{rangedWeaponDefinitionIds:[STUKOV_COMBAT_IDS[0],...(friendlyRifle?[rifle]:[])],meleeWeaponDefinitionIds:[STUKOV_COMBAT_IDS[1]],
     meleeModifierDefinitionIds:[STUKOV_COMBAT_IDS[2]],includeImpactAllocation:charge}:{}),

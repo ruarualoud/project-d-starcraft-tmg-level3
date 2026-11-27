@@ -1,0 +1,73 @@
+{
+  "schema": "starcraft_tmg_wave4_detonation_template_outside_harness_v1",
+  "harnessLoopUsed": true,
+  "targetGames": [
+    "starcraft-tmg"
+  ],
+  "promptPackRoutes": [
+    {
+      "route": "fact_probe_prompt",
+      "mode": "offline_contract_verification",
+      "invoked": false,
+      "modelCalls": 0
+    }
+  ],
+  "harnessToolsCalled": [
+    "actual_roster_factory",
+    "blast_template_coverage",
+    "native_template_main_and_spillover",
+    "before_casualty_reservation",
+    "detonation_reaction",
+    "sealed_template_resume",
+    "paid_seeker_declaration",
+    "phase_end_deferral",
+    "outside_activation_priority",
+    "native_hits_context",
+    "empty_roster_phase_pass",
+    "mission_scoring_and_cleanup",
+    "legalSpace",
+    "preview",
+    "explicit_human_confirmation",
+    "idempotency_reapply",
+    "cold_replay",
+    "seat_recovery_exchange"
+  ],
+  "uiTraceEvidence": [
+    "docs/development/wave4/evidence/detonation-template-web.public.json",
+    "docs/development/wave4/evidence/detonation-outside-web.public.json",
+    "docs/development/wave4/evidence/detonation-template-mobile.png",
+    "docs/development/wave4/evidence/detonation-outside-mobile.png"
+  ],
+  "agentDecisionEvidence": {
+    "status": "not_applicable",
+    "modelCalls": 0
+  },
+  "memoryTraceEvidence": [],
+  "trainingTraceCandidates": [],
+  "rollbackOrDemotionRules": [
+    "original_dice_and_casualty_order_retained",
+    "dead_attacker_does_not_cancel_sealed_batches",
+    "supply_only_once",
+    "outside_activation_null_identity_and_current_marker_priority",
+    "no_premature_parent_phase_completion",
+    "unsupported_external_and_delegated_owners_fail_closed",
+    "partial_consumer_proofs_do_not_complete_atom_or_Wave4"
+  ],
+  "userVisibleChecks": [
+    "three_rooms_two_independent_seats",
+    "explicit_human_confirmation",
+    "recovery_and_replay",
+    "opaque_casualty_labels_pending_W4_03"
+  ],
+  "nativeCases": 6,
+  "nativeSignedActions": 83,
+  "nativeCompletedRounds": 2,
+  "webRooms": 3,
+  "webSignedActions": 16,
+  "newGameAtomsImplemented": 0,
+  "implementedCumulativeAtoms": 6,
+  "sourceHeldDefinitions": 39,
+  "fullMatchAdmission": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

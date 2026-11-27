@@ -275,8 +275,8 @@
     }
   ],
   "next": [
-    "继续Detonation模板、委托/激活外与直接移除的封存和恢复。",
-    "接其他新增单位/势力，完成整版发布/Builder/大厅/媒体及500/2000分Web。"
+    "继续Detonation委托攻击父节点、其他激活外HITS及Disengage/Consume直接移除。",
+    "接其他新增单位/势力，完成整版发布/Builder/大厅/媒体及500/2000分Web；补伤亡方案可读摘要。"
   ],
   "modelCalls": 0,
   "trainingTruth": false,
@@ -2128,7 +2128,7 @@
       "fullMatchAdmission": false
     }
   ],
-  "executionStatus": "Stukov_9_of_9_scoped_Detonation_remaining_hosts_and_full_Wave4_in_progress",
+  "executionStatus": "Detonation_template_and_Seeker_outside_scoped_verified_delegated_and_direct_removal_in_progress",
   "creepBuilderGate": {
     "verifiedDefinitions": 3,
     "legalCreepChoices": 5,
@@ -2662,12 +2662,12 @@
     "sourceHeldDefinitions": 39
   },
   "detonationWorkInProgress": {
-    "status": "standard_ranged_melee_hits_nested_verified_other_removal_hosts_pending",
+    "status": "standard_template_and_Seeker_outside_verified_delegated_and_other_removal_hosts_pending",
     "sourceDefinitionsCompiled": 2,
-    "nativeCases": 9,
-    "nativeSignedActions": 87,
-    "webRooms": 4,
-    "webSignedActions": 16,
+    "nativeCases": 15,
+    "nativeSignedActions": 170,
+    "webRooms": 7,
+    "webSignedActions": 32,
     "legacyColdReplayCases": 3,
     "legacyOriginalActions": 30,
     "newGameAtomsImplemented": 0,
@@ -2685,7 +2685,17 @@
       "docs/development/wave4/evidence/detonation-v1-cold-compat.public.json",
       "docs/development/wave4/evidence/detonation-nested-web.public.json",
       "docs/development/wave4/evidence/detonation-nested-harness.public.json",
-      "docs/development/wave4/evidence/bio-kill-switch.public.json"
+      "docs/development/wave4/evidence/bio-kill-switch.public.json",
+      "docs/development/wave4/evidence/detonation-template.public.json",
+      "docs/development/wave4/evidence/detonation-outside.public.json",
+      "docs/development/wave4/evidence/bio-kill-switch-before-casualty-v3.public.json",
+      "docs/development/wave4/evidence/detonation-outside-context.public.json",
+      "docs/development/wave4/evidence/detonation-v3-compat.public.json",
+      "docs/development/wave4/evidence/detonation-v3-current-cold.public.json",
+      "docs/development/wave4/evidence/detonation-template-web.public.json",
+      "docs/development/wave4/evidence/detonation-outside-web.public.json",
+      "docs/development/wave4/evidence/detonation-template-outside-consumers.public.json",
+      "docs/development/wave4/evidence/detonation-template-outside-harness.public.json"
     ],
     "workbenchRef": "docs/development/wave4/detonation-continuation-workbench.zh-CN.md",
     "multiTargetParentAndNestedPending": false,
@@ -2694,17 +2704,23 @@
     "delegatedAndOutsideActivationHostsPending": true,
     "latestMilestone": {
       "nativeCases": 6,
-      "nativeSignedActions": 71,
-      "noDamageControlCases": 1,
-      "webRooms": 2,
-      "webSignedActions": 8,
-      "standardHostsOnly": true,
-      "allocationOnlyComponentVerified": true,
-      "settlementAuditCases": 6,
-      "v1ColdReplayCases": 3,
-      "v1OriginalActions": 16
+      "nativeSignedActions": 83,
+      "nativeCompletedRounds": 2,
+      "webRooms": 3,
+      "webSignedActions": 16,
+      "readOnlyContextChecks": 5,
+      "legacyColdReplayCases": 5,
+      "legacyOriginalActions": 50,
+      "currentV3ColdReplayCases": 5,
+      "currentV3OriginalActions": 74,
+      "allConsumersVerified": false
     },
-    "directAbilityDamageHostVerified": true
+    "directAbilityDamageHostVerified": true,
+    "nativeCountScope": "Dedicated ranged/nested proof groups plus this V3 milestone; earlier overlapping Stukov Bio group excluded",
+    "templateHostVerified": true,
+    "seekerOutsideHostVerified": true,
+    "otherOutsideActivationHostsPending": true,
+    "delegatedAttackHostsPending": true
   },
   "partialRuntimeVerificationByDefinition": [
     {
@@ -2732,6 +2748,18 @@
         {
           "file": "packages/product-composition/official-automatic-hits-runtime-v1.mjs",
           "exportName": "createOfficialAutomaticHitsRuntimeV1"
+        },
+        {
+          "file": "packages/product-composition/official-blast-template-attack-runtime-v1.mjs",
+          "exportName": "createOfficialBlastTemplateAttackRuntimeV1"
+        },
+        {
+          "file": "packages/product-composition/official-characteristic-status-component-runtime-v2.mjs",
+          "exportName": "createOfficialCharacteristicStatusComponentRuntimeV2"
+        },
+        {
+          "file": "packages/product-composition/official-current-product-match-runtime-v1.mjs",
+          "exportName": "createOfficialEngineeringScopedRoundRuntimeV1"
         }
       ],
       "evidenceRefs": [
@@ -2747,13 +2775,27 @@
         "docs/development/wave4/evidence/detonation-v1-cold-compat.public.json",
         "docs/development/wave4/evidence/detonation-nested-web.public.json",
         "docs/development/wave4/evidence/detonation-nested-harness.public.json",
-        "docs/development/wave4/evidence/bio-kill-switch.public.json"
+        "docs/development/wave4/evidence/bio-kill-switch.public.json",
+        "docs/development/wave4/evidence/detonation-template.public.json",
+        "docs/development/wave4/evidence/detonation-outside.public.json",
+        "docs/development/wave4/evidence/bio-kill-switch-before-casualty-v3.public.json",
+        "docs/development/wave4/evidence/detonation-outside-context.public.json",
+        "docs/development/wave4/evidence/detonation-v3-compat.public.json",
+        "docs/development/wave4/evidence/detonation-v3-current-cold.public.json",
+        "docs/development/wave4/evidence/detonation-template-web.public.json",
+        "docs/development/wave4/evidence/detonation-outside-web.public.json"
       ],
       "meleeHostVerified": true,
       "automaticHitsHostVerified": true,
       "nestedReactionVerified": true,
       "webNestedSuccessorVerified": true,
-      "directAbilityDamageHostVerified": true
+      "directAbilityDamageHostVerified": true,
+      "templateHostVerified": true,
+      "seekerOutsideNativeVerified": true,
+      "sharedOutsideTimingContractVerified": true,
+      "v3DirectAbilityDamageNativeVerified": true,
+      "webTemplateSuccessorVerified": true,
+      "webSeekerOutsideSuccessorVerified": true
     },
     {
       "definitionId": "unit:infested_trooper/detonation-any-phase@1",
@@ -2780,6 +2822,14 @@
         {
           "file": "packages/product-composition/official-automatic-hits-runtime-v1.mjs",
           "exportName": "createOfficialAutomaticHitsRuntimeV1"
+        },
+        {
+          "file": "packages/product-composition/official-blast-template-attack-runtime-v1.mjs",
+          "exportName": "createOfficialBlastTemplateAttackRuntimeV1"
+        },
+        {
+          "file": "packages/product-composition/official-characteristic-status-component-runtime-v2.mjs",
+          "exportName": "createOfficialCharacteristicStatusComponentRuntimeV2"
         }
       ],
       "evidenceRefs": [
@@ -2795,13 +2845,27 @@
         "docs/development/wave4/evidence/detonation-v1-cold-compat.public.json",
         "docs/development/wave4/evidence/detonation-nested-web.public.json",
         "docs/development/wave4/evidence/detonation-nested-harness.public.json",
-        "docs/development/wave4/evidence/bio-kill-switch.public.json"
+        "docs/development/wave4/evidence/bio-kill-switch.public.json",
+        "docs/development/wave4/evidence/detonation-template.public.json",
+        "docs/development/wave4/evidence/detonation-outside.public.json",
+        "docs/development/wave4/evidence/bio-kill-switch-before-casualty-v3.public.json",
+        "docs/development/wave4/evidence/detonation-outside-context.public.json",
+        "docs/development/wave4/evidence/detonation-v3-compat.public.json",
+        "docs/development/wave4/evidence/detonation-v3-current-cold.public.json",
+        "docs/development/wave4/evidence/detonation-template-web.public.json",
+        "docs/development/wave4/evidence/detonation-outside-web.public.json"
       ],
       "meleeHostVerified": true,
       "automaticHitsHostVerified": true,
       "nestedReactionVerified": true,
       "webNestedSuccessorVerified": true,
-      "directAbilityDamageHostVerified": true
+      "directAbilityDamageHostVerified": true,
+      "templateHostVerified": true,
+      "seekerOutsideNativeVerified": false,
+      "sharedOutsideTimingContractVerified": true,
+      "v3DirectAbilityDamageNativeVerified": false,
+      "webTemplateSuccessorVerified": true,
+      "webSeekerOutsideSuccessorVerified": false
     }
   ],
   "stukovCombatGate": {

@@ -4,7 +4,7 @@ import {OFFICIAL_CORRODE_ARMOUR_ID} from '../source-data/official-corrode-armour
 import {createOfficialCorrodeRestorationRuntimeV1} from './official-corrode-restoration-runtime-v1.mjs';
 import {createOfficialPlaguedMunitionsRuntimeV1} from './official-plagued-munitions-runtime-v1.mjs';
 import {createOfficialBeforeCasualtyRuntimeV1} from './official-before-casualty-runtime-v1.mjs';
-import {hasOfficialBeforeCasualtyBatchPolicyV1,hasOfficialExtendedBeforeCasualtyPolicyV1} from '../rule-atoms/official-before-casualty-batch-v1.mjs';
+import {hasOfficialBeforeCasualtyBatchPolicyV1,hasOfficialExtendedBeforeCasualtyPolicyV1,hasOfficialTemplateBeforeCasualtyPolicyV1} from '../rule-atoms/official-before-casualty-batch-v1.mjs';
 import {resumeOfficialSelectedRosterRangedBeforeCasualtyV1} from './official-selected-roster-ranged-action-runtime-v1.mjs';
 import {resumeOfficialSelectedRosterMeleeBeforeCasualtyV1} from './official-selected-roster-melee-action-runtime-v1.mjs';
 import {createOfficialStukovContextualSupplyRoutesV1} from '../source-data/official-stukov-infestation-source-v1.mjs';
@@ -1102,6 +1102,8 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
   const overwatchSource = reactionBundle?.routes.some(route => route.activationEndOwner === 'current_source_v1');
   const hitOwners = [beforeCasualty?.sourceAuthority,photonEntry?.sourceAuthority, bileResolution?.sourceAuthority, sabotageDronePhaseEnd?.sourceAuthority,
     seekerPhaseEnd?.sourceAuthority, stormPhaseEnd?.sourceAuthority].filter(Boolean);
+  if(hasOfficialTemplateBeforeCasualtyPolicyV1(spatialState)&&hitOwners.some(owner=>owner!==beforeCasualty?.sourceAuthority&&owner!==seekerPhaseEnd?.sourceAuthority))
+    throw Error('BEFORE_CASUALTY_EXTERNAL_HITS_OWNER_NOT_ADMITTED');
   const evadeGrantOwners = hitOwners.filter(owner => owner.evadeGrant);
   const hitsAuthority = hitOwners.length > 1 ? {
     schema: 'starcraft_tmg_automatic_hits_source_authority_v1',
@@ -1562,7 +1564,9 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
     eligibility: khassarEligibility, state: spatialState, includeRun: includeKhassarRun || includeKhassarCharge || includeKhassarCombatExecution,
     enumerateNative, instantiateNative: instantiate, applyNative: apply,
   }) : null;
-  const version = includeCorrodeRoundCleanup ? '3.231.0' : corrodeArmour ? '3.230.0' : infestationDamage ? '3.229.0' : hasOfficialExtendedBeforeCasualtyPolicyV1(spatialState) ? '3.228.0' : beforeCasualty ? '3.227.0' : plaguedMunitions ? '3.226.0' : repeatedActivationIdentity ? '3.225.0' : infantryPrecision ? '3.224.0' : stukovInfestation ? '3.223.0' : universalCarrier ? '3.222.0' : includeReleaseMoundAssaultOrder ? '3.221.0' : includeBilePhysicalPlacement && bile ? '3.220.0' : psionicRoundEnd?.scheduledEffects ? '3.219.0' : includeReleaseBileAssaultOrder ? '3.218.0' : releaseZergTargets ? '3.217.0' : includePsionicStormAssaultSameName ? '3.216.0'
+  if(hasOfficialTemplateBeforeCasualtyPolicyV1(spatialState)&&(targetReactions||rangedDeclaration||overwatch||khassarAttacks.length||khassarCharge))
+    throw Error('BEFORE_CASUALTY_DELEGATED_ATTACK_OWNER_NOT_ADMITTED');
+  const version = hasOfficialTemplateBeforeCasualtyPolicyV1(spatialState) ? '3.232.0' : includeCorrodeRoundCleanup ? '3.231.0' : corrodeArmour ? '3.230.0' : infestationDamage ? '3.229.0' : hasOfficialExtendedBeforeCasualtyPolicyV1(spatialState) ? '3.228.0' : beforeCasualty ? '3.227.0' : plaguedMunitions ? '3.226.0' : repeatedActivationIdentity ? '3.225.0' : infantryPrecision ? '3.224.0' : stukovInfestation ? '3.223.0' : universalCarrier ? '3.222.0' : includeReleaseMoundAssaultOrder ? '3.221.0' : includeBilePhysicalPlacement && bile ? '3.220.0' : psionicRoundEnd?.scheduledEffects ? '3.219.0' : includeReleaseBileAssaultOrder ? '3.218.0' : releaseZergTargets ? '3.217.0' : includePsionicStormAssaultSameName ? '3.216.0'
     : includePsionicStormTokenCleanup ? '3.215.0'
     : includePsionicStormNamedOverlapChoices ? '3.214.0'
     : stormCast ? '3.213.0'
@@ -2136,7 +2140,8 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
     const shooting = ranged?.enumerate(state, options);
     const rangedPending = ranged && (state.pendingCurrentProductRangedCasualtyChoice || state.pendingCurrentProductRangedSequence);
     const result = rangedPending ? { parameterDomains: [] } : adapter ? adapter.legalSpace(state, options) : { parameterDomains: [] };
-    const movement = rangedPending ? null : spatial?.enumerate(state, options);
+    const emptyRoster=hasOfficialTemplateBeforeCasualtyPolicyV1(state)&&!state.pieces.some(p=>p.isDestroyed!==true&&Number(p.currentModels||0)>0);
+    const movement = rangedPending || emptyRoster ? null : spatial?.enumerate(state, options);
     const finishing = rangedPending ? null : activation?.enumerate(state, options);
     const life = rangedPending ? null : unitLifecycleAdapter?.legalSpace(state, options);
     const terranSupply = rangedPending ? null : terranSupplyAdapter?.legalSpace(state, options);
@@ -2819,9 +2824,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
       }
       if (hitsDamageParent && !window) {
         const resumed = hits.resumeDamageReaction(next, options);
-        const withSabotage = sabotageDronePhaseEnd ? sabotageDronePhaseEnd.afterHits(resumed) : resumed;
-        const withBile = bileResolution ? bileResolution.afterHits(withSabotage) : withSabotage;
-        const completed = seekerPhaseEnd ? seekerPhaseEnd.afterHits(withBile) : withBile;
+        const completed = completeAutomaticHitsOwners(resumed);
         return { ...transition, state: completed.state, events: [...transition.events, ...completed.events] };
       }
       if (meleeDamageParent && window && ownsMeleeDamageContinuation && targetParent?.stage === 'ready') {
@@ -2972,7 +2975,11 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
     const updated = selectedAbilityAdapter && action.sourceRuntimeKind === 'activation'
       && completed.state.pieces.length !== state.pieces.length
       ? { ...completed, state: refreshOfficialReleaseRosterDerivedStateV2({ context, state: completed.state }) } : completed;
-    const withSabotage = sabotageDronePhaseEnd ? sabotageDronePhaseEnd.afterHits(updated) : updated;
+    return completeAutomaticHitsOwners(updated);
+  }
+  function completeAutomaticHitsOwners(result){
+    if(hasOfficialTemplateBeforeCasualtyPolicyV1(result.state)&&beforeCasualty?.pending(result.state)?.stage==='reaction')return result;
+    const withSabotage = sabotageDronePhaseEnd ? sabotageDronePhaseEnd.afterHits(result) : result;
     const withBile = bileResolution ? bileResolution.afterHits(withSabotage) : withSabotage;
     return seekerPhaseEnd ? seekerPhaseEnd.afterHits(withBile) : withBile;
   }
@@ -3008,8 +3015,10 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
     const raw=resumed.frame.hostKind==='ranged'?resumeOfficialSelectedRosterRangedBeforeCasualtyV1({...resumed,options})
       :resumed.frame.hostKind==='melee'?resumeOfficialSelectedRosterMeleeBeforeCasualtyV1({...resumed,options})
       :resumed.frame.hostKind==='automatic_hits'?hits.resumeBeforeCasualty({...resumed,options})
+       :resumed.frame.hostKind==='blast_template'?templateAttack.resumeBeforeCasualty({...resumed,options})
       :(()=>{throw Error('BEFORE_CASUALTY_NATIVE_HOST_NOT_ADMITTED');})();
-    const native=completeNativeOutcome(resumed.before,raw,resumed.frame.rootAction,options,
+    const settled=hasOfficialTemplateBeforeCasualtyPolicyV1(raw.state)?completeAutomaticHitsOwners(raw):raw;
+     const native=completeNativeOutcome(resumed.before,settled,resumed.frame.rootAction,options,
       {attack:khassarAttackContinuation(resumed.before),chargeParent:khassarCharge?.pending(resumed.before),resumeSealedDamage:true});
     const completed=completeCompositionTail(resumed.before,native,resumed.frame.rootAction);
     const merged={...result,state:completed.state,events:[...(result.events||[]),...completed.events]};
@@ -3022,6 +3031,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
     return completeCompositionTail(state,applied,action);
   }
   function completeCompositionTail(state,applied,action){
+    if(hasOfficialTemplateBeforeCasualtyPolicyV1(applied.state)&&beforeCasualty?.pending(applied.state)?.stage==='reaction')return applied;
     const dash=artanisDash ? artanisDash.afterTransition(state,applied) : applied;
     const completed=photonEntry ? photonEntry.afterTransition(state,dash,action) : dash;
     const withMunitions=plaguedMunitions?plaguedMunitions.afterTransition(state,completed,action):completed;
@@ -3060,6 +3070,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
     return completeNativeOutcome(state,outcome,action,options,{attack,chargeParent});
   }
   function completeNativeOutcome(state,outcome,action,options,{attack=null,chargeParent=null,resumeSealedDamage=false}={}){
+    if(hasOfficialTemplateBeforeCasualtyPolicyV1(outcome.state)&&beforeCasualty?.pending(outcome.state)?.stage==='reaction')return outcome;
     const native = afterChargeRoll ? openOfficialChargeRollReactionV1(outcome, reactionAdapter) : outcome;
     const applied = ancestralWisdom ? ancestralWisdom.finishAuthorizedCast(state, native) : native;
     const lightning = !resumeSealedDamage && action.sourceRuntimeKind === 'ability'
@@ -3067,6 +3078,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
       && applied.state.pendingOfficialAutomaticHits?.stage==='ready'
       ? hits.resolveDirectDamage(applied.state, action.sourceAction, options) : null;
     const resolved = lightning ? { ...applied, state: lightning.state, events: [...applied.events, ...lightning.events] } : applied;
+    if(hasOfficialTemplateBeforeCasualtyPolicyV1(resolved.state)&&beforeCasualty?.pending(resolved.state)?.stage==='reaction')return resolved;
     const withDebuff = damageHitDebuff ? consumeOfficialDamageWeaponHitDebuffsV1(bundle, resolved) : resolved;
     const result = feedback ? feedback.afterTransition(state, withDebuff, action) : withDebuff;
     const detected = detectionHiddenLoss ? consumeOfficialDetectionHiddenStatusesV1(bundle, result.state) : null;
@@ -3509,7 +3521,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
     if (rangedDeclaration?.pending(state)) throw Error('RANGED_DECLARATION_ATTACK_CONTINUATION_REQUIRED');
     if (hiddenLossReactions?.pending(state)) throw Error('HIDDEN_LOSS_REACTION_CONTINUATION_REQUIRED');
     if (closeRanksReactions && displacement.pending(state)) throw Error('PSIONIC_DISPLACEMENT_CLOSE_RANKS_CONTINUATION_REQUIRED');
-    if (!(corrodeArmour&&includeCorrodeRoundCleanup) && !infantryPrecision && !stukovInfestation && !battlefieldModifierBundle?.routes.some(route=>route.effectKind==='stukov_creep') && !guardianShield && !ourMindsAsOne && !khalasGift && !executorsWill && !forceWallTraversal && !feedback && !farsight && !scourgeQueen && !zagaraBroodmother && !poisonousEssence && !overwatch && !sabotageDronePhaseEnd && !holoRoundEnd && !unitLifecycleAdapter && !bileUpgrades && !psionicRoundEnd && !hiddenLossReactions && !targetedMeleeCritical && !markedTargetFirstWeapon && !vilelingFoundation && !defilerMeleeFoundation && !markerAreas && !coordinatedStrike && !stationaryFirstRanged && !plasmaArmourSource && !alloyArmourSource && !superStimpack && !commandoStimpack && !chargeDeclaration) throw Error('CHARACTERISTIC_UNIT_LIFECYCLE_CONSUMER_REQUIRED');
+    if (!hasOfficialTemplateBeforeCasualtyPolicyV1(state) && !(corrodeArmour&&includeCorrodeRoundCleanup) && !infantryPrecision && !stukovInfestation && !battlefieldModifierBundle?.routes.some(route=>route.effectKind==='stukov_creep') && !guardianShield && !ourMindsAsOne && !khalasGift && !executorsWill && !forceWallTraversal && !feedback && !farsight && !scourgeQueen && !zagaraBroodmother && !poisonousEssence && !overwatch && !sabotageDronePhaseEnd && !holoRoundEnd && !unitLifecycleAdapter && !bileUpgrades && !psionicRoundEnd && !hiddenLossReactions && !targetedMeleeCritical && !markedTargetFirstWeapon && !vilelingFoundation && !defilerMeleeFoundation && !markerAreas && !coordinatedStrike && !stationaryFirstRanged && !plasmaArmourSource && !alloyArmourSource && !superStimpack && !commandoStimpack && !chargeDeclaration) throw Error('CHARACTERISTIC_UNIT_LIFECYCLE_CONSUMER_REQUIRED');
     if (psionicRoundEnd && request.eventKind === 'round_end'
       && (psionicRoundEnd.pending(state) || psionicRoundEnd.hasOutstanding(state))) throw Error('PSIONIC_TRANSFER_ROUND_END_CHOICES_REQUIRED');
     const prepared = psionicRoundEnd && request.eventKind === 'cleanup_and_refresh' ? psionicRoundEnd.cleanup(state) : state;
@@ -3541,7 +3553,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
     ...(chargeDeclaration ? { chargeDeclaration } : {}),
     ...(cardRefresh ? { cardRefresh } : {}),
     ...(unitLifecycleAdapter ? { unitLifecycleBundle, unitLifecycleAdapter } : {}),
-    ...(corrodeArmour&&includeCorrodeRoundCleanup || infantryPrecision || stukovInfestation || battlefieldModifierBundle?.routes.some(route=>route.effectKind==='stukov_creep') || releaseZergTargets && darkSwarmLifecycle || guardianShield || ourMindsAsOne || khalasGift || executorsWill || forceWallTraversal || feedback || farsight || scourgeQueen || zagaraBroodmother || poisonousEssence || overwatch || sabotageDronePhaseEnd || holoRoundEnd || unitLifecycleAdapter || bileUpgrades || psionicRoundEnd || hiddenLossReactions || targetedMeleeCritical || markedTargetFirstWeapon || vilelingFoundation || defilerMeleeFoundation || markerAreas || coordinatedStrike || stationaryFirstRanged || plasmaArmourSource || alloyArmourSource || superStimpack || commandoStimpack || chargeDeclaration ? { lifecycle } : {}),
+    ...(hasOfficialTemplateBeforeCasualtyPolicyV1(spatialState) || corrodeArmour&&includeCorrodeRoundCleanup || infantryPrecision || stukovInfestation || battlefieldModifierBundle?.routes.some(route=>route.effectKind==='stukov_creep') || releaseZergTargets && darkSwarmLifecycle || guardianShield || ourMindsAsOne || khalasGift || executorsWill || forceWallTraversal || feedback || farsight || scourgeQueen || zagaraBroodmother || poisonousEssence || overwatch || sabotageDronePhaseEnd || holoRoundEnd || unitLifecycleAdapter || bileUpgrades || psionicRoundEnd || hiddenLossReactions || targetedMeleeCritical || markedTargetFirstWeapon || vilelingFoundation || defilerMeleeFoundation || markerAreas || coordinatedStrike || stationaryFirstRanged || plasmaArmourSource || alloyArmourSource || superStimpack || commandoStimpack || chargeDeclaration ? { lifecycle } : {}),
     ...(relocationAdapter ? { relocationBundle, relocationAdapter, postPlaceReactions } : {}),
     ...(reactionAdapter ? { reactionBundle, reactionAdapter, router } : {}),
     ...(registeredStorm ? { router, registeredStorm } : {}),

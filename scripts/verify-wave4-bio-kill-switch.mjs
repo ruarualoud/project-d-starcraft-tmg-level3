@@ -12,7 +12,8 @@ const directory=await fs.mkdtemp(path.join(root,'build/wave4-web/stukov-units/bi
 const infected=p=>p.statuses.some(s=>String(typeof s==='string'?s:s.statusName).toLowerCase()==='infestation');
 const reductionOnly=process.argv.includes('--reduction-only');
 const farHiddenOnly=process.argv.includes('--far-hidden-only');
-for(const spec of farHiddenOnly?[{id:'far-hidden-target',farHidden:true}]:reductionOnly?[{id:'transfusion-prevents-damage',transfusion:true}]:[{id:'empty',empty:true},{id:'decline',use:false},{id:'counter-detonation',use:true}]){
+const beforeCasualtyV3=process.argv.includes('--before-casualty-v3');
+for(const spec of beforeCasualtyV3?[{id:'v3-counter-detonation',use:true,beforeCasualtyPolicyVersion:'1.2.0'}]:farHiddenOnly?[{id:'far-hidden-target',farHidden:true}]:reductionOnly?[{id:'transfusion-prevents-damage',transfusion:true}]:[{id:'empty',empty:true},{id:'decline',use:false},{id:'counter-detonation',use:true}]){
  const scene=createWave4BioKillSwitchScene(inputs,spec),caseDirectory=path.join(directory,spec.id);
  const bound=await bindWave4TurretRoom({inputs,...scene,directory:caseDirectory});
  let native=bound.open(),expected;const roomId='wave4-bio-kill-switch-'+spec.id,trace=[];
@@ -56,6 +57,6 @@ for(const spec of farHiddenOnly?[{id:'far-hidden-target',farHidden:true}]:reduct
  results.push(result);await atomicWrite(path.join(caseDirectory,'result.public.json'),JSON.stringify(result,null,2));
  console.log(JSON.stringify({id:spec.id,status:'passed_scoped',signedActions:result.signedActions,casterDestroyed:result.casterDestroyed}));
 }
-await atomicWrite(path.join(root,'docs/development/wave4/evidence/'+(farHiddenOnly?'bio-kill-switch-far-hidden':reductionOnly?'bio-kill-switch-reduction':'bio-kill-switch')+'.public.json'),JSON.stringify({
+await atomicWrite(path.join(root,'docs/development/wave4/evidence/'+(beforeCasualtyV3?'bio-kill-switch-before-casualty-v3':farHiddenOnly?'bio-kill-switch-far-hidden':reductionOnly?'bio-kill-switch-reduction':'bio-kill-switch')+'.public.json'),JSON.stringify({
  schema:'starcraft_tmg_wave4_bio_kill_switch_v1',status:'passed_scoped',runRef:path.relative(root,directory),results,
  newGameAtomsImplemented:0,implementedCumulativeAtoms:6,fullMatchAdmission:false,sourceHeldDefinitions:39,modelCalls:0,trainingTruth:false},null,2));
