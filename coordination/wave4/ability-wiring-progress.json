@@ -275,8 +275,8 @@
     }
   ],
   "next": [
-    "先接Corrode Armor攻击后反应和实际Armour/Restoration/清理后继。",
-    "继续Detonation委托/激活外与直接移除入口、其他新增单位/势力及整版发布/Builder/大厅/媒体/两规模Web。"
+    "继续Detonation模板、委托/激活外与直接移除的封存和恢复。",
+    "接其他新增单位/势力，完成整版发布/Builder/大厅/媒体及500/2000分Web。"
   ],
   "modelCalls": 0,
   "trainingTruth": false,
@@ -310,7 +310,7 @@
     "newUnitAndFactionEndToEnd": false,
     "builderAndLobbyReleaseSelection": "scoped_stukov_hostile_and_turret_combat_verified_full_release_and_lobby_pending",
     "requiredNewGameAtoms": 18,
-    "implementedNewGameAtoms": 5,
+    "implementedNewGameAtoms": 6,
     "sourceHeldDefinitions": 39,
     "fullWave4MatchAdmission": false,
     "creepBuilderDefinitions": 3,
@@ -2072,9 +2072,63 @@
       ],
       "engineeringEstimatedUnitGeometry": true,
       "fullMatchAdmission": false
+    },
+    {
+      "definitionId": "unit:stukov/corrode-armor-assault-phase@1",
+      "classification": "existing_atoms_new_combination",
+      "newAtomIds": [],
+      "sourceCompiled": true,
+      "executionBound": true,
+      "nativeSuccessorsVerified": true,
+      "webVerified": true,
+      "consumerRefs": [
+        {
+          "file": "packages/source-data/official-corrode-armour-source-v1.mjs",
+          "exportName": "OFFICIAL_CORRODE_ARMOUR_REACTION_COMPONENTS_V1"
+        },
+        {
+          "file": "packages/product-composition/official-after-ranged-reaction-trigger-v1.mjs",
+          "exportName": "projectOfficialAfterRangedSourceTriggerV1"
+        },
+        {
+          "file": "packages/product-composition/official-ranged-lunge-continuation-v1.mjs",
+          "exportName": "createOfficialRangedLungeContinuationV1"
+        },
+        {
+          "file": "packages/product-composition/official-reaction-family-adapter-v1.mjs",
+          "exportName": "createOfficialReactionFamilyAdapterV1"
+        },
+        {
+          "file": "packages/product-composition/official-characteristic-status-family-adapter-v1.mjs",
+          "exportName": "applyOfficialCorrodeArmourDebuffV1"
+        },
+        {
+          "file": "packages/product-composition/official-corrode-restoration-runtime-v1.mjs",
+          "exportName": "createOfficialCorrodeRestorationRuntimeV1"
+        },
+        {
+          "file": "packages/product-composition/official-characteristic-status-component-runtime-v2.mjs",
+          "exportName": "createOfficialCharacteristicStatusComponentRuntimeV2"
+        }
+      ],
+      "evidenceRefs": [
+        "docs/development/wave4/evidence/corrode-armour-basic.public.json",
+        "docs/development/wave4/evidence/corrode-armour-restoration.public.json",
+        "docs/development/wave4/evidence/corrode-armour-successor.public.json",
+        "docs/development/wave4/evidence/corrode-armour-lunge.public.json",
+        "docs/development/wave4/evidence/corrode-armour-controls.public.json",
+        "docs/development/wave4/evidence/corrode-armour-zero-damage.public.json",
+        "docs/development/wave4/evidence/corrode-armour-round.public.json",
+        "docs/development/wave4/evidence/corrode-armour-boundaries.public.json",
+        "docs/development/wave4/evidence/corrode-armour-compat.public.json",
+        "docs/development/wave4/evidence/corrode-armour-web.public.json",
+        "docs/development/wave4/evidence/corrode-armour-zero-damage.public.json"
+      ],
+      "engineeringEstimatedUnitGeometry": true,
+      "fullMatchAdmission": false
     }
   ],
-  "executionStatus": "Detonation_ranged_host_native_and_Web_verified_other_hosts_in_progress",
+  "executionStatus": "Stukov_9_of_9_scoped_Detonation_remaining_hosts_and_full_Wave4_in_progress",
   "creepBuilderGate": {
     "verifiedDefinitions": 3,
     "legalCreepChoices": 5,
@@ -2781,10 +2835,51 @@
       "docs/development/wave4/evidence/stukov-combat-harness.public.json",
       "docs/development/wave4/evidence/stukov-combat-consumers.public.json"
     ],
-    "stukovVerifiedDefinitions": 8,
+    "stukovVerifiedDefinitions": 9,
     "stukovSourceDefinitions": 9,
-    "corrodeArmorPending": true,
+    "corrodeArmorPending": false,
     "fullMatchAdmission": false,
     "sourceHeldDefinitions": 39
+  },
+  "corrodeArmourGate": {
+    "schema": "starcraft_tmg_wave4_corrode_consumers_v1",
+    "status": "passed_scoped",
+    "nativeCases": 12,
+    "nativeSignedActions": 59,
+    "nativeCompletedRounds": 1,
+    "webRooms": 2,
+    "webSignedActions": 6,
+    "oldColdReplayActions": 25,
+    "readOnlyBoundaryChecks": 11,
+    "newGameAtomsImplemented": 0,
+    "implementedCumulativeAtoms": 6,
+    "stukovVerifiedDefinitions": 9,
+    "stukovSourceDefinitions": 9,
+    "successors": {
+      "actualLaterArmourRoll": 5,
+      "restorationFinalArmour": 4,
+      "lungeJointWindow": true,
+      "zeroDamageTriggers": true,
+      "cleanupBefore": 5,
+      "cleanupAfter": 4
+    },
+    "sourceHeldDefinitions": 39,
+    "fullMatchAdmission": false,
+    "modelCalls": 0,
+    "trainingTruth": false,
+    "evidenceRefs": [
+      "docs/development/wave4/evidence/corrode-armour-basic.public.json",
+      "docs/development/wave4/evidence/corrode-armour-restoration.public.json",
+      "docs/development/wave4/evidence/corrode-armour-successor.public.json",
+      "docs/development/wave4/evidence/corrode-armour-lunge.public.json",
+      "docs/development/wave4/evidence/corrode-armour-controls.public.json",
+      "docs/development/wave4/evidence/corrode-armour-zero-damage.public.json",
+      "docs/development/wave4/evidence/corrode-armour-round.public.json",
+      "docs/development/wave4/evidence/corrode-armour-boundaries.public.json",
+      "docs/development/wave4/evidence/corrode-armour-compat.public.json",
+      "docs/development/wave4/evidence/corrode-armour-web.public.json",
+      "docs/development/wave4/evidence/corrode-armour-consumers.public.json",
+      "docs/development/wave4/evidence/corrode-armour-harness.public.json"
+    ]
   }
 }

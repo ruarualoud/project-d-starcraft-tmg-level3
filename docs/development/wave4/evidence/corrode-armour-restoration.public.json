@@ -1,0 +1,49 @@
+{
+  "schema": "starcraft_tmg_wave4_corrode_armour_basic_v1",
+  "status": "passed_scoped_basic_only",
+  "runRef": "build/wave4-web/stukov-units/corrode-armour-6th0AL",
+  "results": [
+    {
+      "id": "medic-restores",
+      "use": true,
+      "restoration": true,
+      "roomId": "wave4-corrode-medic-restores",
+      "directoryRef": "build/wave4-web/stukov-units/corrode-armour-6th0AL/medic-restores",
+      "signedActions": 5,
+      "stateHash": "0ddc2c3294b58bd7ff7896f88488c8e82fe243dec9cf485fd5e4accddb9f6dc4",
+      "used": true,
+      "trace": [
+        {
+          "revision": 2,
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:stukov/corrode-armor-assault-phase@1"
+        },
+        {
+          "revision": 3,
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null
+        },
+        {
+          "revision": 4,
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:medic/restoration-any-phase@1"
+        },
+        {
+          "revision": 5,
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null
+        }
+      ],
+      "coldReplay": true,
+      "idempotencyVerified": true
+    }
+  ],
+  "nativeArmourSuccessorPending": true,
+  "restorationAndRoundCleanupPending": true,
+  "newGameAtomsImplemented": 0,
+  "implementedCumulativeAtoms": 6,
+  "fullMatchAdmission": false,
+  "sourceHeldDefinitions": 39,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

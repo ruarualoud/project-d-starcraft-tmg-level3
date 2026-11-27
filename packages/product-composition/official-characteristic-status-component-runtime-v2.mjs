@@ -1,5 +1,7 @@
 import {hasOfficialRepeatedActivationIdentityPolicyV1} from '../rule-atoms/official-repeated-activation-identity-v1.mjs';
 import {createOfficialInfestationDamageCleanupV1} from './official-infestation-damage-cleanup-v1.mjs';
+import {OFFICIAL_CORRODE_ARMOUR_ID} from '../source-data/official-corrode-armour-source-v1.mjs';
+import {createOfficialCorrodeRestorationRuntimeV1} from './official-corrode-restoration-runtime-v1.mjs';
 import {createOfficialPlaguedMunitionsRuntimeV1} from './official-plagued-munitions-runtime-v1.mjs';
 import {createOfficialBeforeCasualtyRuntimeV1} from './official-before-casualty-runtime-v1.mjs';
 import {hasOfficialBeforeCasualtyBatchPolicyV1,hasOfficialExtendedBeforeCasualtyPolicyV1} from '../rule-atoms/official-before-casualty-batch-v1.mjs';
@@ -205,7 +207,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
   includePsionicStormGeometryEvidence = false, includePsionicStormPhaseEnd = false,
   includePsionicStormPhaseEndDefence = false, includePsionicStormAssaultDamage = false, includePsionicStormAssaultOrder = false, includeSharedAssaultEffectOrder = false, includeAdditionalAssaultEffectOrder = false, includePsionicStormMovementPass = false, includePsionicStormEquivalentNameOverlap = false, includePsionicStormNamedOverlapChoices = false, includePsionicStormCast = false, includePsionicStormTokenCleanup = false, includePsionicStormAssaultSameName = false, includeRavenSeekerMissileRules = false,
   includeRavenSeekerPaidImpact = false, includeRavenSeekerPhaseEnd = false, includeReleaseRosterActions = false, includeStandaloneFreedomFighters = false,
-   includeReleaseOpticalFlareRestoration = false, includeReleaseSentryGuardianShield = false, includeReleasePhaseControl = false, includeReleaseZergTargetReactions = false, includeReleaseBileAssaultOrder = false, includeReleaseMoundAssaultOrder = false, includeReleaseReactiveCreep = false, includeReleaseMalignantCreep = false, includeReleaseInheritedHitsReactions = false, includeMixedRosterReactions = false, includeIndependentSupportReactions = false, includeBilePhysicalPlacement = false, includeReleaseBeaconLifecycle = false, includeReleaseQueenPsionicLink = false,
+   includeReleaseOpticalFlareRestoration = false, includeReleaseSentryGuardianShield = false, includeReleasePhaseControl = false, includeReleaseZergTargetReactions = false, includeReleaseBileAssaultOrder = false, includeReleaseMoundAssaultOrder = false, includeReleaseReactiveCreep = false, includeReleaseMalignantCreep = false, includeReleaseInheritedHitsReactions = false, includeMixedRosterReactions = false, includeIndependentSupportReactions = false, includeCorrodeRoundCleanup = false, includeBilePhysicalPlacement = false, includeReleaseBeaconLifecycle = false, includeReleaseQueenPsionicLink = false,
    includeReleaseQueenDomineering = false, includeReleaseLairPredation = false, includeReleaseOverseerChargeReaction = false, includeBeforeRangedEvadeReaction = false,
      includeBeforeMeleeEvadeReaction = false, includeBeforeHitsEvadeReaction = false,
      includeAutomaticHitsDefenceContinuation = false, includeBeforeTemplateEvadeReaction = false,
@@ -531,10 +533,18 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
     throw Error('AFTER_CHARGE_ROLL_CONSUMER_REQUIRED');
   }
   const feedbackReactionTiming = spatialState?.officialFeedbackReactionTimingPolicy;
-  const reactionAdapter = reactionBundle ? createOfficialReactionFamilyAdapterV1(reactionBundle, feedbackReactionTiming
-    ? { afterApply: (before, result, action) => feedback.afterReaction(before, result, action) } : {}) : null;
+  const corrodeArmour=reactionBundle?.routes.find(r=>r.definitionId===OFFICIAL_CORRODE_ARMOUR_ID);
+  if(corrodeArmour&&(!includeLungeDirectContinuation||!includeLungeDeferredReaction))throw Error('CORRODE_ARMOUR_AFTER_RANGED_CONSUMER_REQUIRED');
+  if(includeCorrodeRoundCleanup&&!corrodeArmour)throw Error('CORRODE_ROUND_CLEANUP_SOURCE_REQUIRED');
+  const corrodeRestoration=corrodeArmour&&reactionBundle.routes.some(r=>r.triggerKind==='debuff_received'&&r.effectKind==='remove_debuffs')
+    ?createOfficialCorrodeRestorationRuntimeV1({reactionBundle}):null;
+  const reactionAdapter = reactionBundle ? createOfficialReactionFamilyAdapterV1(reactionBundle, feedbackReactionTiming||corrodeRestoration
+    ? { afterApply: (before, result, action) => {
+      const applied=feedbackReactionTiming?feedback.afterReaction(before,result,action):result;
+      return corrodeRestoration?corrodeRestoration.afterReaction(before,applied,action):applied;
+    } } : {}) : null;
   if (includeLungeDirectContinuation && (!includeRanged || !reactionAdapter
-    || !reactionBundle.routes.some(route => route.requiresRangedTargetSnapshot) || !hasOfficialFaqReactionPolicyV13(spatialState))) {
+    || !reactionBundle.routes.some(route => route.requiresRangedTargetSnapshot||route.definitionId===OFFICIAL_CORRODE_ARMOUR_ID) || !hasOfficialFaqReactionPolicyV13(spatialState))) {
     throw Error('LUNGE_CONTINUATION_SOURCE_REQUIRED');
   }
   if (includeLungeDeferredReaction && !includeLungeDirectContinuation) throw Error('LUNGE_CONTINUATION_SOURCE_REQUIRED');
@@ -558,7 +568,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
     throw Error('LUNGE_JOINT_OBSTACLE_PROOF_REQUIRES_CERTIFIED_CONTINUATION');
   }
   const lunge = includeLungeDirectContinuation ? createOfficialRangedLungeContinuationV1(reactionAdapter,
-    { deferBehindOwnedReaction: includeLungeDeferredReaction, includeOverwatch: includeLungeOverwatchContinuation,
+    { deferBehindOwnedReaction: includeLungeDeferredReaction, includeOverwatch: includeLungeOverwatchContinuation,includeCorrodeArmour:Boolean(corrodeArmour),
       certifiedMultiModel: includeLungeCertifiedFormation, certifiedForwardDetour: includeLungeCertifiedForwardDetour,
       certifiedMultiModelDetour: includeLungeCertifiedMultiModelDetour,
       certifiedLeaderWitness: includeLungeCertifiedLeaderWitness, certifiedJointObstacles: includeLungeJointObstacleProof,
@@ -655,7 +665,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
     route.definitionId === zagaraTransfusion?.definitionId
     || headShotSource && route.effectKind === 'ranged_declaration_keywords'
     || route.chargeDeclarationOwner === 'current_source_v1'
-    || lunge && route.requiresRangedTargetSnapshot
+    || lunge && (route.requiresRangedTargetSnapshot||route.definitionId===OFFICIAL_CORRODE_ARMOUR_ID)
     || includeBeforeRangedEvadeReaction && includeBeforeMeleeEvadeReaction && route.triggerKind === 'before_evade_roll'
   );
   if (fixedEvadeSource && !includeTargetReactions) throw Error('CHARACTERISTIC_FIXED_EVADE_TARGET_REACTION_CONSUMER_REQUIRED');
@@ -1138,8 +1148,8 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
       ...(friendlySupplyLossReaction ? ['friendly_supply_reduced'] : []),
       ...(infestationTransfer ? ['infested_enemy_removed', 'debuff_received'] : []),
       ...(ancestralWisdom ? ['ability_cost_payment'] : []),
-      ...((includeBeforeHitsEvadeReaction || includeIndependentRangedLungeOwner) && lunge ? ['after_ranged_attack_resolved'] : []),
-      ...((canRestoreInfestation || inheritedRestoration || includeBeforeHitsEvadeReaction && reactionBundle.routes.some(route => route.triggerKind === 'debuff_received'))
+      ...((includeBeforeHitsEvadeReaction || includeIndependentRangedLungeOwner || corrodeArmour) && lunge ? ['after_ranged_attack_resolved'] : []),
+      ...((corrodeRestoration || canRestoreInfestation || inheritedRestoration || includeBeforeHitsEvadeReaction && reactionBundle.routes.some(route => route.triggerKind === 'debuff_received'))
         ? ['debuff_received'] : [])],
     ...(hitsAuthority ? { sourceAuthority: hitsAuthority } : {}) }) : null;
   const hitsChoices = includeHits ? createOfficialAutomaticHitsPoolChoiceRuntimeV1({ delegate: hits,
@@ -1514,7 +1524,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
     && !(includeMixedRosterReactions && (
       (route.nativeChargeDie || route.nativeChargeDistance) && afterChargeRoll && !sharesKhassarFactionSideV1(spatialState, route.recordKey)
       || route.effectKind === 'evade_roll_modifier' && includeBeforeRangedEvadeReaction && includeBeforeMeleeEvadeReaction
-      || route.requiresRangedTargetSnapshot && lunge && includeLungeDeferredReaction))
+      || (route.requiresRangedTargetSnapshot||route.definitionId===OFFICIAL_CORRODE_ARMOUR_ID) && lunge && includeLungeDeferredReaction))
     && !(includeKhassarChargeDeclaration && route.chargeDeclarationOwner === 'current_source_v1')
     && !(khassarSupplyLoss && route.definitionId === khassarSupplyLoss.descriptor.definitionId)
     && !independentKhassarReaction(route)) : [];
@@ -1552,7 +1562,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
     eligibility: khassarEligibility, state: spatialState, includeRun: includeKhassarRun || includeKhassarCharge || includeKhassarCombatExecution,
     enumerateNative, instantiateNative: instantiate, applyNative: apply,
   }) : null;
-  const version = infestationDamage ? '3.229.0' : hasOfficialExtendedBeforeCasualtyPolicyV1(spatialState) ? '3.228.0' : beforeCasualty ? '3.227.0' : plaguedMunitions ? '3.226.0' : repeatedActivationIdentity ? '3.225.0' : infantryPrecision ? '3.224.0' : stukovInfestation ? '3.223.0' : universalCarrier ? '3.222.0' : includeReleaseMoundAssaultOrder ? '3.221.0' : includeBilePhysicalPlacement && bile ? '3.220.0' : psionicRoundEnd?.scheduledEffects ? '3.219.0' : includeReleaseBileAssaultOrder ? '3.218.0' : releaseZergTargets ? '3.217.0' : includePsionicStormAssaultSameName ? '3.216.0'
+  const version = includeCorrodeRoundCleanup ? '3.231.0' : corrodeArmour ? '3.230.0' : infestationDamage ? '3.229.0' : hasOfficialExtendedBeforeCasualtyPolicyV1(spatialState) ? '3.228.0' : beforeCasualty ? '3.227.0' : plaguedMunitions ? '3.226.0' : repeatedActivationIdentity ? '3.225.0' : infantryPrecision ? '3.224.0' : stukovInfestation ? '3.223.0' : universalCarrier ? '3.222.0' : includeReleaseMoundAssaultOrder ? '3.221.0' : includeBilePhysicalPlacement && bile ? '3.220.0' : psionicRoundEnd?.scheduledEffects ? '3.219.0' : includeReleaseBileAssaultOrder ? '3.218.0' : releaseZergTargets ? '3.217.0' : includePsionicStormAssaultSameName ? '3.216.0'
     : includePsionicStormTokenCleanup ? '3.215.0'
     : includePsionicStormNamedOverlapChoices ? '3.214.0'
     : stormCast ? '3.213.0'
@@ -1792,6 +1802,8 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
       ...(forceWallTraversal ? { forceWallTraversalPolicyHash: forceWallTraversal.policyHash } : {}) } : {}),
     ...(telekineticPush ? { telekineticPushSourceHash: telekineticPush.routeHash } : {}),
     ...(infestationDamageCleanup?{infestationDamageCleanup:infestationDamageCleanup.descriptor}:{}),
+    ...(corrodeArmour?{corrodeArmourSourceHash:corrodeArmour.routeHash,sharedAfterRangedReactionOwner:true,...(includeCorrodeRoundCleanup?{corrodeArmourRoundCleanup:true}:{})}:{}),
+    ...(corrodeRestoration?{corrodeRestoration:corrodeRestoration.descriptor}:{}),
     ...(psiLightning ? { psiLightningSourceHash: psiLightning.routeHash, psiLightningDirectDamage: true } : {}),
     ...(executorsWill ? { executorsWill: executorsWill.descriptor } : {}),
     ...(khalasGift ? { khalasGiftSourceRouteHash: khalasGift.routeHash } : {}),
@@ -1900,6 +1912,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
     return null;
   }
   function enumerate(state, options = {}) {
+    if(corrodeRestoration?.pending(state))return {...meleeEnumeration(state,reactionAdapter.legalSpace(state,options),'reaction'),releasePhaseControl:'blocked'};
     if(beforeCasualty?.pending(state)?.stage==='reaction')return {...meleeEnumeration(state,reactionAdapter.legalSpace(state,options),'reaction'),releasePhaseControl:'blocked'};
     if(plaguedMunitions?.pending(state))return {...meleeEnumeration(state,reactionAdapter.legalSpace(state,options),'reaction'),releasePhaseControl:'blocked'};
     if (universalCarrier?.pending(state)) return { ...meleeEnumeration(state,universalCarrier.enumerate(state,options),'universal_carrier'), releasePhaseControl:'blocked' };
@@ -2565,6 +2578,13 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
   function applySource(state, action, options) {
     if (action.executorId !== runtimeId || action.executorVersion !== version
       || action.sourceActionHash !== hash(action.sourceAction)) throw Error('CHARACTERISTIC_COMPONENT_ACTION_INVALID');
+    if(corrodeRestoration?.pending(state)){
+      if(action.sourceRuntimeKind!=='reaction')throw Error('CORRODE_RESTORATION_CHOICE_REQUIRED');
+      const result=router.dispatch({operation:'apply',adapterId:reactionAdapter.descriptor.adapterId,state,
+        request:{action:action.sourceAction,options}}),next=structuredClone(result.state),window=next.pendingOfficialReactionWindow;
+      if(window)next.activeSideKey=window.prioritySideKeys[window.priorityIndex];
+      return{...result,state:next};
+    }
     if(plaguedMunitions?.pending(state)){
       if(action.sourceRuntimeKind!=='reaction'||!reactionAdapter)throw Error('PLAGUED_MUNITIONS_REACTION_CONTINUATION_REQUIRED');
       const result=router.dispatch({operation:'apply',adapterId:reactionAdapter.descriptor.adapterId,state,
@@ -2970,6 +2990,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
       : binding.owner.apply(state, action.sourceAction, options);
   }
   function apply(state,action,options) {
+    if(corrodeRestoration?.pending(state))return applySource(state,action,options);
     if(!beforeCasualty){const result=applyBase(state,action,options);return infestationDamageCleanup?infestationDamageCleanup.afterTransition(result):result;}
     const pending=beforeCasualty.pending(state);
     const result=pending?.stage==='reaction'?beforeCasualty.afterReaction(applySource(state,action,options)):applyBase(state,action,options);
@@ -3474,6 +3495,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
     if (infestationTransfer?.pending(state)) throw Error('INFESTATION_TRANSFER_REACTION_CHOICE_REQUIRED');
     if (universalCarrier?.pending(state)) throw Error('UNIVERSAL_CARRIER_CHOICE_REQUIRED');
     if (infestationDamageCleanup?.pending(state))throw Error('INFESTATION_DAMAGE_CLEANUP_REQUIRED');
+    if (corrodeRestoration?.pending(state))throw Error('CORRODE_RESTORATION_CONTINUATION_REQUIRED');
     if (beforeCasualty?.pending(state)) throw Error('BEFORE_CASUALTY_CONTINUATION_REQUIRED');
     if (plaguedMunitions?.pending(state)) throw Error('PLAGUED_MUNITIONS_REACTION_CONTINUATION_REQUIRED');
     if (ancestralWisdom?.pending(state)) throw Error('ANCESTRAL_WISDOM_PAYMENT_CONTINUATION_REQUIRED');
@@ -3487,7 +3509,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
     if (rangedDeclaration?.pending(state)) throw Error('RANGED_DECLARATION_ATTACK_CONTINUATION_REQUIRED');
     if (hiddenLossReactions?.pending(state)) throw Error('HIDDEN_LOSS_REACTION_CONTINUATION_REQUIRED');
     if (closeRanksReactions && displacement.pending(state)) throw Error('PSIONIC_DISPLACEMENT_CLOSE_RANKS_CONTINUATION_REQUIRED');
-    if (!infantryPrecision && !stukovInfestation && !battlefieldModifierBundle?.routes.some(route=>route.effectKind==='stukov_creep') && !guardianShield && !ourMindsAsOne && !khalasGift && !executorsWill && !forceWallTraversal && !feedback && !farsight && !scourgeQueen && !zagaraBroodmother && !poisonousEssence && !overwatch && !sabotageDronePhaseEnd && !holoRoundEnd && !unitLifecycleAdapter && !bileUpgrades && !psionicRoundEnd && !hiddenLossReactions && !targetedMeleeCritical && !markedTargetFirstWeapon && !vilelingFoundation && !defilerMeleeFoundation && !markerAreas && !coordinatedStrike && !stationaryFirstRanged && !plasmaArmourSource && !alloyArmourSource && !superStimpack && !commandoStimpack && !chargeDeclaration) throw Error('CHARACTERISTIC_UNIT_LIFECYCLE_CONSUMER_REQUIRED');
+    if (!(corrodeArmour&&includeCorrodeRoundCleanup) && !infantryPrecision && !stukovInfestation && !battlefieldModifierBundle?.routes.some(route=>route.effectKind==='stukov_creep') && !guardianShield && !ourMindsAsOne && !khalasGift && !executorsWill && !forceWallTraversal && !feedback && !farsight && !scourgeQueen && !zagaraBroodmother && !poisonousEssence && !overwatch && !sabotageDronePhaseEnd && !holoRoundEnd && !unitLifecycleAdapter && !bileUpgrades && !psionicRoundEnd && !hiddenLossReactions && !targetedMeleeCritical && !markedTargetFirstWeapon && !vilelingFoundation && !defilerMeleeFoundation && !markerAreas && !coordinatedStrike && !stationaryFirstRanged && !plasmaArmourSource && !alloyArmourSource && !superStimpack && !commandoStimpack && !chargeDeclaration) throw Error('CHARACTERISTIC_UNIT_LIFECYCLE_CONSUMER_REQUIRED');
     if (psionicRoundEnd && request.eventKind === 'round_end'
       && (psionicRoundEnd.pending(state) || psionicRoundEnd.hasOutstanding(state))) throw Error('PSIONIC_TRANSFER_ROUND_END_CHOICES_REQUIRED');
     const prepared = psionicRoundEnd && request.eventKind === 'cleanup_and_refresh' ? psionicRoundEnd.cleanup(state) : state;
@@ -3519,7 +3541,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
     ...(chargeDeclaration ? { chargeDeclaration } : {}),
     ...(cardRefresh ? { cardRefresh } : {}),
     ...(unitLifecycleAdapter ? { unitLifecycleBundle, unitLifecycleAdapter } : {}),
-    ...(infantryPrecision || stukovInfestation || battlefieldModifierBundle?.routes.some(route=>route.effectKind==='stukov_creep') || releaseZergTargets && darkSwarmLifecycle || guardianShield || ourMindsAsOne || khalasGift || executorsWill || forceWallTraversal || feedback || farsight || scourgeQueen || zagaraBroodmother || poisonousEssence || overwatch || sabotageDronePhaseEnd || holoRoundEnd || unitLifecycleAdapter || bileUpgrades || psionicRoundEnd || hiddenLossReactions || targetedMeleeCritical || markedTargetFirstWeapon || vilelingFoundation || defilerMeleeFoundation || markerAreas || coordinatedStrike || stationaryFirstRanged || plasmaArmourSource || alloyArmourSource || superStimpack || commandoStimpack || chargeDeclaration ? { lifecycle } : {}),
+    ...(corrodeArmour&&includeCorrodeRoundCleanup || infantryPrecision || stukovInfestation || battlefieldModifierBundle?.routes.some(route=>route.effectKind==='stukov_creep') || releaseZergTargets && darkSwarmLifecycle || guardianShield || ourMindsAsOne || khalasGift || executorsWill || forceWallTraversal || feedback || farsight || scourgeQueen || zagaraBroodmother || poisonousEssence || overwatch || sabotageDronePhaseEnd || holoRoundEnd || unitLifecycleAdapter || bileUpgrades || psionicRoundEnd || hiddenLossReactions || targetedMeleeCritical || markedTargetFirstWeapon || vilelingFoundation || defilerMeleeFoundation || markerAreas || coordinatedStrike || stationaryFirstRanged || plasmaArmourSource || alloyArmourSource || superStimpack || commandoStimpack || chargeDeclaration ? { lifecycle } : {}),
     ...(relocationAdapter ? { relocationBundle, relocationAdapter, postPlaceReactions } : {}),
     ...(reactionAdapter ? { reactionBundle, reactionAdapter, router } : {}),
     ...(registeredStorm ? { router, registeredStorm } : {}),

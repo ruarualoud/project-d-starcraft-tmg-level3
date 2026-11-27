@@ -1,0 +1,162 @@
+{
+  "schema": "starcraft_tmg_wave4_corrode_round_v1",
+  "status": "passed_scoped",
+  "roomId": "wave4-corrode-round",
+  "directoryRef": "build/wave4-web/stukov-units/corrode-round-D8NZ3A",
+  "signedActions": 20,
+  "stateHash": "ff810601ff7a7b1d2053ddfc8974bcfb0e7965ae32f90cbf0c76ef247bf62693",
+  "trace": [
+    {
+      "revision": 1,
+      "round": 1,
+      "phase": "start_of_round",
+      "actionType": "resolve_mission_start_of_round",
+      "definitionId": null
+    },
+    {
+      "revision": 2,
+      "round": 1,
+      "phase": "movement",
+      "actionType": "choose_first_actor",
+      "definitionId": null
+    },
+    {
+      "revision": 3,
+      "round": 1,
+      "phase": "movement",
+      "actionType": "pass",
+      "definitionId": null
+    },
+    {
+      "revision": 4,
+      "round": 1,
+      "phase": "movement",
+      "actionType": "pass",
+      "definitionId": null
+    },
+    {
+      "revision": 5,
+      "round": 1,
+      "phase": "assault",
+      "actionType": "choose_first_actor",
+      "definitionId": null
+    },
+    {
+      "revision": 6,
+      "round": 1,
+      "phase": "assault",
+      "actionType": "ranged_attack",
+      "definitionId": null
+    },
+    {
+      "revision": 7,
+      "round": 1,
+      "phase": "assault",
+      "actionType": "resolve_reaction_family_ability",
+      "definitionId": "unit:stukov/corrode-armor-assault-phase@1"
+    },
+    {
+      "revision": 8,
+      "round": 1,
+      "phase": "assault",
+      "actionType": "pass_reaction_family_window",
+      "definitionId": null
+    },
+    {
+      "revision": 9,
+      "round": 1,
+      "phase": "assault",
+      "actionType": "finish_activation",
+      "definitionId": null
+    },
+    {
+      "revision": 10,
+      "round": 1,
+      "phase": "assault",
+      "actionType": "pass",
+      "definitionId": null
+    },
+    {
+      "revision": 11,
+      "round": 1,
+      "phase": "assault",
+      "actionType": "pass",
+      "definitionId": null
+    },
+    {
+      "revision": 12,
+      "round": 1,
+      "phase": "combat",
+      "actionType": "choose_first_actor",
+      "definitionId": null
+    },
+    {
+      "revision": 13,
+      "round": 1,
+      "phase": "combat",
+      "actionType": "pass",
+      "definitionId": null
+    },
+    {
+      "revision": 14,
+      "round": 1,
+      "phase": "combat",
+      "actionType": "pass",
+      "definitionId": null
+    },
+    {
+      "revision": 15,
+      "round": 1,
+      "phase": "cleanup",
+      "actionType": "determine_current_product_mission_marker_control",
+      "definitionId": null
+    },
+    {
+      "revision": 16,
+      "round": 1,
+      "phase": "cleanup",
+      "actionType": "score_mission",
+      "definitionId": null
+    },
+    {
+      "revision": 17,
+      "round": 1,
+      "phase": "cleanup",
+      "actionType": "check_mission_end_game",
+      "definitionId": null
+    },
+    {
+      "revision": 18,
+      "round": 1,
+      "phase": "cleanup",
+      "actionType": "resolve_current_product_end_of_round_effects",
+      "definitionId": null
+    },
+    {
+      "revision": 19,
+      "round": 1,
+      "phase": "cleanup",
+      "actionType": "resolve_current_product_cleanup_refresh",
+      "definitionId": null
+    },
+    {
+      "revision": 20,
+      "round": 1,
+      "phase": "cleanup",
+      "actionType": "resolve_current_product_next_round_initiative",
+      "definitionId": null
+    }
+  ],
+  "fullNativeRound": true,
+  "armourFiveBeforeCleanup": true,
+  "armourFourAfterCleanup": true,
+  "coldReplay": true,
+  "idempotencyVerified": true,
+  "engineeringEstimatedUnitGeometry": true,
+  "fullMatchAdmission": false,
+  "newGameAtomsImplemented": 0,
+  "implementedCumulativeAtoms": 6,
+  "sourceHeldDefinitions": 39,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

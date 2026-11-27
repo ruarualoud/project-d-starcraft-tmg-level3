@@ -1,0 +1,115 @@
+{
+  "schema": "starcraft_tmg_wave4_corrode_zero_damage_v1",
+  "status": "passed_scoped",
+  "runRef": "build/wave4-web/stukov-units/corrode-zero-XmwRmT",
+  "results": [
+    {
+      "id": "mirror-stukov-attempt-0",
+      "roomId": "wave4-corrode-zero-0",
+      "directoryRef": "build/wave4-web/stukov-units/corrode-zero-XmwRmT/attempt-0",
+      "signedActions": 3,
+      "originalDamage": 2,
+      "zeroDamage": false,
+      "stateHash": "05454faff74fd35b51b4953ccd18ee7f9de4dcf151f68634079c33a640038b74",
+      "trace": [
+        {
+          "revision": 2,
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:stukov/corrode-armor-assault-phase@1"
+        },
+        {
+          "revision": 3,
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null
+        }
+      ],
+      "corrodeUsed": true,
+      "armourThresholdAfter": 5,
+      "coldReplay": true,
+      "idempotencyVerified": true
+    },
+    {
+      "id": "mirror-stukov-attempt-1",
+      "roomId": "wave4-corrode-zero-1",
+      "directoryRef": "build/wave4-web/stukov-units/corrode-zero-XmwRmT/attempt-1",
+      "signedActions": 3,
+      "originalDamage": 3,
+      "zeroDamage": false,
+      "stateHash": "ad55acbf7821fc4e5a0853357fd2834ab65bd5fac049e535ac609de0c2a02fc1",
+      "trace": [
+        {
+          "revision": 2,
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:stukov/corrode-armor-assault-phase@1"
+        },
+        {
+          "revision": 3,
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null
+        }
+      ],
+      "corrodeUsed": true,
+      "armourThresholdAfter": 5,
+      "coldReplay": true,
+      "idempotencyVerified": true
+    },
+    {
+      "id": "mirror-stukov-attempt-2",
+      "roomId": "wave4-corrode-zero-2",
+      "directoryRef": "build/wave4-web/stukov-units/corrode-zero-XmwRmT/attempt-2",
+      "signedActions": 3,
+      "originalDamage": 1,
+      "zeroDamage": false,
+      "stateHash": "48d86c10c790bf5cbd56c94bf2f6feff1c6593b4b961352c88dfa74001052738",
+      "trace": [
+        {
+          "revision": 2,
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:stukov/corrode-armor-assault-phase@1"
+        },
+        {
+          "revision": 3,
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null
+        }
+      ],
+      "corrodeUsed": true,
+      "armourThresholdAfter": 5,
+      "coldReplay": true,
+      "idempotencyVerified": true
+    },
+    {
+      "id": "mirror-stukov-attempt-3",
+      "roomId": "wave4-corrode-zero-3",
+      "directoryRef": "build/wave4-web/stukov-units/corrode-zero-XmwRmT/attempt-3",
+      "signedActions": 3,
+      "originalDamage": 0,
+      "zeroDamage": true,
+      "stateHash": "a2bc1c1a9edb92345384a7c1b0238b6132a96d9267939e7899a183260026c0ce",
+      "trace": [
+        {
+          "revision": 2,
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:stukov/corrode-armor-assault-phase@1"
+        },
+        {
+          "revision": 3,
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null
+        }
+      ],
+      "corrodeUsed": true,
+      "armourThresholdAfter": 5,
+      "coldReplay": true,
+      "idempotencyVerified": true
+    }
+  ],
+  "zeroDamageNativeVerified": true,
+  "noRollInjection": true,
+  "newGameAtomsImplemented": 0,
+  "implementedCumulativeAtoms": 6,
+  "fullMatchAdmission": false,
+  "sourceHeldDefinitions": 39,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

@@ -1,0 +1,67 @@
+{
+  "schema": "starcraft_tmg_wave4_corrode_harness_v1",
+  "harnessLoopUsed": true,
+  "targetGames": [
+    "starcraft-tmg"
+  ],
+  "promptPackRoutes": [
+    {
+      "route": "fact_probe_prompt",
+      "mode": "offline_contract_verification",
+      "invoked": false,
+      "modelCalls": 0
+    }
+  ],
+  "harnessToolsCalled": [
+    "actual_roster_factory",
+    "native_ranged_resolution",
+    "sealed_after_ranged_witness",
+    "shared_lunge_reaction_window",
+    "biomass_payment",
+    "armour_debuff_projection",
+    "nested_restoration",
+    "actual_later_armour_roll",
+    "round_cleanup",
+    "legalSpace",
+    "preview",
+    "explicit_human_confirmation",
+    "idempotency_reapply",
+    "cold_replay",
+    "seat_recovery_exchange"
+  ],
+  "uiTraceEvidence": [
+    "docs/development/wave4/evidence/corrode-armour-web.public.json",
+    "docs/development/wave4/evidence/corrode-restoration-mobile.png"
+  ],
+  "agentDecisionEvidence": {
+    "status": "not_applicable",
+    "modelCalls": 0
+  },
+  "memoryTraceEvidence": [],
+  "trainingTraceCandidates": [],
+  "rollbackOrDemotionRules": [
+    "exact_source_and_1BM_payment",
+    "source_is_actual_ranged_attacker",
+    "zero_damage_still_triggers",
+    "nested_restoration_preserves_original_window",
+    "joint_lunge_continues",
+    "cleanup_removes_status_and_marker",
+    "legacy_descriptor_and_envelope_unchanged",
+    "scoped_Stukov_proof_does_not_complete_Wave4"
+  ],
+  "userVisibleChecks": [
+    "explicit_human_confirmation",
+    "medic_restoration_returns_armour",
+    "two_seat_recovery_and_replay"
+  ],
+  "nativeCases": 12,
+  "nativeSignedActions": 59,
+  "webRooms": 2,
+  "webSignedActions": 6,
+  "newGameAtomsImplemented": 0,
+  "implementedCumulativeAtoms": 6,
+  "sourceHeldDefinitions": 39,
+  "fullMatchAdmission": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

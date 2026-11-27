@@ -1,0 +1,39 @@
+{
+  "schema": "starcraft_tmg_wave4_corrode_armour_basic_v1",
+  "status": "passed_scoped_basic_only",
+  "runRef": "build/wave4-web/stukov-units/corrode-armour-5pYn4s",
+  "results": [
+    {
+      "id": "next-rifle-armour",
+      "use": true,
+      "successor": true,
+      "roomId": "wave4-corrode-next-rifle-armour",
+      "directoryRef": "build/wave4-web/stukov-units/corrode-armour-5pYn4s/next-rifle-armour",
+      "signedActions": 8,
+      "stateHash": "a5bfd95b6832820f18c753105f46b4aad495bfad58ca5a63a3584a07dc8753b8",
+      "used": true,
+      "trace": [
+        {
+          "revision": 2,
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:stukov/corrode-armor-assault-phase@1"
+        },
+        {
+          "revision": 3,
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null
+        }
+      ],
+      "coldReplay": true,
+      "idempotencyVerified": true
+    }
+  ],
+  "nativeArmourSuccessorPending": true,
+  "restorationAndRoundCleanupPending": true,
+  "newGameAtomsImplemented": 0,
+  "implementedCumulativeAtoms": 6,
+  "fullMatchAdmission": false,
+  "sourceHeldDefinitions": 39,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

@@ -1,0 +1,39 @@
+{
+  "schema": "starcraft_tmg_wave4_corrode_armour_basic_v1",
+  "status": "passed_scoped_basic_only",
+  "runRef": "build/wave4-web/stukov-units/corrode-armour-H3Gvek",
+  "results": [
+    {
+      "id": "shared-lunge",
+      "use": true,
+      "lunge": true,
+      "roomId": "wave4-corrode-shared-lunge",
+      "directoryRef": "build/wave4-web/stukov-units/corrode-armour-H3Gvek/shared-lunge",
+      "signedActions": 3,
+      "stateHash": "a040282a050366db745d515a61a93121b01c8327dae7b7c61c046be2e9f9d64a",
+      "used": true,
+      "trace": [
+        {
+          "revision": 2,
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:stukov/corrode-armor-assault-phase@1"
+        },
+        {
+          "revision": 3,
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:hydralisk/lunge-assault-phase@1"
+        }
+      ],
+      "coldReplay": true,
+      "idempotencyVerified": true
+    }
+  ],
+  "nativeArmourSuccessorPending": true,
+  "restorationAndRoundCleanupPending": true,
+  "newGameAtomsImplemented": 0,
+  "implementedCumulativeAtoms": 6,
+  "fullMatchAdmission": false,
+  "sourceHeldDefinitions": 39,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

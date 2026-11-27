@@ -20,7 +20,7 @@ const webRoot=process.argv[4]?path.resolve(process.argv[4]):path.join(root,'apps
 if(process.argv[4])assert.ok(webRoot.startsWith(path.join(root,'build/wave4-web')+path.sep));
 const inputs=['starcraft_tmg_wave4_stukov_infestation_native_v1','starcraft_tmg_wave4_plagued_munitions_v1',
    'starcraft_tmg_wave4_infested_infantry_base_wiring_v1','starcraft_tmg_wave4_detonation_ranged_host_v1','starcraft_tmg_wave4_detonation_nested_host_v1',
-   'starcraft_tmg_wave4_bio_kill_switch_v1'].includes(sourceResult.schema)?await loadWave4StukovUnitInputs(root)
+   'starcraft_tmg_wave4_bio_kill_switch_v1','starcraft_tmg_wave4_corrode_web_source_v1'].includes(sourceResult.schema)?await loadWave4StukovUnitInputs(root)
   :sourceResult.schema==='starcraft_tmg_wave4_virus_creep_native_v1'?await loadWave4VirusEffectsInputs(root):await loadWave4TurretInputs(root);
 const rooms=new Map();
 const service={liveEnabled:false,scope:'Wave4 source-bound Native successors; scoped local Web acceptance',rooms:[]};

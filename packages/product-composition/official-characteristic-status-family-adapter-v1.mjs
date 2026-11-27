@@ -1,4 +1,5 @@
 import { compileOfficialUniversalCarrierSpecV1 } from '../source-data/official-universal-carrier-source-v1.mjs';
+import {OFFICIAL_CORRODE_ARMOUR_ID} from '../source-data/official-corrode-armour-source-v1.mjs';
 import {compileOfficialStukovInfestationSpecV1} from '../source-data/official-stukov-infestation-source-v1.mjs';
 import {compileOfficialInfestedInfantrySpecV1} from '../source-data/official-infested-infantry-source-v1.mjs';
 import {inspectOfficialUnitCreepProximityV1} from './official-current-product-state-facts-v1.mjs';
@@ -1032,8 +1033,18 @@ function hitPointRoutesForPiece(bundle, state, piece) {
       ?? Number.NEGATIVE_INFINITY) < Number(state.round)));
 }
 
+function resolveCorrodeArmourPenalty(state,piece){
+  const rows=(piece.statuses||[]).filter(s=>s?.sourceDefinitionId===OFFICIAL_CORRODE_ARMOUR_ID);if(!rows.length)return 0;
+  const route=state.officialReactionFamilySourceBundle?.routes.find(r=>r.definitionId===OFFICIAL_CORRODE_ARMOUR_ID),s=rows[0];
+  if(rows.length!==1||!route||route.effectKind!=='after_ranged_armour_debuff'
+    ||s.statusEffectHash!==hashStarcraftTmgContract(without(s,['statusEffectHash']))||s.sourceAdapterId!==OFFICIAL_CHARACTERISTIC_STATUS_FAMILY_ADAPTER_ID
+    ||s.sourceFeatureHash!==route.sourceFeatureHash||s.targetPieceId!==piece.id||s.sourceSideKey!==otherSide(piece.sideKey)
+    ||s.statusKind!=='debuff'||s.characteristic!=='armour'||s.modifier!==-route.armourPenalty
+    ||s.roundApplied!==Number(state.round)||s.expiresAt!=='cleanup_and_refresh'||!/^[a-f0-9]{64}$/u.test(s.reactionActionHash||''))fail('CORRODE_ARMOUR_STATUS_INVALID',piece.id);
+  return route.armourPenalty;
+}
 function resolveArmourPenalty(state, piece) {
-  const potentBilePenalty = inspectOfficialPotentBileArmourPenaltyV1(state, piece);
+  const potentBilePenalty = inspectOfficialPotentBileArmourPenaltyV1(state, piece)+resolveCorrodeArmourPenalty(state,piece);
   const missiles = (piece.statuses || []).filter(entry =>
     entry?.sourceDefinitionId === OFFICIAL_RAVEN_ANTI_ARMOUR_MISSILE_DEFINITION_ID);
   if (!missiles.length) return potentBilePenalty;
@@ -1064,7 +1075,8 @@ export function resolveOfficialEffectiveCombatProfileV1(state, piece) {
       effectiveProfileVersion: 'selected-unit-effective-armour-debuff-v1',
       hitPoints: Number(base.hitPoints) + hitPointsModifier, hitPointsModifier,
       hitPointModifierDefinitionIds: routes.map(route => route.definitionId).sort(),
-      armourThreshold: Number(base.armourThreshold) + armourPenalty, armourPenalty,
+      armourThreshold:base.armourThreshold===null&&state.officialReactionFamilySourceBundle?.definitionIds.includes(OFFICIAL_CORRODE_ARMOUR_ID)
+        ?null:Number(base.armourThreshold) + armourPenalty, armourPenalty,
     }, 'profileHash');
   }
   if (!hitPointsModifier) return base;
@@ -1812,6 +1824,16 @@ function status(route, state, actor, target, properties = {}) {
     trainingTruth: false,
   };
   return seal(body, "statusEffectHash");
+}
+export function applyOfficialCorrodeArmourDebuffV1(state,route,source,target,reactionActionHash){
+  if(route.definitionId!==OFFICIAL_CORRODE_ARMOUR_ID||route.effectKind!=='after_ranged_armour_debuff'
+    ||!activePiece(source)||!activePiece(target)||source.sideKey===target.sideKey)fail('CORRODE_ARMOUR_RECIPIENT_INVALID');
+  const existing=(target.statuses||[]).find(s=>s?.sourceDefinitionId===route.definitionId);
+  if(existing){resolveCorrodeArmourPenalty(state,target);return{statusEffectHash:existing.statusEffectHash,alreadyApplied:true};}
+  const value=status(route,state,source,target,{statusName:'DEBUFF Armour (1)',statusKind:'debuff',characteristic:'armour',modifier:-route.armourPenalty,
+    expiresAt:'cleanup_and_refresh',reactionActionHash});
+  addStatus(target,value);state.board.effectMarkers=[...(state.board.effectMarkers||[]),markerFor(value)];
+  return{statusEffectHash:value.statusEffectHash,alreadyApplied:false,expiresAt:value.expiresAt};
 }
 function effect(route, state, actor, target, properties = {}) {
   const body = {

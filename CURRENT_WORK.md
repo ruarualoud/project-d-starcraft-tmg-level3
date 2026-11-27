@@ -4,15 +4,15 @@
 
 当前执行 T28-W4-02。
 Ticket 23 / Slice 249；整体 33/36；剩余 248、249、250。
-状态日期：2026-11-27T21:50:57.206Z。本页由 coordination/current-development.json 生成，不追加历史。
+状态日期：2026-11-27T22:37:21.353Z。本页由 coordination/current-development.json 生成，不追加历史。
 
-Wave4人人长任务进行中，原子6/18。Stukov Bio-Kill Switch及武器/冲锋4条新增接线，9原生分支34动作、Web1房6确认通过；全伤害减免保留感染、施法者阵亡仍完成原能力。Stukov已验8/9，Corrode Armor待。Detonation普通攻击/嵌套已验，委托/激活外与直接移除继续；整版规则、发布/Builder/大厅/媒体及500/2000分Web仍待，39来源与估算几何保持。
+Wave4人人长任务进行中，完整原子6/18。Corrode Armor补齐攻击后窗口、实际后续Armour、Medic清除、Lunge共存、零伤害和回合清理；12原生分支59动作、Web2房6确认通过。Stukov9/9具名工程定义已验。Detonation模板/委托/激活外/直接移除、其他新单位与整版发布/Builder/大厅/媒体、500/2000分Web继续，39来源及估算几何保持。
 
 运行限制：本分支仅推进Wave4人人对战，按Wave3模式补齐数据、规则、建军、房间、媒体和Web双席；使用5484及build/wave4-web，按可验证成果提交推送。其他同步开发线不在本分支展开；付费模型、K3、AI对局、复盘与生产发布继续暂停。
 
 | 工作 | 实现 | 产品交接 | 真实产出 | 策略效果 |
 |---|---|---|---|---|
-| Wave4人人更新：6/18原子；Stukov已验8/9条 | 部分完成 | 部分完成 | 不适用 | 不适用 |
+| Wave4人人更新：6/18原子；Stukov9/9具名工程定义 | 部分完成 | 部分完成 | 不适用 | 不适用 |
 | Wave4 W4-01 候选与旧版兼容 | 已实现 | 已通过 | 已产出 | 不适用 |
 | 开发环境六项改进 | 已实现 | 已通过 | 不适用 | 不适用 |
 | WikiSkill | 已实现 | 部分完成 | 已产出 | 未能证明 |
@@ -23,12 +23,13 @@ Wave4人人长任务进行中，原子6/18。Stukov Bio-Kill Switch及武器/冲
 | T27/S272 军表与 Plan／Teach，P0–P6 验收 3/7 | 部分完成 | 部分完成 | 部分完成 | 未测效果 |
 
 下一步：
-1. W4-02：接Corrode Armor及实际Armour/清除后继；继续Detonation委托/激活外、Disengage/Consume与完整回合。
-2. 继续其余12个需实现合同及其他新增单位／势力；撤回Archon独占3个合同不计18。39来源隔离与估算几何保持。
-3. 完成 W4-03 整版发布／Builder／大厅／媒体及 W4-04 的500／2000分 Web 双席。
+1. W4-02：继续Detonation模板、委托/激活外、Disengage/Consume与完整回合。
+2. 继续其余12个需实现合同及其他新增单位／势力；39来源隔离与估算几何保持。
+3. 完成W4-03整版发布/Builder/大厅/媒体及W4-04的500/2000分Web双席。
 
 ## Navigation
 
+- 查看Corrode攻击后、实际Armour、Medic/Lunge、清理及Web证据：[Corrode Armor接线](docs/development/wave4/corrode-armour-wiring.zh-CN.md)
 - 查看Stukov全场伤害、延迟清除和武器/冲锋实际后继：[Stukov本批战斗接线](docs/development/wave4/stukov-combat-wiring.zh-CN.md)
 - 查看Detonation普通近战/HITS、双方嵌套及多目标后继：[Detonation嵌套接线](docs/development/wave4/detonation-nested-wiring.zh-CN.md)
 - 查看Detonation伤亡前远程后继及边界：[Detonation远程接线](docs/development/wave4/detonation-ranged-wiring.zh-CN.md)

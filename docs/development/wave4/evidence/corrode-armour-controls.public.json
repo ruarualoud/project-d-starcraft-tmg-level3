@@ -1,0 +1,58 @@
+{
+  "schema": "starcraft_tmg_wave4_corrode_armour_basic_v1",
+  "status": "passed_scoped_basic_only",
+  "runRef": "build/wave4-web/stukov-units/corrode-armour-fzWuEV",
+  "results": [
+    {
+      "id": "no-biomass",
+      "use": false,
+      "noBiomass": true,
+      "roomId": "wave4-corrode-no-biomass",
+      "directoryRef": "build/wave4-web/stukov-units/corrode-armour-fzWuEV/no-biomass",
+      "signedActions": 1,
+      "stateHash": "0c43b7d9ad4dce3985587f1f32e64d6df092105b5a3680817c6214db7c91ec67",
+      "used": false,
+      "trace": [],
+      "coldReplay": true,
+      "idempotencyVerified": true
+    },
+    {
+      "id": "legacy-lunge-without-corrode",
+      "use": false,
+      "lunge": true,
+      "legacyLunge": true,
+      "roomId": "wave4-corrode-legacy-lunge-without-corrode",
+      "directoryRef": "build/wave4-web/stukov-units/corrode-armour-fzWuEV/legacy-lunge-without-corrode",
+      "signedActions": 4,
+      "stateHash": "a9f5a251e99a66d35f808b7c5a7256ba1da3831569105d4b3e0e35f52c47e182",
+      "used": false,
+      "trace": [
+        {
+          "revision": 2,
+          "actionType": "ranged_attack",
+          "definitionId": null
+        },
+        {
+          "revision": 3,
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null
+        },
+        {
+          "revision": 4,
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:hydralisk/lunge-assault-phase@1"
+        }
+      ],
+      "coldReplay": true,
+      "idempotencyVerified": true
+    }
+  ],
+  "nativeArmourSuccessorPending": true,
+  "restorationAndRoundCleanupPending": true,
+  "newGameAtomsImplemented": 0,
+  "implementedCumulativeAtoms": 6,
+  "fullMatchAdmission": false,
+  "sourceHeldDefinitions": 39,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

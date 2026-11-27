@@ -1,0 +1,61 @@
+{
+  "schema": "starcraft_tmg_wave4_corrode_armour_basic_v1",
+  "status": "passed_scoped_basic_only",
+  "runRef": "build/wave4-web/stukov-units/corrode-armour-4M7kfs",
+  "results": [
+    {
+      "id": "use",
+      "use": true,
+      "roomId": "wave4-corrode-use",
+      "directoryRef": "build/wave4-web/stukov-units/corrode-armour-4M7kfs/use",
+      "signedActions": 3,
+      "stateHash": "7239ed8433e4da37dc4ac82824986762ef476957fa24bea4122e335e219ac6ec",
+      "used": true,
+      "trace": [
+        {
+          "revision": 2,
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:stukov/corrode-armor-assault-phase@1"
+        },
+        {
+          "revision": 3,
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null
+        }
+      ],
+      "coldReplay": true,
+      "idempotencyVerified": true
+    },
+    {
+      "id": "decline",
+      "use": false,
+      "roomId": "wave4-corrode-decline",
+      "directoryRef": "build/wave4-web/stukov-units/corrode-armour-4M7kfs/decline",
+      "signedActions": 3,
+      "stateHash": "6479319ddc51976b66e6c3490bef063a40ae20bdff5dace984124e6f95113eeb",
+      "used": false,
+      "trace": [
+        {
+          "revision": 2,
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null
+        },
+        {
+          "revision": 3,
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null
+        }
+      ],
+      "coldReplay": true,
+      "idempotencyVerified": true
+    }
+  ],
+  "nativeArmourSuccessorPending": true,
+  "restorationAndRoundCleanupPending": true,
+  "newGameAtomsImplemented": 0,
+  "implementedCumulativeAtoms": 6,
+  "fullMatchAdmission": false,
+  "sourceHeldDefinitions": 39,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

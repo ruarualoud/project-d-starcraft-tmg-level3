@@ -1,4 +1,6 @@
 import { isDeepStrictEqual } from 'node:util';
+import {OFFICIAL_CORRODE_ARMOUR_ID} from '../source-data/official-corrode-armour-source-v1.mjs';
+import {projectOfficialAfterRangedSourceTriggerV1,openOfficialAfterRangedSourceTriggerV1} from './official-after-ranged-reaction-trigger-v1.mjs';
 import { hashStarcraftTmgContract as hash } from '../authoritative-engine/referee-crypto-v1.mjs';
 import { OFFICIAL_HYDRALISK_LUNGE_DEFINITION_ID, openOfficialRangedLungeWindowV1,
   consumeOfficialReactionFamilyResolutionV1, projectOfficialRangedLungeTriggerV1, openOfficialRangedLungeTriggerV1 }
@@ -16,9 +18,12 @@ const pass = 'pass_reaction_family_window';
 export function createOfficialRangedLungeContinuationV1(reactionAdapter, {
   deferBehindOwnedReaction = false, includeOverwatch = false, certifiedMultiModel = false, certifiedForwardDetour = false,
   certifiedMultiModelDetour = false, certifiedLeaderWitness = false, certifiedJointObstacles = false, certifiedAxisLeaderBound = false,
+  includeCorrodeArmour = false,
 } = {}) {
   const moveProofOptions = { certifiedMultiModel, certifiedForwardDetour, certifiedMultiModelDetour,
     certifiedLeaderWitness, certifiedJointObstacles, certifiedAxisLeaderBound };
+  const projectTrigger=includeCorrodeArmour?projectOfficialAfterRangedSourceTriggerV1:projectOfficialRangedLungeTriggerV1;
+  const openTrigger=includeCorrodeArmour?openOfficialAfterRangedSourceTriggerV1:openOfficialRangedLungeTriggerV1;
   function pending(state) {
     const parent = state[parentKey];
     if (!parent) return null;
@@ -39,13 +44,14 @@ export function createOfficialRangedLungeContinuationV1(reactionAdapter, {
 
   function eligibleDomains(state, options) {
     return reactionAdapter.legalSpace(state, options).parameterDomains.filter(domain => domain.actionType === pass
+      || includeCorrodeArmour&&domain.definitionId===OFFICIAL_CORRODE_ARMOUR_ID
       || domain.definitionId === OFFICIAL_HYDRALISK_LUNGE_DEFINITION_ID && supportsSource(state, domain.sourceInstanceId));
   }
 
   function enumerate(state, options = {}) {
     const parent = pending(state);
     const parameterDomains = !parent ? [] : eligibleDomains(state, options).map(reactionDomain => {
-      const use = reactionDomain.actionType !== pass;
+      const use = reactionDomain.definitionId===OFFICIAL_HYDRALISK_LUNGE_DEFINITION_ID;
       const { domainId: reactionDomainId, ...body } = reactionDomain;
       return seal({ ...body, reactionDomain, parentHash: parent.parentHash,
         parameterKind: 'official_ranged_lunge_continuation_v1',
@@ -86,12 +92,12 @@ export function createOfficialRangedLungeContinuationV1(reactionAdapter, {
 
   function prepare(state, domain, parameters) {
     const current = currentDomain(state, domain);
-    const use = current.actionType !== pass;
+    const use = current.definitionId===OFFICIAL_HYDRALISK_LUNGE_DEFINITION_ID;
     const { move, ...payment } = parameters || {};
     if (use !== Boolean(move)) throw Error('LUNGE_REACTION_MOVE_PARAMETERS_REQUIRED');
     const result = reactionAdapter.preview(state, { domain: current.reactionDomain, parameters: payment });
     const action = { actionType: current.actionType, sideKey: current.sideKey, phase: state.phase,
-      ...(use ? { pieceId: current.pieceId, abilityName: current.abilityName } : {}),
+      ...(current.actionType!==pass ? { pieceId: current.pieceId||current.sourceInstanceId, abilityName: current.abilityName } : {}),
       domainId: current.domainId, parentHash: current.parentHash, reactionAction: result.action };
     const canonicalParameters = { ...result.action.reactionPlan.canonicalParameters };
     if (use) {
@@ -177,10 +183,10 @@ export function createOfficialRangedLungeContinuationV1(reactionAdapter, {
       const saved = result.state[deferredKey];
       if (saved && (saved.triggerHash !== hash(saved.trigger)
         || saved.trigger.phase !== result.state.phase
-        || saved.trigger.context.rangedTargetDesignation.round !== Number(result.state.round))) {
+        || (saved.trigger.context.rangedTargetDesignation||saved.trigger.context.corrodeRangedAttack).round !== Number(result.state.round))) {
         throw Error('LUNGE_DEFERRED_TRIGGER_INVALID');
       }
-      const trigger = capture ? projectOfficialRangedLungeTriggerV1(previous, result, {
+      const trigger = capture ? projectTrigger(previous, result, {
         scanNewLogEntries: true, includeOverwatch,
       }) : null;
       if (saved && trigger && saved.triggerHash !== hash(trigger)) throw Error('LUNGE_DEFERRED_TRIGGER_ALREADY_PENDING');
@@ -193,13 +199,13 @@ export function createOfficialRangedLungeContinuationV1(reactionAdapter, {
       const state = { ...result.state };
       delete state[deferredKey];
       result = { ...result, state };
-      opened = openOfficialRangedLungeTriggerV1(state, waiting);
+      opened = openTrigger(state, waiting);
     } else {
-      opened = openOfficialRangedLungeWindowV1(previous, result);
+      opened = includeCorrodeArmour?openTrigger(result.state,projectTrigger(previous,result)):openOfficialRangedLungeWindowV1(previous, result);
     }
     if (!opened) return result;
     const window = opened.state.pendingOfficialReactionWindow;
-    if (!window.context.rangedTargetDesignation.sourceUnitIds.some(id => supportsSource(opened.state, id))) return result;
+    if (!window.context.corrodeRangedAttack&&!window.context.rangedTargetDesignation.sourceUnitIds.some(id => supportsSource(opened.state, id))) return result;
     const state = { ...opened.state, activeSideKey: window.prioritySideKeys[window.priorityIndex],
       [parentKey]: seal({ triggerHash: window.triggerHash, activationId: window.activationId,
         sourceActionHash: window.sourceActionHash, round: window.round, phase: window.phase,

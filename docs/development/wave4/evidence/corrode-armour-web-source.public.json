@@ -1,0 +1,67 @@
+{
+  "schema": "starcraft_tmg_wave4_corrode_web_source_v1",
+  "status": "passed_scoped",
+  "results": [
+    {
+      "id": "use",
+      "use": true,
+      "roomId": "wave4-corrode-use",
+      "directoryRef": "build/wave4-web/stukov-units/corrode-armour-4M7kfs/use",
+      "signedActions": 3,
+      "stateHash": "7239ed8433e4da37dc4ac82824986762ef476957fa24bea4122e335e219ac6ec",
+      "used": true,
+      "trace": [
+        {
+          "revision": 2,
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:stukov/corrode-armor-assault-phase@1"
+        },
+        {
+          "revision": 3,
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null
+        }
+      ],
+      "coldReplay": true,
+      "idempotencyVerified": true
+    },
+    {
+      "id": "medic-restores",
+      "use": true,
+      "restoration": true,
+      "roomId": "wave4-corrode-medic-restores",
+      "directoryRef": "build/wave4-web/stukov-units/corrode-armour-6th0AL/medic-restores",
+      "signedActions": 5,
+      "stateHash": "0ddc2c3294b58bd7ff7896f88488c8e82fe243dec9cf485fd5e4accddb9f6dc4",
+      "used": true,
+      "trace": [
+        {
+          "revision": 2,
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:stukov/corrode-armor-assault-phase@1"
+        },
+        {
+          "revision": 3,
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null
+        },
+        {
+          "revision": 4,
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:medic/restoration-any-phase@1"
+        },
+        {
+          "revision": 5,
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null
+        }
+      ],
+      "coldReplay": true,
+      "idempotencyVerified": true
+    }
+  ],
+  "fullMatchAdmission": false,
+  "fullCorrodeAdmission": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

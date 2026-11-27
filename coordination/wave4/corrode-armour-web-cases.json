@@ -1,0 +1,4 @@
+[
+ {"id":"use","definitionId":"unit:stukov/corrode-armor-assault-phase@1","requiredPendingKey":"pendingOfficialRangedLungeReaction","flow":"corrode-armour"},
+ {"id":"medic-restores","definitionId":"unit:stukov/corrode-armor-assault-phase@1","requiredPendingKey":"pendingOfficialRangedLungeReaction","flow":"corrode-restoration"}
+]

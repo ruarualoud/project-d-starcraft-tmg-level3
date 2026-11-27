@@ -1,0 +1,194 @@
+{
+  "schema": "starcraft_tmg_wave4_corrode_consumers_v1",
+  "status": "passed_scoped",
+  "definitions": [
+    {
+      "definitionId": "unit:stukov/corrode-armor-assault-phase@1",
+      "classification": "existing_atoms_new_combination",
+      "newAtomIds": [],
+      "sourceCompiled": true,
+      "executionBound": true,
+      "nativeSuccessorsVerified": true,
+      "webVerified": true,
+      "consumerRefs": [
+        {
+          "file": "packages/source-data/official-corrode-armour-source-v1.mjs",
+          "exportName": "OFFICIAL_CORRODE_ARMOUR_REACTION_COMPONENTS_V1"
+        },
+        {
+          "file": "packages/product-composition/official-after-ranged-reaction-trigger-v1.mjs",
+          "exportName": "projectOfficialAfterRangedSourceTriggerV1"
+        },
+        {
+          "file": "packages/product-composition/official-ranged-lunge-continuation-v1.mjs",
+          "exportName": "createOfficialRangedLungeContinuationV1"
+        },
+        {
+          "file": "packages/product-composition/official-reaction-family-adapter-v1.mjs",
+          "exportName": "createOfficialReactionFamilyAdapterV1"
+        },
+        {
+          "file": "packages/product-composition/official-characteristic-status-family-adapter-v1.mjs",
+          "exportName": "applyOfficialCorrodeArmourDebuffV1"
+        },
+        {
+          "file": "packages/product-composition/official-corrode-restoration-runtime-v1.mjs",
+          "exportName": "createOfficialCorrodeRestorationRuntimeV1"
+        },
+        {
+          "file": "packages/product-composition/official-characteristic-status-component-runtime-v2.mjs",
+          "exportName": "createOfficialCharacteristicStatusComponentRuntimeV2"
+        }
+      ],
+      "evidenceRefs": [
+        "docs/development/wave4/evidence/corrode-armour-basic.public.json",
+        "docs/development/wave4/evidence/corrode-armour-restoration.public.json",
+        "docs/development/wave4/evidence/corrode-armour-successor.public.json",
+        "docs/development/wave4/evidence/corrode-armour-lunge.public.json",
+        "docs/development/wave4/evidence/corrode-armour-controls.public.json",
+        "docs/development/wave4/evidence/corrode-armour-zero-damage.public.json",
+        "docs/development/wave4/evidence/corrode-armour-round.public.json",
+        "docs/development/wave4/evidence/corrode-armour-boundaries.public.json",
+        "docs/development/wave4/evidence/corrode-armour-compat.public.json",
+        "docs/development/wave4/evidence/corrode-armour-web.public.json",
+        "docs/development/wave4/evidence/corrode-armour-zero-damage.public.json"
+      ],
+      "engineeringEstimatedUnitGeometry": true,
+      "fullMatchAdmission": false
+    }
+  ],
+  "nativeCases": 12,
+  "nativeSignedActions": 59,
+  "nativeCompletedRounds": 1,
+  "webRooms": 2,
+  "webSignedActions": 6,
+  "oldColdReplayActions": 25,
+  "readOnlyBoundaryChecks": 11,
+  "newGameAtomsImplemented": 0,
+  "implementedCumulativeAtoms": 6,
+  "stukovVerifiedDefinitions": 9,
+  "stukovSourceDefinitions": 9,
+  "proofs": [
+    {
+      "id": "use",
+      "roomId": "wave4-corrode-use",
+      "directoryRef": "build/wave4-web/stukov-units/corrode-armour-4M7kfs/use",
+      "signedActions": 3,
+      "stateHash": "7239ed8433e4da37dc4ac82824986762ef476957fa24bea4122e335e219ac6ec",
+      "evidenceRef": "docs/development/wave4/evidence/corrode-armour-basic.public.json"
+    },
+    {
+      "id": "decline",
+      "roomId": "wave4-corrode-decline",
+      "directoryRef": "build/wave4-web/stukov-units/corrode-armour-4M7kfs/decline",
+      "signedActions": 3,
+      "stateHash": "6479319ddc51976b66e6c3490bef063a40ae20bdff5dace984124e6f95113eeb",
+      "evidenceRef": "docs/development/wave4/evidence/corrode-armour-basic.public.json"
+    },
+    {
+      "id": "medic-restores",
+      "roomId": "wave4-corrode-medic-restores",
+      "directoryRef": "build/wave4-web/stukov-units/corrode-armour-6th0AL/medic-restores",
+      "signedActions": 5,
+      "stateHash": "0ddc2c3294b58bd7ff7896f88488c8e82fe243dec9cf485fd5e4accddb9f6dc4",
+      "evidenceRef": "docs/development/wave4/evidence/corrode-armour-restoration.public.json"
+    },
+    {
+      "id": "next-rifle-armour",
+      "roomId": "wave4-corrode-next-rifle-armour",
+      "directoryRef": "build/wave4-web/stukov-units/corrode-armour-5pYn4s/next-rifle-armour",
+      "signedActions": 8,
+      "stateHash": "a5bfd95b6832820f18c753105f46b4aad495bfad58ca5a63a3584a07dc8753b8",
+      "evidenceRef": "docs/development/wave4/evidence/corrode-armour-successor.public.json"
+    },
+    {
+      "id": "shared-lunge",
+      "roomId": "wave4-corrode-shared-lunge",
+      "directoryRef": "build/wave4-web/stukov-units/corrode-armour-H3Gvek/shared-lunge",
+      "signedActions": 3,
+      "stateHash": "a040282a050366db745d515a61a93121b01c8327dae7b7c61c046be2e9f9d64a",
+      "evidenceRef": "docs/development/wave4/evidence/corrode-armour-lunge.public.json"
+    },
+    {
+      "id": "no-biomass",
+      "roomId": "wave4-corrode-no-biomass",
+      "directoryRef": "build/wave4-web/stukov-units/corrode-armour-fzWuEV/no-biomass",
+      "signedActions": 1,
+      "stateHash": "0c43b7d9ad4dce3985587f1f32e64d6df092105b5a3680817c6214db7c91ec67",
+      "evidenceRef": "docs/development/wave4/evidence/corrode-armour-controls.public.json"
+    },
+    {
+      "id": "legacy-lunge-without-corrode",
+      "roomId": "wave4-corrode-legacy-lunge-without-corrode",
+      "directoryRef": "build/wave4-web/stukov-units/corrode-armour-fzWuEV/legacy-lunge-without-corrode",
+      "signedActions": 4,
+      "stateHash": "a9f5a251e99a66d35f808b7c5a7256ba1da3831569105d4b3e0e35f52c47e182",
+      "evidenceRef": "docs/development/wave4/evidence/corrode-armour-controls.public.json"
+    },
+    {
+      "id": "mirror-stukov-attempt-0",
+      "roomId": "wave4-corrode-zero-0",
+      "directoryRef": "build/wave4-web/stukov-units/corrode-zero-XmwRmT/attempt-0",
+      "signedActions": 3,
+      "stateHash": "05454faff74fd35b51b4953ccd18ee7f9de4dcf151f68634079c33a640038b74",
+      "evidenceRef": "docs/development/wave4/evidence/corrode-armour-zero-damage.public.json"
+    },
+    {
+      "id": "mirror-stukov-attempt-1",
+      "roomId": "wave4-corrode-zero-1",
+      "directoryRef": "build/wave4-web/stukov-units/corrode-zero-XmwRmT/attempt-1",
+      "signedActions": 3,
+      "stateHash": "ad55acbf7821fc4e5a0853357fd2834ab65bd5fac049e535ac609de0c2a02fc1",
+      "evidenceRef": "docs/development/wave4/evidence/corrode-armour-zero-damage.public.json"
+    },
+    {
+      "id": "mirror-stukov-attempt-2",
+      "roomId": "wave4-corrode-zero-2",
+      "directoryRef": "build/wave4-web/stukov-units/corrode-zero-XmwRmT/attempt-2",
+      "signedActions": 3,
+      "stateHash": "48d86c10c790bf5cbd56c94bf2f6feff1c6593b4b961352c88dfa74001052738",
+      "evidenceRef": "docs/development/wave4/evidence/corrode-armour-zero-damage.public.json"
+    },
+    {
+      "id": "mirror-stukov-attempt-3",
+      "roomId": "wave4-corrode-zero-3",
+      "directoryRef": "build/wave4-web/stukov-units/corrode-zero-XmwRmT/attempt-3",
+      "signedActions": 3,
+      "stateHash": "a2bc1c1a9edb92345384a7c1b0238b6132a96d9267939e7899a183260026c0ce",
+      "evidenceRef": "docs/development/wave4/evidence/corrode-armour-zero-damage.public.json"
+    },
+    {
+      "id": "full-round",
+      "roomId": "wave4-corrode-round",
+      "directoryRef": "build/wave4-web/stukov-units/corrode-round-D8NZ3A",
+      "signedActions": 20,
+      "stateHash": "ff810601ff7a7b1d2053ddfc8974bcfb0e7965ae32f90cbf0c76ef247bf62693",
+      "evidenceRef": "docs/development/wave4/evidence/corrode-armour-round.public.json"
+    }
+  ],
+  "successors": {
+    "actualLaterArmourRoll": 5,
+    "restorationFinalArmour": 4,
+    "lungeJointWindow": true,
+    "zeroDamageTriggers": true,
+    "cleanupBefore": 5,
+    "cleanupAfter": 4
+  },
+  "historicalPendingFieldsSupersededBy": [
+    "docs/development/wave4/evidence/corrode-armour-basic.public.json",
+    "docs/development/wave4/evidence/corrode-armour-restoration.public.json",
+    "docs/development/wave4/evidence/corrode-armour-successor.public.json",
+    "docs/development/wave4/evidence/corrode-armour-lunge.public.json",
+    "docs/development/wave4/evidence/corrode-armour-controls.public.json",
+    "docs/development/wave4/evidence/corrode-armour-zero-damage.public.json",
+    "docs/development/wave4/evidence/corrode-armour-round.public.json",
+    "docs/development/wave4/evidence/corrode-armour-boundaries.public.json",
+    "docs/development/wave4/evidence/corrode-armour-compat.public.json",
+    "docs/development/wave4/evidence/corrode-armour-web.public.json",
+    "docs/development/wave4/evidence/corrode-armour-zero-damage.public.json"
+  ],
+  "sourceHeldDefinitions": 39,
+  "fullMatchAdmission": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

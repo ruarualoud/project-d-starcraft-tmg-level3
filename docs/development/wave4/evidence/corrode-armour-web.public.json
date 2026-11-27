@@ -1,0 +1,90 @@
+{
+  "schema": "starcraft_tmg_wave4_virus_web_verification_v1",
+  "status": "passed_scoped",
+  "runRef": "build/wave4-web/stukov-units/corrode-armour-web-v1",
+  "results": [
+    {
+      "kind": "use",
+      "definitionId": "unit:stukov/corrode-armor-assault-phase@1",
+      "sourceRoomId": "wave4-corrode-use",
+      "sourceStateHash": "62c060372e0d3b2ffba70b920088050e82b2089078fcded7fd4d647f2e1a2271",
+      "sourcePrefixReceipts": 1,
+      "trace": [
+        {
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:stukov/corrode-armor-assault-phase@1",
+          "sideKey": "player1",
+          "stateRevision": 1,
+          "stateHash": "7c56b4bf3299a5cfda1e5166b98de7063fe7df80bb74ce8e83da3a84bdea2d6a"
+        },
+        {
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null,
+          "sideKey": "player2",
+          "stateRevision": 2,
+          "stateHash": "464bfc5268627686b7b99897513c73927684ef8ae44e79e743ce0d30a6fb36a9"
+        }
+      ],
+      "signedActions": 2,
+      "twoSeatsVerified": true,
+      "explicitHumanConfirmation": true,
+      "previewReadOnly": true,
+      "replayMatchesCurrent": true,
+      "seatRecoveryReentryVerified": true,
+      "pageErrors": []
+    },
+    {
+      "kind": "medic-restores",
+      "definitionId": "unit:stukov/corrode-armor-assault-phase@1",
+      "sourceRoomId": "wave4-corrode-medic-restores",
+      "sourceStateHash": "c6015fe2407879e2ef6a49c0c8da218bed042f7fc98d72a10c85c2fad598ce75",
+      "sourcePrefixReceipts": 1,
+      "trace": [
+        {
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:stukov/corrode-armor-assault-phase@1",
+          "sideKey": "player1",
+          "stateRevision": 1,
+          "stateHash": "ea860e02ae1cbea249513d9bcc7354f62afab7b30ba3008032e69217cf7c2a4c"
+        },
+        {
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null,
+          "sideKey": "player1",
+          "stateRevision": 2,
+          "stateHash": "6d173d88436c8c56d0866eb2a2fa7f0410d3da364855e4ee0c0f34cf57fc0de6"
+        },
+        {
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:medic/restoration-any-phase@1",
+          "sideKey": "player2",
+          "stateRevision": 3,
+          "stateHash": "add745bd6ecf87bd7726ba020ab0848b19331f614f3edb35d1bc320965d36a1e"
+        },
+        {
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null,
+          "sideKey": "player2",
+          "stateRevision": 4,
+          "stateHash": "3ddd9d71e93c91ccf6c020764c80a5ec2e544dff53b239f07a32b2a0a845256e"
+        }
+      ],
+      "signedActions": 4,
+      "twoSeatsVerified": true,
+      "explicitHumanConfirmation": true,
+      "previewReadOnly": true,
+      "replayMatchesCurrent": true,
+      "seatRecoveryReentryVerified": true,
+      "pageErrors": []
+    }
+  ],
+  "signedActions": 6,
+  "conditionalTurretGeometryInRestorationCaseOnly": false,
+  "sourceHeldDefinitions": 39,
+  "engineeringEstimatedUnitGeometry": true,
+  "fullWave4LobbyBuilderAdmission": false,
+  "fullMatchAdmission": false,
+  "wave3PlayerRoomsTouched": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

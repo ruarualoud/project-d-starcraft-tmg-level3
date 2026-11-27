@@ -1,0 +1,134 @@
+{
+  "schema": "starcraft_tmg_wave4_corrode_boundaries_v1",
+  "status": "passed_scoped",
+  "checks": [
+    {
+      "id": "forged-status-modifier",
+      "rejected": true
+    },
+    {
+      "id": "forged-status-feature-hash",
+      "rejected": true
+    },
+    {
+      "id": "forged-status-friendly-source",
+      "rejected": true
+    },
+    {
+      "id": "forged-status-expiry",
+      "rejected": true
+    },
+    {
+      "id": "forged-status-round",
+      "rejected": true
+    },
+    {
+      "id": "forged-status-reaction-proof",
+      "rejected": true
+    },
+    {
+      "id": "same-source-does-not-stack",
+      "componentOnly": true,
+      "passed": true
+    },
+    {
+      "id": "existing-debuff-survives-caster-death",
+      "componentOnly": true,
+      "passed": true
+    },
+    {
+      "id": "resolve_current_product_end_of_round_effects",
+      "originalSignedPrefix": 18,
+      "armourThreshold": 5,
+      "prefixStateHash": "4ce67e890dc24e8df02b6926a2bd5c68557bbb6d4bd5285c770b6798bad99bda",
+      "newActions": 0
+    },
+    {
+      "id": "resolve_current_product_cleanup_refresh",
+      "originalSignedPrefix": 19,
+      "armourThreshold": 4,
+      "prefixStateHash": "8ec6d6a10162d27d00576bd27fe6cd60f7c764f7d8c4bc6f1856f1d48549d7ff",
+      "newActions": 0
+    },
+    {
+      "id": "actual-next-rifle-armour-roll",
+      "roomId": "wave4-corrode-next-rifle-armour",
+      "armourThreshold": 5,
+      "armourRolls": [
+        1,
+        5,
+        5,
+        2,
+        4,
+        6
+      ],
+      "newActions": 0
+    }
+  ],
+  "observations": [
+    {
+      "id": "use",
+      "roomId": "wave4-corrode-use",
+      "originalDamage": 1,
+      "corrodeUsed": true,
+      "signedActions": 3,
+      "stateHash": "7239ed8433e4da37dc4ac82824986762ef476957fa24bea4122e335e219ac6ec"
+    },
+    {
+      "id": "decline",
+      "roomId": "wave4-corrode-decline",
+      "originalDamage": 2,
+      "corrodeUsed": false,
+      "signedActions": 3,
+      "stateHash": "6479319ddc51976b66e6c3490bef063a40ae20bdff5dace984124e6f95113eeb"
+    },
+    {
+      "id": "medic-restores",
+      "roomId": "wave4-corrode-medic-restores",
+      "originalDamage": 2,
+      "corrodeUsed": true,
+      "signedActions": 5,
+      "stateHash": "0ddc2c3294b58bd7ff7896f88488c8e82fe243dec9cf485fd5e4accddb9f6dc4"
+    },
+    {
+      "id": "next-rifle-armour",
+      "roomId": "wave4-corrode-next-rifle-armour",
+      "originalDamage": 3,
+      "corrodeUsed": true,
+      "signedActions": 8,
+      "stateHash": "a5bfd95b6832820f18c753105f46b4aad495bfad58ca5a63a3584a07dc8753b8"
+    },
+    {
+      "id": "shared-lunge",
+      "roomId": "wave4-corrode-shared-lunge",
+      "originalDamage": 2,
+      "corrodeUsed": true,
+      "signedActions": 3,
+      "stateHash": "a040282a050366db745d515a61a93121b01c8327dae7b7c61c046be2e9f9d64a"
+    },
+    {
+      "id": "no-biomass",
+      "roomId": "wave4-corrode-no-biomass",
+      "originalDamage": 3,
+      "corrodeUsed": false,
+      "signedActions": 1,
+      "stateHash": "0c43b7d9ad4dce3985587f1f32e64d6df092105b5a3680817c6214db7c91ec67"
+    },
+    {
+      "id": "legacy-lunge-without-corrode",
+      "roomId": "wave4-corrode-legacy-lunge-without-corrode",
+      "originalDamage": 3,
+      "corrodeUsed": false,
+      "signedActions": 4,
+      "stateHash": "a9f5a251e99a66d35f808b7c5a7256ba1da3831569105d4b3e0e35f52c47e182"
+    }
+  ],
+  "nativeActionsAdded": 0,
+  "zeroDamageCorrodeObserved": false,
+  "newGameAtomsImplemented": 0,
+  "implementedCumulativeAtoms": 6,
+  "fullMatchAdmission": false,
+  "sourceHeldDefinitions": 39,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

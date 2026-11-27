@@ -1,4 +1,6 @@
 import { allowsOfficialInfestationReactionV1 } from '../rule-atoms/official-infestation-restrictions-v1.mjs';
+import {OFFICIAL_CORRODE_ARMOUR_ID,OFFICIAL_CORRODE_ARMOUR_REACTION_COMPONENTS_V1} from '../source-data/official-corrode-armour-source-v1.mjs';
+import {applyOfficialCorrodeArmourDebuffV1} from './official-characteristic-status-family-adapter-v1.mjs';
 import { allowsOfficialSpawnRoundSpecialAbilityV1 } from '../rule-atoms/official-spawn-round-ability-lock-v1.mjs';
 import { OFFICIAL_OCULAR_OVERWATCH_DEFINITION_ID } from '../rule-atoms/official-overwatch-attack-policy-v1.mjs';
 import { OFFICIAL_INFESTATION_TRANSFER_DEFINITION_ID, resolveOfficialInfestationTransferTargetsV1,
@@ -674,6 +676,7 @@ const LEGACY_REVIEWED_REACTION_COMPONENTS_V2 = Object.freeze({
 const REVIEWED_REACTION_COMPONENTS_V2 = Object.freeze({
   ...LEGACY_REVIEWED_REACTION_COMPONENTS_V2,
   ...OFFICIAL_DETONATION_REACTION_COMPONENTS_V1,
+  ...OFFICIAL_CORRODE_ARMOUR_REACTION_COMPONENTS_V1,
   ...Object.fromEntries(WAVE4_REACTION_REVISIONS.map(({ previousDefinitionId, definitionId, sourceText }) =>
     [definitionId, Object.freeze({ ...LEGACY_REVIEWED_REACTION_COMPONENTS_V2[previousDefinitionId], sourceText })])),
 });
@@ -861,6 +864,7 @@ const REACTION_RECIPIENT_ROLES = Object.freeze({
   refresh_after_friendly_supply_loss: "source_unit",
   infestation_transfer: "source_unit",
   before_casualty_detonation: "source_unit",
+  after_ranged_armour_debuff: "trigger_unit",
 });
 function reactionRecipient(state, window, route, instance) {
   const role = REACTION_RECIPIENT_ROLES[route.effectKind];
@@ -933,6 +937,14 @@ function routeEligible(state, window, route, instance) {
       || !Array.isArray(designation.sourceUnitIds) || !designation.sourceUnitIds.includes(source?.id)) return false;
     return activePiece(source) && activePiece(attacker)
       && !deriveOfficialEngagementGraphV2(state).engagedUnitIds.includes(source.id);
+  }
+  if(route.effectKind==='after_ranged_armour_debuff'){
+    const proof=window.context.corrodeRangedAttack;
+    return Boolean(proof&&proof.proofHash===hashStarcraftTmgContract(without(proof,['proofHash']))
+      &&proof.round===Number(state.round)&&proof.phase===state.phase&&proof.sourceFeatureHash===route.sourceFeatureHash
+      &&activePiece(source)&&activePiece(target)&&source.id===window.context.actorPieceId
+      &&source.id===proof.attackerPieceId&&source.sideKey!==target.sideKey&&target.id===proof.targetPieceId
+      &&state.rangedActionHistory?.some(h=>h.pieceId===source.id&&h.targetId===target.id&&h.resolutionHash===proof.attackResolutionHash));
   }
   if (window.context.rangedHitDebuffOwnerV1 === true && route.effectKind === 'ranged_declaration_keywords') return false;
   if (route.persistentRangedHitDebuff) {
@@ -1584,6 +1596,9 @@ function reactionEffect(route, state, window, action) {
     const facts=inspectOfficialDetonationFactsV1(state,source,route,window.context);
     if(window.context.beforeCasualtyReservations)effect.targetPieceId=source.id;
     Object.assign(effect,{automaticHits:facts.hits,damagePerHit:facts.damagePerHit,detonationFacts:facts});
+  } else if(route.effectKind==='after_ranged_armour_debuff'){
+    Object.assign(effect,{armourPenalty:route.armourPenalty,corrodeArmourDebuff:applyOfficialCorrodeArmourDebuffV1(state,route,source,target,
+      action.reactionPlan.planHash||hashStarcraftTmgContract(action))});
   } else if (route.effectKind === "evade_roll_modifier") {
     effect.evadeModifier = route.evadeModifier;
   } else if (route.effectKind === "followup_move_towards_attacker") {
