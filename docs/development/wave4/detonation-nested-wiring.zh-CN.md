@@ -39,6 +39,6 @@ Web 使用已签名的两层中断检查点：Marine 原生前缀 9 动作，Tro
 
 可复验入口：`verify-wave4-detonation-nested.mjs`、该脚本的 `--multi-target` 模式、`verify-wave4-detonation-settlements.mjs --multi-target`、`verify-wave4-detonation-allocation-only.mjs`、`verify-wave4-before-casualty-compat.mjs`。证据见同目录 `evidence/detonation-{nested-host,multi-target,settlement-audit,allocation-only,nested-web,v1-cold-compat}.public.json`。
 
-继续项：委托/Overwatch 与激活外时点；Disengage、Consume、Bio-Kill Switch 等直接移除；完整回合与其他后继。工程数据切换 releaseId 时，进口 Terran 转换政策仍绑定其原来源发布，应在后续新工程版本中重编建军组件后再验证，不能去掉来源核对。本批零伤亡对照改用合法 Queen/Hatchery 组合。
+继续项：委托/Overwatch 与激活外时点；Disengage、Consume 等直接移除及 Bio-Kill Switch 全场伤害后继；完整回合与其他后继。工程数据切换 releaseId 时，进口 Terran 转换政策仍绑定其原来源发布，应在后续新工程版本中重编建军组件后再验证，不能去掉来源核对。本批零伤亡对照改用合法 Queen/Hatchery 组合。
 
 39 条来源阻断仍隔离，所有估算底座仍仅工程值；付费模型、K3、AI 对局、复盘和生产发布保持暂停，模型调用 0。

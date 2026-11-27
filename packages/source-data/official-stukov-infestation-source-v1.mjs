@@ -3,6 +3,11 @@ export const OFFICIAL_ADMIRAL_ACTIVATION_EXCHANGE_ID='unit:stukov/admiral-of-the
 export const OFFICIAL_ADMIRAL_ACTIVATION_EXCHANGE_ATOM='rule-atom:wave4/infestation-activation-exchange@1';
 const spread='Target an Enemy Unit Within 8". The targeted Unit gains the INFESTATION Status. For the purposes of resolving Special Abilities, this effect is treated as a DEBUFF.';
 const definitions={
+ 'unit:stukov/bio-kill-switch-assault-phase@1':{recordKey:'army_units:stukov',name:'Bio-Kill Switch',activation:'active',phase:'assault',
+  activationText:'<Active>\n(0 Biomass)',
+  text:'Each Enemy Unit with the INFESTATION Status on the Battlefield suffers Damage (2). Immediately after this Special Ability is resolved, Remove the INFESTATION Status from Units that suffered Damage.',
+  spec:{effectKind:'infestation_damage_cleanup',actionKind:'active_ability',damageAmount:2,resourceType:'BM',resourceCost:0,
+   coverageKind:'all_infected_enemies_on_battlefield',removeInfestationAfterDamage:true,expiresAt:'immediate'}},
  'unit:stukov/commander-any-phase@1':{recordKey:'army_units:stukov',name:'Commander',activation:'passive',phase:'any',
   text:'Treat this Unit’s Supply characteristic as increased by 1 for Controlling and Contesting Mission Markers, completing objectives, and resolving Disengage checks.',
   spec:{effectKind:'commander_supply_bonus',actionKind:'query_modifier',supplyModifier:1,
@@ -27,6 +32,7 @@ export function compileOfficialStukovInfestationSpecV1(definition){
  const row=definitions[definition?.definitionId];if(!row)return null;
  if(definition.recordKey!==row.recordKey||definition.definitionName!==row.name||definition.sourceKind!=='unit_feature'
   ||definition.activationKind!==row.activation||definition.phase!==row.phase||definition.sourceText!==row.text
+  ||row.activationText!==undefined&&definition.activationText!==row.activationText
   ||Object.values(definition.costByComposition||{}).some(cost=>cost!==0))throw Error('STUKOV_INFESTATION_SOURCE_MISMATCH:'+definition.definitionId);
  return structuredClone(row.spec);
 }

@@ -1,0 +1,555 @@
+{
+  "schema": "starcraft_tmg_wave4_stukov_combat_v1",
+  "status": "passed_scoped",
+  "runRef": "build/wave4-web/stukov-units/stukov-combat-u370AB",
+  "results": [
+    {
+      "id": "corrosive-light",
+      "kind": "ranged",
+      "roomId": "wave4-stukov-corrosive-light",
+      "directoryRef": "build/wave4-web/stukov-units/stukov-combat-u370AB/corrosive-light",
+      "signedActions": 4,
+      "stateHash": "01a7e5f88f28197728395f0b6017faa88e2bab591e171cdc825f97d15f2fd0df",
+      "event": {
+        "type": "ranged_attack",
+        "sideKey": "player1",
+        "pieceId": "stukov",
+        "targetId": "infected",
+        "weaponName": "Corrosive Blast",
+        "sourceProfileHash": "148dbd39ca61e3205fd79f78e2dc43261a2984ff312002a5d1f8d40ba6a64a3e",
+        "batchProfileHash": "193514a1d1dee7fe2d77150d2c4eb660a56d68e3c65b278c595759f5002f5599",
+        "attackPlanHash": "1ee99f304bf785b1776a583ca17a9c024a967ed316c946668f0ecc5ba0c4cffa",
+        "attackResolutionHash": "e36dfea30402d645ab5a43586cae3fcdbf1b074a7c0b07ceff861c85978d38a9",
+        "casualtyDomainHash": "c595eab61c6324b63dd487a166ba34baa99e1c446ab4a99d8a3d6b33c2cd9a3c",
+        "casualtyResolutionHash": "e6134f9a70a31c5244af5cccd2c13c94f8cfe6a7a64f0a25e4ed18be00487090",
+        "eligibleAttackerModelIds": [
+          "stukov-model-1"
+        ],
+        "visibleTargetModelIds": [
+          "infected-model-1",
+          "infected-model-2",
+          "infected-model-3",
+          "infected-model-4",
+          "infected-model-5",
+          "infected-model-6"
+        ],
+        "chanceReveals": [
+          6,
+          3,
+          2,
+          2,
+          3,
+          2,
+          5
+        ],
+        "stages": {
+          "declaration": {
+            "profileKey": "army_units:stukov::assault::Corrosive Blast",
+            "profileHash": "193514a1d1dee7fe2d77150d2c4eb660a56d68e3c65b278c595759f5002f5599",
+            "distanceInches": 1.5,
+            "rangeBand": "normal"
+          },
+          "hit": {
+            "dice": 3,
+            "rolls": [
+              6,
+              3,
+              2
+            ],
+            "threshold": null,
+            "thresholdByDieIndex": [
+              3,
+              3,
+              3
+            ],
+            "successfulHitDieIndices": [
+              0,
+              1
+            ],
+            "hits": 2,
+            "failedHitDieIndices": [
+              2
+            ],
+            "convertedFailedHitDieIndices": []
+          },
+          "effects": {
+            "appliedEffectAtomIds": [
+              "attack-effect:surge-armour-bypass-v1"
+            ],
+            "surgeRolls": [
+              2
+            ],
+            "surgeResults": [
+              1
+            ],
+            "surgeMatched": true,
+            "surgeCapacity": 1,
+            "criticalHitCapacity": 0,
+            "bypassedArmourHits": 1,
+            "antiEvadeApplied": false,
+            "antiEvadeModifier": 0,
+            "burstFireApplied": false,
+            "lockedInApplied": false,
+            "attackPoolRemoval": {
+              "guardianShieldDice": 0,
+              "pointDefenseDice": 0,
+              "pointDefenseSourcePieceIds": [],
+              "pointDefenseRemovedDieIds": [],
+              "pointDefenseAvailableSourcePieceIds": [],
+              "pointDefenseChoiceCapacity": 0,
+              "controllerChoiceAuthority": "defender_explicit_die_selection"
+            },
+            "printedRateOfAttack": 3,
+            "effectiveRateOfAttack": 3,
+            "pierceMatched": false,
+            "pierceDamage": null,
+            "precisionApplied": false,
+            "precisionValue": 0
+          },
+          "armour": {
+            "dice": 1,
+            "rolls": [
+              3
+            ],
+            "unusedPreallocatedRolls": [
+              2,
+              5
+            ],
+            "threshold": 4,
+            "saves": 0
+          },
+          "evade": {
+            "eligible": false,
+            "eligibilityReason": "none",
+            "dice": 0,
+            "rolls": [],
+            "unusedPreallocatedRolls": [],
+            "effectiveThreshold": 6,
+            "damagePoolBeforeEvade": 2,
+            "saves": 0,
+            "confirmedDamageDice": 2
+          },
+          "damage": {
+            "damagePoolDice": 2,
+            "damagePerDie": 1,
+            "totalDamage": 2
+          }
+        },
+        "casualtyModelIds": [
+          "infected-model-1",
+          "infected-model-2",
+          "infected-model-3",
+          "infected-model-4",
+          "infected-model-5",
+          "infected-model-6"
+        ],
+        "postDamageMarker": 0,
+        "targetDestroyed": true,
+        "shieldedBefore": false,
+        "shieldedAfter": false,
+        "pointDefenseSourcePieceIds": [],
+        "consumedCharacteristicFirstWeaponEffects": [],
+        "consumedBattlefieldAssetFirstWeaponEffects": [],
+        "consumedProtossFirstWeaponEffects": [],
+        "currentSupplyBefore": 2,
+        "currentSupplyAfter": 0,
+        "evadeEligibilityReason": "none",
+        "stageOrder": [
+          "declaration",
+          "hit",
+          "effects",
+          "armour",
+          "evade",
+          "damage"
+        ],
+        "trainingTruth": false,
+        "sequenceHash": "243a662bd9b532397351b549bc69df0212a56f86d3e6059434229b43c20ce0a6",
+        "sequenceContinues": false,
+        "remainingProfileKeys": []
+      },
+      "trace": [
+        {
+          "revision": 2,
+          "actionType": "ranged_attack"
+        },
+        {
+          "revision": 3,
+          "actionType": "pass_reaction_family_window"
+        },
+        {
+          "revision": 4,
+          "actionType": "pass_reaction_family_window"
+        }
+      ],
+      "coldReplay": true,
+      "idempotencyVerified": true
+    },
+    {
+      "id": "corrosive-armoured",
+      "kind": "ranged",
+      "targetKey": "goliath",
+      "roomId": "wave4-stukov-corrosive-armoured",
+      "directoryRef": "build/wave4-web/stukov-units/stukov-combat-u370AB/corrosive-armoured",
+      "signedActions": 1,
+      "stateHash": "776fe0f7c4ad5c1e84fbfdb57ccd030ff01fb4e90c45f57f22c93f51cf6425b1",
+      "event": {
+        "type": "ranged_attack",
+        "sideKey": "player1",
+        "pieceId": "stukov",
+        "targetId": "infected",
+        "weaponName": "Corrosive Blast",
+        "sourceProfileHash": "148dbd39ca61e3205fd79f78e2dc43261a2984ff312002a5d1f8d40ba6a64a3e",
+        "batchProfileHash": "193514a1d1dee7fe2d77150d2c4eb660a56d68e3c65b278c595759f5002f5599",
+        "attackPlanHash": "e569c6217d9f02877832d101c86bb9eb8ee802470b9524715a1e838f0967c12f",
+        "attackResolutionHash": "01ce8ad8e218313bbcb25fae42d05feed03b73a9fbc05bae22ffe85d716730da",
+        "casualtyDomainHash": "9021efa91b49add7c97cce7672f606f21e992403a2c15a01b6291c132e13f314",
+        "casualtyResolutionHash": "85062cea5ce728971af54afada55d9e2707ea838b1a8009e0287ef4ce6845a75",
+        "eligibleAttackerModelIds": [
+          "stukov-model-1"
+        ],
+        "visibleTargetModelIds": [
+          "infected-model-1"
+        ],
+        "chanceReveals": [
+          2,
+          5,
+          6,
+          6,
+          6,
+          4,
+          3
+        ],
+        "stages": {
+          "declaration": {
+            "profileKey": "army_units:stukov::assault::Corrosive Blast",
+            "profileHash": "193514a1d1dee7fe2d77150d2c4eb660a56d68e3c65b278c595759f5002f5599",
+            "distanceInches": 1.5,
+            "rangeBand": "normal"
+          },
+          "hit": {
+            "dice": 3,
+            "rolls": [
+              2,
+              5,
+              6
+            ],
+            "threshold": null,
+            "thresholdByDieIndex": [
+              3,
+              3,
+              3
+            ],
+            "successfulHitDieIndices": [
+              1,
+              2
+            ],
+            "hits": 2,
+            "failedHitDieIndices": [
+              0
+            ],
+            "convertedFailedHitDieIndices": []
+          },
+          "effects": {
+            "appliedEffectAtomIds": [
+              "attack-effect:surge-armour-bypass-v1"
+            ],
+            "surgeRolls": [
+              6
+            ],
+            "surgeResults": [
+              3
+            ],
+            "surgeMatched": true,
+            "surgeCapacity": 3,
+            "criticalHitCapacity": 0,
+            "bypassedArmourHits": 2,
+            "antiEvadeApplied": false,
+            "antiEvadeModifier": 0,
+            "burstFireApplied": false,
+            "lockedInApplied": false,
+            "attackPoolRemoval": {
+              "guardianShieldDice": 0,
+              "pointDefenseDice": 0,
+              "pointDefenseSourcePieceIds": [],
+              "pointDefenseRemovedDieIds": [],
+              "pointDefenseAvailableSourcePieceIds": [],
+              "pointDefenseChoiceCapacity": 0,
+              "controllerChoiceAuthority": "defender_explicit_die_selection"
+            },
+            "printedRateOfAttack": 3,
+            "effectiveRateOfAttack": 3,
+            "pierceMatched": false,
+            "pierceDamage": null,
+            "precisionApplied": false,
+            "precisionValue": 0
+          },
+          "armour": {
+            "dice": 0,
+            "rolls": [],
+            "unusedPreallocatedRolls": [
+              6,
+              4,
+              3
+            ],
+            "threshold": 4,
+            "saves": 0
+          },
+          "evade": {
+            "eligible": false,
+            "eligibilityReason": "none",
+            "dice": 0,
+            "rolls": [],
+            "unusedPreallocatedRolls": [],
+            "effectiveThreshold": null,
+            "damagePoolBeforeEvade": 2,
+            "saves": 0,
+            "confirmedDamageDice": 2
+          },
+          "damage": {
+            "damagePoolDice": 2,
+            "damagePerDie": 1,
+            "totalDamage": 2
+          }
+        },
+        "casualtyModelIds": [
+          "infected-model-1"
+        ],
+        "postDamageMarker": 0,
+        "targetDestroyed": true,
+        "shieldedBefore": false,
+        "shieldedAfter": false,
+        "pointDefenseSourcePieceIds": [],
+        "consumedCharacteristicFirstWeaponEffects": [],
+        "consumedBattlefieldAssetFirstWeaponEffects": [],
+        "consumedProtossFirstWeaponEffects": [],
+        "currentSupplyBefore": 2,
+        "currentSupplyAfter": 0,
+        "evadeEligibilityReason": "none",
+        "stageOrder": [
+          "declaration",
+          "hit",
+          "effects",
+          "armour",
+          "evade",
+          "damage"
+        ],
+        "trainingTruth": false,
+        "sequenceHash": "1ec1fca24f03023f4378000cfcbbcc451bb13caafde505ce1e83b5e751eb2445",
+        "sequenceContinues": false,
+        "remainingProfileKeys": []
+      },
+      "trace": [],
+      "coldReplay": true,
+      "idempotencyVerified": true
+    },
+    {
+      "id": "infested-arm",
+      "kind": "melee",
+      "phase": "combat",
+      "targetKey": "goliath",
+      "roomId": "wave4-stukov-infested-arm",
+      "directoryRef": "build/wave4-web/stukov-units/stukov-combat-u370AB/infested-arm",
+      "signedActions": 3,
+      "stateHash": "a6f2cf04ea655833479ae56f1dd38ade504a169781dba95f1361c1f939bc3d63",
+      "event": {
+        "type": "close_combat_attack",
+        "sideKey": "player1",
+        "pieceId": "stukov",
+        "targetId": "infected",
+        "weaponName": "Infested Arm",
+        "resolutionHash": "3abcfaacfe279cc18d48b576695c9cda4ca42d14cfc48415398995ea98632e88",
+        "casualtyDomainHash": "848d42290e6f0c235b874552d31ed9021b976f883096f4de74465e03b15bfc2b",
+        "casualtyResolutionHash": "ebb1329a515ddc6655c3a5a3b921e386a4e050ced6da0d911168d82df6fb28a1",
+        "stages": {
+          "schemaVersion": "starcraft_tmg_selected_roster_fight_target_resolution_v1",
+          "targetUnitId": "infected",
+          "hitRolls": [
+            5,
+            1,
+            6
+          ],
+          "hitThreshold": 3,
+          "hits": 2,
+          "activePrecisionValue": 0,
+          "failedHitDieIndices": [
+            1
+          ],
+          "convertedFailedHitDieIndices": [],
+          "hitRollModifier": 0,
+          "surgeRolls": [
+            3
+          ],
+          "surgeResult": 2,
+          "criticalHitResolutionHash": null,
+          "bypassedArmourDice": 2,
+          "armourDice": 0,
+          "armourRolls": [],
+          "unusedPreallocatedArmourRolls": [
+            4,
+            5,
+            6
+          ],
+          "armourThreshold": 4,
+          "armourSaves": 0,
+          "originalArmourSaves": 0,
+          "toughValue": 0,
+          "failedArmourDieIndices": [],
+          "convertedFailedArmourDieIndices": [],
+          "evadeDice": 0,
+          "evadeRolls": [],
+          "evadeEligible": false,
+          "evadeModifier": 0,
+          "evadeThreshold": null,
+          "evadeSaves": 0,
+          "damagePerDie": 2,
+          "totalDamage": 4,
+          "rulesTruth": "official_selected_roster_fight_pool_resolution",
+          "trainingTruth": false,
+          "resolutionHash": "3abcfaacfe279cc18d48b576695c9cda4ca42d14cfc48415398995ea98632e88"
+        },
+        "casualtyModelIds": [
+          "infected-model-1"
+        ],
+        "postDamageMarker": 0,
+        "currentSupplyBefore": 2,
+        "currentSupplyAfter": 0,
+        "targetDestroyed": true,
+        "enemyReactionAllowed": true,
+        "trainingTruth": false
+      },
+      "trace": [
+        {
+          "revision": 2,
+          "actionType": "roll_melee_attack_armour_pool"
+        },
+        {
+          "revision": 3,
+          "actionType": "resolve_melee_attack_evade_pool"
+        }
+      ],
+      "coldReplay": true,
+      "idempotencyVerified": true
+    },
+    {
+      "id": "devastating-charge",
+      "kind": "impact",
+      "charge": true,
+      "roomId": "wave4-stukov-devastating-charge",
+      "directoryRef": "build/wave4-web/stukov-units/stukov-combat-u370AB/devastating-charge",
+      "signedActions": 8,
+      "stateHash": "b7f5be67f024c9cee6aecee0e9ff27dbf8ba0608b70bb2cf5ad6ab0f8750493a",
+      "event": {
+        "type": "impact_damage",
+        "sideKey": "player1",
+        "pieceId": "stukov",
+        "targetId": "infected",
+        "weaponName": "IMPACT",
+        "resolutionHash": "1d9eb488cc6b24d60d8fae01e4919750f6d395733f4cfd5adf29b1a5a6a7e74e",
+        "casualtyDomainHash": "36a908da4cf90fc7708f70ae3934b22fc7aa8d937eb5c7f655f935c5b421eee5",
+        "casualtyResolutionHash": "3d582afb0e15e402cd675dc3e7e20a26ea63e2046a5b6fa9e6c38ffabb066b89",
+        "stages": {
+          "schemaVersion": "starcraft_tmg_selected_roster_impact_target_resolution_v1",
+          "targetUnitId": "infected",
+          "hitRolls": [
+            6,
+            2,
+            5,
+            4,
+            2,
+            4
+          ],
+          "hitThreshold": 4,
+          "hits": 4,
+          "activePrecisionValue": 0,
+          "failedHitDieIndices": [
+            1,
+            4
+          ],
+          "convertedFailedHitDieIndices": [],
+          "hitRollModifier": 0,
+          "surgeRolls": [],
+          "surgeResult": 0,
+          "criticalHitResolutionHash": null,
+          "bypassedArmourDice": 0,
+          "armourDice": 4,
+          "armourRolls": [
+            1,
+            1,
+            2,
+            3
+          ],
+          "unusedPreallocatedArmourRolls": [
+            5,
+            2
+          ],
+          "armourThreshold": 4,
+          "armourSaves": 0,
+          "originalArmourSaves": 0,
+          "toughValue": 0,
+          "failedArmourDieIndices": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "convertedFailedArmourDieIndices": [],
+          "evadeDice": 0,
+          "evadeRolls": [],
+          "evadeEligible": false,
+          "evadeModifier": 0,
+          "evadeThreshold": 6,
+          "evadeSaves": 0,
+          "damagePerDie": 1,
+          "totalDamage": 4,
+          "rulesTruth": "official_selected_roster_impact_pool_resolution",
+          "trainingTruth": false,
+          "resolutionHash": "1d9eb488cc6b24d60d8fae01e4919750f6d395733f4cfd5adf29b1a5a6a7e74e"
+        },
+        "casualtyModelIds": [
+          "infected-model-2",
+          "infected-model-3",
+          "infected-model-5",
+          "infected-model-6",
+          "infected-model-4",
+          "infected-model-1"
+        ],
+        "postDamageMarker": 0,
+        "currentSupplyBefore": 2,
+        "currentSupplyAfter": 0,
+        "targetDestroyed": true,
+        "enemyReactionAllowed": true,
+        "trainingTruth": false
+      },
+      "trace": [
+        {
+          "revision": 4,
+          "actionType": "roll_melee_attack_armour_pool"
+        },
+        {
+          "revision": 5,
+          "actionType": "resolve_melee_attack_evade_pool"
+        },
+        {
+          "revision": 6,
+          "actionType": "resolve_impact"
+        },
+        {
+          "revision": 7,
+          "actionType": "pass_reaction_family_window"
+        },
+        {
+          "revision": 8,
+          "actionType": "pass_reaction_family_window"
+        }
+      ],
+      "coldReplay": true,
+      "idempotencyVerified": true
+    }
+  ],
+  "newGameAtomsImplemented": 0,
+  "implementedCumulativeAtoms": 6,
+  "fullMatchAdmission": false,
+  "sourceHeldDefinitions": 39,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

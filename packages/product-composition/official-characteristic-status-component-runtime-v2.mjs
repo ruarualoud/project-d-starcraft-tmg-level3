@@ -1,4 +1,5 @@
 import {hasOfficialRepeatedActivationIdentityPolicyV1} from '../rule-atoms/official-repeated-activation-identity-v1.mjs';
+import {createOfficialInfestationDamageCleanupV1} from './official-infestation-damage-cleanup-v1.mjs';
 import {createOfficialPlaguedMunitionsRuntimeV1} from './official-plagued-munitions-runtime-v1.mjs';
 import {createOfficialBeforeCasualtyRuntimeV1} from './official-before-casualty-runtime-v1.mjs';
 import {hasOfficialBeforeCasualtyBatchPolicyV1,hasOfficialExtendedBeforeCasualtyPolicyV1} from '../rule-atoms/official-before-casualty-batch-v1.mjs';
@@ -714,6 +715,12 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
       || includeHits || includeArmourOrdinals
       || spatialState?.officialBattlefieldAssetFamilySourceBundle?.schema === 'starcraft_tmg_official_battlefield_asset_family_source_bundle_v2' });
   const characteristicRoutes = bundle?.routes || [];
+  const infestationDamage=characteristicRoutes.find(r=>r.effectKind==='infestation_damage_cleanup');
+  if(infestationDamage&&!includeHits)throw Error('INFESTATION_DAMAGE_HITS_CONSUMER_REQUIRED');
+  const infestationDamageCleanup=infestationDamage?createOfficialInfestationDamageCleanupV1({sourceBundle:bundle,
+    hasUnsettled:state=>Boolean(state.pendingOfficialAutomaticHits||state.pendingOfficialHitsPoolChoice||state.pendingOfficialReactionWindow
+      ||state.officialBeforeCasualtyContinuations?.length||universalCarrier?.pending(state)||infestationTransfer?.pending(state)
+      ||friendlySupplyLossReaction?.pending(state)||plaguedMunitions?.pending(state)||hiddenLossReactions?.pending(state))}):null;
   const beforeCasualty=hasOfficialBeforeCasualtyBatchPolicyV1(spatialState)
     ?createOfficialBeforeCasualtyRuntimeV1({reactionBundle,policy:spatialState.officialBeforeCasualtyBatchPolicy}):null;
   if(beforeCasualty&&(!includeRanged||!includeHits||!bundle))throw Error('BEFORE_CASUALTY_NATIVE_ATTACK_AND_HITS_REQUIRED');
@@ -1545,7 +1552,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
     eligibility: khassarEligibility, state: spatialState, includeRun: includeKhassarRun || includeKhassarCharge || includeKhassarCombatExecution,
     enumerateNative, instantiateNative: instantiate, applyNative: apply,
   }) : null;
-  const version = hasOfficialExtendedBeforeCasualtyPolicyV1(spatialState) ? '3.228.0' : beforeCasualty ? '3.227.0' : plaguedMunitions ? '3.226.0' : repeatedActivationIdentity ? '3.225.0' : infantryPrecision ? '3.224.0' : stukovInfestation ? '3.223.0' : universalCarrier ? '3.222.0' : includeReleaseMoundAssaultOrder ? '3.221.0' : includeBilePhysicalPlacement && bile ? '3.220.0' : psionicRoundEnd?.scheduledEffects ? '3.219.0' : includeReleaseBileAssaultOrder ? '3.218.0' : releaseZergTargets ? '3.217.0' : includePsionicStormAssaultSameName ? '3.216.0'
+  const version = infestationDamage ? '3.229.0' : hasOfficialExtendedBeforeCasualtyPolicyV1(spatialState) ? '3.228.0' : beforeCasualty ? '3.227.0' : plaguedMunitions ? '3.226.0' : repeatedActivationIdentity ? '3.225.0' : infantryPrecision ? '3.224.0' : stukovInfestation ? '3.223.0' : universalCarrier ? '3.222.0' : includeReleaseMoundAssaultOrder ? '3.221.0' : includeBilePhysicalPlacement && bile ? '3.220.0' : psionicRoundEnd?.scheduledEffects ? '3.219.0' : includeReleaseBileAssaultOrder ? '3.218.0' : releaseZergTargets ? '3.217.0' : includePsionicStormAssaultSameName ? '3.216.0'
     : includePsionicStormTokenCleanup ? '3.215.0'
     : includePsionicStormNamedOverlapChoices ? '3.214.0'
     : stormCast ? '3.213.0'
@@ -1784,6 +1791,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
       forceWallScope: forceWallTraversal ? 'pair_placement_swept_crossing_and_cleanup' : 'pair_placement_only',
       ...(forceWallTraversal ? { forceWallTraversalPolicyHash: forceWallTraversal.policyHash } : {}) } : {}),
     ...(telekineticPush ? { telekineticPushSourceHash: telekineticPush.routeHash } : {}),
+    ...(infestationDamageCleanup?{infestationDamageCleanup:infestationDamageCleanup.descriptor}:{}),
     ...(psiLightning ? { psiLightningSourceHash: psiLightning.routeHash, psiLightningDirectDamage: true } : {}),
     ...(executorsWill ? { executorsWill: executorsWill.descriptor } : {}),
     ...(khalasGift ? { khalasGiftSourceRouteHash: khalasGift.routeHash } : {}),
@@ -2962,10 +2970,11 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
       : binding.owner.apply(state, action.sourceAction, options);
   }
   function apply(state,action,options) {
-    if(!beforeCasualty)return applyBase(state,action,options);
+    if(!beforeCasualty){const result=applyBase(state,action,options);return infestationDamageCleanup?infestationDamageCleanup.afterTransition(result):result;}
     const pending=beforeCasualty.pending(state);
     const result=pending?.stage==='reaction'?beforeCasualty.afterReaction(applySource(state,action,options)):applyBase(state,action,options);
-    return resumeBeforeCasualtyIfReady(beforeCasualty.bindRootAction(result,action),options);
+    const resumed=resumeBeforeCasualtyIfReady(beforeCasualty.bindRootAction(result,action),options);
+    return infestationDamageCleanup?infestationDamageCleanup.afterTransition(resumed):resumed;
   }
   function resumeBeforeCasualtyIfReady(result,options){
     const frame=beforeCasualty.pending(result.state);
@@ -2980,7 +2989,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
       :resumed.frame.hostKind==='automatic_hits'?hits.resumeBeforeCasualty({...resumed,options})
       :(()=>{throw Error('BEFORE_CASUALTY_NATIVE_HOST_NOT_ADMITTED');})();
     const native=completeNativeOutcome(resumed.before,raw,resumed.frame.rootAction,options,
-      {attack:khassarAttackContinuation(resumed.before),chargeParent:khassarCharge?.pending(resumed.before)});
+      {attack:khassarAttackContinuation(resumed.before),chargeParent:khassarCharge?.pending(resumed.before),resumeSealedDamage:true});
     const completed=completeCompositionTail(resumed.before,native,resumed.frame.rootAction);
     const merged={...result,state:completed.state,events:[...(result.events||[]),...completed.events]};
     return hasOfficialExtendedBeforeCasualtyPolicyV1(merged.state)?resumeBeforeCasualtyIfReady(merged,options):merged;
@@ -3029,11 +3038,12 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
     const outcome = applySource(state, action, options);
     return completeNativeOutcome(state,outcome,action,options,{attack,chargeParent});
   }
-  function completeNativeOutcome(state,outcome,action,options,{attack=null,chargeParent=null}={}){
+  function completeNativeOutcome(state,outcome,action,options,{attack=null,chargeParent=null,resumeSealedDamage=false}={}){
     const native = afterChargeRoll ? openOfficialChargeRollReactionV1(outcome, reactionAdapter) : outcome;
     const applied = ancestralWisdom ? ancestralWisdom.finishAuthorizedCast(state, native) : native;
-    const lightning = psiLightning && action.sourceRuntimeKind === 'ability'
-      && action.sourceAction?.definitionId === psiLightning.definitionId
+    const lightning = !resumeSealedDamage && action.sourceRuntimeKind === 'ability'
+      && [psiLightning?.definitionId,infestationDamage?.definitionId].filter(Boolean).includes(action.sourceAction?.definitionId)
+      && applied.state.pendingOfficialAutomaticHits?.stage==='ready'
       ? hits.resolveDirectDamage(applied.state, action.sourceAction, options) : null;
     const resolved = lightning ? { ...applied, state: lightning.state, events: [...applied.events, ...lightning.events] } : applied;
     const withDebuff = damageHitDebuff ? consumeOfficialDamageWeaponHitDebuffsV1(bundle, resolved) : resolved;
@@ -3463,6 +3473,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
     if (friendlySupplyLossReaction?.pending(state)) throw Error('FRIENDLY_SUPPLY_LOSS_REACTION_CHOICE_REQUIRED');
     if (infestationTransfer?.pending(state)) throw Error('INFESTATION_TRANSFER_REACTION_CHOICE_REQUIRED');
     if (universalCarrier?.pending(state)) throw Error('UNIVERSAL_CARRIER_CHOICE_REQUIRED');
+    if (infestationDamageCleanup?.pending(state))throw Error('INFESTATION_DAMAGE_CLEANUP_REQUIRED');
     if (beforeCasualty?.pending(state)) throw Error('BEFORE_CASUALTY_CONTINUATION_REQUIRED');
     if (plaguedMunitions?.pending(state)) throw Error('PLAGUED_MUNITIONS_REACTION_CONTINUATION_REQUIRED');
     if (ancestralWisdom?.pending(state)) throw Error('ANCESTRAL_WISDOM_PAYMENT_CONTINUATION_REQUIRED');

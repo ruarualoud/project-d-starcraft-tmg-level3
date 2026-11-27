@@ -1,0 +1,36 @@
+{
+  "schema": "starcraft_tmg_wave4_bio_kill_switch_v1",
+  "status": "passed_scoped",
+  "runRef": "build/wave4-web/stukov-units/bio-kill-switch-QPLGzb",
+  "results": [
+    {
+      "id": "transfusion-prevents-damage",
+      "transfusion": true,
+      "roomId": "wave4-bio-kill-switch-transfusion-prevents-damage",
+      "directoryRef": "build/wave4-web/stukov-units/bio-kill-switch-QPLGzb/transfusion-prevents-damage",
+      "signedActions": 3,
+      "stateHash": "a38327d639fa912cbe94b370234847445386370114b654fbb3122a21464e4901",
+      "casterDestroyed": false,
+      "trace": [
+        {
+          "revision": 2,
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null
+        },
+        {
+          "revision": 3,
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:queen/transfusion-any-phase@1"
+        }
+      ],
+      "coldReplay": true,
+      "idempotencyVerified": true
+    }
+  ],
+  "newGameAtomsImplemented": 0,
+  "implementedCumulativeAtoms": 6,
+  "fullMatchAdmission": false,
+  "sourceHeldDefinitions": 39,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

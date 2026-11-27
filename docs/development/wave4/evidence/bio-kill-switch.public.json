@@ -1,0 +1,91 @@
+{
+  "schema": "starcraft_tmg_wave4_bio_kill_switch_v1",
+  "status": "passed_scoped",
+  "runRef": "build/wave4-web/stukov-units/bio-kill-switch-24RKq1",
+  "results": [
+    {
+      "id": "empty",
+      "empty": true,
+      "roomId": "wave4-bio-kill-switch-empty",
+      "directoryRef": "build/wave4-web/stukov-units/bio-kill-switch-24RKq1/empty",
+      "signedActions": 1,
+      "stateHash": "33be15cc5f0314b43779472d79ec505fa1d1508eed2f7bb2bc655a8033d20e4c",
+      "casterDestroyed": false,
+      "trace": [],
+      "coldReplay": true,
+      "idempotencyVerified": true
+    },
+    {
+      "id": "decline",
+      "use": false,
+      "roomId": "wave4-bio-kill-switch-decline",
+      "directoryRef": "build/wave4-web/stukov-units/bio-kill-switch-24RKq1/decline",
+      "signedActions": 4,
+      "stateHash": "e74d06531072ef158730a566af0c0ea0cd2d36a32bc28aa5e049ea9ca14312f2",
+      "casterDestroyed": false,
+      "trace": [
+        {
+          "revision": 2,
+          "actionType": "choose_direct_ability_damage_casualties",
+          "definitionId": null
+        },
+        {
+          "revision": 3,
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null
+        },
+        {
+          "revision": 4,
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null
+        }
+      ],
+      "coldReplay": true,
+      "idempotencyVerified": true
+    },
+    {
+      "id": "counter-detonation",
+      "use": true,
+      "roomId": "wave4-bio-kill-switch-counter-detonation",
+      "directoryRef": "build/wave4-web/stukov-units/bio-kill-switch-24RKq1/counter-detonation",
+      "signedActions": 6,
+      "stateHash": "054ad37c91e821c1c52b74367a67e72fde1391079c28523bb38d1f8e2923eb28",
+      "casterDestroyed": true,
+      "trace": [
+        {
+          "revision": 2,
+          "actionType": "choose_direct_ability_damage_casualties",
+          "definitionId": null
+        },
+        {
+          "revision": 3,
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null
+        },
+        {
+          "revision": 4,
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:infested_marine/detonation-any-phase@1"
+        },
+        {
+          "revision": 5,
+          "actionType": "roll_automatic_hits_armour_pool",
+          "definitionId": null
+        },
+        {
+          "revision": 6,
+          "actionType": "resolve_automatic_hits_evade_pool",
+          "definitionId": null
+        }
+      ],
+      "coldReplay": true,
+      "idempotencyVerified": true
+    }
+  ],
+  "newGameAtomsImplemented": 0,
+  "implementedCumulativeAtoms": 6,
+  "fullMatchAdmission": false,
+  "sourceHeldDefinitions": 39,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

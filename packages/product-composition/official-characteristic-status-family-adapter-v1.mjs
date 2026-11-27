@@ -1413,6 +1413,9 @@ function routeAvailable(state, route, instance, actor, authorizeSeekerCast) {
   }
   const lightningCoverage = route.effectKind === 'force_wall_lightning'
     ? inspectOfficialPsiLightningCoverageV1(state, route, actor) : null;
+  const infestationCoverage=route.effectKind==='infestation_damage_cleanup'?state.pieces
+    .filter(target=>target.sideKey!==actor.sideKey&&target.isOnField===true&&activePiece(target)&&hasStatus(target,'infestation'))
+    .map(target=>({unitId:target.id})).sort((a,b)=>a.unitId.localeCompare(b.unitId)):null;
   if (lightningCoverage && !lightningCoverage.length) fail('PSI_LIGHTNING_NO_AFFECTED_UNITS');
   let modelComparison = null;
   if (route.effectKind === 'scourge_queen') {
@@ -1446,6 +1449,7 @@ function routeAvailable(state, route, instance, actor, authorizeSeekerCast) {
     resourceCostsByChoice: { default: cost },
     ...(modelComparison ? { modelComparison } : {}),
     ...(lightningCoverage ? { lightningCoverage } : {}),
+    ...(infestationCoverage ? { infestationCoverage } : {}),
   })).filter(choice => choice.payments.length > 0);
   if (available.length === 0) fail("CHARACTERISTIC_STATUS_PAYMENT_UNAVAILABLE");
   return available;
@@ -1563,6 +1567,9 @@ function domainFor(state, route, instance, actor, available) {
       ...(available.lightningCoverage ? { psiLightning: { rangeMilliInches: route.rangeMilliInches,
         damagePerAffectedUnit: route.damageAmount, affectedUnits: clone(available.lightningCoverage),
         requiresAttackRolls: false, additiveAcrossWalls: false } } : {}),
+      ...(available.infestationCoverage?{infestationDamage:{affectedUnits:clone(available.infestationCoverage),
+        damagePerAffectedUnit:route.damageAmount,noTargetSelection:true,lineOfSightRequired:false,rangeLimited:false,
+        removeInfestationAfterAbility:true}}:{}),
       strategicImmediateValue: route.effectKind === "fixed_heal" ? {
         kind: "heal",
         targetPieceId: actor.id,
@@ -1750,6 +1757,7 @@ function instantiate(bundle, state, domain, parameters = {}, authorizeSeekerCast
     ...(domain.constraints.resourceCostsByChoice.default.corvidReactorDefinitionId ? { useCorvidReactor: true } : {}),
     ...(automaticHits ? { automaticHits } : {}),
     ...(domain.constraints.psiLightning ? { lightningCoverage: clone(domain.constraints.psiLightning.affectedUnits) } : {}),
+    ...(domain.constraints.infestationDamage?{infestationCoverage:clone(domain.constraints.infestationDamage.affectedUnits)}:{}),
     ...(domain.constraints.modelComparison ? { modelComparison: clone(domain.constraints.modelComparison) } : {}),
     sourceRouteHash: route.routeHash,
     rulesTruth: "official_current_product_characteristic_status_ability_plan",
@@ -1960,7 +1968,20 @@ function applyEffect(state, route, actor, action, events) {
   const targetId = action.characteristicStatusPlan.canonicalParameters.targetUnitId;
   const target = targetId ? state.pieces.find((entry) => entry.id === targetId) : actor;
   if (!target) fail("CHARACTERISTIC_STATUS_APPLY_TARGET_UNKNOWN", String(targetId || ""));
-  if(route.effectKind==='infestation_spread'){
+  if(route.effectKind==='infestation_damage_cleanup'){
+    if(state.pendingOfficialAutomaticHits||state.pendingOfficialInfestationDamageCleanup)fail('INFESTATION_DAMAGE_SEQUENCE_PENDING');
+    const plan=action.characteristicStatusPlan,coverage=plan.infestationCoverage;
+    state.pendingOfficialInfestationDamageCleanup=seal({round:Number(state.round),phase:state.phase,pieceId:actor.id,
+      sourceDefinitionId:route.definitionId,sourceFeatureHash:route.sourceFeatureHash,sourceRouteHash:route.routeHash,
+      sourcePlanHash:plan.planHash,targetUnitIds:coverage.map(unit=>unit.unitId),trainingTruth:false},'parentHash');
+    if(coverage.length)state.pendingOfficialAutomaticHits=seal({schema:'starcraft_tmg_automatic_hits_source_checkpoint_v1',
+      round:Number(state.round),phase:state.phase,sideKey:actor.sideKey,pieceId:actor.id,definitionId:route.definitionId,
+      sourceFeatureHash:route.sourceFeatureHash,sourceRouteHash:route.routeHash,abilityName:route.abilityName,
+      sourcePlanHash:plan.planHash,directDamage:{damageAmount:route.damageAmount,targetUnitIds:coverage.map(unit=>unit.unitId),
+        coverageHash:hashStarcraftTmgContract(coverage)},stage:'ready',trainingTruth:false},'parentHash');
+    events.push({type:'infestation_damage_declared',pieceId:actor.id,sourceDefinitionId:route.definitionId,
+      coverage:clone(coverage),damageAmount:route.damageAmount,sourcePlanHash:plan.planHash,trainingTruth:false});
+  }else if(route.effectKind==='infestation_spread'){
     const prior=(target.statuses||[]).filter(s=>statusName(s)==='infestation').map(s=>s.statusEffectHash).filter(Boolean);
     removeStatus(target,['infestation']);
     state.board.effectMarkers=(state.board.effectMarkers||[]).filter(m=>!prior.includes(m.statusEffectHash));

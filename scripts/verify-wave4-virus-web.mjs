@@ -50,7 +50,9 @@ async function operate(page,item,choice,parameterized) {
       }
       for(const [index,id]of ids.entries()){
         await form.getByRole('button',{name:'添加移除模型（按顺序）',exact:true}).click();
-        await form.getByText('第 '+(index+1)+' 项',{exact:true}).locator('..').getByRole('button',{name:id,exact:true}).click();
+        const row=form.getByText('第 '+(index+1)+' 项',{exact:true}).locator('..');
+        const modelIndex=parameterSchema.casualtyModelIds.items.enum.indexOf(id);assert.ok(modelIndex>=0);
+        await row.getByText('模型',{exact:true}).locator('..').getByRole('button').nth(modelIndex).click();
       }
     }
     if(choice.definitionId==='unit:stalker/blink-movement-phase@1') {
@@ -151,7 +153,7 @@ try {
         }
         let choice;
         if(!primaryUsed)choice=menu.parameterDomains.find(row=>item.id==='infected-ordinary-move'?row.actionType==='move'&&row.pieceId==='enemy':item.id==='clean-blink'?row.definitionId==='unit:stalker/blink-movement-phase@1':item.id==='clean-recall'?row.definitionId==='card:nexus/strategic-recall-any@1':row.definitionId===item.definitionId);
-        else if(item.flow==='detonation-nested')choice=menu.parameterDomains.find(row=>row.effectKind==='before_casualty_detonation');
+        else if(item.flow==='detonation-nested'||item.flow==='bio-kill-switch')choice=menu.parameterDomains.find(row=>row.effectKind==='before_casualty_detonation');
         else if(item.kind==='ocular-use'&&!shotUsed)choice=menu.parameterDomains.find(row=>row.weaponName==='Firefly Missiles');
         else if((item.kind==='growing-restoration-exception'||item.flow==='carrier-restoration'||item.flow==='trooper-restoration')&&!restorationUsed)choice=menu.parameterDomains.find(row=>row.definitionId==='unit:medic/restoration-any-phase@1'||item.flow==='carrier-restoration'&&row.effectKind==='infestation_transfer');
         choice ||= menu.parameterDomains.find(row=>row.actionType==='pass_reaction_family_window')||menu.parameterDomains[0];
@@ -170,6 +172,12 @@ try {
         const recipient=final.envelope.state.pieces.find(piece=>piece.id==='recipient');
         assert.equal(recipient.statuses.some(status=>String(status.statusName||status).toLowerCase()==='infestation'),false);
         assert.equal(restorationUsed,true);
+      } else if(item.flow==='bio-kill-switch'){
+        const state=final.envelope.state;assert.equal(state.officialInfestationDamageCleanupHistory.length,1);
+        assert.deepEqual(state.officialInfestationDamageCleanupHistory[0].unitsThatSufferedDamage,['infected']);
+        assert.ok(!state.pieces.find(p=>p.id==='infected').statuses.some(s=>String(typeof s==='string'?s:s.statusName).toLowerCase()==='infestation'));
+        assert.equal(state.log.flatMap(l=>l.events||[]).filter(e=>e.type==='ability_direct_damage').length,1);
+        assert.ok(!state.pendingOfficialInfestationDamageCleanup);
       } else if(item.flow==='detonation-nested'){
         const state=final.envelope.state;assert.equal(Boolean(state.officialBeforeCasualtyContinuations?.length),false);
         assert.equal(state.fightActionHistory.length,1);assert.ok(state.pieces.every(p=>p.isDestroyed));
@@ -231,7 +239,7 @@ try {
 const result={schema:'starcraft_tmg_wave4_virus_web_verification_v1',status:'passed_scoped',
   runRef:path.relative(root,directory),results,signedActions:results.reduce((sum,row)=>sum+row.signedActions,0),
   conditionalTurretGeometryInRestorationCaseOnly:service.rooms.some(item=>item.id==='growing-restoration-exception'||item.flow==='carrier-restoration'),sourceHeldDefinitions:39,
-   engineeringEstimatedUnitGeometry:service.rooms.some(item=>['admiral-exchange','trooper-restoration','stukov-spread','munitions-support','infantry-burrow','detonation-ranged','detonation-nested'].includes(item.flow)),
+   engineeringEstimatedUnitGeometry:service.rooms.some(item=>['admiral-exchange','trooper-restoration','stukov-spread','munitions-support','infantry-burrow','detonation-ranged','detonation-nested','bio-kill-switch'].includes(item.flow)),
   fullWave4LobbyBuilderAdmission:false,fullMatchAdmission:false,wave3PlayerRoomsTouched:false,modelCalls:0,trainingTruth:false};
 await atomicWrite(path.join(directory,'web-result.public.json'),JSON.stringify(result,null,2)+'\n');
 await atomicWrite(path.join(root,'docs/development/wave4/evidence/'+(process.argv[3]||'virus-web.public.json')),JSON.stringify(result,null,2)+'\n');

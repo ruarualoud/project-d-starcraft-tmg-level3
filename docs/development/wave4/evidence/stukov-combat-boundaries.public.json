@@ -1,0 +1,49 @@
+{
+  "schema": "starcraft_tmg_wave4_stukov_combat_boundaries_v1",
+  "status": "passed_scoped_read_only",
+  "checks": [
+    {
+      "id": "source-text",
+      "rejected": true
+    },
+    {
+      "id": "resource-cost",
+      "rejected": true
+    },
+    {
+      "id": "activation-kind",
+      "rejected": true
+    },
+    {
+      "id": "phase",
+      "rejected": true
+    },
+    {
+      "id": "record-key",
+      "rejected": true
+    },
+    {
+      "id": "purchase-cost",
+      "rejected": true
+    },
+    {
+      "id": "far-hidden-unit-affected-without-target-selection",
+      "passed": true
+    },
+    {
+      "id": "friendly-reserve-clean-excluded",
+      "passed": true
+    },
+    {
+      "id": "native-fully-reduced-damage-keeps-infestation",
+      "evidenceRef": "docs/development/wave4/evidence/bio-kill-switch-reduction.public.json"
+    }
+  ],
+  "nativeActionsAdded": 0,
+  "newGameAtomsImplemented": 0,
+  "implementedCumulativeAtoms": 6,
+  "fullMatchAdmission": false,
+  "sourceHeldDefinitions": 39,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

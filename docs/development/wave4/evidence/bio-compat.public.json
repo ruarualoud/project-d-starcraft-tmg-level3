@@ -1,0 +1,28 @@
+{
+  "schema": "starcraft_tmg_wave4_bio_compat_v1",
+  "status": "passed_scoped",
+  "results": [
+    {
+      "id": "detonation-ranged-host",
+      "roomId": "wave4-detonation-marine-use",
+      "originalSignedActions": 6,
+      "runtimeVersion": "3.227.0",
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "stateHash": "7f9ad13350a71ca9bf674cc78823072534481bb7e994ebfa6e3e04df80fe692a",
+      "newActions": 0
+    },
+    {
+      "id": "detonation-nested-host",
+      "roomId": "wave4-detonation-marine-both-use-0",
+      "originalSignedActions": 13,
+      "runtimeVersion": "3.228.0",
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "stateHash": "46bb5070ec68b3d4685ad72d45631b1e8615ca674cfe569da238bf34103a2f79",
+      "newActions": 0
+    }
+  ],
+  "modelCalls": 0,
+  "trainingTruth": false
+}

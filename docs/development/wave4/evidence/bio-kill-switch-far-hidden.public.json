@@ -1,0 +1,41 @@
+{
+  "schema": "starcraft_tmg_wave4_bio_kill_switch_v1",
+  "status": "passed_scoped",
+  "runRef": "build/wave4-web/stukov-units/bio-kill-switch-dXKCjc",
+  "results": [
+    {
+      "id": "far-hidden-target",
+      "farHidden": true,
+      "roomId": "wave4-bio-kill-switch-far-hidden-target",
+      "directoryRef": "build/wave4-web/stukov-units/bio-kill-switch-dXKCjc/far-hidden-target",
+      "signedActions": 4,
+      "stateHash": "c2f22494c9c9dee3ca1cfe8b97b833ef38ae1135b93e80f6f59072b23026b5c2",
+      "casterDestroyed": false,
+      "trace": [
+        {
+          "revision": 2,
+          "actionType": "choose_direct_ability_damage_casualties",
+          "definitionId": null
+        },
+        {
+          "revision": 3,
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null
+        },
+        {
+          "revision": 4,
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null
+        }
+      ],
+      "coldReplay": true,
+      "idempotencyVerified": true
+    }
+  ],
+  "newGameAtomsImplemented": 0,
+  "implementedCumulativeAtoms": 6,
+  "fullMatchAdmission": false,
+  "sourceHeldDefinitions": 39,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

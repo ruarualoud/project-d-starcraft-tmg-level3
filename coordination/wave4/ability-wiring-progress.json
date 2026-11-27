@@ -275,8 +275,8 @@
     }
   ],
   "next": [
-    "继续Detonation委托/激活外批次与直接移除入口，再补Stukov其余能力。",
-    "继续其他新增单位与势力、完整发布/Builder/大厅/媒体及500/2000分双席Web。"
+    "先接Corrode Armor攻击后反应和实际Armour/Restoration/清理后继。",
+    "继续Detonation委托/激活外与直接移除入口、其他新增单位/势力及整版发布/Builder/大厅/媒体/两规模Web。"
   ],
   "modelCalls": 0,
   "trainingTruth": false,
@@ -1955,6 +1955,123 @@
       ],
       "engineeringEstimatedUnitGeometry": true,
       "fullMatchAdmission": false
+    },
+    {
+      "definitionId": "unit:stukov/bio-kill-switch-assault-phase@1",
+      "classification": "existing_atoms_new_combination",
+      "newAtomIds": [],
+      "sourceCompiled": true,
+      "executionBound": true,
+      "nativeSuccessorsVerified": true,
+      "webVerified": true,
+      "consumerRefs": [
+        {
+          "file": "packages/source-data/official-stukov-infestation-source-v1.mjs",
+          "exportName": "compileOfficialStukovInfestationSpecV1"
+        },
+        {
+          "file": "packages/product-composition/official-characteristic-status-family-adapter-v1.mjs",
+          "exportName": "createOfficialCharacteristicStatusFamilyAdapterV1"
+        },
+        {
+          "file": "packages/product-composition/official-automatic-hits-runtime-v1.mjs",
+          "exportName": "createOfficialAutomaticHitsRuntimeV1"
+        },
+        {
+          "file": "packages/product-composition/official-infestation-damage-cleanup-v1.mjs",
+          "exportName": "createOfficialInfestationDamageCleanupV1"
+        },
+        {
+          "file": "packages/product-composition/official-characteristic-status-component-runtime-v2.mjs",
+          "exportName": "createOfficialCharacteristicStatusComponentRuntimeV2"
+        }
+      ],
+      "evidenceRefs": [
+        "docs/development/wave4/evidence/bio-kill-switch.public.json",
+        "docs/development/wave4/evidence/bio-kill-switch-reduction.public.json",
+        "docs/development/wave4/evidence/bio-kill-switch-far-hidden.public.json",
+        "docs/development/wave4/evidence/stukov-combat-boundaries.public.json",
+        "docs/development/wave4/evidence/bio-kill-switch-web.public.json",
+        "docs/development/wave4/evidence/bio-compat.public.json",
+        "docs/development/wave4/evidence/stukov-combat-harness.public.json"
+      ],
+      "engineeringEstimatedUnitGeometry": true,
+      "fullMatchAdmission": false
+    },
+    {
+      "definitionId": "unit:stukov/corrosive-blast-assault-phase@1",
+      "classification": "data_change",
+      "newAtomIds": [],
+      "sourceCompiled": true,
+      "executionBound": true,
+      "nativeSuccessorsVerified": true,
+      "webVerified": false,
+      "consumerRefs": [
+        {
+          "file": "packages/source-data/official-attack-profile-catalogue-v2.mjs",
+          "exportName": "createOfficialAttackProfileCatalogueV2"
+        },
+        {
+          "file": "packages/product-composition/official-selected-roster-ranged-action-runtime-v1.mjs",
+          "exportName": "createOfficialSelectedRosterRangedActionRuntimeV1"
+        }
+      ],
+      "evidenceRefs": [
+        "docs/development/wave4/evidence/stukov-combat.public.json",
+        "docs/development/wave4/evidence/bio-compat.public.json"
+      ],
+      "engineeringEstimatedUnitGeometry": true,
+      "fullMatchAdmission": false
+    },
+    {
+      "definitionId": "unit:stukov/infested-arm-combat-phase@1",
+      "classification": "data_change",
+      "newAtomIds": [],
+      "sourceCompiled": true,
+      "executionBound": true,
+      "nativeSuccessorsVerified": true,
+      "webVerified": false,
+      "consumerRefs": [
+        {
+          "file": "packages/source-data/official-attack-profile-catalogue-v2.mjs",
+          "exportName": "createOfficialAttackProfileCatalogueV2"
+        },
+        {
+          "file": "packages/product-composition/official-selected-roster-melee-action-runtime-v1.mjs",
+          "exportName": "createOfficialSelectedRosterMeleeActionRuntimeV1"
+        }
+      ],
+      "evidenceRefs": [
+        "docs/development/wave4/evidence/stukov-combat.public.json",
+        "docs/development/wave4/evidence/bio-compat.public.json"
+      ],
+      "engineeringEstimatedUnitGeometry": true,
+      "fullMatchAdmission": false
+    },
+    {
+      "definitionId": "unit:stukov/devastating-charge-assault-phase@1",
+      "classification": "existing_atom",
+      "newAtomIds": [],
+      "sourceCompiled": true,
+      "executionBound": true,
+      "nativeSuccessorsVerified": true,
+      "webVerified": false,
+      "consumerRefs": [
+        {
+          "file": "packages/product-composition/official-melee-family-adapter-v1.mjs",
+          "exportName": "createOfficialMeleeModifierComponentAdapterV1"
+        },
+        {
+          "file": "packages/product-composition/official-selected-roster-melee-action-runtime-v1.mjs",
+          "exportName": "createOfficialSelectedRosterMeleeActionRuntimeV1"
+        }
+      ],
+      "evidenceRefs": [
+        "docs/development/wave4/evidence/stukov-combat.public.json",
+        "docs/development/wave4/evidence/bio-compat.public.json"
+      ],
+      "engineeringEstimatedUnitGeometry": true,
+      "fullMatchAdmission": false
     }
   ],
   "executionStatus": "Detonation_ranged_host_native_and_Web_verified_other_hosts_in_progress",
@@ -2513,7 +2630,8 @@
       "docs/development/wave4/evidence/detonation-settlement-audit.public.json",
       "docs/development/wave4/evidence/detonation-v1-cold-compat.public.json",
       "docs/development/wave4/evidence/detonation-nested-web.public.json",
-      "docs/development/wave4/evidence/detonation-nested-harness.public.json"
+      "docs/development/wave4/evidence/detonation-nested-harness.public.json",
+      "docs/development/wave4/evidence/bio-kill-switch.public.json"
     ],
     "workbenchRef": "docs/development/wave4/detonation-continuation-workbench.zh-CN.md",
     "multiTargetParentAndNestedPending": false,
@@ -2531,7 +2649,8 @@
       "settlementAuditCases": 6,
       "v1ColdReplayCases": 3,
       "v1OriginalActions": 16
-    }
+    },
+    "directAbilityDamageHostVerified": true
   },
   "partialRuntimeVerificationByDefinition": [
     {
@@ -2573,12 +2692,14 @@
         "docs/development/wave4/evidence/detonation-settlement-audit.public.json",
         "docs/development/wave4/evidence/detonation-v1-cold-compat.public.json",
         "docs/development/wave4/evidence/detonation-nested-web.public.json",
-        "docs/development/wave4/evidence/detonation-nested-harness.public.json"
+        "docs/development/wave4/evidence/detonation-nested-harness.public.json",
+        "docs/development/wave4/evidence/bio-kill-switch.public.json"
       ],
       "meleeHostVerified": true,
       "automaticHitsHostVerified": true,
       "nestedReactionVerified": true,
-      "webNestedSuccessorVerified": true
+      "webNestedSuccessorVerified": true,
+      "directAbilityDamageHostVerified": true
     },
     {
       "definitionId": "unit:infested_trooper/detonation-any-phase@1",
@@ -2619,12 +2740,51 @@
         "docs/development/wave4/evidence/detonation-settlement-audit.public.json",
         "docs/development/wave4/evidence/detonation-v1-cold-compat.public.json",
         "docs/development/wave4/evidence/detonation-nested-web.public.json",
-        "docs/development/wave4/evidence/detonation-nested-harness.public.json"
+        "docs/development/wave4/evidence/detonation-nested-harness.public.json",
+        "docs/development/wave4/evidence/bio-kill-switch.public.json"
       ],
       "meleeHostVerified": true,
       "automaticHitsHostVerified": true,
       "nestedReactionVerified": true,
-      "webNestedSuccessorVerified": true
+      "webNestedSuccessorVerified": true,
+      "directAbilityDamageHostVerified": true
     }
-  ]
+  ],
+  "stukovCombatGate": {
+    "definitionIds": [
+      "unit:stukov/bio-kill-switch-assault-phase@1",
+      "unit:stukov/corrosive-blast-assault-phase@1",
+      "unit:stukov/infested-arm-combat-phase@1",
+      "unit:stukov/devastating-charge-assault-phase@1"
+    ],
+    "classificationCounts": {
+      "existing_atoms_new_combination": 1,
+      "data_change": 2,
+      "existing_atom": 1
+    },
+    "newGameAtomsImplemented": 0,
+    "implementedCumulativeAtoms": 6,
+    "nativeCases": 9,
+    "nativeSignedActions": 34,
+    "webRooms": 1,
+    "webSignedActions": 6,
+    "readOnlyBoundaryChecks": 9,
+    "oldV1V2ColdReplayActions": 19,
+    "evidenceRefs": [
+      "docs/development/wave4/evidence/bio-kill-switch.public.json",
+      "docs/development/wave4/evidence/bio-kill-switch-reduction.public.json",
+      "docs/development/wave4/evidence/bio-kill-switch-far-hidden.public.json",
+      "docs/development/wave4/evidence/stukov-combat.public.json",
+      "docs/development/wave4/evidence/stukov-combat-boundaries.public.json",
+      "docs/development/wave4/evidence/bio-kill-switch-web.public.json",
+      "docs/development/wave4/evidence/bio-compat.public.json",
+      "docs/development/wave4/evidence/stukov-combat-harness.public.json",
+      "docs/development/wave4/evidence/stukov-combat-consumers.public.json"
+    ],
+    "stukovVerifiedDefinitions": 8,
+    "stukovSourceDefinitions": 9,
+    "corrodeArmorPending": true,
+    "fullMatchAdmission": false,
+    "sourceHeldDefinitions": 39
+  }
 }

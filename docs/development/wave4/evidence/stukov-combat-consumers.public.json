@@ -1,0 +1,132 @@
+{
+  "schema": "starcraft_tmg_wave4_stukov_combat_consumers_v1",
+  "definitions": [
+    {
+      "definitionId": "unit:stukov/bio-kill-switch-assault-phase@1",
+      "classification": "existing_atoms_new_combination",
+      "newAtomIds": [],
+      "sourceCompiled": true,
+      "executionBound": true,
+      "nativeSuccessorsVerified": true,
+      "webVerified": true,
+      "consumerRefs": [
+        {
+          "file": "packages/source-data/official-stukov-infestation-source-v1.mjs",
+          "exportName": "compileOfficialStukovInfestationSpecV1"
+        },
+        {
+          "file": "packages/product-composition/official-characteristic-status-family-adapter-v1.mjs",
+          "exportName": "createOfficialCharacteristicStatusFamilyAdapterV1"
+        },
+        {
+          "file": "packages/product-composition/official-automatic-hits-runtime-v1.mjs",
+          "exportName": "createOfficialAutomaticHitsRuntimeV1"
+        },
+        {
+          "file": "packages/product-composition/official-infestation-damage-cleanup-v1.mjs",
+          "exportName": "createOfficialInfestationDamageCleanupV1"
+        },
+        {
+          "file": "packages/product-composition/official-characteristic-status-component-runtime-v2.mjs",
+          "exportName": "createOfficialCharacteristicStatusComponentRuntimeV2"
+        }
+      ],
+      "evidenceRefs": [
+        "docs/development/wave4/evidence/bio-kill-switch.public.json",
+        "docs/development/wave4/evidence/bio-kill-switch-reduction.public.json",
+        "docs/development/wave4/evidence/bio-kill-switch-far-hidden.public.json",
+        "docs/development/wave4/evidence/stukov-combat-boundaries.public.json",
+        "docs/development/wave4/evidence/bio-kill-switch-web.public.json",
+        "docs/development/wave4/evidence/bio-compat.public.json",
+        "docs/development/wave4/evidence/stukov-combat-harness.public.json"
+      ],
+      "engineeringEstimatedUnitGeometry": true,
+      "fullMatchAdmission": false
+    },
+    {
+      "definitionId": "unit:stukov/corrosive-blast-assault-phase@1",
+      "classification": "data_change",
+      "newAtomIds": [],
+      "sourceCompiled": true,
+      "executionBound": true,
+      "nativeSuccessorsVerified": true,
+      "webVerified": false,
+      "consumerRefs": [
+        {
+          "file": "packages/source-data/official-attack-profile-catalogue-v2.mjs",
+          "exportName": "createOfficialAttackProfileCatalogueV2"
+        },
+        {
+          "file": "packages/product-composition/official-selected-roster-ranged-action-runtime-v1.mjs",
+          "exportName": "createOfficialSelectedRosterRangedActionRuntimeV1"
+        }
+      ],
+      "evidenceRefs": [
+        "docs/development/wave4/evidence/stukov-combat.public.json",
+        "docs/development/wave4/evidence/bio-compat.public.json"
+      ],
+      "engineeringEstimatedUnitGeometry": true,
+      "fullMatchAdmission": false
+    },
+    {
+      "definitionId": "unit:stukov/infested-arm-combat-phase@1",
+      "classification": "data_change",
+      "newAtomIds": [],
+      "sourceCompiled": true,
+      "executionBound": true,
+      "nativeSuccessorsVerified": true,
+      "webVerified": false,
+      "consumerRefs": [
+        {
+          "file": "packages/source-data/official-attack-profile-catalogue-v2.mjs",
+          "exportName": "createOfficialAttackProfileCatalogueV2"
+        },
+        {
+          "file": "packages/product-composition/official-selected-roster-melee-action-runtime-v1.mjs",
+          "exportName": "createOfficialSelectedRosterMeleeActionRuntimeV1"
+        }
+      ],
+      "evidenceRefs": [
+        "docs/development/wave4/evidence/stukov-combat.public.json",
+        "docs/development/wave4/evidence/bio-compat.public.json"
+      ],
+      "engineeringEstimatedUnitGeometry": true,
+      "fullMatchAdmission": false
+    },
+    {
+      "definitionId": "unit:stukov/devastating-charge-assault-phase@1",
+      "classification": "existing_atom",
+      "newAtomIds": [],
+      "sourceCompiled": true,
+      "executionBound": true,
+      "nativeSuccessorsVerified": true,
+      "webVerified": false,
+      "consumerRefs": [
+        {
+          "file": "packages/product-composition/official-melee-family-adapter-v1.mjs",
+          "exportName": "createOfficialMeleeModifierComponentAdapterV1"
+        },
+        {
+          "file": "packages/product-composition/official-selected-roster-melee-action-runtime-v1.mjs",
+          "exportName": "createOfficialSelectedRosterMeleeActionRuntimeV1"
+        }
+      ],
+      "evidenceRefs": [
+        "docs/development/wave4/evidence/stukov-combat.public.json",
+        "docs/development/wave4/evidence/bio-compat.public.json"
+      ],
+      "engineeringEstimatedUnitGeometry": true,
+      "fullMatchAdmission": false
+    }
+  ],
+  "newGameAtomsImplemented": 0,
+  "implementedCumulativeAtoms": 6,
+  "nativeCases": 9,
+  "nativeSignedActions": 34,
+  "webRooms": 1,
+  "webSignedActions": 6,
+  "sourceHeldDefinitions": 39,
+  "fullMatchAdmission": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

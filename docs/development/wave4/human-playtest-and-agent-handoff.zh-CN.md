@@ -2,7 +2,7 @@
 
 本分支只负责 Wave4 人人对战更新，按 Wave3 的更新模式补齐数据、规则、建军、房间、媒体和 Web 双席验收。其他同步开发线独立推进。当前分支是 `codex/wave4-web-pvp`，验收服务使用 5484，数据仅写入 `build/wave4-web/`；通过具名验收后提交并推送本分支。
 
-W4-01 已冻结 U98/C88/R50 候选。W4-02 的 156 条逐 ID 差分完成，需新增游戏原子 18 个，当前累计 **6/18**；撤回 Archon 独占的另 3 个候选合同不计入18。炮塔与 Virus 后继见既有具名报告；[Stukov 本批](stukov-infestation-wiring.zh-CN.md)补齐五条感染／Supply／激活交换定义，原生 34 动作、1 完整回合和 Web 3 房 7 动作通过。[感染步兵本批](infested-infantry-wiring.zh-CN.md)新增15条实际消费者接线、0新增游戏原子；16个原生分支62动作、24项边界及Web3房4动作通过。[Detonation普通攻击与嵌套](detonation-nested-wiring.zh-CN.md)已补近战/HITS与多目标，6原生分支71动作、Web2房8确认通过；委托/激活外与直接移除仍待，完整新增原子计数不变。继续Stukov其余能力与整版更新，实时消费者以[接线账](../../../coordination/wave4/ability-wiring-progress.json)为准。
+W4-01 已冻结 U98/C88/R50 候选。W4-02 的 156 条逐 ID 差分完成，需新增游戏原子 18 个，当前累计 **6/18**；撤回 Archon 独占的另 3 个候选合同不计入18。炮塔与 Virus 后继见既有具名报告；[Stukov 本批](stukov-infestation-wiring.zh-CN.md)补齐五条感染／Supply／激活交换定义，原生 34 动作、1 完整回合和 Web 3 房 7 动作通过。[感染步兵本批](infested-infantry-wiring.zh-CN.md)新增15条实际消费者接线、0新增游戏原子；16个原生分支62动作、24项边界及Web3房4动作通过。[Detonation普通攻击与嵌套](detonation-nested-wiring.zh-CN.md)已补近战/HITS与多目标，6原生分支71动作、Web2房8确认通过；委托/激活外与直接移除仍待，完整新增原子计数不变。[Stukov战斗本批](stukov-combat-wiring.zh-CN.md)补四定义，9原生分支34动作和Web1房6确认通过；Stukov已验8/9，继续Corrode Armor与整版更新，实时消费者以[接线账](../../../coordination/wave4/ability-wiring-progress.json)为准。
 
 ## 已核对的增量
 

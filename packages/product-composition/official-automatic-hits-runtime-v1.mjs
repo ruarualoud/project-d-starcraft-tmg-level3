@@ -36,7 +36,8 @@ export function createOfficialAutomaticHitsRuntimeV1({ sourceBundle, state, incl
   independentlyOwnedReactionTriggers = [], includeDamageReceivedReaction = false, includeEvadeEligibility = false,
   includeBeforeEvadeReaction = false, consumeDefenceBeforeFollowUp = false }) {
   if (consumeDefenceBeforeFollowUp && !includeBeforeEvadeReaction) fail('AUTOMATIC_HITS_EVADE_CONSUMER_REQUIRED');
-  const directSources = sourceBundle.routes.filter(route => route.effectKind === 'force_wall_lightning');
+  const directSources = sourceBundle.routes.filter(route => ['force_wall_lightning','infestation_damage_cleanup'].includes(route.effectKind));
+  const infestationDamage=directSources.some(route=>route.effectKind==='infestation_damage_cleanup');
   if (sourceAuthority && (sourceAuthority.schema !== 'starcraft_tmg_automatic_hits_source_authority_v1'
     || typeof sourceAuthority.owns !== 'function' || typeof sourceAuthority.validate !== 'function'
     || !sourceAuthority.sourceBundleHash)) fail('AUTOMATIC_HITS_EXTERNAL_SOURCE_INVALID');
@@ -66,7 +67,7 @@ export function createOfficialAutomaticHitsRuntimeV1({ sourceBundle, state, incl
     });
   }
   const beforeCasualty=hasOfficialExtendedBeforeCasualtyPolicyV1(state);
-  const runtimeVersion = beforeCasualty ? '3.9.0' : includeBeforeEvadeReaction ? '3.8.0' : resolvedDirectDamage ? '3.7.0' : externalEvadeGrant ? '3.6.0' : directSources.length ? '3.5.0' : includeEvadeEligibility ? '3.4.0' : includeDamageReceivedReaction ? '3.3.0' : otherTriggers.length ? (sourceAuthority ? '3.2.0' : '2.1.0')
+  const runtimeVersion = infestationDamage ? '3.10.0' : beforeCasualty ? '3.9.0' : includeBeforeEvadeReaction ? '3.8.0' : resolvedDirectDamage ? '3.7.0' : externalEvadeGrant ? '3.6.0' : directSources.length ? '3.5.0' : includeEvadeEligibility ? '3.4.0' : includeDamageReceivedReaction ? '3.3.0' : otherTriggers.length ? (sourceAuthority ? '3.2.0' : '2.1.0')
     : sourceAuthority?.reactionTiming === 'outside_activation' ? '3.1.0'
     : sourceAuthority ? '3.0.0' : includeArmourReactions ? '2.0.0' : '1.0.0';
   const descriptor = seal({ runtimeId, runtimeVersion, ruleAtomIds,
@@ -95,7 +96,8 @@ export function createOfficialAutomaticHitsRuntimeV1({ sourceBundle, state, incl
     const external = sourceAuthority?.owns(parent) === true;
     const ownDirect = directSources.includes(source);
     const direct = ownDirect || (external && resolvedDirectDamage && Boolean(parent.directDamage));
-    const declaredCoverage = ownDirect && history?.events.find(event => event.type === 'psi_lightning_declared')?.coverage;
+    const declaredCoverage = ownDirect && history?.events.find(event => event.type ===
+      (source.effectKind==='infestation_damage_cleanup'?'infestation_damage_declared':'psi_lightning_declared'))?.coverage;
     const targetIds = direct ? parent.directDamage?.targetUnitIds : parent.automaticHits?.targetUnitIds;
     const sourceValid = external ? sourceAuthority.validate(current, parent) === true
       : Boolean(source && history && source.sourceFeatureHash === parent.sourceFeatureHash && source.routeHash === parent.sourceRouteHash

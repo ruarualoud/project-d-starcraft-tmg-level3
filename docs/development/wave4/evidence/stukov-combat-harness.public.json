@@ -1,0 +1,69 @@
+{
+  "schema": "starcraft_tmg_wave4_stukov_combat_harness_v1",
+  "harnessLoopUsed": true,
+  "targetGames": [
+    "starcraft-tmg"
+  ],
+  "promptPackRoutes": [
+    {
+      "route": "fact_probe_prompt",
+      "mode": "offline_contract_verification",
+      "invoked": false,
+      "modelCalls": 0
+    }
+  ],
+  "harnessToolsCalled": [
+    "actual_roster_factory",
+    "source_bound_active_ability",
+    "native_direct_damage",
+    "defender_casualty_order",
+    "damage_received_reaction",
+    "before_casualty_detonation",
+    "sealed_damage_resume",
+    "deferred_status_cleanup",
+    "native_ranged_and_surge",
+    "native_melee_and_surge",
+    "native_charge_and_impact",
+    "legalSpace",
+    "preview",
+    "explicit_human_confirmation",
+    "idempotency_reapply",
+    "cold_replay",
+    "seat_recovery_exchange"
+  ],
+  "uiTraceEvidence": [
+    "docs/development/wave4/evidence/bio-kill-switch-web.public.json",
+    "docs/development/wave4/evidence/bio-kill-switch-casualties-mobile.png"
+  ],
+  "agentDecisionEvidence": {
+    "status": "not_applicable",
+    "modelCalls": 0
+  },
+  "memoryTraceEvidence": [],
+  "trainingTraceCandidates": [],
+  "rollbackOrDemotionRules": [
+    "exact_source_and_zero_BM_payment",
+    "only_infected_enemies_on_battlefield_affected",
+    "no_damage_keeps_infestation",
+    "no_restarting_sealed_direct_damage",
+    "dead_caster_does_not_cancel_resolution",
+    "legacy_v1_v2_hashes_unchanged",
+    "partial_Stukov_proof_does_not_complete_Wave4"
+  ],
+  "userVisibleChecks": [
+    "six_ordered_casualty_models_selected",
+    "counter_detonation_successor",
+    "explicit_human_confirmation",
+    "two_seat_recovery_and_replay"
+  ],
+  "nativeCases": 9,
+  "nativeSignedActions": 34,
+  "webRooms": 1,
+  "webSignedActions": 6,
+  "newGameAtomsImplemented": 0,
+  "implementedCumulativeAtoms": 6,
+  "sourceHeldDefinitions": 39,
+  "fullMatchAdmission": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

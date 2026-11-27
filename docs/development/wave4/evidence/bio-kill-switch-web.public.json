@@ -1,0 +1,74 @@
+{
+  "schema": "starcraft_tmg_wave4_virus_web_verification_v1",
+  "status": "passed_scoped",
+  "runRef": "build/wave4-web/stukov-units/bio-kill-switch-web-v2",
+  "results": [
+    {
+      "kind": "counter-detonation",
+      "definitionId": "unit:stukov/bio-kill-switch-assault-phase@1",
+      "sourceRoomId": "wave4-bio-kill-switch-counter-detonation",
+      "sourceStateHash": "1cb0da27f969e8f236f41410fd594b7fe79c535bcf421e02276b22dbb555d265",
+      "sourcePrefixReceipts": 0,
+      "trace": [
+        {
+          "actionType": "resolve_characteristic_status_ability",
+          "definitionId": "unit:stukov/bio-kill-switch-assault-phase@1",
+          "sideKey": "player1",
+          "stateRevision": 1,
+          "stateHash": "01fb75faa4654accc278c2234b3d2e60f6868a86f1c80949ebc623408a692e14"
+        },
+        {
+          "actionType": "choose_direct_ability_damage_casualties",
+          "definitionId": null,
+          "sideKey": "player2",
+          "stateRevision": 2,
+          "stateHash": "6c4bdd16f5a7189fb6c7690744331fd61f3c817b7478ef9d48e3142ff83247d3"
+        },
+        {
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null,
+          "sideKey": "player1",
+          "stateRevision": 3,
+          "stateHash": "575170d70ecfadd7fa303785c3be09788a08246558d5492fc30365486c6428a8"
+        },
+        {
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:infested_marine/detonation-any-phase@1",
+          "sideKey": "player2",
+          "stateRevision": 4,
+          "stateHash": "a25f6de59f99ad0842c8b22b454d89a8e548b48b723bc2260bb19bccfa36c39c"
+        },
+        {
+          "actionType": "roll_automatic_hits_armour_pool",
+          "definitionId": null,
+          "sideKey": "player2",
+          "stateRevision": 5,
+          "stateHash": "9ce99325cfc2ed0a1e56634c69b090262385546f8024edb22f46ab4acd0a42f7"
+        },
+        {
+          "actionType": "resolve_automatic_hits_evade_pool",
+          "definitionId": null,
+          "sideKey": "player2",
+          "stateRevision": 6,
+          "stateHash": "4b07378f0cfdff8e9be36c42da49d5a14d68a03d0fdd66c229d7213529495ea2"
+        }
+      ],
+      "signedActions": 6,
+      "twoSeatsVerified": true,
+      "explicitHumanConfirmation": true,
+      "previewReadOnly": true,
+      "replayMatchesCurrent": true,
+      "seatRecoveryReentryVerified": true,
+      "pageErrors": []
+    }
+  ],
+  "signedActions": 6,
+  "conditionalTurretGeometryInRestorationCaseOnly": false,
+  "sourceHeldDefinitions": 39,
+  "engineeringEstimatedUnitGeometry": true,
+  "fullWave4LobbyBuilderAdmission": false,
+  "fullMatchAdmission": false,
+  "wave3PlayerRoomsTouched": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}
