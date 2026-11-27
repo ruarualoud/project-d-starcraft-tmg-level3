@@ -7,6 +7,7 @@ const records = new Map([
   ['unit:pylon/structure-any-phase@1', 'army_units:pylon'],
   ['unit:omega_worm/structure-any-phase@1', 'army_units:omega_worm'],
   ['unit:sabotage_drone/structure-any-phase@1', 'army_units:sabotage_drone'],
+  ['unit:infested_missile_turret/structure-any-phase@1', 'army_units:infested_missile_turret'],
 ]);
 const text = 'This Unit cannot be Activated in any Phase and cannot perform actions. Additionally, its Current Supply Value is treated as 0, and it can never Control or Contest Mission Markers, ignoring the standard Zero Supply Exception. This Unit cannot be a target of an ability, unless stated otherwise.';
 export const OFFICIAL_STRUCTURE_RULE_ATOM_IDS = Object.freeze([

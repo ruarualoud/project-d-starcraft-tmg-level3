@@ -83,7 +83,7 @@
 | `rule-atom:wave4/infestation-placement-reserve-lock@1` | For an infected enemy, reject PLACE, set effects and return-to-reserves across all movement/lifecycle entry points; ordinary legal movement remains available. | 需求已拆分，尚未实现 |
 | `rule-atom:wave4/foreign-faction-army-eligibility@1` | Permit Terran Ground Mechanical purchases only under the Stukov faction while applying costs, slots, uniqueness and upgrade rules to the original source identity. | 组件接线通过，正式对局未准入 |
 | `rule-atom:wave4/faction-unit-runtime-conversion@1` | Bind the imported units to Infested tag addition, CP-to-BM payment conversion and BURROWED prohibition without changing unrelated units or rewriting the source records. | 组件接线通过，正式对局未准入 |
-| `rule-atom:wave4/spawn-round-ability-lock@1` | When the faction sets its structure, suppress its abilities except Structure for that round, then restore the correct abilities after cleanup; do not silently grant SUMMON semantics. | 需求已拆分，尚未实现 |
+| `rule-atom:wave4/spawn-round-ability-lock@1` | When the faction sets its structure, suppress its abilities except Structure for that round, then restore the correct abilities after cleanup; do not silently grant SUMMON semantics. | 条件几何组件已验，完整回合／正式对局待 |
 | `rule-atom:wave4/shield-scaled-effect-value@1` | Use remaining shield points to derive attack/IMPACT dice or detonation damage with each printed rounding rule. Withdrawn Archon source only. | Archon 撤下来源专属，暂不实施 |
 | `rule-atom:wave4/shield-reservoir-damage-payment@1` | Reduce a friendly pending damage batch by spending this source shield reservoir with the exact optional/fixed amount and shielded requirements. Conflicting withdrawn Archon drafts. | Archon 撤下来源专属，暂不实施 |
 | `rule-atom:wave4/target-card-exhaustion-waiver@1` | Once per round, waive exhaustion of a non-Faction card targeting the carrier, without readying an already exhausted card or changing other payment requirements. Withdrawn Archon source only. | Archon 撤下来源专属，暂不实施 |
@@ -264,4 +264,4 @@ node scripts/verify-wave4-wave3-cold-read.mjs build/wave4-web/host/run-qI3May
 
 组件验收和旧房冷读复用本树已备的 Wave3 冻结缓存与 W4-01 隔离房；这些命令不读 5483 玩家服务。旧房的状态、绑定、完整回放和元数据字节均匹配 W4-01 原证据，没有新增动作。
 
-11 条时点、三条 Creep 及 Stukov 跨种族建军／运行时转换已完成各自范围的消费者验收，见 [Stukov 记录](stukov-army-wiring.zh-CN.md)。18 个新合同当前实现 2；下一步接 Hostile Incubation 的回合禁用、Infested Missile Turret，再接新单位完整行为和几何。组件、正式房间与 Web 分别验收。付费模型、K3、AI 对局、复盘与生产发布继续暂停。
+11 条时点、三条 Creep 及 Stukov 跨种族建军／运行时转换已完成各自范围的消费者验收，见 [Stukov 记录](stukov-army-wiring.zh-CN.md)。18 个新合同当前实现 3；Hostile 设置与回合锁已在用户允许的截图估算几何下验过，见 [本批记录](hostile-incubation-wiring.zh-CN.md)。炮塔还有三条定义、完整回合／Web待接，随后推进其余 15 个合同及新单位完整行为和几何。组件、正式房间与 Web 分别验收。付费模型、K3、AI 对局、复盘与生产发布继续暂停。

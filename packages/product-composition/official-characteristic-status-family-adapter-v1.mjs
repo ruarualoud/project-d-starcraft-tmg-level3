@@ -1,3 +1,4 @@
+import { allowsOfficialSpawnRoundSpecialAbilityV1 } from '../rule-atoms/official-spawn-round-ability-lock-v1.mjs';
 import { projectOfficialDeploymentSupplyV1 } from '../rule-atoms/official-deployment-supply-projection-v1.mjs';
 import { listOfficialExhaustedTacticalCardIdsV1 } from './official-ranged-card-refresh-runtime-v1.mjs';
 import { listOfficialPhaseActivationUnitIdsV1 } from '../rule-atoms/official-phase-activation-availability-v1.mjs';
@@ -661,6 +662,11 @@ function compileRoute(definition, { explicitRelease = false } = {}) {
     && text === 'While Enemy Units are Within 6" of this Unit, they lose the HIDDEN Status.') {
     spec = { effectKind: 'detection_aura', actionKind: 'query_modifier',
       rangeMilliInches: 6000, removesHidden: true };
+  } else if (definition.definitionId === 'unit:infested_missile_turret/detection-any-phase@1'
+    && definition.recordKey === 'army_units:infested_missile_turret' && name === 'Detection'
+    && definition.activationKind === 'passive' && definition.phase === 'any'
+    && text === 'While Enemy Units are Within 8" of this Unit, they lose the HIDDEN Status.') {
+    spec = { effectKind: 'detection_aura', actionKind: 'query_modifier', rangeMilliInches: 8000, removesHidden: true };
   } else if (definition.definitionId === 'unit:holo_decoy/lethal-hologram-any-phase@1'
     && name === 'Lethal Hologram' && definition.recordKey === 'army_units:holo_decoy'
     && definition.activationKind === 'passive' && definition.phase === 'any'
@@ -905,6 +911,7 @@ function engagedWithEnemy(state, piece) {
 }
 function passiveRoutesForPiece(bundle, state, piece) {
   return bundle.routes.filter((route) => route.recordKey === piece.officialUnitRecordKey
+    && allowsOfficialSpawnRoundSpecialAbilityV1(state, piece, route.abilityName)
     && route.actionKind !== "active_ability" && fieldedFeature(piece, route)
     && activePiece(piece)
     && (route.effectKind === "structure"
@@ -1086,6 +1093,7 @@ function cannotGainBurrowed(bundle, state, piece) {
 function routeInstances(state, route) {
   if (route.sourceKind === "unit_feature") {
     return (state.pieces || []).filter((piece) => piece.officialUnitRecordKey === route.recordKey
+      && allowsOfficialSpawnRoundSpecialAbilityV1(state, piece, route.abilityName)
       && livePiece(piece) && fieldedFeature(piece, route)).map((piece) => ({
       sourceInstanceId: piece.id, sideKey: piece.sideKey, sourcePiece: piece,
     }));
@@ -2612,8 +2620,8 @@ export function projectOfficialCharacteristicStatusFamilyModifiersV1(
   const detectionSources = (state.pieces || []).filter((source) => source.sideKey !== piece.sideKey
     && activePiece(source)
     && passiveRoutesForPiece(bundle, state, source).some((entry) => (
-      entry.effectKind === "detection_aura"))
-    && unitWithin(state, source, piece, 6000).within);
+      entry.effectKind === "detection_aura"
+      && unitWithin(state, source, piece, entry.rangeMilliInches).within)));
   const tough = Math.max(0, ...passives.filter(entry => entry.effectKind === 'conditional_tough'
     && !hasStatus(piece, entry.excludedModeStatus)).map(entry => entry.tough),
     ...broodmotherEffects.map(entry => entry.tough || 0),

@@ -1,3 +1,4 @@
+import { allowsOfficialSpawnRoundSpecialAbilityV1 } from '../rule-atoms/official-spawn-round-ability-lock-v1.mjs';
 import { evaluateOfficialWithinWhollyWithinV1 } from
   '../rule-atoms/official-model-base-geometry-rules-kernel-v1.mjs';
 
@@ -54,7 +55,8 @@ function zergGround(state, piece) {
 }
 
 function structureSpecialAbilitiesAvailable(state, piece) {
-  return Number(piece?.structureRules?.specialAbilitiesDisabledThroughRound
+  return allowsOfficialSpawnRoundSpecialAbilityV1(state, piece, '')
+    && Number(piece?.structureRules?.specialAbilitiesDisabledThroughRound
     ?? Number.NEGATIVE_INFINITY) < Number(state?.round);
 }
 

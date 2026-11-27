@@ -1,3 +1,6 @@
+import { OFFICIAL_HOSTILE_INCUBATION_DEFINITION_ID, createOfficialSpawnRoundAbilityLockPolicyV1,
+  bindOfficialSpawnRoundAbilityLockV1, allowsOfficialSpawnRoundSpecialAbilityV1 }
+  from '../rule-atoms/official-spawn-round-ability-lock-v1.mjs';
 import { quoteOfficialUnitAbilityModifiersV1, consumeOfficialUnitAbilityModifiersV1 } from './official-unit-ability-payment-modifiers-v1.mjs';
 import { canOfficialUnitBeAbilityTargetV1 } from '../rule-atoms/official-decoy-rules-v1.mjs';
 import { projectOfficialUnitRestrictionsV1 } from '../rule-atoms/official-unit-restrictions-v1.mjs';
@@ -182,6 +185,12 @@ function compileRoute(definition) {
       createdUnitRecordKey: "army_units:pylon", minimumEnemyGapMilliInchesExclusive: 10000,
       groundLevelRequired: true, suppressSpecialAbilitiesThisRound: true,
       removeAtRoundEnd: false };
+  } else if (definition.definitionId === OFFICIAL_HOSTILE_INCUBATION_DEFINITION_ID) {
+    const spawnRoundAbilityLockPolicy = createOfficialSpawnRoundAbilityLockPolicyV1(definition);
+    spec = { effectKind: 'set_special_unit', actionKind: 'active_ability',
+      createdUnitRecordKey: spawnRoundAbilityLockPolicy.createdUnitRecordKey,
+      minimumEnemyGapMilliInchesExclusive: 10000, groundLevelRequired: true,
+      suppressSpecialAbilitiesThisRound: true, removeAtRoundEnd: false, spawnRoundAbilityLockPolicy };
   } else if (name === "Mass Recall"
     && /Once per Game.+Faction Indicator.+Within 6.+returned to Reserves/isu.test(text)) {
     spec = { effectKind: "mass_recall", actionKind: "active_ability",
@@ -518,6 +527,9 @@ function isQueenSpawnCreepSource(row) {
 }
 
 const singleUnitLifecycleSources = Object.freeze({
+  [OFFICIAL_HOSTILE_INCUBATION_DEFINITION_ID]: { version: '2.8.0',
+    scope: 'current_release_hostile_incubation_subset', unit: 'army_units:infested_missile_turret',
+    verifySource: row => { createOfficialSpawnRoundAbilityLockPolicyV1({ ...row, definitionName: row.definitionName || row.abilityName }); return true; } },
   [OFFICIAL_QUEEN_SPAWN_CREEP_DEFINITION_ID]: { version: '2.7.0',
     scope: 'current_release_queen_creep_tumor_subset', effectKind: 'spawn_creep_tumor',
     verifySource: isQueenSpawnCreepSource },
@@ -915,6 +927,9 @@ function namedActiveUsedThisRound(state, route, pieceId) {
   });
 }
 function available(state, route, instance, actor, bundle, isEngaged) {
+  if (route.sourceKind === 'unit_feature' && !allowsOfficialSpawnRoundSpecialAbilityV1(state, actor, route.abilityName)) {
+    fail('UNIT_LIFECYCLE_SPAWN_ROUND_ABILITY_LOCKED');
+  }
   if (!SIDE_KEYS.has(instance.sideKey) || state.activeSideKey !== instance.sideKey
     || (route.phase !== "any" && route.phase !== state.phase)) {
     fail("UNIT_LIFECYCLE_ROUTE_WINDOW_INVALID", route.definitionId);
@@ -1922,6 +1937,12 @@ function applyPrimary(state, route, action, events) {
     if (route.friendlyAnchorCasterOnly) placed.specialDeploymentSourcePieceId = actor.id;
     placed.specialAbilitiesSuppressedUntilRoundEnd = route.suppressSpecialAbilitiesThisRound;
     placed.removeAtRoundEnd = route.removeAtRoundEnd;
+    if (route.spawnRoundAbilityLockPolicy) {
+      const lock = bindOfficialSpawnRoundAbilityLockV1(placed, route.spawnRoundAbilityLockPolicy, Number(state.round));
+      events.push({ type: 'spawn_round_ability_lock_bound', pieceId: placed.id,
+        ruleAtomId: lock.policy.ruleAtomId, sourceDefinitionId: lock.policy.definitionId, lockHash: lock.lockHash,
+        disabledThroughRound: lock.spawnRound, exceptAbilityName: lock.policy.exceptAbilityName, trainingTruth: false });
+    }
   } else if (route.effectKind === 'summon_unit') {
     const piece = makeSpecialPiece(state, action.sideKey, route.createdUnitRecordKey, parameters.createdPieceId);
     const patch = parameters.summonResolution.mutation.piecePatches[0];

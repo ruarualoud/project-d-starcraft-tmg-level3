@@ -252,11 +252,13 @@ function compileProfiles(dataset, baseBundle, options = {}) {
         } : base.baseShape === 'measured_contour' ? {
           localVerticesMilliInches: base.localVerticesMilliInches,
           ravenOutlineSource: base.ravenOutlineSource,
-        } : { p2pSourceId: base.p2pSource.sourceId, p2pSourceContentHash: base.p2pSource.sourceContentHash }) } : null,
+        } : base.engineeringImageEstimate ? { engineeringImageEstimate: base.engineeringImageEstimate }
+          : { p2pSourceId: base.p2pSource.sourceId, p2pSourceContentHash: base.p2pSource.sourceContentHash }) } : null,
       ...(options.releaseBound === true ? { geometryStatus: missingGeometry
         ? { status: "source_missing", reason: missingGeometry.reason,
           sourceRefs: structuredClone(missingGeometry.sourceRefs) }
-        : { status: "source_bound" } } : {}),
+        : base.engineeringImageEstimate ? { status: 'engineering_image_estimate', officialPhysicalAuthority: false,
+          estimateHash: base.engineeringImageEstimate.estimateHash } : { status: "source_bound" } } : {}),
       upgradeSide: { present: true, definitionCount: payload.upgrades.length,
         definitionsHash: hashStarcraftTmgContract(payload.upgrades) },
       rulesOwnedLayoutFields: ["faction_tag", "army_slot", "phase_boxes", "speed",
@@ -344,6 +346,9 @@ export function createOfficialUnitCardSupplyDataBundleV2(input = {}) {
     armyBuilderUnitDataBundle: units } = input;
   const manifest = assertOfficialReleaseSourceV2(releaseContext, { dataset, snapshot });
   verifyOfficialModelBaseGeometryDataBundleV2(geometry);
+  if (geometry.sourcePolicy.engineeringOnly === true && releaseContext.allowEngineeringEstimatedGeometry !== true) {
+    fail('UNIT_CARD_SUPPLY_ENGINEERING_GEOMETRY_NOT_ADMITTED');
+  }
   verifyOfficialArmyBuilderReleaseBundleV2(units, "units");
   for (const dependency of [geometry, units]) {
     if (dependency.sourceSnapshotHash !== dataset.sourceSnapshotHash
@@ -459,7 +464,10 @@ export function verifyOfficialUnitCardSupplyDataBundleV2(bundle) {
       || (profile.base === null
         ? profile.geometryStatus?.status !== "source_missing" || !profile.geometryStatus.reason
           || !profile.geometryStatus.sourceRefs?.length
-        : profile.geometryStatus?.status !== "source_bound")) {
+        : profile.base.engineeringImageEstimate ? profile.geometryStatus?.status !== 'engineering_image_estimate'
+          || profile.geometryStatus.officialPhysicalAuthority !== false
+          || profile.geometryStatus.estimateHash !== profile.base.engineeringImageEstimate.estimateHash
+          : profile.geometryStatus?.status !== "source_bound")) {
       fail("UNIT_CARD_SUPPLY_PROFILE_V2_INVALID", String(profile?.recordKey || ""));
     }
     keys.add(profile.recordKey);
@@ -474,6 +482,10 @@ export function getOfficialReleaseUnitCardSupplyDataBundleV2(context) {
   const manifest = assertOfficialReleaseSourceV2(context, context || {});
   const bundle = context.resources?.unitCharacteristics;
   verifyOfficialUnitCardSupplyDataBundleV2(bundle);
+  if (bundle.unitProfiles.some(profile => profile.geometryStatus?.status === 'engineering_image_estimate')
+    && context.allowEngineeringEstimatedGeometry !== true) {
+    fail('UNIT_CARD_SUPPLY_ENGINEERING_GEOMETRY_NOT_ADMITTED');
+  }
   const integrity = manifest.components.unitCharacteristics?.integrity;
   const builderUnits = context.resources.armyBuilder?.armyResourceBudgetDataBundle
     ?.factionArmyEligibilityDataBundle?.unitDataBundle;

@@ -1,3 +1,4 @@
+import { allowsOfficialSpawnRoundSpecialAbilityV1 } from '../rule-atoms/official-spawn-round-ability-lock-v1.mjs';
 import { listOfficialOnFieldModelFootprintsV1, assertOfficialTokenPlacementSpaceV1 }
   from './official-battlefield-token-placement-space-v1.mjs';
 import { isOfficialUnitVisibleForActiveAbilityV1 } from './official-characteristic-status-family-adapter-v1.mjs';
@@ -489,7 +490,7 @@ function reviewedBattlefieldModifierSource(row) {
     && row.sourceText === 'While this Unit is Within 3" of a Mission Marker, its Armour characteristic is increased by 1.') {
     return 'marker_armour';
   }
-  if (['army_units:bile_launcher', 'army_units:omega_worm'].includes(row.recordKey)
+  if (['army_units:bile_launcher', 'army_units:omega_worm', 'army_units:infested_missile_turret'].includes(row.recordKey)
       && row.definitionId === 'unit:' + row.recordKey.split(':')[1] + '/source-of-creep-any-phase@1'
       && row.abilityName === 'Source of Creep'
       && row.sourceText === 'A Friendly or Enemy Ground Zerg Unit Within 6" of this Unit, counts as being ON CREEP.') {
@@ -688,7 +689,9 @@ function routeInstances(state, route) {
   if (route.sourceKind === "unit_feature") {
     return (state.pieces || []).filter((piece) => piece.officialUnitRecordKey === route.recordKey
       && activePiece(piece) && fieldedFeature(piece, route)
+      && allowsOfficialSpawnRoundSpecialAbilityV1(state, piece, route.abilityName)
       && (piece.specialAbilitiesSuppressedUntilRoundEnd !== true
+        || piece.officialSpawnRoundAbilityLock
         || route.effectKind === "structure")).map((piece) => ({
       sourceInstanceId: piece.id, sideKey: piece.sideKey, sourcePiece: piece,
     }));
@@ -1478,7 +1481,8 @@ function sideHasPassive(state, sideKey, effectKind) {
     && routeInstances(state, route).some((instance) => instance.sideKey === sideKey));
 }
 function structureSpecialAbilitiesAvailable(state, piece) {
-  return Number(piece?.structureRules?.specialAbilitiesDisabledThroughRound
+  return allowsOfficialSpawnRoundSpecialAbilityV1(state, piece, '')
+    && Number(piece?.structureRules?.specialAbilitiesDisabledThroughRound
     ?? Number.NEGATIVE_INFINITY) < Number(state.round);
 }
 function markerDistance(state, piece) {

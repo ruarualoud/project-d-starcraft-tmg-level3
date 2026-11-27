@@ -105,6 +105,7 @@ import { OFFICIAL_FEEDBACK_REACTION_TIMING_POLICY_V1 } from './official-feedback
 // separate Native operations, owned by their respective product runtimes.
 export function createOfficialReleaseRosterStateV2({ context, candidatesBySide, legacyDisclosurePolicy, blastTemplateGeometryAsset,
   sourceDefinitionIds,
+  attackProfileRecordKeys,
   includeMelee = false, includeArmourOrdinals = false, meleeModifierDefinitionIds, battlefieldModifierDefinitionIds,
   reactionDefinitionIds, characteristicDefinitionIds, canonicalResourceTypes = false, meleeWeaponDefinitionIds,
   rangedWeaponDefinitionIds,
@@ -232,8 +233,20 @@ export function createOfficialReleaseRosterStateV2({ context, candidatesBySide, 
     state.officialSummonedCombatEligibilityPolicy = createOfficialSummonedCombatEligibilityPolicyV1({ context });
   }
   if (includeArmourOrdinals) state.officialArmourRollOrdinalPolicy = structuredClone(OFFICIAL_ARMOUR_ROLL_ORDINAL_POLICY_V1);
+  if (attackProfileRecordKeys !== undefined && (!Array.isArray(attackProfileRecordKeys)
+    || new Set(attackProfileRecordKeys).size !== attackProfileRecordKeys.length
+    || attackProfileRecordKeys.some(key => !recordKeys.includes(key))
+    || pieces.some(piece => !attackProfileRecordKeys.includes(piece.officialUnitRecordKey)))) {
+    throw Error('RELEASE_ROSTER_ATTACK_PROFILE_SELECTION_INVALID');
+  }
+  if (attackProfileRecordKeys !== undefined && recordKeys.some(key => !attackProfileRecordKeys.includes(key))
+    && context.allowEngineeringEstimatedGeometry !== true) {
+    throw Error('RELEASE_ROSTER_PARTIAL_GENERATED_WEAPONS_ENGINEERING_ONLY');
+  }
   state.officialAttackProfileCatalogue = createOfficialAttackProfileCatalogueV3({ context,
-    recordKeys: [...new Set(recordKeys)] });
+    recordKeys: attackProfileRecordKeys ?? [...new Set(recordKeys)] });
+  if (attackProfileRecordKeys !== undefined) state.officialUnadmittedGeneratedWeaponRecords = recordKeys
+    .filter(key => !attackProfileRecordKeys.includes(key));
   if (rangedWeaponDefinitionIds !== undefined) {
     state.officialRosterRangedWeaponSourceBundle = createOfficialRangedFamilySourceBundleV2({
       catalogue: abilityCatalogue(), definitionIds: rangedWeaponDefinitionIds,

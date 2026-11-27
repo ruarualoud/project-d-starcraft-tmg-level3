@@ -422,6 +422,7 @@ export function inspectOfficialSkirmish500ReleaseOpeningCoverageV2(input = {}) {
 }
 
 function buildOfficialSkirmish500Room(input, prepareReleaseOpening) {
+  if (input.releaseContext?.allowEngineeringEstimatedGeometry === true) fail('SKIRMISH_ROOM_ESTIMATED_GEOMETRY_FORBIDDEN');
   if (input.prepareFirstRound !== undefined && typeof input.prepareFirstRound !== "boolean") {
     fail("SKIRMISH_FIRST_ROUND_PREPARATION_INVALID");
   }

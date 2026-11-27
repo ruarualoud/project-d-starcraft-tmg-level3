@@ -9,7 +9,7 @@
     "records": 38,
     "requiredNewAtoms": 18,
     "withdrawnOnlyCandidateAtoms": 3,
-    "implementedNewGameAtoms": 2
+    "implementedNewGameAtoms": 3
   },
   "sourceCompilation": {
     "exactReactionRevisions": 11,
@@ -275,9 +275,9 @@
     }
   ],
   "next": [
-    "Implement Hostile Incubation and spawn-round ability suppression before admitting Infested Missile Turret",
-    "Wire Stukov/Infested Marine/Infested Trooper gameplay and reviewed geometry; their army-building facts are connected",
-    "Implement the remaining sixteen game atom contracts, then full release selection, new-roster factories and Web acceptance; keep all 39 source-held definitions isolated"
+    "Wire Infestation transfer and Ocular Overwatch with native attack continuations; resolve strict Firefly source parsing before admitting the turret weapon",
+    "Verify full round progression and Web only for the admitted scope; the 80mm screenshot estimate remains conditional engineering geometry",
+    "Wire Stukov/Infested Marine/Infested Trooper gameplay and reviewed geometry; implement the remaining fifteen atom contracts; preserve all 39 source holds and paused work"
   ],
   "modelCalls": 0,
   "trainingTruth": false,
@@ -309,9 +309,9 @@
     "perIdAnalysisComplete": true,
     "oldCardTimingNativeDefinitions": 11,
     "newUnitAndFactionEndToEnd": false,
-    "builderAndLobbyReleaseSelection": "scoped_stukov_army_and_native_conversion_verified_full_release_and_lobby_pending",
+    "builderAndLobbyReleaseSelection": "scoped_stukov_and_hostile_conditional_geometry_verified_full_release_and_lobby_pending",
     "requiredNewGameAtoms": 18,
-    "implementedNewGameAtoms": 2,
+    "implementedNewGameAtoms": 3,
     "sourceHeldDefinitions": 39,
     "fullWave4MatchAdmission": false,
     "creepBuilderDefinitions": 3,
@@ -935,9 +935,194 @@
       ],
       "verificationScope": "Exactly one reviewed Virus group with printed costs; six source-bound army audits and cold import",
       "fullMatchAdmission": false
+    },
+    {
+      "definitionId": "card:stukov_s_forces/hostile-incubation-any@1",
+      "classification": "new_semantics",
+      "newAtomIds": [
+        "rule-atom:wave4/spawn-round-ability-lock@1"
+      ],
+      "sourceCompiled": true,
+      "executionBound": true,
+      "nativePlacementVerifiedWithEstimatedGeometry": true,
+      "nativeQueryConsumerVerified": false,
+      "consumerRefs": [
+        {
+          "file": "packages/product-composition/official-unit-lifecycle-family-adapter-v1.mjs",
+          "exportName": "createOfficialUnitLifecycleFamilySourceBundleV2"
+        },
+        {
+          "file": "packages/product-composition/official-unit-lifecycle-family-adapter-v1.mjs",
+          "exportName": "createOfficialUnitLifecycleFamilyAdapterV1"
+        },
+        {
+          "file": "packages/rule-atoms/official-spawn-round-ability-lock-v1.mjs",
+          "exportName": "bindOfficialSpawnRoundAbilityLockV1"
+        },
+        {
+          "file": "packages/rule-atoms/official-spawn-round-ability-lock-v1.mjs",
+          "exportName": "allowsOfficialSpawnRoundSpecialAbilityV1"
+        },
+        {
+          "file": "packages/product-composition/official-characteristic-status-component-runtime-v2.mjs",
+          "exportName": "createOfficialCharacteristicStatusComponentRuntimeV2"
+        }
+      ],
+      "evidenceRefs": [
+        "docs/development/wave4/evidence/hostile-incubation.public.json",
+        "docs/development/wave4/evidence/hostile-native-estimate.public.json"
+      ],
+      "verificationScope": "Conditional 80mm image-estimate component; one signed SET action plus R1/R2 query counterfactuals; no complete round progression",
+      "webVerified": false,
+      "fullMatchAdmission": false
+    },
+    {
+      "definitionId": "unit:infested_missile_turret/detection-any-phase@1",
+      "classification": "existing_atoms_new_combination",
+      "newAtomIds": [],
+      "sourceCompiled": true,
+      "executionBound": true,
+      "nativePlacementVerifiedWithEstimatedGeometry": false,
+      "nativeQueryConsumerVerified": true,
+      "consumerRefs": [
+        {
+          "file": "packages/product-composition/official-characteristic-status-component-runtime-v2.mjs",
+          "exportName": "createOfficialCharacteristicStatusComponentRuntimeV2"
+        },
+        {
+          "file": "packages/product-composition/official-characteristic-status-family-adapter-v1.mjs",
+          "exportName": "createOfficialCharacteristicStatusFamilySourceBundleV2"
+        },
+        {
+          "file": "packages/product-composition/official-characteristic-status-family-adapter-v1.mjs",
+          "exportName": "projectOfficialCharacteristicStatusFamilyModifiersV1"
+        },
+        {
+          "file": "packages/product-composition/official-characteristic-status-family-adapter-v1.mjs",
+          "exportName": "consumeOfficialDetectionHiddenStatusesV1"
+        },
+        {
+          "file": "packages/rule-atoms/official-spawn-round-ability-lock-v1.mjs",
+          "exportName": "allowsOfficialSpawnRoundSpecialAbilityV1"
+        }
+      ],
+      "evidenceRefs": [
+        "docs/development/wave4/evidence/hostile-incubation.public.json",
+        "docs/development/wave4/evidence/hostile-native-estimate.public.json"
+      ],
+      "verificationScope": "Conditional 80mm image-estimate component; one signed SET action plus R1/R2 query counterfactuals; no complete round progression",
+      "webVerified": false,
+      "fullMatchAdmission": false
+    },
+    {
+      "definitionId": "unit:infested_missile_turret/source-of-creep-any-phase@1",
+      "classification": "existing_atom",
+      "newAtomIds": [],
+      "sourceCompiled": true,
+      "executionBound": true,
+      "nativePlacementVerifiedWithEstimatedGeometry": false,
+      "nativeQueryConsumerVerified": true,
+      "consumerRefs": [
+        {
+          "file": "packages/product-composition/official-battlefield-asset-family-adapter-v1.mjs",
+          "exportName": "createOfficialBattlefieldAssetFamilySourceBundleV2"
+        },
+        {
+          "file": "packages/product-composition/official-battlefield-asset-family-adapter-v1.mjs",
+          "exportName": "projectOfficialBattlefieldAssetFamilyModifiersV1"
+        },
+        {
+          "file": "packages/product-composition/official-current-product-state-facts-v1.mjs",
+          "exportName": "isOfficialCurrentProductUnitOnCreepV1"
+        }
+      ],
+      "evidenceRefs": [
+        "docs/development/wave4/evidence/hostile-incubation.public.json",
+        "docs/development/wave4/evidence/hostile-native-estimate.public.json"
+      ],
+      "verificationScope": "Conditional 80mm image-estimate component; one signed SET action plus R1/R2 query counterfactuals; no complete round progression",
+      "webVerified": false,
+      "fullMatchAdmission": false
+    },
+    {
+      "definitionId": "unit:infested_missile_turret/infestation-any-phase@1",
+      "classification": "existing_atoms_new_combination",
+      "newAtomIds": [],
+      "sourceCompiled": true,
+      "executionBound": false,
+      "nativePlacementVerifiedWithEstimatedGeometry": false,
+      "nativeQueryConsumerVerified": false,
+      "consumerRefs": [],
+      "evidenceRefs": [
+        "docs/development/wave4/evidence/hostile-incubation.public.json",
+        "docs/development/wave4/evidence/hostile-native-estimate.public.json"
+      ],
+      "verificationScope": "Unbound; Firefly strict source parser or native reaction/attack continuation pending",
+      "webVerified": false,
+      "fullMatchAdmission": false
+    },
+    {
+      "definitionId": "unit:infested_missile_turret/structure-any-phase@1",
+      "classification": "existing_atom",
+      "newAtomIds": [],
+      "sourceCompiled": true,
+      "executionBound": true,
+      "nativePlacementVerifiedWithEstimatedGeometry": false,
+      "nativeQueryConsumerVerified": true,
+      "consumerRefs": [
+        {
+          "file": "packages/source-data/official-structure-source-v1.mjs",
+          "exportName": "createOfficialStructureSourceV1"
+        },
+        {
+          "file": "packages/product-composition/official-structure-family-adapter-v1.mjs",
+          "exportName": "createOfficialStructureFamilyAdapterV1"
+        }
+      ],
+      "evidenceRefs": [
+        "docs/development/wave4/evidence/hostile-incubation.public.json",
+        "docs/development/wave4/evidence/hostile-native-estimate.public.json"
+      ],
+      "verificationScope": "Conditional 80mm image-estimate component; one signed SET action plus R1/R2 query counterfactuals; no complete round progression",
+      "webVerified": false,
+      "fullMatchAdmission": false
+    },
+    {
+      "definitionId": "unit:infested_missile_turret/firefly-missiles-assault-phase@1",
+      "classification": "data_change",
+      "newAtomIds": [],
+      "sourceCompiled": true,
+      "executionBound": false,
+      "nativePlacementVerifiedWithEstimatedGeometry": false,
+      "nativeQueryConsumerVerified": false,
+      "consumerRefs": [],
+      "evidenceRefs": [
+        "docs/development/wave4/evidence/hostile-incubation.public.json",
+        "docs/development/wave4/evidence/hostile-native-estimate.public.json"
+      ],
+      "verificationScope": "Unbound; Firefly strict source parser or native reaction/attack continuation pending",
+      "webVerified": false,
+      "fullMatchAdmission": false
+    },
+    {
+      "definitionId": "unit:infested_missile_turret/ocular-overwatch-assault-phase@1",
+      "classification": "existing_atoms_new_combination",
+      "newAtomIds": [],
+      "sourceCompiled": true,
+      "executionBound": false,
+      "nativePlacementVerifiedWithEstimatedGeometry": false,
+      "nativeQueryConsumerVerified": false,
+      "consumerRefs": [],
+      "evidenceRefs": [
+        "docs/development/wave4/evidence/hostile-incubation.public.json",
+        "docs/development/wave4/evidence/hostile-native-estimate.public.json"
+      ],
+      "verificationScope": "Unbound; Firefly strict source parser or native reaction/attack continuation pending",
+      "webVerified": false,
+      "fullMatchAdmission": false
     }
   ],
-  "executionStatus": "stukov_army_and_native_conversion_components_verified",
+  "executionStatus": "hostile_incubation_native_component_verified_with_user_authorized_estimated_geometry",
   "creepBuilderGate": {
     "verifiedDefinitions": 3,
     "legalCreepChoices": 5,
@@ -1044,6 +1229,74 @@
         "docs/development/wave4/evidence/stukov-boundaries.public.json"
       ],
       "fullMatchAdmission": false
+    },
+    {
+      "atomId": "rule-atom:wave4/spawn-round-ability-lock@1",
+      "status": "implemented_native_component_verified_conditional_image_geometry",
+      "definitionIds": [
+        "card:stukov_s_forces/hostile-incubation-any@1"
+      ],
+      "consumerRefs": [
+        {
+          "file": "packages/product-composition/official-unit-lifecycle-family-adapter-v1.mjs",
+          "exportName": "createOfficialUnitLifecycleFamilySourceBundleV2"
+        },
+        {
+          "file": "packages/product-composition/official-unit-lifecycle-family-adapter-v1.mjs",
+          "exportName": "createOfficialUnitLifecycleFamilyAdapterV1"
+        },
+        {
+          "file": "packages/rule-atoms/official-spawn-round-ability-lock-v1.mjs",
+          "exportName": "bindOfficialSpawnRoundAbilityLockV1"
+        },
+        {
+          "file": "packages/rule-atoms/official-spawn-round-ability-lock-v1.mjs",
+          "exportName": "allowsOfficialSpawnRoundSpecialAbilityV1"
+        },
+        {
+          "file": "packages/product-composition/official-characteristic-status-component-runtime-v2.mjs",
+          "exportName": "createOfficialCharacteristicStatusComponentRuntimeV2"
+        },
+        {
+          "file": "packages/product-composition/official-structure-family-adapter-v1.mjs",
+          "exportName": "createOfficialStructureFamilyAdapterV1"
+        },
+        {
+          "file": "packages/product-composition/official-current-product-state-facts-v1.mjs",
+          "exportName": "resolveOfficialCurrentProductSideCapabilityV1"
+        },
+        {
+          "file": "packages/product-composition/official-battlefield-asset-family-adapter-v1.mjs",
+          "exportName": "createOfficialBattlefieldAssetFamilySourceBundleV2"
+        },
+        {
+          "file": "packages/product-composition/official-characteristic-status-family-adapter-v1.mjs",
+          "exportName": "createOfficialCharacteristicStatusFamilySourceBundleV2"
+        },
+        {
+          "file": "packages/product-composition/official-reaction-family-adapter-v1.mjs",
+          "exportName": "createOfficialReactionFamilyAdapterV1"
+        },
+        {
+          "file": "packages/product-composition/official-current-product-state-facts-v1.mjs",
+          "exportName": "isOfficialCurrentProductUnitOnCreepV1"
+        },
+        {
+          "file": "packages/product-composition/official-characteristic-status-family-adapter-v1.mjs",
+          "exportName": "projectOfficialCharacteristicStatusFamilyModifiersV1"
+        },
+        {
+          "file": "packages/product-composition/official-characteristic-status-family-adapter-v1.mjs",
+          "exportName": "consumeOfficialDetectionHiddenStatusesV1"
+        }
+      ],
+      "evidenceRefs": [
+        "docs/development/wave4/evidence/hostile-incubation.public.json",
+        "docs/development/wave4/evidence/hostile-native-estimate.public.json"
+      ],
+      "verifiedWithOfficialPhysicalGeometry": false,
+      "nativeRoundTransitionVerified": false,
+      "fullMatchAdmission": false
     }
   ],
   "stukovArmyGate": {
@@ -1072,6 +1325,36 @@
       "docs/development/wave4/evidence/stukov-army.public.json",
       "docs/development/wave4/evidence/stukov-boundaries.public.json"
     ],
+    "fullMatchAdmission": false,
+    "webAcceptance": false
+  },
+  "hostileIncubationGate": {
+    "sourceDefinitions": 7,
+    "boundDefinitions": 4,
+    "selectedRecords": 102,
+    "sourceRecords": 119,
+    "newAtoms": 1,
+    "nativeSignedActions": 1,
+    "nativeColdReplayCases": 1,
+    "implementedCumulativeAtoms": 3,
+    "confirmedGeometryNativeAtoms": 2,
+    "estimatedGeometryNativeAtoms": 1,
+    "baseEstimateRef": "content/source-releases/wave4-20261127/infested-turret-base-estimate-v1.json",
+    "baseEstimateHash": "9fd4ef4671d395003a703183a3ffb829ad13a9fa659bfc610d739afbe02f989a",
+    "officialPhysicalAuthority": false,
+    "unboundDefinitionIds": [
+      "unit:infested_missile_turret/infestation-any-phase@1",
+      "unit:infested_missile_turret/firefly-missiles-assault-phase@1",
+      "unit:infested_missile_turret/ocular-overwatch-assault-phase@1"
+    ],
+    "normalGeometryError": "MODEL_BASE_GEOMETRY_SOURCE_MISSING:army_units:infested_missile_turret:NO_UNCHANGED_ORDINARY_REVIEWED_FOOTPRINT",
+    "weaponError": "OFFICIAL_ATTACK_SURGE_UNKNOWN:army_units:infested_missile_turret:assault:Firefly Missiles:Light. Armoured (D3)",
+    "evidenceRefs": [
+      "docs/development/wave4/evidence/hostile-incubation.public.json",
+      "docs/development/wave4/evidence/hostile-native-estimate.public.json"
+    ],
+    "formalStandardAndSkirmishAdmissionRejected": true,
+    "nativeRoundTransitionVerified": false,
     "fullMatchAdmission": false,
     "webAcceptance": false
   }

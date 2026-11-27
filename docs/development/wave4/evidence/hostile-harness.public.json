@@ -1,0 +1,53 @@
+{
+  "schema": "starcraft_tmg_wave4_hostile_harness_round_v1",
+  "harnessLoopUsed": true,
+  "targetGames": [
+    "starcraft-tmg"
+  ],
+  "promptPackRoutes": [
+    {
+      "route": "fact_probe_prompt",
+      "mode": "offline_engineering",
+      "modelCalls": 0
+    }
+  ],
+  "harnessToolsCalled": [
+    "createOfficialReleaseRosterStateV2",
+    "createEnvelope",
+    "legalSpace",
+    "previewAction",
+    "confirmPreview",
+    "applyAction",
+    "replay",
+    "projectOfficialCharacteristicStatusFamilyModifiersV1",
+    "projectOfficialBattlefieldAssetFamilyModifiersV1",
+    "consumeOfficialDetectionHiddenStatusesV1"
+  ],
+  "uiTraceEvidence": [],
+  "agentDecisionEvidence": {
+    "status": "not_applicable",
+    "reason": "No model decision or AI game; source-bound rule and room component verification only"
+  },
+  "memoryTraceEvidence": [],
+  "trainingTraceCandidates": [],
+  "rollbackOrDemotionRules": [
+    "Demote spatial evidence if a confirmed footprint differs from this separately hashed estimate; never rewrite old room bindings",
+    "Reject altered source, lock, marker identity or expired runtime binding",
+    "Keep the full turret and formal release held until unbound definitions, native round progression, complete attack and Web gates pass"
+  ],
+  "userVisibleChecks": [
+    "Native placement succeeds only beyond the strict 10-inch boundary",
+    "Structure remains effective while the other special abilities are locked in the setting round",
+    "Query-only R2 counterfactuals restore the 8-inch Detection and 6-inch Source of Creep consumers",
+    "Idempotent resubmission and cold signed replay preserve the exact envelope",
+    "Standard and Skirmish factories reject engineering image geometry; no Web UI gate claimed"
+  ],
+  "evidenceRefs": [
+    "docs/development/wave4/evidence/hostile-incubation.public.json",
+    "docs/development/wave4/evidence/hostile-native-estimate.public.json"
+  ],
+  "nativeRunRef": "build/wave4-web/hostile-incubation/native-estimate-K9ByEE",
+  "wave3PlayerRoomsTouched": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

@@ -1,0 +1,116 @@
+{
+  "schema": "starcraft_tmg_wave4_hostile_incubation_verification_v1",
+  "status": "passed_with_admission_holds",
+  "runRef": "build/wave4-web/hostile-incubation/run-yVlUZG",
+  "candidateManifestHash": "90d72a3366ded11e5770f804f5173f4ed2e89093c9e7c603ca8582a79782c34a",
+  "sourceDefinitionIds": [
+    "card:stukov_s_forces/hostile-incubation-any@1",
+    "unit:infested_missile_turret/detection-any-phase@1",
+    "unit:infested_missile_turret/source-of-creep-any-phase@1",
+    "unit:infested_missile_turret/infestation-any-phase@1",
+    "unit:infested_missile_turret/structure-any-phase@1",
+    "unit:infested_missile_turret/firefly-missiles-assault-phase@1",
+    "unit:infested_missile_turret/ocular-overwatch-assault-phase@1"
+  ],
+  "sourceSnapshotHash": "60ca66a0a1f3eca17f6cea3ac49f6aaa71e0e1b2b957407156c94630acf20c80",
+  "datasetHash": "66a15120a2f995707e3b5271753c754b581050ec14665a2eb4245f2651e1ae25",
+  "policyHash": "48b77a023e0b13b275b846c33aadee073c9fd8eb7345f31f9b47db3ddc9c1c57",
+  "atomId": "rule-atom:wave4/spawn-round-ability-lock@1",
+  "implementedNewGameAtoms": 3,
+  "nativeVerifiedNewGameAtoms": 2,
+  "selectedRecords": 102,
+  "sourceRecords": 119,
+  "sourceHeldDefinitions": 39,
+  "checks": [
+    {
+      "round": 1,
+      "abilities": {
+        "Detection": false,
+        "Source of Creep": false,
+        "Infestation": false,
+        "Structure": true,
+        "Firefly Missiles": false,
+        "Ocular Overwatch": false
+      },
+      "structureQueryReceiptHash": "1229f909dab96ea2a7cdfbe3ab15c6c0aebbf8d1c37c7c3112bc019d5451ff74"
+    },
+    {
+      "round": 2,
+      "abilities": {
+        "Detection": true,
+        "Source of Creep": true,
+        "Infestation": true,
+        "Structure": true,
+        "Firefly Missiles": true,
+        "Ocular Overwatch": true
+      },
+      "structureQueryReceiptHash": "2780cf6cdcfc98d97a3a5eddfb0ffc586dd78471ddb3bb6f3db9d16ca1aca681"
+    }
+  ],
+  "consumerRefs": [
+    {
+      "file": "packages/product-composition/official-unit-lifecycle-family-adapter-v1.mjs",
+      "exportName": "createOfficialUnitLifecycleFamilySourceBundleV2"
+    },
+    {
+      "file": "packages/product-composition/official-unit-lifecycle-family-adapter-v1.mjs",
+      "exportName": "createOfficialUnitLifecycleFamilyAdapterV1"
+    },
+    {
+      "file": "packages/rule-atoms/official-spawn-round-ability-lock-v1.mjs",
+      "exportName": "bindOfficialSpawnRoundAbilityLockV1"
+    },
+    {
+      "file": "packages/rule-atoms/official-spawn-round-ability-lock-v1.mjs",
+      "exportName": "allowsOfficialSpawnRoundSpecialAbilityV1"
+    },
+    {
+      "file": "packages/product-composition/official-characteristic-status-component-runtime-v2.mjs",
+      "exportName": "createOfficialCharacteristicStatusComponentRuntimeV2"
+    },
+    {
+      "file": "packages/product-composition/official-structure-family-adapter-v1.mjs",
+      "exportName": "createOfficialStructureFamilyAdapterV1"
+    },
+    {
+      "file": "packages/product-composition/official-current-product-state-facts-v1.mjs",
+      "exportName": "resolveOfficialCurrentProductSideCapabilityV1"
+    },
+    {
+      "file": "packages/product-composition/official-battlefield-asset-family-adapter-v1.mjs",
+      "exportName": "createOfficialBattlefieldAssetFamilySourceBundleV2"
+    },
+    {
+      "file": "packages/product-composition/official-characteristic-status-family-adapter-v1.mjs",
+      "exportName": "createOfficialCharacteristicStatusFamilySourceBundleV2"
+    },
+    {
+      "file": "packages/product-composition/official-reaction-family-adapter-v1.mjs",
+      "exportName": "createOfficialReactionFamilyAdapterV1"
+    }
+  ],
+  "sourceBindings": {
+    "hostileIncubation": "6acc5364db5ad31365557aa424bf8a58abd7623ee1ab30ccb28735c43024acd5",
+    "structure": "c4af8d57b79930952196fbb15ba34c9a18316da353fe78cb7b394b6aabab0aaa",
+    "detection": "f7d7ea83d21e6142ac1778c49f62567140c93a70a2122265b137f38c7dcb6e4a",
+    "sourceOfCreep": "ad173648f368eff79e592e6c5df564c1a04effe596899fbb49c165d1644dacb7"
+  },
+  "boundDefinitionCount": 4,
+  "unboundDefinitionIds": [
+    "unit:infested_missile_turret/infestation-any-phase@1",
+    "unit:infested_missile_turret/firefly-missiles-assault-phase@1",
+    "unit:infested_missile_turret/ocular-overwatch-assault-phase@1"
+  ],
+  "coldLockReadVerified": true,
+  "cleanupCannotUnlockEarly": true,
+  "markerTamperRejected": true,
+  "generatedUnitArmyPurchaseRejected": true,
+  "geometryError": "MODEL_BASE_GEOMETRY_SOURCE_MISSING:army_units:infested_missile_turret:NO_UNCHANGED_ORDINARY_REVIEWED_FOOTPRINT",
+  "weaponError": "OFFICIAL_ATTACK_SURGE_UNKNOWN:army_units:infested_missile_turret:assault:Firefly Missiles:Light. Armoured (D3)",
+  "nativePlacementVerified": false,
+  "turretFullGameplayVerified": false,
+  "fullMatchAdmission": false,
+  "webAcceptance": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

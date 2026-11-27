@@ -1,0 +1,66 @@
+{
+  "schema": "starcraft_tmg_wave4_hostile_native_image_estimate_verification_v1",
+  "status": "passed_conditional_geometry",
+  "runRef": "build/wave4-web/hostile-incubation/native-estimate-K9ByEE",
+  "candidateManifestHash": "1852412c0b8185c3da14c4adfc854d3c8944206bba8ffd4d8ac63fde34bf39b3",
+  "baseEstimateHash": "9fd4ef4671d395003a703183a3ffb829ad13a9fa659bfc610d739afbe02f989a",
+  "estimatedRoundBaseMillimetres": 80,
+  "uncertaintyMillimetres": {
+    "minimum": 60,
+    "maximum": 100
+  },
+  "officialPhysicalAuthority": false,
+  "nativePlacementVerified": true,
+  "nativeRoundTransitionVerified": false,
+  "proof": {
+    "sourceDefinitionIds": [
+      "card:stukov_s_forces/hostile-incubation-any@1",
+      "unit:infested_missile_turret/detection-any-phase@1",
+      "unit:infested_missile_turret/structure-any-phase@1",
+      "unit:infested_missile_turret/source-of-creep-any-phase@1"
+    ],
+    "signedActions": 1,
+    "stateHash": "935530d66910e439ac4b935b329215d7b22d33f5cee466a38dc78d16b10c2646",
+    "createdPieceId": "special:1:infested_missile_turret:1",
+    "lockHash": "058c15ae26be2b7d770377a9b395730d7bbe2b37487da198788916b69da52c1b",
+    "runtimeHash": "1f935258f56c9d98ec558a86ff084df1aade238c329d75862847525ab14586a5",
+    "structureQueryReceiptHash": "fd4117c8b329df2c5519cd6ac6c5767e2d69ca67afcd400248033179abc6af7a",
+    "exactTenRejected": true,
+    "rejection": {
+      "reason": "PROPOSAL_INVALID",
+      "ruleError": "UNIT_LIFECYCLE_ENEMY_SEPARATION_REQUIRED"
+    },
+    "duplicateFriendlyTurretRejected": true,
+    "auraQueryCounterfactuals": [
+      {
+        "round": 1,
+        "detectionAtEdgeGap6350": false,
+        "onCreep": false,
+        "hiddenRemoved": false
+      },
+      {
+        "round": 2,
+        "detectionAtEdgeGap6350": true,
+        "onCreep": true,
+        "hiddenRemoved": true
+      }
+    ],
+    "idempotencyVerified": true,
+    "coldReplay": true
+  },
+  "formalStandardAndSkirmishAdmissionRejected": true,
+  "implicitEstimatedGeometryAdmissionRejected": true,
+  "implementedNewGameAtoms": 3,
+  "nativeVerifiedWithConfirmedGeometry": 2,
+  "nativeVerifiedWithEstimatedGeometry": 1,
+  "sourceHeldDefinitions": 39,
+  "unadmittedGeneratedWeaponRecords": [
+    "army_units:infested_missile_turret"
+  ],
+  "turretFullGameplayVerified": false,
+  "fullMatchAdmission": false,
+  "webAcceptance": false,
+  "wave3PlayerRoomsTouched": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

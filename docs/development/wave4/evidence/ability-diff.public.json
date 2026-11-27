@@ -4,7 +4,7 @@
   "inventoryRole": "frozen_initial_analysis; current implementation is recorded separately in executionProgress",
   "executionProgress": {
     "ref": "coordination/wave4/ability-wiring-progress.json",
-    "implementedNewGameAtoms": 2
+    "implementedNewGameAtoms": 3
   },
   "inventoryHash": "c922fc85ecafdbe88597dae454b3263727f9732d12f639d297fbabdec87a7543",
   "denominator": {

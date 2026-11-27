@@ -4,15 +4,15 @@
 
 当前执行 T28-W4-02。
 Ticket 23 / Slice 249；整体 33/36；剩余 248、249、250。
-状态日期：2026-11-27T15:21:14.228Z。本页由 coordination/current-development.json 生成，不追加历史。
+状态日期：2026-11-27T16:08:48.760Z。本页由 coordination/current-development.json 生成，不追加历史。
 
-整版Wave4仍未准入。156条差分完成；旧卡14条修订已有局部接线证据。本批Stukov跨种族建军与运行时转换新增2原子（累计2/18），4条Native签名动作及冷重放通过；3个新单位的建军资料已接，完整行为/几何待。39条来源阻断隔离；Wave3仍9/16。
+整版Wave4仍未准入。156条差分完成；旧卡14条修订已有局部证据。本批Hostile Incubation新增1原子，累计3/18；官方截图暂估炮塔圆形80mm（60–100mm），条件几何下一条Native设置/幂等/冷重放及实际光环查询通过。7定义绑定4条；炮塔完整行为、原生跨回合及Web待。39条来源阻断隔离；Wave3仍9/16。
 
 运行限制：仅 codex/wave4-web-pvp；服务端口 5484、数据 build/wave4-web/host。本轮已授权离线工程验收及按成果提交推送。5483 Wave3 玩家房与主线保留；付费模型、K3、AI 对局、复盘与生产发布继续暂停。
 
 | 工作 | 实现 | 产品交接 | 真实产出 | 策略效果 |
 |---|---|---|---|---|
-| Wave4 W4-02：Stukov两原子组件已验；整版数据未完 | 部分完成 | 部分完成 | 不适用 | 不适用 |
+| Wave4 W4-02：累计3原子；Hostile条件几何组件已验 | 部分完成 | 部分完成 | 不适用 | 不适用 |
 | Wave4 W4-01 候选与旧版兼容 | 已实现 | 已通过 | 已产出 | 不适用 |
 | 开发环境六项改进 | 已实现 | 已通过 | 不适用 | 不适用 |
 | WikiSkill | 已实现 | 部分完成 | 已产出 | 未能证明 |
@@ -23,12 +23,13 @@ Ticket 23 / Slice 249；整体 33/36；剩余 248、249、250。
 | T27/S272 军表与 Plan／Teach，P0–P6 验收 3/7 | 部分完成 | 部分完成 | 部分完成 | 未测效果 |
 
 下一步：
-1. W4-02：接Hostile Incubation回合禁用合同与Infested Missile Turret；续接Stukov/Infested Marine/Infested Trooper的完整行为和几何，再依赖实现其余16个新合同。
-2. 39条来源继续阻断：Archon撤下、原生感染机械CP语义及Alarak阶段拼写，不以旧单位定点验收代替准入。
-3. 能力准入后推进W4-03完整发布选择、Builder/工厂/查询与媒体，再做W4-04双浏览器500/2000分新军表验收；付费模型、K3、AI、复盘、生产发布保持暂停。
+1. W4-02：接炮塔Infestation与Ocular Overwatch后继，解决Firefly严格源解析，再验完整回合和Web；截图80mm几何仅工程条件。
+2. 39条来源继续阻断。续接Stukov/Infested Marine/Infested Trooper完整行为和几何，按依赖完成其余15个新增合同。
+3. 能力准入后推进W4-03完整发布选择、Builder/工厂/查询与媒体，再做W4-04双浏览器500/2000分新军表验收；所有暂停项保持。
 
 ## Navigation
 
+- 查看Hostile新增原子、炮塔截图估算与原生准入边界：[Hostile与炮塔条件几何接线](docs/development/wave4/hostile-incubation-wiring.zh-CN.md)
 - 查看新增2原子、进口单位BM支付与源阻断边界：[Stukov建军与运行时接线](docs/development/wave4/stukov-army-wiring.zh-CN.md)
 - 查看11条旧卡局部接线；区分整版新数据未完成项：[原生时点与Web局部验收](docs/development/wave4/native-timing-wiring.zh-CN.md)
 - 查看三条Creep主体、消费者与新增记录排除范围：[Creep同源建军验收](docs/development/wave4/creep-builder-wiring.zh-CN.md)

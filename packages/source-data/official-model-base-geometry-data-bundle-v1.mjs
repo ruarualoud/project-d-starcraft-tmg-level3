@@ -1,3 +1,4 @@
+import { verifyOfficialEngineeringImageBaseEstimateV1 } from './official-engineering-image-base-estimate-v1.mjs';
 import { createHash } from 'node:crypto';
 import { isDeepStrictEqual, types } from 'node:util';
 import { hashStarcraftTmgContract } from
@@ -449,6 +450,14 @@ export function verifyOfficialModelBaseGeometryDataBundleV2(bundle) {
   const keys = new Set();
   for (const profile of bundle.profiles) {
     const ravenOutline = profile.baseShape === ravenShape && ravenShape !== undefined;
+    const estimate = profile.engineeringImageEstimate;
+    if (estimate) {
+      verifyOfficialEngineeringImageBaseEstimateV1(estimate);
+      if (bundle.sourcePolicy.engineeringOnly !== true || profile.recordKey !== estimate.recordKey
+        || profile.sourceRecordHash !== estimate.sourceRecordHash || profile.payloadHash !== estimate.payloadHash
+        || profile.baseShape !== estimate.shape || profile.baseWidthMillimetres !== estimate.diameterMillimetres
+        || profile.baseDepthMillimetres !== estimate.diameterMillimetres) fail('ENGINEERING_IMAGE_GEOMETRY_PROFILE_INVALID');
+    }
     const p2p = profile.p2pSource;
     if (keys.has(profile.recordKey) || !hashPattern.test(profile.sourceRecordHash)
       || !hashPattern.test(profile.payloadHash) || (!ravenOutline && !['round', 'rectangle'].includes(profile.baseShape))
@@ -459,7 +468,7 @@ export function verifyOfficialModelBaseGeometryDataBundleV2(bundle) {
       || profile.baseWidthMilliInches !== milliInches(profile.baseWidthMillimetres)
       || profile.baseDepthMilliInches !== milliInches(profile.baseDepthMillimetres)
       || (profile.baseShape === 'round' && profile.baseWidthMilliInches !== profile.baseDepthMilliInches)
-      || (ravenOutline ? !(ravenShape === 'measured_contour'
+      || (estimate ? false : ravenOutline ? !(ravenShape === 'measured_contour'
         ? validRavenContourProfile(profile) : validRavenCrossProfile(profile))
         : !Number.isSafeInteger(p2p?.pdfPage) || p2p.pdfPage < 1 || !hashPattern.test(p2p.sourceContentHash)
           || p2p.sourceContentHash !== bundle.p2pSourceHashes[p2p.sourceId]
@@ -513,10 +522,39 @@ export function rebindOfficialUnchangedModelGeometryV2({ context, previousBundle
   return result;
 }
 
+export function createOfficialEngineeringImageGeometryV1({ context, baseGeometry, estimate }) {
+  assertOfficialReleaseSourceV2(context, context || {});
+  verifyOfficialModelBaseGeometryDataBundleV2(baseGeometry);
+  verifyOfficialEngineeringImageBaseEstimateV1(estimate);
+  const record = context.dataset.recordsByKey[estimate.recordKey];
+  if (context.allowEngineeringEstimatedGeometry !== true || record?.sourceRecordHash !== estimate.sourceRecordHash
+    || record?.payloadHash !== estimate.payloadHash || baseGeometry.normalizedDatasetHash !== context.dataset.datasetHash
+    || !baseGeometry.missingProfiles.some(row => row.recordKey === estimate.recordKey)) {
+    fail('ENGINEERING_IMAGE_GEOMETRY_SOURCE_INVALID');
+  }
+  const diameter = estimate.diameterMillimetres;
+  const profile = { recordKey: record.recordKey, unitName: record.payload.name,
+    sourceRecordHash: record.sourceRecordHash, payloadHash: record.payloadHash, baseShape: 'round',
+    baseWidthMillimetres: diameter, baseDepthMillimetres: diameter,
+    baseWidthMilliInches: milliInches(diameter), baseDepthMilliInches: milliInches(diameter),
+    printedBase: `ESTIMATE ONLY: round ${diameter}mm`, engineeringImageEstimate: estimate };
+  const missingProfiles = baseGeometry.missingProfiles.filter(row => row.recordKey !== record.recordKey);
+  const body = { ...without(baseGeometry, ['bundleHash']),
+    profiles: [...baseGeometry.profiles, profile].sort((a, b) => a.recordKey.localeCompare(b.recordKey)),
+    missingProfiles, profileDenominatorComplete: missingProfiles.length === 0,
+    sourcePolicy: { ...baseGeometry.sourcePolicy, engineeringOnly: true, captureMode: 'conditional_official_image_estimate' } };
+  const bundle = freezeDeep({ ...body, bundleHash: hashStarcraftTmgContract(body) });
+  verifyOfficialModelBaseGeometryDataBundleV2(bundle);
+  return bundle;
+}
+
 export function getOfficialReleaseModelBaseGeometryBundleV2(context) {
   const manifest = assertOfficialReleaseSourceV2(context, context || {});
   const bundle = context.resources?.geometry;
   verifyOfficialModelBaseGeometryDataBundleV2(bundle);
+  if (bundle.sourcePolicy.engineeringOnly === true && context.allowEngineeringEstimatedGeometry !== true) {
+    fail('ENGINEERING_IMAGE_GEOMETRY_NOT_ADMITTED');
+  }
   if (bundle.sourceSnapshotHash !== manifest.source.snapshotHash
     || bundle.normalizedDatasetHash !== manifest.source.datasetHash
     || bundle.sourceLockHash !== manifest.source.sourceRevisionHash

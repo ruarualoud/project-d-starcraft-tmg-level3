@@ -1,0 +1,56 @@
+{
+  "schema": "starcraft_tmg_engineering_image_base_estimate_v1",
+  "recordKey": "army_units:infested_missile_turret",
+  "sourceRecordHash": "36d00672b6ebc8145dda4defedc6e78a68f5cd4e94193a9b0c6a7a672c70a0f8",
+  "payloadHash": "7103c8b123c54b4641a519901658c460e519fbbecbd913833ceb0332ebccfd63",
+  "shape": "round",
+  "diameterMillimetres": 80,
+  "uncertaintyMillimetres": {
+    "minimum": 60,
+    "maximum": 100
+  },
+  "confidence": "low",
+  "officialPhysicalAuthority": false,
+  "usageScope": "conditional_engineering",
+  "userInstruction": "先看官方截图估算吧",
+  "sourceImage": {
+    "ref": "docs/development/wave4/evidence/hostile-base-reference.webp",
+    "url": "https://starcraft-tmg.com/files/scaled-thumbs/news/double-the-action-with-the-new-starcraft-tabletop-miniatures-game-2-player-starter-set/13%20w4%20-%20content%20-%2016x9.png.jpg/1920_1080.webp?ts=1795704275",
+    "byteHash": "d701984b95c6c2c415e921deb205e3c64ef0844d083487157e8ecf2599931f3a",
+    "widthPixels": 1920,
+    "heightPixels": 1080
+  },
+  "calibration": {
+    "referenceRecords": [
+      "army_units:goliath",
+      "army_units:defiler"
+    ],
+    "referenceDiameterMillimetres": 80,
+    "approximatePixelBounds": {
+      "turretBase": {
+        "left": 668,
+        "right": 754,
+        "top": 195,
+        "bottom": 228
+      },
+      "goliathBase": {
+        "left": 466,
+        "right": 562,
+        "top": 439,
+        "bottom": 483
+      }
+    },
+    "method": "Visual comparison of round bases on the official common-plane contents image. Correct approximately for perspective using nearby unit cards; choose the nearest listed 80mm size. This is not a calibrated photograph or a measurement.",
+    "officialProductUrl": "https://starcraft-tmg.com/pl/sklep/pre-orders/starcraft-two-player-starter-set-purification",
+    "listedSetBaseSizesMillimetres": [
+      32,
+      40,
+      50,
+      80,
+      150
+    ]
+  },
+  "productionRoomEligible": false,
+  "trainingTruth": false,
+  "estimateHash": "9fd4ef4671d395003a703183a3ffb829ad13a9fa659bfc610d739afbe02f989a"
+}

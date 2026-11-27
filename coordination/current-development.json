@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-11-27T15:21:14.228Z",
+  "updatedAt": "2026-11-27T16:08:48.760Z",
   "ticket": 23,
   "slice": 249,
   "completion": "33/36",
@@ -9,15 +9,15 @@
     249,
     250
   ],
-  "summary": "整版Wave4仍未准入。156条差分完成；旧卡14条修订已有局部接线证据。本批Stukov跨种族建军与运行时转换新增2原子（累计2/18），4条Native签名动作及冷重放通过；3个新单位的建军资料已接，完整行为/几何待。39条来源阻断隔离；Wave3仍9/16。",
+  "summary": "整版Wave4仍未准入。156条差分完成；旧卡14条修订已有局部证据。本批Hostile Incubation新增1原子，累计3/18；官方截图暂估炮塔圆形80mm（60–100mm），条件几何下一条Native设置/幂等/冷重放及实际光环查询通过。7定义绑定4条；炮塔完整行为、原生跨回合及Web待。39条来源阻断隔离；Wave3仍9/16。",
   "runPolicy": "仅 codex/wave4-web-pvp；服务端口 5484、数据 build/wave4-web/host。本轮已授权离线工程验收及按成果提交推送。5483 Wave3 玩家房与主线保留；付费模型、K3、AI 对局、复盘与生产发布继续暂停。",
   "items": [
     {
       "id": "wave4-ability-diff",
-      "title": "Wave4 W4-02：Stukov两原子组件已验；整版数据未完",
+      "title": "Wave4 W4-02：累计3原子；Hostile条件几何组件已验",
       "implementation": {
         "status": "partial",
-        "note": "逐ID差分156/156；旧卡14条修订局部已验。Stukov跨种族建军及运行时转换新增2原子，累计2/18；101条同源候选，39条来源阻断隔离。",
+        "note": "逐ID差分156/156；新增原子累计3/18。Hostile与炮塔7定义绑定4条，102/119同源候选；截图估算几何隔离，39条来源阻断保持。",
         "evidence": [
           "content/source-releases/wave4-20261127/abilities/ability-diff.json",
           "docs/development/wave4/evidence/ability-diff.public.json",
@@ -25,12 +25,14 @@
           "docs/development/wave4/evidence/native-other-timing.public.json",
           "docs/development/wave4/evidence/creep-builder.public.json",
           "docs/development/wave4/evidence/stukov-army.public.json",
-          "docs/development/wave4/evidence/stukov-boundaries.public.json"
+          "docs/development/wave4/evidence/stukov-boundaries.public.json",
+          "docs/development/wave4/evidence/hostile-incubation.public.json",
+          "docs/development/wave4/evidence/hostile-native-estimate.public.json"
         ]
       },
       "productHandoff": {
         "status": "partial",
-        "note": "Stukov 6份军表冷导入、8建军反例、4源阻断候选、4 Native签名动作和冷重放通过；3新单位仅建军资料，完整行为/几何/房间/Web待。",
+        "note": "Stukov既有四条Native回归通过；Hostile在80mm估算底座下一条签名设置/幂等/冷重放通过，Structure保留，R1/R2实际光环查询通过。未执行完整回合推进；炮塔三条能力、正式开局和新数据Web待。",
         "evidence": [
           "docs/development/wave4/evidence/native-armour-timing.public.json",
           "docs/development/wave4/evidence/native-other-timing.public.json",
@@ -38,7 +40,9 @@
           "docs/development/wave4/evidence/ability-wave3-cold-read.public.json",
           "docs/development/wave4/evidence/creep-builder.public.json",
           "docs/development/wave4/evidence/stukov-army.public.json",
-          "docs/development/wave4/evidence/stukov-boundaries.public.json"
+          "docs/development/wave4/evidence/stukov-boundaries.public.json",
+          "docs/development/wave4/evidence/hostile-incubation.public.json",
+          "docs/development/wave4/evidence/hostile-native-estimate.public.json"
         ]
       },
       "liveOutput": {
@@ -652,11 +656,16 @@
     }
   ],
   "next": [
-    "W4-02：接Hostile Incubation回合禁用合同与Infested Missile Turret；续接Stukov/Infested Marine/Infested Trooper的完整行为和几何，再依赖实现其余16个新合同。",
-    "39条来源继续阻断：Archon撤下、原生感染机械CP语义及Alarak阶段拼写，不以旧单位定点验收代替准入。",
-    "能力准入后推进W4-03完整发布选择、Builder/工厂/查询与媒体，再做W4-04双浏览器500/2000分新军表验收；付费模型、K3、AI、复盘、生产发布保持暂停。"
+    "W4-02：接炮塔Infestation与Ocular Overwatch后继，解决Firefly严格源解析，再验完整回合和Web；截图80mm几何仅工程条件。",
+    "39条来源继续阻断。续接Stukov/Infested Marine/Infested Trooper完整行为和几何，按依赖完成其余15个新增合同。",
+    "能力准入后推进W4-03完整发布选择、Builder/工厂/查询与媒体，再做W4-04双浏览器500/2000分新军表验收；所有暂停项保持。"
   ],
   "navigation": [
+    {
+      "when": "查看Hostile新增原子、炮塔截图估算与原生准入边界",
+      "title": "Hostile与炮塔条件几何接线",
+      "path": "docs/development/wave4/hostile-incubation-wiring.zh-CN.md"
+    },
     {
       "when": "查看新增2原子、进口单位BM支付与源阻断边界",
       "title": "Stukov建军与运行时接线",

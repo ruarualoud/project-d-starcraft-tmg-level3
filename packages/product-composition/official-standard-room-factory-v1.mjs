@@ -654,6 +654,7 @@ export function inspectOfficialStandardReleaseOpeningCoverageV2(input = {}) {
 }
 
 function buildOfficialStandardRoom(input, prepareReleaseOpening) {
+  if (input.releaseContext?.allowEngineeringEstimatedGeometry === true) fail('STANDARD_ROOM_ESTIMATED_GEOMETRY_FORBIDDEN');
   if (input.prepareFirstRound !== undefined && typeof input.prepareFirstRound !== "boolean") {
     fail("STANDARD_ROOM_FIRST_ROUND_PREPARATION_INVALID");
   }

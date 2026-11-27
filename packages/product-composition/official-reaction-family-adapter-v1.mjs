@@ -1,3 +1,4 @@
+import { allowsOfficialSpawnRoundSpecialAbilityV1 } from '../rule-atoms/official-spawn-round-ability-lock-v1.mjs';
 import { WAVE4_REACTION_REVISIONS } from '../../content/source-releases/wave4-20261127/ability-review-v1.mjs';
 import { projectOfficialRangedFamilyModifiersV1 } from './official-ranged-family-projection-v1.mjs';
 import { OFFICIAL_OPTICAL_FLARE_DEFINITION_ID } from './official-targeted-active-ability-policy-v1.mjs';
@@ -860,6 +861,7 @@ function suppressionSubjects(state, window, route, source) {
     }).visible)))).map(target => target.id).sort();
 }
 function routeEligible(state, window, route, instance) {
+  if (instance.sourcePiece && !allowsOfficialSpawnRoundSpecialAbilityV1(state, instance.sourcePiece, route.abilityName)) return false;
   if (route.triggerKind !== window.triggerKind
     || (route.phase !== "any" && route.phase !== window.phase)
     || instance.sideKey !== window.prioritySideKeys[window.priorityIndex]
