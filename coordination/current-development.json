@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-11-27T11:40:20.229Z",
+  "updatedAt": "2026-11-27T14:07:58.105Z",
   "ticket": 23,
   "slice": 249,
   "completion": "33/36",
@@ -9,31 +9,35 @@
     249,
     250
   ],
-  "summary": "Wave4 W4-02：逐 ID 差分156/156（38记录），31数据变化、50已有原子、34新组合、41新增语义。去重需18个新原子，另3个仅Archon撤下来源候选；新原子实现0。11条旧卡时点已精确编译，7条护甲反应组件经14条签名回执/冷回放；正式攻击所有者与Web未准出。来源阻断39条。Wave3旧房500/2000分冷读不变，历史仍9/16。",
+  "summary": "整版Wave4新数据尚未接完。156条差分已完成；11条旧卡时点原生接线通过（68条主链回执），Web局部11/11。18个新游戏原子实现0；新单位/势力与完整Builder/大厅待接，39条来源阻断隔离。旧房兼容通过；Wave3仍9/16。",
   "runPolicy": "仅 codex/wave4-web-pvp；服务端口 5484、数据 build/wave4-web/host。本轮已授权离线工程验收及按成果提交推送。5483 Wave3 玩家房与主线保留；付费模型、K3、AI 对局、复盘与生产发布继续暂停。",
   "items": [
     {
       "id": "wave4-ability-diff",
-      "title": "Wave4 W4-02 差分156/156，组件7条",
+      "title": "Wave4 W4-02：旧卡时点接线；整版数据未完",
       "implementation": {
         "status": "partial",
-        "note": "156条逐ID语义、稳定身份、实际消费者和18个新增合同需求已对账；11条时点新源编译，0个新游戏原子实现。",
+        "note": "逐ID差分156/156；旧卡11条时点接入完整原生行为，68主链回执；18个新游戏原子实现0。",
         "evidence": [
           "content/source-releases/wave4-20261127/abilities/ability-diff.json",
-          "docs/development/wave4/evidence/ability-diff.public.json"
+          "docs/development/wave4/evidence/ability-diff.public.json",
+          "docs/development/wave4/evidence/native-armour-timing.public.json",
+          "docs/development/wave4/evidence/native-other-timing.public.json"
         ]
       },
       "productHandoff": {
         "status": "partial",
-        "note": "7条声明护甲触发组件经14条签名行动及冷回放；两个规模旧房源绑定、状态、回放、元数据一致。实际攻击所有者、其余时点、Builder与Web待验。",
+        "note": "旧卡时点Web局部11/11；两席操作、恢复重进与后继通过。不含整版新单位、势力、Builder/大厅准出；39条来源隔离。",
         "evidence": [
-          "docs/development/wave4/evidence/armour-reaction-components.public.json",
+          "docs/development/wave4/evidence/native-armour-timing.public.json",
+          "docs/development/wave4/evidence/native-other-timing.public.json",
+          "docs/development/wave4/evidence/timing-web.public.json",
           "docs/development/wave4/evidence/ability-wave3-cold-read.public.json"
         ]
       },
       "liveOutput": {
         "status": "not_applicable",
-        "note": "本轮为离线工程和声明组件验收，未执行AI或真人Web新对局。",
+        "note": "仅离线工程棋位；尚未进行Wave4新军表全流程或AI对局。",
         "evidence": []
       },
       "strategyEffect": {
@@ -642,12 +646,16 @@
     }
   ],
   "next": [
-    "W4-02接线：把首批7条护甲反应接到真实攻击生产者、实际护甲骰与后继，组件回执不可替代正式Match准出。",
-    "W4-02：补Observer/Overseer冲锋、Veil of Shadows位移、Brood Instinct闪避四条时点，以及三条Creep编军主体修订；随后按18个新合同的依赖实施并逐行为验收。",
-    "W4来源准入：Archon当前官方集合已移除；原生感染机械CP语义与Alarak阶段拼写仍需具名来源解决。冻结候选保留，39条定义持续阻断。",
-    "完成能力准入后推进W4-03发布选择、Builder/工厂/查询与媒体，再做W4-04双浏览器500/2000分人人局。付费模型、K3、AI、复盘与生产发布保持暂停。"
+    "W4-02：接三条Zerg Creep主体修订至同版Builder/军表/工厂；再按18个新合同依赖接新单位和新势力。",
+    "39条来源继续阻断：Archon撤下、原生感染机械CP语义及Alarak阶段拼写，不以旧单位定点验收代替准入。",
+    "能力准入后推进W4-03完整发布选择、Builder/工厂/查询与媒体，再做W4-04双浏览器500/2000分新军表验收；付费模型、K3、AI、复盘、生产发布保持暂停。"
   ],
   "navigation": [
+    {
+      "when": "查看11条旧卡局部接线；区分整版新数据未完成项",
+      "title": "原生时点与Web局部验收",
+      "path": "docs/development/wave4/native-timing-wiring.zh-CN.md"
+    },
     {
       "when": "查看Wave4逐ID能力、原子需求与接线边界",
       "title": "W4-02能力差分与首批组件",

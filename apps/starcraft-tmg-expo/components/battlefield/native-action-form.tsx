@@ -20,6 +20,7 @@ const labels: Record<string, string> = {
   coordinate: '位置', xMilliInches: '横向位置（英寸）', yMilliInches: '纵向位置（英寸）',
   pointDefenseSourcePieceIds: '点防御来源', pointDefenseRemovedDieIds: '点防御移除骰',
   surgeTargetUnitId: 'Surge 目标', criticalTargetUnitId: 'Critical 目标',
+  convertedFailedArmourDieIndices: '用 TOUGH 转为成功的护甲骰',
 };
 const choices: Record<string, string> = { top: '上边', bottom: '下边', left: '左边', right: '右边',
   success: '成功', failure: '失败', distance_shortfall: '距离不足', declared_target_spread: '已声明目标相距过远',
@@ -38,6 +39,7 @@ function Field({ name, descriptor: d, value, onChange, names, pickPoint }: {
   const title = labels[name] || name;
   const renderValue = (v: any): string => Array.isArray(v)
     ? (v.length ? v.map(renderValue).join(' + ') : '无需支付 / 空选择')
+    : name === 'convertedFailedArmourDieIndices' && Number.isSafeInteger(v) ? `第${v + 1}颗护甲骰`
     : v && typeof v === 'object' && 'kind' in v ? renderValue(v.kind)
     : names[String(v)] || choices[String(v)] || String(v ?? '无');
   if (Object.hasOwn(d, 'const')) return <Text style={styles.hint}>{title}：{renderValue(d.const)}</Text>;

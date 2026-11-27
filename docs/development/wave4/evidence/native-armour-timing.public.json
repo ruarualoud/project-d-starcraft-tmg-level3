@@ -1,0 +1,525 @@
+{
+  "schema": "starcraft_tmg_wave4_native_armour_timing_v1",
+  "status": "passed",
+  "inventoryHash": "c922fc85ecafdbe88597dae454b3263727f9732d12f639d297fbabdec87a7543",
+  "definitionsVerified": 7,
+  "results": [
+    {
+      "definitionId": "card:armory/vehicle-plating-any@2",
+      "roomId": "wave4-native-armour-armory-0",
+      "signedReceipts": 6,
+      "sourceAction": "fight",
+      "armourRoll": true,
+      "trace": [
+        {
+          "revision": 1,
+          "side": "player1",
+          "actionType": "fight",
+          "trigger": null
+        },
+        {
+          "revision": 2,
+          "side": "player1",
+          "actionType": "pass_reaction_family_window",
+          "trigger": "before_armour_roll"
+        },
+        {
+          "revision": 3,
+          "side": "player2",
+          "actionType": "resolve_reaction_family_ability",
+          "trigger": "before_armour_roll"
+        },
+        {
+          "revision": 4,
+          "side": "player1",
+          "actionType": "roll_melee_attack_armour_pool",
+          "trigger": null
+        },
+        {
+          "revision": 5,
+          "side": "player2",
+          "actionType": "choose_melee_tough_armour",
+          "trigger": null
+        },
+        {
+          "revision": 6,
+          "side": "player1",
+          "actionType": "resolve_melee_attack_evade_pool",
+          "trigger": null
+        }
+      ],
+      "cardExhausted": true,
+      "effectConsumed": true,
+      "successorSide": "player1",
+      "successorMenuAvailable": true,
+      "fixedControl": {
+        "useDamage": 3,
+        "passDamage": 4,
+        "toughAdded": 1,
+        "dodgeAdded": 0,
+        "dodgeTransferReduction": 0,
+        "damageEventHash": "e9277709a36ae7e1c8f515ef0780f90f8a5aed4f2e8c197a32eca3849cd86bc4",
+        "traceHash": "f14db025609d1554844665e924ef9441b92b6ec90206ad0ab3807c14c4599c1d"
+      },
+      "stateHash": "cc927c7d198e1154976c18b8a06b82ec1b19cac82ded821eb61cbce501fde27f",
+      "bindingHash": "3b576fb92a883936c040197901bf3c0f7c2f7819d325bfc1558297133e26331d",
+      "emptyPoolBranches": [],
+      "fullAttackOwnerVerified": true,
+      "fullMatchAdmission": false,
+      "coldReplayMatched": true,
+      "missingConsumerRejected": true
+    },
+    {
+      "definitionId": "card:engineering_bay/infantry-armor-any@2",
+      "roomId": "wave4-native-armour-engineering_bay-1",
+      "signedReceipts": 6,
+      "sourceAction": "fight",
+      "armourRoll": true,
+      "trace": [
+        {
+          "revision": 1,
+          "side": "player1",
+          "actionType": "fight",
+          "trigger": null
+        },
+        {
+          "revision": 2,
+          "side": "player1",
+          "actionType": "pass_reaction_family_window",
+          "trigger": "before_armour_roll"
+        },
+        {
+          "revision": 3,
+          "side": "player2",
+          "actionType": "resolve_reaction_family_ability",
+          "trigger": "before_armour_roll"
+        },
+        {
+          "revision": 4,
+          "side": "player1",
+          "actionType": "roll_melee_attack_armour_pool",
+          "trigger": null
+        },
+        {
+          "revision": 5,
+          "side": "player2",
+          "actionType": "choose_melee_tough_armour",
+          "trigger": null
+        },
+        {
+          "revision": 6,
+          "side": "player1",
+          "actionType": "resolve_melee_attack_evade_pool",
+          "trigger": null
+        }
+      ],
+      "cardExhausted": true,
+      "effectConsumed": true,
+      "successorSide": "player1",
+      "successorMenuAvailable": true,
+      "fixedControl": {
+        "useDamage": 3,
+        "passDamage": 4,
+        "toughAdded": 1,
+        "dodgeAdded": 0,
+        "dodgeTransferReduction": 0,
+        "damageEventHash": "18c0b59faf2456eb2a8d4eadca47dd3bbfca9f4d18fdfdf72e5e3f0673db4cbf",
+        "traceHash": "151f0074ac3e5a7502f0375834ced2fefbf76bd111b571ea666c57d09fdb5db0"
+      },
+      "stateHash": "68453259bae81e78fcfae78904e34a9a711ed2150031408a281564b54714a569",
+      "bindingHash": "9661075f2f02acb681a9e4adf06d8c63b8d7a48c2de27fbb3a1fb1ee720d24a1",
+      "emptyPoolBranches": [
+        {
+          "roomId": "wave4-native-armour-engineering_bay-0",
+          "signedReceipts": 3,
+          "stateHash": "725502b65d1a084d2c874744b4d132b480375e88bb603d5f95f736b2ea13091a",
+          "hits": 2,
+          "armourDice": 0,
+          "cardUnspent": true,
+          "replayMatched": true
+        }
+      ],
+      "fullAttackOwnerVerified": true,
+      "fullMatchAdmission": false,
+      "coldReplayMatched": true,
+      "missingConsumerRejected": false
+    },
+    {
+      "definitionId": "card:evolution_chamber/carapace-any@2",
+      "roomId": "wave4-native-armour-evolution_chamber-1",
+      "signedReceipts": 6,
+      "sourceAction": "fight",
+      "armourRoll": true,
+      "trace": [
+        {
+          "revision": 1,
+          "side": "player1",
+          "actionType": "fight",
+          "trigger": null
+        },
+        {
+          "revision": 2,
+          "side": "player1",
+          "actionType": "pass_reaction_family_window",
+          "trigger": "before_armour_roll"
+        },
+        {
+          "revision": 3,
+          "side": "player2",
+          "actionType": "resolve_reaction_family_ability",
+          "trigger": "before_armour_roll"
+        },
+        {
+          "revision": 4,
+          "side": "player1",
+          "actionType": "roll_melee_attack_armour_pool",
+          "trigger": null
+        },
+        {
+          "revision": 5,
+          "side": "player2",
+          "actionType": "choose_melee_tough_armour",
+          "trigger": null
+        },
+        {
+          "revision": 6,
+          "side": "player1",
+          "actionType": "resolve_melee_attack_evade_pool",
+          "trigger": null
+        }
+      ],
+      "cardExhausted": true,
+      "effectConsumed": true,
+      "successorSide": "player1",
+      "successorMenuAvailable": true,
+      "fixedControl": {
+        "useDamage": 3,
+        "passDamage": 4,
+        "toughAdded": 1,
+        "dodgeAdded": 0,
+        "dodgeTransferReduction": 0,
+        "damageEventHash": "8b0e8362046c79a56d99d9b0c0bb6f52eb6834c0e81ef580a02f51ac9d6763f5",
+        "traceHash": "db5399072ec670d508bc18b532b99ee86b241904ef95c6c5b477ebb9bb7c54c1"
+      },
+      "stateHash": "aab22356ba276b620ed7aa84f03b0188fd9d82c252dcf0a7225250e59e2ea3e1",
+      "bindingHash": "c804e4323fa96ee94ba1a7701d91d02356f908e25406bd6f8bc535b067b0c315",
+      "emptyPoolBranches": [
+        {
+          "roomId": "wave4-native-armour-evolution_chamber-0",
+          "signedReceipts": 3,
+          "stateHash": "8570d0c74a60b16222d012dd2219d997bbdcef5e614922bfd78d6123ec4e37a8",
+          "hits": 1,
+          "armourDice": 0,
+          "cardUnspent": true,
+          "replayMatched": true
+        }
+      ],
+      "fullAttackOwnerVerified": true,
+      "fullMatchAdmission": false,
+      "coldReplayMatched": true,
+      "missingConsumerRejected": false
+    },
+    {
+      "definitionId": "card:forge/ground-armor-any@2",
+      "roomId": "wave4-native-armour-forge-2",
+      "signedReceipts": 6,
+      "sourceAction": "fight",
+      "armourRoll": true,
+      "trace": [
+        {
+          "revision": 1,
+          "side": "player1",
+          "actionType": "fight",
+          "trigger": null
+        },
+        {
+          "revision": 2,
+          "side": "player1",
+          "actionType": "pass_reaction_family_window",
+          "trigger": "before_armour_roll"
+        },
+        {
+          "revision": 3,
+          "side": "player2",
+          "actionType": "resolve_reaction_family_ability",
+          "trigger": "before_armour_roll"
+        },
+        {
+          "revision": 4,
+          "side": "player1",
+          "actionType": "roll_melee_attack_armour_pool",
+          "trigger": null
+        },
+        {
+          "revision": 5,
+          "side": "player2",
+          "actionType": "choose_melee_tough_armour",
+          "trigger": null
+        },
+        {
+          "revision": 6,
+          "side": "player1",
+          "actionType": "resolve_melee_attack_evade_pool",
+          "trigger": null
+        }
+      ],
+      "cardExhausted": true,
+      "effectConsumed": true,
+      "successorSide": "player1",
+      "successorMenuAvailable": true,
+      "fixedControl": {
+        "useDamage": 3,
+        "passDamage": 4,
+        "toughAdded": 1,
+        "dodgeAdded": 0,
+        "dodgeTransferReduction": 0,
+        "damageEventHash": "8b0e8362046c79a56d99d9b0c0bb6f52eb6834c0e81ef580a02f51ac9d6763f5",
+        "traceHash": "fc662a27d7e083489c0015af3d4b563ce4bb22b8e9a8f61b816e837617228571"
+      },
+      "stateHash": "ec1172e1a3809ff062656c8f9684ad64882ca06f54dfd55ca006e82f041736e6",
+      "bindingHash": "f6677a3447a29c5b83012b1adb88ed1a995e7a4881b2cad69b2f9ac1ca73cbe2",
+      "emptyPoolBranches": [
+        {
+          "roomId": "wave4-native-armour-forge-0",
+          "signedReceipts": 3,
+          "stateHash": "cbea1ab0485f89ae63fdb30d37a5f2966d13852710eae1ee58a1603c9598525e",
+          "hits": 2,
+          "armourDice": 0,
+          "cardUnspent": true,
+          "replayMatched": true
+        },
+        {
+          "roomId": "wave4-native-armour-forge-1",
+          "signedReceipts": 3,
+          "stateHash": "8e2a36b279ed8499d873e5c8d0d7827c322520c8867bc5ad49a8529d647a1446",
+          "hits": 2,
+          "armourDice": 0,
+          "cardUnspent": true,
+          "replayMatched": true
+        }
+      ],
+      "fullAttackOwnerVerified": true,
+      "fullMatchAdmission": false,
+      "coldReplayMatched": true,
+      "missingConsumerRejected": false
+    },
+    {
+      "definitionId": "card:power_field/guardian-shell-any@2",
+      "roomId": "wave4-native-armour-power_field-0",
+      "signedReceipts": 5,
+      "sourceAction": "fight",
+      "armourRoll": true,
+      "trace": [
+        {
+          "revision": 1,
+          "side": "player1",
+          "actionType": "fight",
+          "trigger": null
+        },
+        {
+          "revision": 2,
+          "side": "player1",
+          "actionType": "pass_reaction_family_window",
+          "trigger": "before_armour_roll"
+        },
+        {
+          "revision": 3,
+          "side": "player2",
+          "actionType": "resolve_reaction_family_ability",
+          "trigger": "before_armour_roll"
+        },
+        {
+          "revision": 4,
+          "side": "player1",
+          "actionType": "roll_melee_attack_armour_pool",
+          "trigger": null
+        },
+        {
+          "revision": 5,
+          "side": "player1",
+          "actionType": "resolve_melee_attack_evade_pool",
+          "trigger": null
+        }
+      ],
+      "cardExhausted": true,
+      "effectConsumed": true,
+      "successorSide": "player1",
+      "successorMenuAvailable": true,
+      "fixedControl": {
+        "useDamage": 0,
+        "passDamage": 1,
+        "toughAdded": 0,
+        "dodgeAdded": 2,
+        "dodgeTransferReduction": 1,
+        "damageEventHash": "4406d3401645dae7931ec099ef511dbe6a5538b1dd91fd0e8679a225fa87a8ad",
+        "traceHash": "53164405d2f3f59930f582c33678d51dcb559aae54facd8a86f46c439de11f05"
+      },
+      "stateHash": "b5f39baaf6a5bbc6643a092a6d45ebe66af3d31678fcea251a97482a9c4cb73f",
+      "bindingHash": "2a33b771aebfd6fc60226f19b5cd90b970350f6f311a985fc17e99477578e106",
+      "emptyPoolBranches": [],
+      "fullAttackOwnerVerified": true,
+      "fullMatchAdmission": false,
+      "coldReplayMatched": true,
+      "missingConsumerRejected": false
+    },
+    {
+      "definitionId": "card:robotics_facility/plasma-shields-any@2",
+      "roomId": "wave4-native-armour-robotics_facility-3",
+      "signedReceipts": 6,
+      "sourceAction": "fight",
+      "armourRoll": true,
+      "trace": [
+        {
+          "revision": 1,
+          "side": "player1",
+          "actionType": "fight",
+          "trigger": null
+        },
+        {
+          "revision": 2,
+          "side": "player1",
+          "actionType": "pass_reaction_family_window",
+          "trigger": "before_armour_roll"
+        },
+        {
+          "revision": 3,
+          "side": "player2",
+          "actionType": "resolve_reaction_family_ability",
+          "trigger": "before_armour_roll"
+        },
+        {
+          "revision": 4,
+          "side": "player1",
+          "actionType": "roll_melee_attack_armour_pool",
+          "trigger": null
+        },
+        {
+          "revision": 5,
+          "side": "player2",
+          "actionType": "choose_melee_tough_armour",
+          "trigger": null
+        },
+        {
+          "revision": 6,
+          "side": "player1",
+          "actionType": "resolve_melee_attack_evade_pool",
+          "trigger": null
+        }
+      ],
+      "cardExhausted": true,
+      "effectConsumed": true,
+      "successorSide": "player1",
+      "successorMenuAvailable": true,
+      "fixedControl": {
+        "useDamage": 0,
+        "passDamage": 1,
+        "toughAdded": 1,
+        "dodgeAdded": 1,
+        "dodgeTransferReduction": 1,
+        "damageEventHash": "1f3d7faf02b5af20d986f84378c93e1426a46b097a059836037367ace5863944",
+        "traceHash": "4a846b0d87eb4318d07a9a664058cf8e7e5517dfdb788487327f3aa8b829db38"
+      },
+      "stateHash": "851ed762bbef65baafe61a3b5f05ef2a5d478d2d0e84250487f47d797b89ea6d",
+      "bindingHash": "b6126081e4115a14500eea102b669f33dcda79378452f1b6d28b2cd1533f0eb1",
+      "emptyPoolBranches": [
+        {
+          "roomId": "wave4-native-armour-robotics_facility-0",
+          "signedReceipts": 3,
+          "stateHash": "cdee753b66d80e43e0a50e6b91fc4c8e0a353c5f32588161f99904deea74f763",
+          "hits": 3,
+          "armourDice": 0,
+          "cardUnspent": true,
+          "replayMatched": true
+        },
+        {
+          "roomId": "wave4-native-armour-robotics_facility-1",
+          "signedReceipts": 3,
+          "stateHash": "28d5d0cf089b8acf1ef5d74e1d84bfa64704141c11d8e55c6351360bd3bec885",
+          "hits": 1,
+          "armourDice": 0,
+          "cardUnspent": true,
+          "replayMatched": true
+        },
+        {
+          "roomId": "wave4-native-armour-robotics_facility-2",
+          "signedReceipts": 3,
+          "stateHash": "59cefbe55478752266e128463034257d51e927932302b5ec7f7849fa54f6534a",
+          "hits": 1,
+          "armourDice": 0,
+          "cardUnspent": true,
+          "replayMatched": true
+        }
+      ],
+      "fullAttackOwnerVerified": true,
+      "fullMatchAdmission": false,
+      "coldReplayMatched": true,
+      "missingConsumerRejected": true
+    },
+    {
+      "definitionId": "card:vanadium_plating/crystalline-alloy-any@2",
+      "roomId": "wave4-native-armour-vanadium_plating-0",
+      "signedReceipts": 5,
+      "sourceAction": "fight",
+      "armourRoll": true,
+      "trace": [
+        {
+          "revision": 1,
+          "side": "player1",
+          "actionType": "fight",
+          "trigger": null
+        },
+        {
+          "revision": 2,
+          "side": "player1",
+          "actionType": "pass_reaction_family_window",
+          "trigger": "before_armour_roll"
+        },
+        {
+          "revision": 3,
+          "side": "player2",
+          "actionType": "resolve_reaction_family_ability",
+          "trigger": "before_armour_roll"
+        },
+        {
+          "revision": 4,
+          "side": "player1",
+          "actionType": "roll_melee_attack_armour_pool",
+          "trigger": null
+        },
+        {
+          "revision": 5,
+          "side": "player1",
+          "actionType": "resolve_melee_attack_evade_pool",
+          "trigger": null
+        }
+      ],
+      "cardExhausted": true,
+      "effectConsumed": true,
+      "successorSide": "player1",
+      "successorMenuAvailable": true,
+      "fixedControl": {
+        "useDamage": 0,
+        "passDamage": 1,
+        "toughAdded": 0,
+        "dodgeAdded": 2,
+        "dodgeTransferReduction": 1,
+        "damageEventHash": "518b8034510e9592e2b1f951926e6721b10b52b3085e6e3882982d789f18e64f",
+        "traceHash": "9df650b85fabb9148bfe15d1293a632f553f00ad0dd3f7a4f3709070d5021d70"
+      },
+      "stateHash": "a88c1dc03dd08329700d743745966390c47b0bf7627706948917e1e9d9d6dff3",
+      "bindingHash": "c0d0d221b29e4f18ed5a74add9c22b93a6d0b2a4b61231186a33678909d2455c",
+      "emptyPoolBranches": [],
+      "fullAttackOwnerVerified": true,
+      "fullMatchAdmission": false,
+      "coldReplayMatched": true,
+      "missingConsumerRejected": true
+    }
+  ],
+  "scope": "complete native melee attack producer, actual armour dice, effect consumption and successor; conditional engineering scenes",
+  "sourceHeldDefinitions": 39,
+  "fullWave4Admission": false,
+  "webAcceptance": "separate_gate",
+  "modelCalls": 0,
+  "trainingTruth": false,
+  "productionPromoted": false
+}

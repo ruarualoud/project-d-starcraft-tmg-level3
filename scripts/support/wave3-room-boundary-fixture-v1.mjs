@@ -156,14 +156,14 @@ export function openWave3EngineeringRoomV1({ directory, filename, rulesRuntime, 
   }
   return {
     room, store, engine, restoreDependencies,
-    async create(roomId, authority) {
+    async create(roomId, authority, { matchId } = {}) {
       const file = path.join(directory, roomId + '.seats.private.json');
       if (await store.loadRoom(roomId)) {
         await restoreDependencies(roomId, authority);
         if (memoryCredentials) return memoryCredentials.get(roomId);
         return JSON.parse(await fs.readFile(file, 'utf8'));
       }
-      const result = await room.createRoom({ roomId, initialStateAuthority: authority,
+      const result = await room.createRoom({ roomId, ...(matchId ? { matchId } : {}), initialStateAuthority: authority,
         serverSeatPlan: authority.serverSeatPlan });
       assert.equal(result.ok, true, JSON.stringify(result));
       const credentials = Object.fromEntries(Object.values(result.credentials).map(value => [value.seatKey, value]));

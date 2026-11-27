@@ -2,6 +2,8 @@
 
 2026-11-27；`codex/wave4-web-pvp`。逐定义差分完成；整版接线仍在进行。
 
+机器清单保留初始差分快照；各 ID 的后续执行状态见 [接线进度](../../../coordination/wave4/ability-wiring-progress.json)。11 条旧卡时点修订的最新范围与证据见 [原生／Web 局部接线记录](native-timing-wiring.zh-CN.md)，不代表整版新增数据已接完。
+
 **分母：38 个记录、156 条定义。** 新增记录内有 142 条；13 张旧卡实际变更 14 条。完整身份目录为 556 条：保留 400 条旧语义身份、将 14 条变更定义升为 @2、加入 142 条新身份。数组序号仅作原件定位，重排不改变语义 ID；改过语义的 @1 不被别名映射到 @2。
 
 | 分类 | 定义数 | 含义 |
@@ -42,7 +44,7 @@
 
 **7/11 条时点反应获得首批原生组件证据，共 14 条签名回执。** Vehicle Plating、Infantry Armor、Carapace、Ground Armor、Guardian Shell、Plasma Shields、Crystalline Alloy 在声明的护甲触发窗口中，通过真实 Room legalSpace → preview → confirm（如需）→ apply，核对 TOUGH/DODGE、耗卡、幂等、恢复原 activeSide 和冷回放。单位事实及桌面取自实际 500/2000 分房间工厂，原件字段经 Wave3/Wave4 对照一致。
 
-这批是声明触发的组件验收：场景显式允许条件棋位，不证明混合势力卡组合能通过正式编军；也没有把护甲修改量误记为完整射击／近战／HITS／IMPACT 的真实护甲骰消费。真实攻击生产者、选择后继和 Web 仍是下一门。其余四条时点（Observer、Overseer、Veil of Shadows、Brood Instinct）仅完成来源编译；三条 Zerg Creep 主语修订仍待同版 Builder/房间消费者接线。
+上面的 14 条回执属于首批声明触发组件门。后续已将 7 条护甲接入原生近战全链，另 4 条时点接入原生冲锋、PLACE 与实际闪避池，共 68 条主链回执；Web 条件棋位 11/11、31 条回执。场景不证明混合势力卡组合能通过正式编军，也不扩记为全部射击／HITS／IMPACT 消费者已经准出。三条 Zerg Creep 主语修订及新增数据的 Builder／工厂／规则消费者仍待接线。
 
 [差分和来源编译回执](evidence/ability-diff.public.json) · [7 组件原生回执](evidence/armour-reaction-components.public.json) · [旧房冷读](evidence/ability-wave3-cold-read.public.json)
 

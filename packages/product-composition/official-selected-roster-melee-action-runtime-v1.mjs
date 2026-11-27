@@ -2061,7 +2061,8 @@ export function finishOfficialChargeRollReactionV1(before, transition, adapter, 
   } else if (extra !== 0) fail("AFTER_CHARGE_ROLL_UNSUPPORTED_EXTRA_DICE");
   const added = consumed.projection.chargeDistanceModifier;
   if (added) {
-    if (added !== 1 || !consumed.projection.effects.some(effect => effect.definitionId === 'card:observer/gravitic-boosters-any@1')) fail('CHARGE_DISTANCE_REACTION_SOURCE_MISMATCH');
+    if (added !== 1 || !consumed.projection.effects.some(effect =>
+      ['card:observer/gravitic-boosters-any@1', 'card:observer/gravitic-boosters-any@2'].includes(effect.definitionId))) fail('CHARGE_DISTANCE_REACTION_SOURCE_MISMATCH');
     const adjusted = state.pendingAction;
     const body = { ...without(adjusted, ['pendingHash']), maxDistanceMilliInches: adjusted.maxDistanceMilliInches + milli(added) };
     state.pendingAction = { ...body, pendingHash: hashStarcraftTmgContract(body) };

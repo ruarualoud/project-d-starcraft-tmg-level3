@@ -1,0 +1,248 @@
+{
+  "schema": "starcraft_tmg_wave4_native_other_timing_v1",
+  "status": "passed",
+  "inventoryHash": "c922fc85ecafdbe88597dae454b3263727f9732d12f639d297fbabdec87a7543",
+  "definitionsVerified": 4,
+  "results": [
+    {
+      "caseHash": "d9b9a9fe02d345cece584063c57b697d756d05c5558546a7bfe2148b63ea24c7",
+      "definitionId": "card:observer/gravitic-boosters-any@2",
+      "kind": "observer",
+      "branch": "pass",
+      "roomId": "wave4-observer-pass-0",
+      "signedReceipts": 3,
+      "stateHash": "022b0f2936c862cffd16b4b670e1930083efea8fb3f0f73e2991f5d74b75cb86",
+      "trace": [],
+      "outcome": {
+        "cardReadiness": "ready",
+        "added": null,
+        "extra": null,
+        "chargeResolved": true,
+        "selectionAfterOriginalRoll": true,
+        "originalChargeRoll": 1,
+        "eventOrder": {
+          "rolled": 0,
+          "opened": 1,
+          "resolved": 6
+        }
+      },
+      "successorSide": "player1",
+      "successorMenuAvailable": true,
+      "emptyBranches": [],
+      "fullMatchAdmission": false,
+      "coldReplayMatched": true
+    },
+    {
+      "caseHash": "d9b9a9fe02d345cece584063c57b697d756d05c5558546a7bfe2148b63ea24c7",
+      "definitionId": "card:observer/gravitic-boosters-any@2",
+      "kind": "observer",
+      "branch": "use",
+      "roomId": "wave4-observer-use-0",
+      "signedReceipts": 3,
+      "stateHash": "f5648eed6edc97d934218f0ef25465995dd304875c14f504b834ec8cd2f20454",
+      "trace": [],
+      "outcome": {
+        "cardReadiness": "exhausted",
+        "added": {
+          "type": "charge_distance_increased",
+          "pieceId": "zealot",
+          "triggerHash": "e64e9a266f57a95d97b9ae40aea61e608e3405273edbb7ff8cbb4452fd8aa9a8",
+          "modifierInches": 1,
+          "maxDistanceMilliInches": 11000,
+          "pendingHash": "c0878ffe93513dc89e413d3571335f185e592f8f0e5844f9033986fb216fa30e"
+        },
+        "extra": null,
+        "chargeResolved": true,
+        "selectionAfterOriginalRoll": true,
+        "originalChargeRoll": 6,
+        "eventOrder": {
+          "rolled": 0,
+          "opened": 1,
+          "resolved": 8
+        }
+      },
+      "successorSide": "player1",
+      "successorMenuAvailable": true,
+      "emptyBranches": [],
+      "fullMatchAdmission": false,
+      "coldReplayMatched": true
+    },
+    {
+      "caseHash": "0bc1f228acd21842c2fe6675cb0b7a41e3372d6b027b514df134c0c8ce47bb1e",
+      "definitionId": "card:overseer/pneumatized-carapace-any@2",
+      "kind": "overseer",
+      "branch": "pass",
+      "roomId": "wave4-overseer-pass-0",
+      "signedReceipts": 3,
+      "stateHash": "5fec214885f145f9422e5f88eb2965a09d7e45bacd8098ced318f1963fedac13",
+      "trace": [],
+      "outcome": {
+        "cardReadiness": "ready",
+        "added": null,
+        "extra": null,
+        "chargeResolved": true,
+        "selectionAfterOriginalRoll": true,
+        "originalChargeRoll": 3,
+        "eventOrder": {
+          "rolled": 0,
+          "opened": 1,
+          "resolved": 6
+        }
+      },
+      "successorSide": "player1",
+      "successorMenuAvailable": true,
+      "emptyBranches": [],
+      "fullMatchAdmission": false,
+      "coldReplayMatched": true
+    },
+    {
+      "caseHash": "0bc1f228acd21842c2fe6675cb0b7a41e3372d6b027b514df134c0c8ce47bb1e",
+      "definitionId": "card:overseer/pneumatized-carapace-any@2",
+      "kind": "overseer",
+      "branch": "use",
+      "roomId": "wave4-overseer-use-0",
+      "signedReceipts": 3,
+      "stateHash": "a109fe6583ec07da2430090ebb51df576b89463e3a5e383c426d1ff843bef8b5",
+      "trace": [],
+      "outcome": {
+        "cardReadiness": "exhausted",
+        "added": null,
+        "extra": {
+          "type": "additional_charge_die_resolved",
+          "pieceId": "zealot",
+          "triggerHash": "0134116c5d35428ea3b7b89d4d6d6d05cd1e1f888a2ae1ec385feaa6236114c5",
+          "originalRoll": 1,
+          "additionalRoll": 3,
+          "keptRoll": 3,
+          "maxDistanceMilliInches": 7000,
+          "pendingHash": "fa781a1358a41d887067f74cd61c51e5f9f467936dca9ea491fe0b5c6d0654a7",
+          "trainingTruth": false
+        },
+        "chargeResolved": true,
+        "selectionAfterOriginalRoll": true,
+        "originalChargeRoll": 1,
+        "eventOrder": {
+          "rolled": 0,
+          "opened": 1,
+          "resolved": 8
+        }
+      },
+      "successorSide": "player1",
+      "successorMenuAvailable": true,
+      "emptyBranches": [],
+      "fullMatchAdmission": false,
+      "coldReplayMatched": true
+    },
+    {
+      "caseHash": "062a603115a89bcef9cc771b3e0899a9bb80bff0687c938acdfc2bbe3ecf2ea4",
+      "definitionId": "card:twilight_council/veil-of-shadows-any@2",
+      "kind": "veil-of-shadows",
+      "branch": "pass",
+      "roomId": "wave4-veil-of-shadows-pass-0",
+      "signedReceipts": 3,
+      "stateHash": "42f8714e3ae0d6efe5a46b00fac96b8323cb1ea0fec570db912048dfb6755937",
+      "trace": [
+        {
+          "revision": 1,
+          "side": "player1",
+          "actionType": "resolve_relocation_ability",
+          "trigger": null
+        },
+        {
+          "revision": 2,
+          "side": "player1",
+          "actionType": "pass_reaction_family_window",
+          "trigger": "after_place"
+        },
+        {
+          "revision": 3,
+          "side": "player2",
+          "actionType": "pass_reaction_family_window",
+          "trigger": "after_place"
+        }
+      ],
+      "outcome": {
+        "placementX": 11,
+        "damageMarker": 4,
+        "cardReadiness": "ready",
+        "placeBeforeHeal": true
+      },
+      "successorSide": "player1",
+      "successorMenuAvailable": true,
+      "emptyBranches": [],
+      "fullMatchAdmission": false,
+      "coldReplayMatched": true
+    },
+    {
+      "caseHash": "062a603115a89bcef9cc771b3e0899a9bb80bff0687c938acdfc2bbe3ecf2ea4",
+      "definitionId": "card:twilight_council/veil-of-shadows-any@2",
+      "kind": "veil-of-shadows",
+      "branch": "use",
+      "roomId": "wave4-veil-of-shadows-use-0",
+      "signedReceipts": 3,
+      "stateHash": "375a2dcc38ae9d1a86eb27eb748ee676a3d6a013ffa73a30922af9e93664300a",
+      "trace": [],
+      "outcome": {
+        "placementX": 11,
+        "damageMarker": 2,
+        "cardReadiness": "exhausted",
+        "placeBeforeHeal": true
+      },
+      "successorSide": "player1",
+      "successorMenuAvailable": true,
+      "emptyBranches": [],
+      "fullMatchAdmission": false,
+      "coldReplayMatched": true
+    },
+    {
+      "caseHash": "3a7688de4db1aeed08b8082e5cb1946ae5c2055de68b92050ab1a0cfb3d6a889",
+      "definitionId": "card:zerg_swarm/brood-instinct-any@2",
+      "kind": "brood-instinct",
+      "branch": "pass",
+      "roomId": "wave4-brood-instinct-pass-0",
+      "signedReceipts": 5,
+      "stateHash": "af4d759ded8d615ca8326e1fb4da91da1b578e9d0e4c659fbc1bf6089a90a4be",
+      "trace": [],
+      "outcome": {
+        "evadeDice": 3,
+        "evadeModifier": 0,
+        "effectiveThreshold": 6,
+        "damage": 3,
+        "cardReadiness": "ready"
+      },
+      "successorSide": "player1",
+      "successorMenuAvailable": true,
+      "emptyBranches": [],
+      "fullMatchAdmission": false,
+      "coldReplayMatched": true
+    },
+    {
+      "caseHash": "3a7688de4db1aeed08b8082e5cb1946ae5c2055de68b92050ab1a0cfb3d6a889",
+      "definitionId": "card:zerg_swarm/brood-instinct-any@2",
+      "kind": "brood-instinct",
+      "branch": "use",
+      "roomId": "wave4-brood-instinct-use-0",
+      "signedReceipts": 5,
+      "stateHash": "175ece56af460a34f22faba36e73d68d5d384139b5339467473e1191120980d3",
+      "trace": [],
+      "outcome": {
+        "evadeDice": 3,
+        "evadeModifier": 1,
+        "effectiveThreshold": 5,
+        "damage": 2,
+        "cardReadiness": "exhausted"
+      },
+      "successorSide": "player1",
+      "successorMenuAvailable": true,
+      "emptyBranches": [],
+      "fullMatchAdmission": false,
+      "coldReplayMatched": true
+    }
+  ],
+  "scope": "native charge, native PLACE then HEAL, native ranged attack before actual Evade pool",
+  "sourceHeldDefinitions": 39,
+  "fullWave4Admission": false,
+  "modelCalls": 0,
+  "trainingTruth": false,
+  "productionPromoted": false
+}

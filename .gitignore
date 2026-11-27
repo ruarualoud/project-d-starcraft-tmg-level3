@@ -5,6 +5,7 @@ __pycache__/
 # Generated verification reports, captured source caches, and ephemeral room stores.
 build/
 dist/
+apps/starcraft-tmg-expo/dist-product/
 vendor/dsh-execution-projections-v1/
 .agent-runtime/
 .worktrees/

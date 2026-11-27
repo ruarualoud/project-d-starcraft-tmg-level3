@@ -1,0 +1,14 @@
+{
+  "schema": "starcraft_tmg_wave4_human_confirmation_policy_v1",
+  "status": "passed",
+  "definitionId": "card:armory/vehicle-plating-any@2",
+  "sourceRuntimeHash": "640ecffb60b2033bbe1e6dc13e2af104f0f4a3e8d582488df885a507856202e9",
+  "webRuntimeHash": "998d90bec377755c4ef2871dc2c2179f83957a20c88fbb5620a7f9299850001a",
+  "sourceEnumerationUnchanged": true,
+  "canonicalRulesActionUnchanged": true,
+  "confirmationDowngradeRejected": true,
+  "staleSourceDomainRejected": true,
+  "productionRoomEligible": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

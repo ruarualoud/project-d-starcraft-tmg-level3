@@ -1,0 +1,56 @@
+{
+  "harnessLoopUsed": true,
+  "targetGames": [
+    "starcraft-tmg"
+  ],
+  "promptPackRoutes": [],
+  "harnessToolsCalled": [
+    "compile_exact_source",
+    "native_attack",
+    "native_charge",
+    "native_place",
+    "actual_armour_pool",
+    "actual_evade_pool",
+    "legalSpace",
+    "preview",
+    "confirm",
+    "apply",
+    "idempotency",
+    "signed_prefix_replay",
+    "browser_two_seats",
+    "seat_recovery",
+    "cold_open"
+  ],
+  "uiTraceEvidence": [
+    "docs/development/wave4/evidence/timing-web.public.json",
+    "docs/development/wave4/evidence/timing-web-brood-preview.png"
+  ],
+  "agentDecisionEvidence": null,
+  "memoryTraceEvidence": [],
+  "trainingTraceCandidates": [],
+  "rollbackOrDemotionRules": [
+    "Selected source sets never admit the full Wave4 release",
+    "The 39 source-held definitions remain isolated",
+    "Explicit-human policy receives a separate runtime hash; canonical Rules actions and old runtimes remain unchanged",
+    "Failed lineage, confirmation, replay or recovery gates withdraw only this scoped binding"
+  ],
+  "userVisibleChecks": [
+    "11 old-card timing revisions; not new abilities",
+    "Seven native melee armour chains: 40 primary signed receipts and 21 empty-armour-pool negative receipts",
+    "Four other native timings: 28 signed receipts",
+    "Existing product Web UI: 11 scoped definitions, 31 signed receipts, two isolated seats, recovery and successors",
+    "500/2000 old isolated rooms: state, binding, replay and metadata unchanged"
+  ],
+  "evidence": [
+    "docs/development/wave4/evidence/native-armour-timing.public.json",
+    "docs/development/wave4/evidence/native-other-timing.public.json",
+    "docs/development/wave4/evidence/timing-web.public.json",
+    "docs/development/wave4/evidence/human-confirmation-policy.public.json",
+    "docs/development/wave4/evidence/ability-wave3-cold-read.public.json"
+  ],
+  "implementedNewGameAtoms": 0,
+  "modelCalls": 0,
+  "fullWave4WebAcceptance": false,
+  "fullWave4NewDataProductWiring": false,
+  "productionPromoted": false
+}

@@ -584,11 +584,11 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
   const inheritedRangedHitDebuff = includeReleaseRosterActions
     && reactionBundle?.routes.some(route => route.persistentRangedHitDebuff) === true;
   const headShotSource = reactionBundle?.definitionIds.includes('unit:nova_stealth_mode/head-shot-assault-phase@1') === true;
-  const plasmaArmourSource = reactionBundle?.routes.some(route => route.definitionId === 'card:robotics_facility/plasma-shields-any@1') === true;
+  const plasmaArmourSource = reactionBundle?.routes.some(route => ['card:robotics_facility/plasma-shields-any@1', 'card:robotics_facility/plasma-shields-any@2'].includes(route.definitionId)) === true;
   if (plasmaArmourSource && !includeArmourReactions) throw Error('PLASMA_SHIELDS_ARMOUR_CONSUMER_REQUIRED');
-  const alloyArmourSource = reactionBundle?.routes.some(route => route.definitionId === 'card:vanadium_plating/crystalline-alloy-any@1') === true;
+  const alloyArmourSource = reactionBundle?.routes.some(route => ['card:vanadium_plating/crystalline-alloy-any@1', 'card:vanadium_plating/crystalline-alloy-any@2'].includes(route.definitionId)) === true;
   if (alloyArmourSource && !includeArmourReactions) throw Error('CRYSTALLINE_ALLOY_ARMOUR_CONSUMER_REQUIRED');
-  const vehiclePlatingSource = reactionBundle?.routes.some(route => route.definitionId === 'card:armory/vehicle-plating-any@1') === true;
+  const vehiclePlatingSource = reactionBundle?.routes.some(route => ['card:armory/vehicle-plating-any@1', 'card:armory/vehicle-plating-any@2'].includes(route.definitionId)) === true;
   if (vehiclePlatingSource && !includeArmourReactions) throw Error('VEHICLE_PLATING_ARMOUR_CONSUMER_REQUIRED');
   if (declarationSource !== hasOfficialRangedDeclarationPolicyV1(spatialState)) throw Error('RANGED_DECLARATION_POLICY_SOURCE_REQUIRED');
   const hiddenLossReactions = reactionBundle?.routes.some(route => route.effectKind === 'hidden_loss_might')

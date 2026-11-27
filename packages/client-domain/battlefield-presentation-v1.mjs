@@ -433,7 +433,8 @@ function parameterDomainFrom(value) {
         pieceId: text(value.pieceId) || null,
         label: delegatedMovement
             ? `${text(value.abilityName) || text(value.actionType)} · ${text(value.pieceId)} → ${delegatedMovement.pieceId}`
-            : [text(value.actionType) || "parameterized", text(value.pieceId)].filter(Boolean).join(" · "),
+            : [text(value.actionType) || "parameterized", text(value.pieceId),
+                text(value.abilityName) || text(record(value.sourceDomain).abilityName)].filter(Boolean).join(" · "),
         support: parameterSupport(value),
         modelIds,
         modelStartPoints,

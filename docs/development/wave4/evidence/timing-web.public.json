@@ -1,0 +1,455 @@
+{
+  "schema": "starcraft_tmg_wave4_timing_web_v1",
+  "status": "passed",
+  "definitionsVerified": 11,
+  "inventoryHash": "c922fc85ecafdbe88597dae454b3263727f9732d12f639d297fbabdec87a7543",
+  "results": [
+    {
+      "definitionId": "card:armory/vehicle-plating-any@2",
+      "roomId": "product-wave4-web-armory",
+      "kind": "armory",
+      "abilityName": "Vehicle Plating",
+      "twoIsolatedBrowserSeats": true,
+      "opponentCannotChooseCard": true,
+      "previewReadOnly": true,
+      "trace": [
+        {
+          "actionType": "resolve_reaction_family_ability",
+          "revision": 1,
+          "stateHash": "c9ee0bba4b1663ac44221642fd3a3c05d75a86f6af61c0105b9375945d746409"
+        },
+        {
+          "actionType": "roll_melee_attack_armour_pool",
+          "revision": 2,
+          "stateHash": "d13ff5a88c5ba9767bfc6b3545cb141ff63b845e2bc006bb084e10cb7b5bbf11"
+        },
+        {
+          "actionType": "resolve_melee_attack_evade_pool",
+          "revision": 3,
+          "stateHash": "b6aad5314fea8621151d27113ff39ea03d8fe69cdf920507423b080d13c5c83f"
+        }
+      ],
+      "signedWebReceipts": 3,
+      "stateHash": "b6aad5314fea8621151d27113ff39ea03d8fe69cdf920507423b080d13c5c83f",
+      "seatRecoveryReentryVerified": true,
+      "automaticCounterpartyRevisionRefresh": true,
+      "nativePrefix": {
+        "roomId": "wave4-native-armour-armory-0",
+        "stateHash": "964c442000604b80e5e2137312c2769a5e1b6d34e4770f0af6ce038fafe0cf64",
+        "bindingHash": "3b576fb92a883936c040197901bf3c0f7c2f7819d325bfc1558297133e26331d",
+        "signedReceipts": 2
+      },
+      "successorMenuAvailable": true,
+      "replayMatched": true,
+      "successorScope": "Web native attack damage settled",
+      "mobileDefender": false,
+      "fullMatchAdmission": false
+    },
+    {
+      "definitionId": "card:engineering_bay/infantry-armor-any@2",
+      "roomId": "product-wave4-web-engineering_bay",
+      "kind": "engineering_bay",
+      "abilityName": "Infantry Armor",
+      "twoIsolatedBrowserSeats": true,
+      "opponentCannotChooseCard": true,
+      "previewReadOnly": true,
+      "trace": [
+        {
+          "actionType": "resolve_reaction_family_ability",
+          "revision": 1,
+          "stateHash": "fc62e3f9ee43a00eafe0353df6c9d73441dd6e3c42cca4207ae8ad68f1d95c21"
+        },
+        {
+          "actionType": "roll_melee_attack_armour_pool",
+          "revision": 2,
+          "stateHash": "2981886ed79b1615a6152c12eda177f8b0af06ea14e21ab8a8403069dc66f448"
+        },
+        {
+          "actionType": "choose_melee_tough_armour",
+          "revision": 3,
+          "stateHash": "d4ea757fd5da845d6bbb867a7293eb1eb6cffad2df483a4f57d5939c36d26af1"
+        },
+        {
+          "actionType": "resolve_melee_attack_evade_pool",
+          "revision": 4,
+          "stateHash": "d701bd700e7f4121aad42d8ad3e7938848ea1d285df92b436b978c3f9b62b040"
+        }
+      ],
+      "signedWebReceipts": 4,
+      "stateHash": "d701bd700e7f4121aad42d8ad3e7938848ea1d285df92b436b978c3f9b62b040",
+      "seatRecoveryReentryVerified": true,
+      "automaticCounterpartyRevisionRefresh": true,
+      "nativePrefix": {
+        "roomId": "wave4-native-armour-engineering_bay-1",
+        "stateHash": "99be2ae0852c89386bcccccbc68242dae167c7aad011937de400cb546555ae6b",
+        "bindingHash": "9661075f2f02acb681a9e4adf06d8c63b8d7a48c2de27fbb3a1fb1ee720d24a1",
+        "signedReceipts": 2
+      },
+      "successorMenuAvailable": true,
+      "replayMatched": true,
+      "successorScope": "Web native attack damage settled",
+      "mobileDefender": false,
+      "fullMatchAdmission": false
+    },
+    {
+      "definitionId": "card:evolution_chamber/carapace-any@2",
+      "roomId": "product-wave4-web-evolution_chamber",
+      "kind": "evolution_chamber",
+      "abilityName": "Carapace",
+      "twoIsolatedBrowserSeats": true,
+      "opponentCannotChooseCard": true,
+      "previewReadOnly": true,
+      "trace": [
+        {
+          "actionType": "resolve_reaction_family_ability",
+          "revision": 1,
+          "stateHash": "1bfa3e170331bece7fd2d5958402bfe231a33f800a83c2b95d9c7b8cf2702db9"
+        },
+        {
+          "actionType": "roll_melee_attack_armour_pool",
+          "revision": 2,
+          "stateHash": "629d3c4e140413198edcb2d8e5dc42b8333a63124065f73f851d8f70d06b811f"
+        },
+        {
+          "actionType": "choose_melee_tough_armour",
+          "revision": 3,
+          "stateHash": "0644b4b1a74770c8813281bd4cc9c50e50a9a1e6bffce31489eff75594690325"
+        },
+        {
+          "actionType": "resolve_melee_attack_evade_pool",
+          "revision": 4,
+          "stateHash": "41182507aee503e352a95d06e6a760312a38d5d2691acb670765ed7e8c14e280"
+        }
+      ],
+      "signedWebReceipts": 4,
+      "stateHash": "41182507aee503e352a95d06e6a760312a38d5d2691acb670765ed7e8c14e280",
+      "seatRecoveryReentryVerified": true,
+      "automaticCounterpartyRevisionRefresh": true,
+      "nativePrefix": {
+        "roomId": "wave4-native-armour-evolution_chamber-1",
+        "stateHash": "6c1826ea681a689683b50c9422ea85045aa92bd022ede0b8161e23bb3caffe80",
+        "bindingHash": "c804e4323fa96ee94ba1a7701d91d02356f908e25406bd6f8bc535b067b0c315",
+        "signedReceipts": 2
+      },
+      "successorMenuAvailable": true,
+      "replayMatched": true,
+      "successorScope": "Web native attack damage settled",
+      "mobileDefender": false,
+      "fullMatchAdmission": false
+    },
+    {
+      "definitionId": "card:forge/ground-armor-any@2",
+      "roomId": "product-wave4-web-forge",
+      "kind": "forge",
+      "abilityName": "Ground Armor",
+      "twoIsolatedBrowserSeats": true,
+      "opponentCannotChooseCard": true,
+      "previewReadOnly": true,
+      "trace": [
+        {
+          "actionType": "resolve_reaction_family_ability",
+          "revision": 1,
+          "stateHash": "9c17951e2d78e71530a2ccb1bafe379eea3b55e86ba5fb452abe66a311e89641"
+        },
+        {
+          "actionType": "roll_melee_attack_armour_pool",
+          "revision": 2,
+          "stateHash": "22e7ff7fd7eeece4ba51aa024b1f808603b06b347a131d06716d59922aeab67e"
+        },
+        {
+          "actionType": "choose_melee_tough_armour",
+          "revision": 3,
+          "stateHash": "8508774a6db0dfe9469bfaee4f9ae1ba0712b624c46129b48bd3fadec48686a5"
+        },
+        {
+          "actionType": "resolve_melee_attack_evade_pool",
+          "revision": 4,
+          "stateHash": "91be8ee39e929538aea66636356ef636aa26a9fe486b2fdb648881d5354df5c4"
+        }
+      ],
+      "signedWebReceipts": 4,
+      "stateHash": "91be8ee39e929538aea66636356ef636aa26a9fe486b2fdb648881d5354df5c4",
+      "seatRecoveryReentryVerified": true,
+      "automaticCounterpartyRevisionRefresh": true,
+      "nativePrefix": {
+        "roomId": "wave4-native-armour-forge-2",
+        "stateHash": "a2018d462d6009b16eb00156e8feccc6c652132f0ac8b4edac8e296ae1c9a250",
+        "bindingHash": "f6677a3447a29c5b83012b1adb88ed1a995e7a4881b2cad69b2f9ac1ca73cbe2",
+        "signedReceipts": 2
+      },
+      "successorMenuAvailable": true,
+      "replayMatched": true,
+      "successorScope": "Web native attack damage settled",
+      "mobileDefender": false,
+      "fullMatchAdmission": false
+    },
+    {
+      "definitionId": "card:power_field/guardian-shell-any@2",
+      "roomId": "product-wave4-web-power_field",
+      "kind": "power_field",
+      "abilityName": "Guardian Shell",
+      "twoIsolatedBrowserSeats": true,
+      "opponentCannotChooseCard": true,
+      "previewReadOnly": true,
+      "trace": [
+        {
+          "actionType": "resolve_reaction_family_ability",
+          "revision": 1,
+          "stateHash": "0ff12760cd3171d293f56f39f6639b87bfb88e5136a547d95fd7ea1d8fd21eda"
+        },
+        {
+          "actionType": "roll_melee_attack_armour_pool",
+          "revision": 2,
+          "stateHash": "dcb9a7a40dde69403b75c24d53dfb95e64a617f147bb6550a1884fd8140a41d4"
+        },
+        {
+          "actionType": "resolve_melee_attack_evade_pool",
+          "revision": 3,
+          "stateHash": "e230b56f49db9bccc5fbaf0e5f13c04dc609d712f4d8e3fd23d682320683a7e9"
+        }
+      ],
+      "signedWebReceipts": 3,
+      "stateHash": "e230b56f49db9bccc5fbaf0e5f13c04dc609d712f4d8e3fd23d682320683a7e9",
+      "seatRecoveryReentryVerified": true,
+      "automaticCounterpartyRevisionRefresh": true,
+      "nativePrefix": {
+        "roomId": "wave4-native-armour-power_field-0",
+        "stateHash": "a46183ed7ba9c0d264e6de0cd4c90762632c174cd2baa193c826c4e533789e96",
+        "bindingHash": "2a33b771aebfd6fc60226f19b5cd90b970350f6f311a985fc17e99477578e106",
+        "signedReceipts": 2
+      },
+      "successorMenuAvailable": true,
+      "replayMatched": true,
+      "successorScope": "Web native attack damage settled",
+      "mobileDefender": true,
+      "fullMatchAdmission": false
+    },
+    {
+      "definitionId": "card:robotics_facility/plasma-shields-any@2",
+      "roomId": "product-wave4-web-robotics_facility",
+      "kind": "robotics_facility",
+      "abilityName": "Plasma Shields",
+      "twoIsolatedBrowserSeats": true,
+      "opponentCannotChooseCard": true,
+      "previewReadOnly": true,
+      "trace": [
+        {
+          "actionType": "resolve_reaction_family_ability",
+          "revision": 1,
+          "stateHash": "d8336d0d7c176198198dcc7837af1fe2da398c766b3b258de2645fcb92e0e251"
+        },
+        {
+          "actionType": "roll_melee_attack_armour_pool",
+          "revision": 2,
+          "stateHash": "92a4ee5234b3e7bf85e95213b5b4155275db928485f877c976c63aa85197ad26"
+        },
+        {
+          "actionType": "choose_melee_tough_armour",
+          "revision": 3,
+          "stateHash": "891b1075f523a9d2067460d7db4adb9166b97de413ec6fd4aac5c14d82492446"
+        },
+        {
+          "actionType": "resolve_melee_attack_evade_pool",
+          "revision": 4,
+          "stateHash": "7c187e17c5077bb95e29d9eec577508c66aa23fe240742dd7186e2e564e42831"
+        }
+      ],
+      "signedWebReceipts": 4,
+      "stateHash": "7c187e17c5077bb95e29d9eec577508c66aa23fe240742dd7186e2e564e42831",
+      "seatRecoveryReentryVerified": true,
+      "automaticCounterpartyRevisionRefresh": true,
+      "nativePrefix": {
+        "roomId": "wave4-native-armour-robotics_facility-3",
+        "stateHash": "7e69955270531e23a516337d63de7323eb1af452005095289ea4ec3f7a4c38ce",
+        "bindingHash": "b6126081e4115a14500eea102b669f33dcda79378452f1b6d28b2cd1533f0eb1",
+        "signedReceipts": 2
+      },
+      "successorMenuAvailable": true,
+      "replayMatched": true,
+      "successorScope": "Web native attack damage settled",
+      "mobileDefender": false,
+      "fullMatchAdmission": false
+    },
+    {
+      "definitionId": "card:vanadium_plating/crystalline-alloy-any@2",
+      "roomId": "product-wave4-web-vanadium_plating",
+      "kind": "vanadium_plating",
+      "abilityName": "Crystalline Alloy",
+      "twoIsolatedBrowserSeats": true,
+      "opponentCannotChooseCard": true,
+      "previewReadOnly": true,
+      "trace": [
+        {
+          "actionType": "resolve_reaction_family_ability",
+          "revision": 1,
+          "stateHash": "2bc6972c108df6e7cc0dfcb115ade281e8f74cef0422fbe100361cfbdc098f3d"
+        },
+        {
+          "actionType": "roll_melee_attack_armour_pool",
+          "revision": 2,
+          "stateHash": "9075ad6236b6909e178af82e14f821f1ce816ed9d958c0978b2963c796125bdb"
+        },
+        {
+          "actionType": "resolve_melee_attack_evade_pool",
+          "revision": 3,
+          "stateHash": "3e3df9d43dba2fae8b534da7f2befcd015339f0c009fa102c87c09608337d21f"
+        }
+      ],
+      "signedWebReceipts": 3,
+      "stateHash": "3e3df9d43dba2fae8b534da7f2befcd015339f0c009fa102c87c09608337d21f",
+      "seatRecoveryReentryVerified": true,
+      "automaticCounterpartyRevisionRefresh": true,
+      "nativePrefix": {
+        "roomId": "wave4-native-armour-vanadium_plating-0",
+        "stateHash": "5b0966e764b709cb8e2f02d670dc7ce74f2a1153c3092dba12848f0baa711f59",
+        "bindingHash": "c0d0d221b29e4f18ed5a74add9c22b93a6d0b2a4b61231186a33678909d2455c",
+        "signedReceipts": 2
+      },
+      "successorMenuAvailable": true,
+      "replayMatched": true,
+      "successorScope": "Web native attack damage settled",
+      "mobileDefender": false,
+      "fullMatchAdmission": false
+    },
+    {
+      "definitionId": "card:observer/gravitic-boosters-any@2",
+      "roomId": "product-wave4-web-observer",
+      "kind": "observer",
+      "abilityName": "Gravitic Boosters",
+      "twoIsolatedBrowserSeats": true,
+      "opponentCannotChooseCard": true,
+      "previewReadOnly": true,
+      "trace": [
+        {
+          "actionType": "resolve_reaction_family_ability",
+          "revision": 1,
+          "stateHash": "be95873dc121de2548c6b98547668c448b6305a1f964efe208ae2a8d343fec2f"
+        }
+      ],
+      "signedWebReceipts": 1,
+      "stateHash": "be95873dc121de2548c6b98547668c448b6305a1f964efe208ae2a8d343fec2f",
+      "seatRecoveryReentryVerified": true,
+      "automaticCounterpartyRevisionRefresh": true,
+      "nativePrefix": {
+        "roomId": "wave4-observer-use-0",
+        "stateHash": "8dada1e4d485d11e2c4e2f0aa3b8ba6e71bfdbb567fb4c75e9a5415b0eccb902",
+        "bindingHash": "c5eabc5d5ffe85bb225c68a5e22cff4dc311207e90d04e1b3c458a425d865aa2",
+        "signedReceipts": 1
+      },
+      "successorMenuAvailable": true,
+      "replayMatched": true,
+      "successorScope": "native resolve_charge menu after revised distance roll",
+      "mobileDefender": false,
+      "fullMatchAdmission": false
+    },
+    {
+      "definitionId": "card:overseer/pneumatized-carapace-any@2",
+      "roomId": "product-wave4-web-overseer",
+      "kind": "overseer",
+      "abilityName": "Pneumatized Carapace",
+      "twoIsolatedBrowserSeats": true,
+      "opponentCannotChooseCard": true,
+      "previewReadOnly": true,
+      "trace": [
+        {
+          "actionType": "resolve_reaction_family_ability",
+          "revision": 1,
+          "stateHash": "52f64e53933381c2b1ef755285a1cc24169f62ea1964616c08b8041029f74a17"
+        }
+      ],
+      "signedWebReceipts": 1,
+      "stateHash": "52f64e53933381c2b1ef755285a1cc24169f62ea1964616c08b8041029f74a17",
+      "seatRecoveryReentryVerified": true,
+      "automaticCounterpartyRevisionRefresh": true,
+      "nativePrefix": {
+        "roomId": "wave4-overseer-use-0",
+        "stateHash": "3ecc11e024395f1c2eedcf9fe5504fcb7a7fd5e5c942af9a8f640ff4539326d9",
+        "bindingHash": "dd691bea01181d8ecc70b10820c3e80ea433adf3e6b31356e5a4da77130fa2a4",
+        "signedReceipts": 1
+      },
+      "successorMenuAvailable": true,
+      "replayMatched": true,
+      "successorScope": "native resolve_charge menu after revised distance roll",
+      "mobileDefender": false,
+      "fullMatchAdmission": false
+    },
+    {
+      "definitionId": "card:twilight_council/veil-of-shadows-any@2",
+      "roomId": "product-wave4-web-veil-of-shadows",
+      "kind": "veil-of-shadows",
+      "abilityName": "Veil of Shadows",
+      "twoIsolatedBrowserSeats": true,
+      "opponentCannotChooseCard": true,
+      "previewReadOnly": true,
+      "trace": [
+        {
+          "actionType": "resolve_reaction_family_ability",
+          "revision": 1,
+          "stateHash": "9a2caebad015fa86c8d97137f00bc8a81d23de1e281c390ca4480178f1971676"
+        },
+        {
+          "actionType": "pass_reaction_family_window",
+          "revision": 2,
+          "stateHash": "1e9c717c0bf7eacb6a251b23f3192e7e5e694ee121816ec4372e4aea02e87c78"
+        }
+      ],
+      "signedWebReceipts": 2,
+      "stateHash": "1e9c717c0bf7eacb6a251b23f3192e7e5e694ee121816ec4372e4aea02e87c78",
+      "seatRecoveryReentryVerified": true,
+      "automaticCounterpartyRevisionRefresh": true,
+      "nativePrefix": {
+        "roomId": "wave4-veil-of-shadows-use-0",
+        "stateHash": "aea899d1df81573d0ea64f7927a51317ddb0d3545e795055b69d9ede21f500d6",
+        "bindingHash": "0073fd300f163c7b5643bbb65e17dbc05b68bb3170118f71d2bb9a466b9ea5e0",
+        "signedReceipts": 1
+      },
+      "successorMenuAvailable": true,
+      "replayMatched": true,
+      "successorScope": "native PLACE prefix then Web HEAL and movement menu",
+      "mobileDefender": false,
+      "fullMatchAdmission": false
+    },
+    {
+      "definitionId": "card:zerg_swarm/brood-instinct-any@2",
+      "roomId": "product-wave4-web-brood-instinct",
+      "kind": "brood-instinct",
+      "abilityName": "Brood Instinct",
+      "twoIsolatedBrowserSeats": true,
+      "opponentCannotChooseCard": true,
+      "previewReadOnly": true,
+      "trace": [
+        {
+          "actionType": "resolve_reaction_family_ability",
+          "revision": 1,
+          "stateHash": "9b4f8af1763489a7e15cd059079c04bd17a65462c37a17e9d6eb1068daf26e11"
+        },
+        {
+          "actionType": "resolve_ranged_attack_evade_pool",
+          "revision": 2,
+          "stateHash": "78191e92694a80698f04f66169d15b475822551b986349a135d7ed20e79be402"
+        }
+      ],
+      "signedWebReceipts": 2,
+      "stateHash": "78191e92694a80698f04f66169d15b475822551b986349a135d7ed20e79be402",
+      "seatRecoveryReentryVerified": true,
+      "automaticCounterpartyRevisionRefresh": true,
+      "nativePrefix": {
+        "roomId": "wave4-brood-instinct-use-0",
+        "stateHash": "33c5566c305ff50b00d50a9e98e2a0d97b3eeef639d754851004d962a8bd94b3",
+        "bindingHash": "719230eaae627f0cff1cc1dba7a7bce5fcfe676e5db517d3c508cda1967c589f",
+        "signedReceipts": 3
+      },
+      "successorMenuAvailable": true,
+      "replayMatched": true,
+      "successorScope": "Web native attack damage settled",
+      "mobileDefender": false,
+      "fullMatchAdmission": false
+    }
+  ],
+  "scope": "signed native prefixes; existing product Web UI; conditional scenes",
+  "fullWave4LobbyBuilderAdmission": false,
+  "sourceHeldDefinitions": 39,
+  "modelCalls": 0,
+  "trainingTruth": false,
+  "productionPromoted": false
+}

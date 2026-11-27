@@ -35,7 +35,8 @@
   },
   "formalMatchGate": {
     "passedDefinitions": 0,
-    "webAcceptance": "not_run"
+    "webAcceptance": "old_card_timing_scoped_passed",
+    "fullWave4Admission": false
   },
   "sourceHeldDefinitions": [
     {
@@ -274,10 +275,418 @@
     }
   ],
   "next": [
-    "Integrate seven armour reactions with actual attack producers, armour roll and successor ownership",
-    "Verify Observer/Overseer charge, Veil of Shadows placement, Brood Instinct Evade and three Creep builder subjects",
-    "Implement the eighteen reviewed new contracts in dependency order; resolve source-held records before admission"
+    "Wire three Zerg Creep @2 builder subjects",
+    "Implement eighteen new game atom contracts and wire new units/factions",
+    "Connect full Wave4 release selection, Builder, room factories, queries and media; keep 39 source-held definitions isolated"
   ],
   "modelCalls": 0,
-  "trainingTruth": false
+  "trainingTruth": false,
+  "inventoryRole": "frozen initial analysis; current execution status is recorded in the gates below",
+  "nativeTimingGate": {
+    "passedDefinitions": 11,
+    "signedPrimaryReceipts": 68,
+    "emptyArmourPoolCases": 7,
+    "emptyArmourPoolReceipts": 21,
+    "fullNativeMeleeArmourDefinitions": 7,
+    "otherNativeTimingDefinitions": 4,
+    "evidenceRefs": [
+      "docs/development/wave4/evidence/native-armour-timing.public.json",
+      "docs/development/wave4/evidence/native-other-timing.public.json"
+    ],
+    "fullMatchAdmission": false
+  },
+  "webTimingGate": {
+    "status": "passed_scoped",
+    "passedDefinitions": 11,
+    "totalDefinitions": 11,
+    "signedReceipts": 31,
+    "scope": "existing product UI from signed native prefixes; conditional scenes",
+    "evidenceRef": "docs/development/wave4/evidence/timing-web.public.json",
+    "fullWave4LobbyBuilderAdmission": false
+  },
+  "productDataWiring": {
+    "frozenCandidateAvailable": true,
+    "perIdAnalysisComplete": true,
+    "oldCardTimingNativeDefinitions": 11,
+    "newUnitAndFactionEndToEnd": false,
+    "builderAndLobbyReleaseSelection": "pending",
+    "requiredNewGameAtoms": 18,
+    "implementedNewGameAtoms": 0,
+    "sourceHeldDefinitions": 39,
+    "fullWave4MatchAdmission": false
+  },
+  "runtimeVerificationByDefinition": [
+    {
+      "definitionId": "card:armory/vehicle-plating-any@2",
+      "nativeTimingVerified": true,
+      "nativeEvidenceRef": "docs/development/wave4/evidence/native-armour-timing.public.json",
+      "webTimingVerified": true,
+      "webEvidenceRef": "docs/development/wave4/evidence/timing-web.public.json",
+      "fullMatchAdmission": false,
+      "nativeConsumerRefs": [
+        {
+          "file": "packages/product-composition/official-melee-pool-choice-runtime-v1.mjs",
+          "exportName": "createOfficialMeleePoolChoiceRuntimeV1"
+        },
+        {
+          "file": "packages/product-composition/official-selected-roster-melee-action-runtime-v1.mjs",
+          "exportName": "createOfficialSelectedRosterMeleeActionRuntimeV1"
+        }
+      ],
+      "webConsumerRefs": [
+        {
+          "file": "packages/product-composition/official-human-confirmed-runtime-v1.mjs",
+          "exportName": "createOfficialHumanConfirmedRuntimeV1"
+        },
+        {
+          "file": "packages/client-domain/battlefield-presentation-v1.mjs",
+          "exportName": "projectStarcraftTmgBattlefieldPresentationV1"
+        },
+        {
+          "file": "apps/starcraft-tmg-expo/components/battlefield/native-action-form.tsx",
+          "exportName": "NativeActionForm"
+        }
+      ],
+      "webVerificationScope": "Web native attack damage settled"
+    },
+    {
+      "definitionId": "card:engineering_bay/infantry-armor-any@2",
+      "nativeTimingVerified": true,
+      "nativeEvidenceRef": "docs/development/wave4/evidence/native-armour-timing.public.json",
+      "webTimingVerified": true,
+      "webEvidenceRef": "docs/development/wave4/evidence/timing-web.public.json",
+      "fullMatchAdmission": false,
+      "nativeConsumerRefs": [
+        {
+          "file": "packages/product-composition/official-melee-pool-choice-runtime-v1.mjs",
+          "exportName": "createOfficialMeleePoolChoiceRuntimeV1"
+        },
+        {
+          "file": "packages/product-composition/official-selected-roster-melee-action-runtime-v1.mjs",
+          "exportName": "createOfficialSelectedRosterMeleeActionRuntimeV1"
+        }
+      ],
+      "webConsumerRefs": [
+        {
+          "file": "packages/product-composition/official-human-confirmed-runtime-v1.mjs",
+          "exportName": "createOfficialHumanConfirmedRuntimeV1"
+        },
+        {
+          "file": "packages/client-domain/battlefield-presentation-v1.mjs",
+          "exportName": "projectStarcraftTmgBattlefieldPresentationV1"
+        },
+        {
+          "file": "apps/starcraft-tmg-expo/components/battlefield/native-action-form.tsx",
+          "exportName": "NativeActionForm"
+        }
+      ],
+      "webVerificationScope": "Web native attack damage settled"
+    },
+    {
+      "definitionId": "card:evolution_chamber/carapace-any@2",
+      "nativeTimingVerified": true,
+      "nativeEvidenceRef": "docs/development/wave4/evidence/native-armour-timing.public.json",
+      "webTimingVerified": true,
+      "webEvidenceRef": "docs/development/wave4/evidence/timing-web.public.json",
+      "fullMatchAdmission": false,
+      "nativeConsumerRefs": [
+        {
+          "file": "packages/product-composition/official-melee-pool-choice-runtime-v1.mjs",
+          "exportName": "createOfficialMeleePoolChoiceRuntimeV1"
+        },
+        {
+          "file": "packages/product-composition/official-selected-roster-melee-action-runtime-v1.mjs",
+          "exportName": "createOfficialSelectedRosterMeleeActionRuntimeV1"
+        }
+      ],
+      "webConsumerRefs": [
+        {
+          "file": "packages/product-composition/official-human-confirmed-runtime-v1.mjs",
+          "exportName": "createOfficialHumanConfirmedRuntimeV1"
+        },
+        {
+          "file": "packages/client-domain/battlefield-presentation-v1.mjs",
+          "exportName": "projectStarcraftTmgBattlefieldPresentationV1"
+        },
+        {
+          "file": "apps/starcraft-tmg-expo/components/battlefield/native-action-form.tsx",
+          "exportName": "NativeActionForm"
+        }
+      ],
+      "webVerificationScope": "Web native attack damage settled"
+    },
+    {
+      "definitionId": "card:forge/ground-armor-any@2",
+      "nativeTimingVerified": true,
+      "nativeEvidenceRef": "docs/development/wave4/evidence/native-armour-timing.public.json",
+      "webTimingVerified": true,
+      "webEvidenceRef": "docs/development/wave4/evidence/timing-web.public.json",
+      "fullMatchAdmission": false,
+      "nativeConsumerRefs": [
+        {
+          "file": "packages/product-composition/official-melee-pool-choice-runtime-v1.mjs",
+          "exportName": "createOfficialMeleePoolChoiceRuntimeV1"
+        },
+        {
+          "file": "packages/product-composition/official-selected-roster-melee-action-runtime-v1.mjs",
+          "exportName": "createOfficialSelectedRosterMeleeActionRuntimeV1"
+        }
+      ],
+      "webConsumerRefs": [
+        {
+          "file": "packages/product-composition/official-human-confirmed-runtime-v1.mjs",
+          "exportName": "createOfficialHumanConfirmedRuntimeV1"
+        },
+        {
+          "file": "packages/client-domain/battlefield-presentation-v1.mjs",
+          "exportName": "projectStarcraftTmgBattlefieldPresentationV1"
+        },
+        {
+          "file": "apps/starcraft-tmg-expo/components/battlefield/native-action-form.tsx",
+          "exportName": "NativeActionForm"
+        }
+      ],
+      "webVerificationScope": "Web native attack damage settled"
+    },
+    {
+      "definitionId": "card:power_field/guardian-shell-any@2",
+      "nativeTimingVerified": true,
+      "nativeEvidenceRef": "docs/development/wave4/evidence/native-armour-timing.public.json",
+      "webTimingVerified": true,
+      "webEvidenceRef": "docs/development/wave4/evidence/timing-web.public.json",
+      "fullMatchAdmission": false,
+      "nativeConsumerRefs": [
+        {
+          "file": "packages/product-composition/official-melee-pool-choice-runtime-v1.mjs",
+          "exportName": "createOfficialMeleePoolChoiceRuntimeV1"
+        },
+        {
+          "file": "packages/product-composition/official-selected-roster-melee-action-runtime-v1.mjs",
+          "exportName": "createOfficialSelectedRosterMeleeActionRuntimeV1"
+        }
+      ],
+      "webConsumerRefs": [
+        {
+          "file": "packages/product-composition/official-human-confirmed-runtime-v1.mjs",
+          "exportName": "createOfficialHumanConfirmedRuntimeV1"
+        },
+        {
+          "file": "packages/client-domain/battlefield-presentation-v1.mjs",
+          "exportName": "projectStarcraftTmgBattlefieldPresentationV1"
+        },
+        {
+          "file": "apps/starcraft-tmg-expo/components/battlefield/native-action-form.tsx",
+          "exportName": "NativeActionForm"
+        }
+      ],
+      "webVerificationScope": "Web native attack damage settled"
+    },
+    {
+      "definitionId": "card:robotics_facility/plasma-shields-any@2",
+      "nativeTimingVerified": true,
+      "nativeEvidenceRef": "docs/development/wave4/evidence/native-armour-timing.public.json",
+      "webTimingVerified": true,
+      "webEvidenceRef": "docs/development/wave4/evidence/timing-web.public.json",
+      "fullMatchAdmission": false,
+      "nativeConsumerRefs": [
+        {
+          "file": "packages/product-composition/official-melee-pool-choice-runtime-v1.mjs",
+          "exportName": "createOfficialMeleePoolChoiceRuntimeV1"
+        },
+        {
+          "file": "packages/product-composition/official-selected-roster-melee-action-runtime-v1.mjs",
+          "exportName": "createOfficialSelectedRosterMeleeActionRuntimeV1"
+        }
+      ],
+      "webConsumerRefs": [
+        {
+          "file": "packages/product-composition/official-human-confirmed-runtime-v1.mjs",
+          "exportName": "createOfficialHumanConfirmedRuntimeV1"
+        },
+        {
+          "file": "packages/client-domain/battlefield-presentation-v1.mjs",
+          "exportName": "projectStarcraftTmgBattlefieldPresentationV1"
+        },
+        {
+          "file": "apps/starcraft-tmg-expo/components/battlefield/native-action-form.tsx",
+          "exportName": "NativeActionForm"
+        }
+      ],
+      "webVerificationScope": "Web native attack damage settled"
+    },
+    {
+      "definitionId": "card:vanadium_plating/crystalline-alloy-any@2",
+      "nativeTimingVerified": true,
+      "nativeEvidenceRef": "docs/development/wave4/evidence/native-armour-timing.public.json",
+      "webTimingVerified": true,
+      "webEvidenceRef": "docs/development/wave4/evidence/timing-web.public.json",
+      "fullMatchAdmission": false,
+      "nativeConsumerRefs": [
+        {
+          "file": "packages/product-composition/official-melee-pool-choice-runtime-v1.mjs",
+          "exportName": "createOfficialMeleePoolChoiceRuntimeV1"
+        },
+        {
+          "file": "packages/product-composition/official-selected-roster-melee-action-runtime-v1.mjs",
+          "exportName": "createOfficialSelectedRosterMeleeActionRuntimeV1"
+        }
+      ],
+      "webConsumerRefs": [
+        {
+          "file": "packages/product-composition/official-human-confirmed-runtime-v1.mjs",
+          "exportName": "createOfficialHumanConfirmedRuntimeV1"
+        },
+        {
+          "file": "packages/client-domain/battlefield-presentation-v1.mjs",
+          "exportName": "projectStarcraftTmgBattlefieldPresentationV1"
+        },
+        {
+          "file": "apps/starcraft-tmg-expo/components/battlefield/native-action-form.tsx",
+          "exportName": "NativeActionForm"
+        }
+      ],
+      "webVerificationScope": "Web native attack damage settled"
+    },
+    {
+      "definitionId": "card:observer/gravitic-boosters-any@2",
+      "nativeTimingVerified": true,
+      "nativeEvidenceRef": "docs/development/wave4/evidence/native-other-timing.public.json",
+      "webTimingVerified": true,
+      "webEvidenceRef": "docs/development/wave4/evidence/timing-web.public.json",
+      "fullMatchAdmission": false,
+      "nativeConsumerRefs": [
+        {
+          "file": "packages/product-composition/official-selected-roster-melee-action-runtime-v1.mjs",
+          "exportName": "openOfficialChargeRollReactionV1"
+        },
+        {
+          "file": "packages/product-composition/official-selected-roster-melee-action-runtime-v1.mjs",
+          "exportName": "finishOfficialChargeRollReactionV1"
+        },
+        {
+          "file": "packages/product-composition/official-selected-roster-melee-action-runtime-v1.mjs",
+          "exportName": "applyOfficialSelectedRosterChargeResolutionTransitionV1"
+        }
+      ],
+      "webConsumerRefs": [
+        {
+          "file": "packages/product-composition/official-human-confirmed-runtime-v1.mjs",
+          "exportName": "createOfficialHumanConfirmedRuntimeV1"
+        },
+        {
+          "file": "packages/client-domain/battlefield-presentation-v1.mjs",
+          "exportName": "projectStarcraftTmgBattlefieldPresentationV1"
+        },
+        {
+          "file": "apps/starcraft-tmg-expo/components/battlefield/native-action-form.tsx",
+          "exportName": "NativeActionForm"
+        }
+      ],
+      "webVerificationScope": "native resolve_charge menu after revised distance roll"
+    },
+    {
+      "definitionId": "card:overseer/pneumatized-carapace-any@2",
+      "nativeTimingVerified": true,
+      "nativeEvidenceRef": "docs/development/wave4/evidence/native-other-timing.public.json",
+      "webTimingVerified": true,
+      "webEvidenceRef": "docs/development/wave4/evidence/timing-web.public.json",
+      "fullMatchAdmission": false,
+      "nativeConsumerRefs": [
+        {
+          "file": "packages/product-composition/official-selected-roster-melee-action-runtime-v1.mjs",
+          "exportName": "openOfficialChargeRollReactionV1"
+        },
+        {
+          "file": "packages/product-composition/official-selected-roster-melee-action-runtime-v1.mjs",
+          "exportName": "finishOfficialChargeRollReactionV1"
+        },
+        {
+          "file": "packages/product-composition/official-selected-roster-melee-action-runtime-v1.mjs",
+          "exportName": "applyOfficialSelectedRosterChargeResolutionTransitionV1"
+        }
+      ],
+      "webConsumerRefs": [
+        {
+          "file": "packages/product-composition/official-human-confirmed-runtime-v1.mjs",
+          "exportName": "createOfficialHumanConfirmedRuntimeV1"
+        },
+        {
+          "file": "packages/client-domain/battlefield-presentation-v1.mjs",
+          "exportName": "projectStarcraftTmgBattlefieldPresentationV1"
+        },
+        {
+          "file": "apps/starcraft-tmg-expo/components/battlefield/native-action-form.tsx",
+          "exportName": "NativeActionForm"
+        }
+      ],
+      "webVerificationScope": "native resolve_charge menu after revised distance roll"
+    },
+    {
+      "definitionId": "card:twilight_council/veil-of-shadows-any@2",
+      "nativeTimingVerified": true,
+      "nativeEvidenceRef": "docs/development/wave4/evidence/native-other-timing.public.json",
+      "webTimingVerified": true,
+      "webEvidenceRef": "docs/development/wave4/evidence/timing-web.public.json",
+      "fullMatchAdmission": false,
+      "nativeConsumerRefs": [
+        {
+          "file": "packages/product-composition/official-relocation-family-adapter-v1.mjs",
+          "exportName": "createOfficialRelocationFamilyAdapterV1"
+        },
+        {
+          "file": "packages/product-composition/official-post-place-reaction-runtime-v1.mjs",
+          "exportName": "createOfficialPostPlaceReactionRuntimeV1"
+        }
+      ],
+      "webConsumerRefs": [
+        {
+          "file": "packages/product-composition/official-human-confirmed-runtime-v1.mjs",
+          "exportName": "createOfficialHumanConfirmedRuntimeV1"
+        },
+        {
+          "file": "packages/client-domain/battlefield-presentation-v1.mjs",
+          "exportName": "projectStarcraftTmgBattlefieldPresentationV1"
+        },
+        {
+          "file": "apps/starcraft-tmg-expo/components/battlefield/native-action-form.tsx",
+          "exportName": "NativeActionForm"
+        }
+      ],
+      "webVerificationScope": "native PLACE prefix then Web HEAL and movement menu"
+    },
+    {
+      "definitionId": "card:zerg_swarm/brood-instinct-any@2",
+      "nativeTimingVerified": true,
+      "nativeEvidenceRef": "docs/development/wave4/evidence/native-other-timing.public.json",
+      "webTimingVerified": true,
+      "webEvidenceRef": "docs/development/wave4/evidence/timing-web.public.json",
+      "fullMatchAdmission": false,
+      "nativeConsumerRefs": [
+        {
+          "file": "packages/product-composition/official-ranged-precision-choice-runtime-v1.mjs",
+          "exportName": "createOfficialRangedPrecisionChoiceRuntimeV1"
+        },
+        {
+          "file": "packages/product-composition/official-selected-roster-ranged-action-runtime-v1.mjs",
+          "exportName": "createOfficialSelectedRosterRangedActionRuntimeV1"
+        }
+      ],
+      "webConsumerRefs": [
+        {
+          "file": "packages/product-composition/official-human-confirmed-runtime-v1.mjs",
+          "exportName": "createOfficialHumanConfirmedRuntimeV1"
+        },
+        {
+          "file": "packages/client-domain/battlefield-presentation-v1.mjs",
+          "exportName": "projectStarcraftTmgBattlefieldPresentationV1"
+        },
+        {
+          "file": "apps/starcraft-tmg-expo/components/battlefield/native-action-form.tsx",
+          "exportName": "NativeActionForm"
+        }
+      ],
+      "webVerificationScope": "Web native attack damage settled"
+    }
+  ],
+  "executionStatus": "old_card_timing_batch_verified"
 }
