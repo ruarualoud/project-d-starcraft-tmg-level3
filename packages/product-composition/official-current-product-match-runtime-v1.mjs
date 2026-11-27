@@ -465,6 +465,38 @@ export function createOfficialCurrentProductMatchRuntimeV1(input = {}) {
   });
 }
 
+// An explicit component test entry uses the same phase/mission/cleanup owner.
+// It is never a release factory and never claims the omitted ability catalogue.
+export function createOfficialEngineeringScopedRoundRuntimeV1({ context, state, nativeActions, definitionIds }) {
+  const sourceDefinitionCount = nativeActions?.catalogue?.definitionSelection?.sourceDefinitionCount;
+  if (context?.allowEngineeringEstimatedGeometry !== true || !nativeActions?.descriptor
+    || typeof nativeActions.lifecycle !== 'function' || !nativeActions.spatial || !nativeActions.ranged || !nativeActions.melee
+    || !Array.isArray(definitionIds) || !definitionIds.length || new Set(definitionIds).size !== definitionIds.length
+    || !Number.isSafeInteger(sourceDefinitionCount) || sourceDefinitionCount < definitionIds.length
+    || definitionIds.some(id => !nativeActions.catalogue.definitions.some(definition => definition.definitionId === id))) {
+    fail('ENGINEERING_SCOPED_ROUND_AUTHORITY_REQUIRED');
+  }
+  const coverage = { schema: 'starcraft_tmg_engineering_round_ability_scope_v1',
+    definitions: definitionIds.map(definitionId => ({ definitionId })),
+    sourceManifestHash: context.manifest.manifestHash, nativeRuntimeHash: nativeActions.descriptor.runtimeHash,
+    fullMatchAdmission: false, trainingTruth: false };
+  return createCurrentProductMatchRuntime({ state, dataset: context.dataset, wave3MissionSourceContext: context,
+    releaseMatchVersion: '2.2.0', engineeringRoundScope: coverage, engineeringSourceDefinitionCount: sourceDefinitionCount },
+  { scaleId: 'Standard', widthInches: 54, heightInches: 36 },
+  { nativeActions, openingRosterCoverage: coverage, pendingNativeDefinitionIds: [], abilityRuntime: {
+    dispatch({ operation, state, request }) {
+      if (operation !== 'lifecycle') fail('ENGINEERING_ROUND_LIFECYCLE_DISPATCH_ONLY');
+      // Notify families of the activation that opened this reaction. Advancing
+      // the reaction remains owned by the native continuation and its choices.
+      const watched = nativeActions.overwatch?.pending(state);
+      if (request.eventKind === 'activation_end' && watched?.targetPieceId === request.pieceId) {
+        return nativeActions.router.dispatch({ operation, state, request });
+      }
+      return nativeActions.lifecycle(state, request);
+    },
+  } });
+}
+
 // Explicit admission for the real scale-specific factories. The original
 // Standard constructor keeps its binding; callers choose this new entry.
 export function createOfficialCurrentProductScaledMatchRuntimeV1(input = {}) {
@@ -744,6 +776,10 @@ function createCurrentProductMatchRuntime(input, scale, releaseOpening) {
       ...(tokenRoundEnd ? { releaseTokenRoundEnd: true } : {}),
       ...(rosterIncrement.exclusiveRangedContinuation ? { releaseExclusiveRangedContinuation: true } : {}),
       ...(releaseArtefactDropScoring && artefactDrop ? { releaseArtefactDropScoring: true } : {}) } : {}),
+    ...(input.engineeringRoundScope ? { engineeringRoundScope: input.engineeringRoundScope,
+      fullMatchAdmission: false, productionRoomEligible: false,
+      currentProductAbilityPendingCount: input.engineeringSourceDefinitionCount - input.engineeringRoundScope.definitions.length,
+      rulesTruth: 'source_bound_scoped_engineering_round_existing_match_owner' } : {}),
     trainingTruth: false,
   };
   const descriptor = freezeDeep({ ...descriptorBody,
@@ -1013,10 +1049,10 @@ function createCurrentProductMatchRuntime(input, scale, releaseOpening) {
       )),
       unsupportedDiagnostics: [],
       legalSpaceComplete: true,
-      developmentSubset: false,
+      developmentSubset: Boolean(input.engineeringRoundScope),
       currentProductAbilityExactCount: descriptor.refreshSupplyOccupancyAfterTransition
         ? descriptor.currentProductAbilityExactCount : 252,
-      currentProductAbilityPendingCount: 0,
+      currentProductAbilityPendingCount: descriptor.currentProductAbilityPendingCount,
       currentProductAbilityUnsupportedCount: 0,
       trainingTruth: false,
     });

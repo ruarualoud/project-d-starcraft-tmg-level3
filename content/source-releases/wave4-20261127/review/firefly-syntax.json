@@ -1,0 +1,29 @@
+{
+  "schema": "starcraft_tmg_wave4_firefly_source_syntax_review_v1",
+  "url": "https://firestore.googleapis.com/v1/projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/army_units/infested_missile_turret",
+  "status": 200,
+  "observedAt": "2026-11-27T16:16:15.261Z",
+  "byteHash": "aa21a2bd66e36055bf0b859ee6d1831198d3e1968b98f3866f4c613b773e8a4e",
+  "rawRef": "content/source-releases/wave4-20261127/review/infested-turret-live-reference.json",
+  "currentThreeFeatureTextsMatchFrozen": true,
+  "syntaxReview": {
+    "schema": "starcraft_tmg_official_reviewed_weapon_syntax_v1",
+    "definitionId": "unit:infested_missile_turret/firefly-missiles-assault-phase@1",
+    "recordKey": "army_units:infested_missile_turret",
+    "sourceRecordHash": "36d00672b6ebc8145dda4defedc6e78a68f5cd4e94193a9b0c6a7a672c70a0f8",
+    "payloadHash": "7103c8b123c54b4641a519901658c460e519fbbecbd913833ceb0332ebccfd63",
+    "sourceFeatureHash": "bdf0e76e30ca8e211d24bead22f507a53c51dd6595b88f9fbbd6e2f0f2c19c23",
+    "sourceValue": "Light. Armoured (D3)",
+    "parserValue": "Light, Armoured (D3)",
+    "interpretation": "reviewed_period_separates_two_existing_surge_target_tags",
+    "sourceUrl": "https://firestore.googleapis.com/v1/projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/army_units/infested_missile_turret",
+    "reviewRef": "content/source-releases/wave4-20261127/review/firefly-syntax.json",
+    "sourceTextRewritten": false,
+    "trainingTruth": false,
+    "reviewHash": "5f215eb93e6138347fa18b77ad3557bb8888dc24b8b13612b4d24dbbb258d654"
+  },
+  "interpretationIsExplicitAdapterReview": true,
+  "newGameAtoms": 0,
+  "sourceHeldDefinitionsUnchanged": 39,
+  "trainingTruth": false
+}

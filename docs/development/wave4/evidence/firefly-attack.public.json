@@ -1,0 +1,33 @@
+{
+  "schema": "starcraft_tmg_wave4_firefly_native_attack_evidence_v1",
+  "sourceRunRef": "build/wave4-web/turret-combat/run-baePTi",
+  "sourceCase": "ocular-use",
+  "sourceProfileHash": "cfa9f254a578aaefa5d8a3785ec0ecdb1847acf06ddfa32480c835f3c7f84c36",
+  "attackResolutionHash": "e22ca1f107ff188e78a90f2a7259880fc1a7a7570ee561eeadbdedfb5fb0ecab",
+  "profileKey": "army_units:infested_missile_turret::assault::Firefly Missiles",
+  "hitDice": 8,
+  "hits": 4,
+  "surgeMatched": true,
+  "surgeResults": [
+    3
+  ],
+  "armourBypassHits": 3,
+  "armourDice": 1,
+  "evadeEligible": false,
+  "antiEvadeModifierPrepared": 1,
+  "antiEvadeActuallyApplied": false,
+  "totalDamage": 4,
+  "damagePerDie": 1,
+  "stageOrder": [
+    "declaration",
+    "hit",
+    "effects",
+    "armour",
+    "evade",
+    "damage"
+  ],
+  "sourceSyntaxReviewRef": "content/source-releases/wave4-20261127/review/firefly-syntax.json",
+  "fullMatchAdmission": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

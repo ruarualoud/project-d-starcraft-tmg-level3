@@ -1,0 +1,25 @@
+{
+  "schema": "starcraft_tmg_wave4_turret_offline_web_build_v1",
+  "status": "passed",
+  "offline": true,
+  "dependencyInstall": false,
+  "staticStylesHash": "95ae776645fbd3e9abca93df2872368fce34410038f08260211f6eabe3b6fdd8",
+  "entryBundle": {
+    "ref": "build/wave4-web/turret-combat/web-bundle-v2/_expo/static/js/web/entry-02dbad0e2943171315cc8766effbb09f.js",
+    "byteHash": "590df5aae9c165375e6a17be2ce833f3791d12dddd0e6fbc200f9a95cc9bc0a5",
+    "bytes": 3824857
+  },
+  "sourcePresentationRef": "packages/client-domain/battlefield-presentation-v1.mjs",
+  "webEvidenceRef": "docs/development/wave4/evidence/turret-web.public.json",
+  "productionPublished": false,
+  "wave3AssetsOverwritten": false,
+  "modelCalls": 0,
+  "trainingTruth": false,
+  "sourcePresentationByteHash": "bb9e809766afcbc7bb2e2407c1cf92e3fd3cfeb0419ea38f3eaa0a488fbce1a9",
+  "webRunRef": "build/wave4-web/turret-combat/web-acceptance-v5",
+  "presentationTests": {
+    "file": "apps/starcraft-tmg-expo/lib/level3/__tests__/battlefield-presentation-v1.test.ts",
+    "passed": 7,
+    "total": 7
+  }
+}

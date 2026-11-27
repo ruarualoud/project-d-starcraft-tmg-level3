@@ -15,6 +15,7 @@ import { assertOfficialKhassarIndependentRangedRoutesV1, canOfficialKhassarDeleg
   from './official-khassar-de-templari-v1.mjs';
 import { createOfficialAncestralWisdomRuntimeV1 } from './official-ancestral-wisdom-runtime-v1.mjs';
 import { createOfficialFriendlySupplyLossReactionRuntimeV1 } from './official-friendly-supply-loss-reaction-v1.mjs';
+import { createOfficialInfestationTransferRuntimeV1 } from './official-infestation-transfer-runtime-v1.mjs';
 import { OFFICIAL_OUR_MINDS_AS_ONE_ATOM_ID } from './official-our-minds-as-one-v1.mjs';
 import { OFFICIAL_KHALAS_GIFT_ATOM_ID } from './official-khalas-gift-v1.mjs';
 import { createOfficialExecutorsWillRuntimeV1 } from './official-executors-will-v1.mjs';
@@ -67,7 +68,7 @@ import { createOfficialTerranFreedomFightersBundleV2, createOfficialTerranMissio
   createOfficialTerranUniqueFamilyDefinitionBindingsV1 } from './official-terran-unique-family-adapter-v1.mjs';
 import { createOfficialChargeDeclarationReactionRuntimeV1 } from './official-charge-declaration-reaction-runtime-v1.mjs';
 import { createOfficialAutoTurretOverwatchRuntimeV1 } from './official-auto-turret-overwatch-runtime-v1.mjs';
-import { OFFICIAL_AUTO_TURRET_GAUSS_CANNON_DEFINITION_ID } from '../rule-atoms/official-overwatch-attack-policy-v1.mjs';
+import { getOfficialOverwatchSourceSpecV1 } from '../rule-atoms/official-overwatch-attack-policy-v1.mjs';
 import { createOfficialRangedCardRefreshRuntimeV1 } from './official-ranged-card-refresh-runtime-v1.mjs';
 import { createOfficialPersonalTransportSourceV1, createOfficialPersonalTransportRuntimeV1 }
   from './official-personal-transport-runtime-v1.mjs';
@@ -557,6 +558,11 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
   if (ancestralWisdom && !hasOfficialFaqReactionPolicyV13(spatialState)) throw Error('ANCESTRAL_WISDOM_FAQ_REACTION_POLICY_REQUIRED');
   const friendlySupplyLossReaction = reactionBundle?.routes.some(route => route.triggerKind === 'friendly_supply_reduced')
     ? createOfficialFriendlySupplyLossReactionRuntimeV1({ reactionBundle }) : null;
+  const infestationTransfer = reactionBundle?.routes.some(route => route.effectKind === 'infestation_transfer')
+    ? createOfficialInfestationTransferRuntimeV1({ reactionBundle }) : null;
+  if (infestationTransfer && (!hasOfficialFaqReactionPolicyV13(spatialState) || !includeRanged && !includeMelee && !includeHits)) {
+    throw Error('INFESTATION_TRANSFER_CONSUMERS_REQUIRED');
+  }
   if (friendlySupplyLossReaction && (!hasOfficialFaqReactionPolicyV13(spatialState) || !includeRanged && !includeMelee && !includeHits)) {
     throw Error('FRIENDLY_SUPPLY_LOSS_REACTION_CONSUMERS_REQUIRED');
   }
@@ -1082,6 +1088,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
       ...(hiddenLossReactions ? ['hidden_lost'] : []),
       ...(postPlaceReactions ? ['after_place'] : []), ...(targetReactions ? ['attack_target_selected'] : []),
       ...(friendlySupplyLossReaction ? ['friendly_supply_reduced'] : []),
+      ...(infestationTransfer ? ['infested_enemy_removed', 'debuff_received'] : []),
       ...(ancestralWisdom ? ['ability_cost_payment'] : []),
       ...((includeBeforeHitsEvadeReaction || includeIndependentRangedLungeOwner) && lunge ? ['after_ranged_attack_resolved'] : []),
       ...((inheritedRestoration || includeBeforeHitsEvadeReaction && reactionBundle.routes.some(route => route.triggerKind === 'debuff_received'))
@@ -1273,8 +1280,11 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
     throw Error('CHARGE_DECLARATION_REACTION_SOURCE_REQUIRED');
   }
   if (overwatchSource && (!ranged || !precisionChoices || !includeArmourChoices || !activation
-    || !structureSource?.definitionIds.includes('unit:auto_turret/structure-any-phase@1')
-    || !weaponBundle?.definitionIds.includes(OFFICIAL_AUTO_TURRET_GAUSS_CANNON_DEFINITION_ID))) {
+    || reactionBundle.routes.filter(route => route.activationEndOwner === 'current_source_v1').some(route => {
+      const spec = getOfficialOverwatchSourceSpecV1(route.definitionId);
+      return !spec || !structureSource?.definitionIds.includes(spec.structureDefinitionId)
+        || !weaponBundle?.definitionIds.includes(spec.weaponDefinitionId);
+    }))) {
     throw Error('OVERWATCH_WEAPON_STRUCTURE_AND_DEFENCE_CONSUMERS_REQUIRED');
   }
   const overwatch = overwatchSource ? createOfficialAutoTurretOverwatchRuntimeV1({
@@ -1737,6 +1747,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
     ...(khalasGift ? { khalasGiftSourceRouteHash: khalasGift.routeHash } : {}),
     ...(ourMindsAsOne ? { ourMindsAsOnePaymentSourceRouteHash: ourMindsAsOne.routeHash } : {}),
     ...(friendlySupplyLossReaction ? { friendlySupplyLossReaction: friendlySupplyLossReaction.descriptor } : {}),
+    ...(infestationTransfer ? { infestationTransfer: infestationTransfer.descriptor } : {}),
     ...(ancestralWisdom ? { ancestralWisdomPaymentRuntime: ancestralWisdom.descriptor } : {}),
     ...(psionicStormSourceRules ? { psionicStormSourceRules: psionicStormSourceRules.descriptor } : {}),
     ...(stormPhaseEnd ? { stormPhaseEnd: stormPhaseEnd.descriptor } : {}),
@@ -1877,6 +1888,9 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
       return { ...meleeEnumeration(state, reactionAdapter.legalSpace(state, options), 'reaction'), releasePhaseControl: 'blocked' };
     }
     if (lunge?.pending(state)) return meleeEnumeration(state, lunge.enumerate(state, options), OFFICIAL_RANGED_LUNGE_CONTINUATION_KIND);
+    if (infestationTransfer?.ownsWindow(state)) {
+      return meleeEnumeration(state, reactionAdapter.legalSpace(state, options), 'reaction');
+    }
     if (friendlySupplyLossReaction?.ownsWindow(state)) {
       return meleeEnumeration(state, reactionAdapter.legalSpace(state, options), 'reaction');
     }
@@ -2502,6 +2516,11 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
       return ancestralWisdom.open(state, action.sourceAction, enumerate, enumerateNative, instantiate);
     }
     ancestralWisdom?.assertAuthorizedCast(state, action, enumerate, instantiate);
+    if (infestationTransfer?.ownsWindow(state)) {
+      if (action.sourceRuntimeKind !== 'reaction') throw Error('INFESTATION_TRANSFER_REACTION_CHOICE_REQUIRED');
+      return infestationTransfer.complete(router.dispatch({ operation: 'apply', adapterId: reactionAdapter.descriptor.adapterId,
+        state, request: { action: action.sourceAction, options } }));
+    }
     if (friendlySupplyLossReaction?.ownsWindow(state)) {
       if (action.sourceRuntimeKind !== 'reaction') throw Error('FRIENDLY_SUPPLY_LOSS_REACTION_CHOICE_REQUIRED');
       return friendlySupplyLossReaction.complete(router.dispatch({ operation: 'apply', adapterId: reactionAdapter.descriptor.adapterId,
@@ -2895,13 +2914,14 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
         : applyKhassarDeclaration(state, action, options);
     }
     if (ancestralWisdom?.pending(state)?.stage === 'reaction'
-      || friendlySupplyLossReaction?.ownsWindow(state)) {
+      || friendlySupplyLossReaction?.ownsWindow(state) || infestationTransfer?.ownsWindow(state)) {
       let outcome = applySource(state, action, options);
       if (khassarSupplyLoss?.ownsWindow(state)) {
         if (attack) outcome = attack.owner.afterTransition(outcome, attack.parent);
         else if (chargeParent) outcome = khassarCharge.afterTransition(outcome, chargeParent);
       }
-      return includeLungeDeferredReaction ? lunge.afterAttack(state, outcome) : outcome;
+      const withInfestation = infestationTransfer ? infestationTransfer.afterTransition(state, outcome, action) : outcome;
+      return includeLungeDeferredReaction ? lunge.afterAttack(state, withInfestation) : withInfestation;
     }
     overwatch?.assertContinuation(state, action);
     const roundEndOwned = action.sourceRuntimeKind === 'holo_round_end'
@@ -2946,7 +2966,8 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
     const bombardCompleted = bombardReplacement ? bombardReplacement.afterTransition(watched, state) : watched;
     const finalized = darkSwarmLifecycle ? darkSwarmLifecycle.afterTransition(bombardCompleted, state) : bombardCompleted;
     const alternated = executorsWill ? executorsWill.afterTransition(state, finalized) : finalized;
-    const afterLoss = friendlySupplyLossReaction ? friendlySupplyLossReaction.afterTransition(state, alternated, action) : alternated;
+    const friendlyLoss = friendlySupplyLossReaction ? friendlySupplyLossReaction.afterTransition(state, alternated, action) : alternated;
+    const afterLoss = infestationTransfer ? infestationTransfer.afterTransition(state, friendlyLoss, action) : friendlyLoss;
     // A delegated shot may open Lunge between weapon batches or after the last batch.
     // Keep the original activation until the defender has used or passed the bound reaction.
     if (includeMixedRosterReactions && attack?.owner === khassarShot && lunge) {
@@ -3340,6 +3361,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
     }
     if (cardRefresh?.pending(state)) throw Error('RANGED_CARD_REFRESH_CHOICE_REQUIRED');
     if (friendlySupplyLossReaction?.pending(state)) throw Error('FRIENDLY_SUPPLY_LOSS_REACTION_CHOICE_REQUIRED');
+    if (infestationTransfer?.pending(state)) throw Error('INFESTATION_TRANSFER_REACTION_CHOICE_REQUIRED');
     if (ancestralWisdom?.pending(state)) throw Error('ANCESTRAL_WISDOM_PAYMENT_CONTINUATION_REQUIRED');
     if (holoRoundEnd && ['round_end', 'cleanup_and_refresh'].includes(request.eventKind)
       && (holoRoundEnd.pending(state) || holoRoundEnd.canStart(state))) throw Error('HOLO_ROUND_END_CHOICES_REQUIRED');

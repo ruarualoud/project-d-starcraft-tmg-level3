@@ -1,5 +1,7 @@
 # W4-02：Hostile Incubation 与炮塔条件几何
 
+本页保留 `d38a2c2` 首批组件验收的历史范围。Firefly 解析及另外两条反应已在后续完成显式绑定，完整原生回合与 Web 后继见[当前批次报告](turret-combat-wiring.zh-CN.md)；以下“待接”不代表当前状态。
+
 本批新增 **1 个游戏原子，累计 3/18**：`rule-atom:wave4/spawn-round-ability-lock@1`。Hostile Incubation 已通过一条 Native 签名设置动作、幂等重交和冷重放。空间结果使用用户允许的官方截图估算：圆形 80 mm，保守误差范围 60–100 mm、低置信度。该结果只证明这份条件几何下的组件接线；整版 Wave4、炮塔完整行为、正式开局和新增数据 Web 验收仍未完成。
 
 ## 逐 ID 与实际消费者

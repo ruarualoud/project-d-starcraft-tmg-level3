@@ -104,8 +104,8 @@ import { hasOfficialShieldedLifecyclePolicyV1 } from '../source-data/official-sh
 import { collectOfficialShieldedDependentCleanupV1 } from '../rule-atoms/official-status-stay-in-play-rules-kernel-v1.mjs';
 import { projectOfficialAttackTargetWeaponDamageCapV1, projectOfficialAttackTargetFixedEvadeV1,
   projectOfficialAttackTargetEvadeEligibilityV1 } from './official-attack-target-reaction-context-v1.mjs';
-import { readOfficialOverwatchAttackGrantV1, OFFICIAL_OVERWATCH_PROFILE_KEY,
-  OFFICIAL_AUTO_TURRET_OVERWATCH_DEFINITION_ID } from '../rule-atoms/official-overwatch-attack-policy-v1.mjs';
+import { readOfficialOverwatchAttackGrantV1, getOfficialOverwatchSourceSpecV1 } from '../rule-atoms/official-overwatch-attack-policy-v1.mjs';
+import { allowsOfficialSpawnRoundSpecialAbilityV1 } from '../rule-atoms/official-spawn-round-ability-lock-v1.mjs';
 
 // A conditional trigger query shares the live target evaluator. Its opaque
 // context is module-local and cannot be supplied as a Native action parameter.
@@ -1256,7 +1256,7 @@ function assertAssaultContext(state, sideKey, piece, target, graph, profile, pro
   const granted = grant?.sourcePieceId === piece?.id && grant.targetPieceId === target?.id
     && grant.profileKey === profile?.profileKey;
   const probing = OVERWATCH_PROBES.has(probe) && probe.pieceId === piece?.id
-    && probe.targetId === target?.id && profile?.profileKey === OFFICIAL_OVERWATCH_PROFILE_KEY;
+    && probe.targetId === target?.id && profile?.profileKey === probe.profileKey;
   if (grant && !granted && !probing) {
     fail('SELECTED_RANGED_OVERWATCH_SCOPE_PROHIBITED', String(piece?.id || ''));
   }
@@ -2192,18 +2192,22 @@ export function inspectOfficialAutoTurretOverwatchShotV1(state, { sourcePieceId,
   const source = state.pieces.find(row => row.id === sourcePieceId);
   const target = state.pieces.find(row => row.id === targetPieceId);
   const route = state.officialReactionFamilySourceBundle?.routes.find(row =>
-    row.definitionId === OFFICIAL_AUTO_TURRET_OVERWATCH_DEFINITION_ID);
-  if (!route || source?.officialUnitRecordKey !== route.recordKey || !target) {
+    row.effectKind === 'overwatch_ranged_attack' && row.recordKey === source?.officialUnitRecordKey);
+  const spec = getOfficialOverwatchSourceSpecV1(route?.definitionId);
+  if (!route || !spec || source?.officialUnitRecordKey !== route.recordKey || !target) {
     throw Error('OVERWATCH_SHOT_SOURCE_OR_TARGET_REQUIRED');
   }
   if (state.phase !== 'assault') return { legal: false, ruleCode: 'SELECTED_RANGED_PHASE_UNAVAILABLE' };
-  const probe = { pieceId: sourcePieceId, targetId: targetPieceId };
+  if (!allowsOfficialSpawnRoundSpecialAbilityV1(state, source, route.abilityName)) {
+    return { legal: false, ruleCode: 'SPAWN_ROUND_ABILITY_LOCKED', sourcePieceId, targetPieceId };
+  }
+  const probe = { pieceId: sourcePieceId, targetId: targetPieceId, profileKey: spec.profileKey };
   OVERWATCH_PROBES.add(probe);
   // Only the acting seat is projected. All geometry, tags, profiles and statuses
   // remain the actual facts evaluated by the same live contextFor function.
   const projected = { ...state, activeSideKey: source.sideKey };
   try {
-    const context = contextFor(projected, source.sideKey, source, target, OFFICIAL_OVERWATCH_PROFILE_KEY,
+    const context = contextFor(projected, source.sideKey, source, target, spec.profileKey,
       { overwatchProbe: probe });
     return { legal: true, ruleCode: null, sourcePieceId, targetPieceId,
       sourceProfileHash: context.profile.profileHash, geometry: clone(context.geometry),

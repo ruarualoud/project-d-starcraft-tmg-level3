@@ -13,7 +13,7 @@
 | 已有原子新组合 | 34 | 已有合同的触发、目标、作用域或顺序新组合 |
 | 新增语义 | 41 | 至少依赖一个当前缺失的执行合同 |
 
-**新增原子需求为 18 个，当前已实现并通过组件验收 2 个。** 同一缺失执行合同跨多个来源 ID 只计一次；新武器名字、数值档案和既有合同的新组合不分别增加原子数。另有 3 个只属于 Archon 撤下记录的候选合同，单独保留，未计入这 18 个。该数值是本次冻结范围的工程分解，不是已实现能力数。
+**新增原子需求为 18 个，当前已实现并通过组件验收 3 个。** 同一缺失执行合同跨多个来源 ID 只计一次；新武器名字、数值档案和既有合同的新组合不分别增加原子数。另有 3 个只属于 Archon 撤下记录的候选合同，单独保留，未计入这 18 个。该数值是本次冻结范围的工程分解，不是已实现能力数。
 
 逐定义原件、源字段哈希、触发、选择权、结算、清除、消费者函数和未覆盖项见 [完整机器清单](../../../content/source-releases/wave4-20261127/abilities/ability-diff.json)；[身份登记表](../../../content/source-releases/wave4-20261127/abilities/feature-registry.json) 与 [来源别名目录](../../../content/source-releases/wave4-20261127/abilities/identity-catalogue.json) 可离线重建。
 
@@ -83,7 +83,7 @@
 | `rule-atom:wave4/infestation-placement-reserve-lock@1` | For an infected enemy, reject PLACE, set effects and return-to-reserves across all movement/lifecycle entry points; ordinary legal movement remains available. | 需求已拆分，尚未实现 |
 | `rule-atom:wave4/foreign-faction-army-eligibility@1` | Permit Terran Ground Mechanical purchases only under the Stukov faction while applying costs, slots, uniqueness and upgrade rules to the original source identity. | 组件接线通过，正式对局未准入 |
 | `rule-atom:wave4/faction-unit-runtime-conversion@1` | Bind the imported units to Infested tag addition, CP-to-BM payment conversion and BURROWED prohibition without changing unrelated units or rewriting the source records. | 组件接线通过，正式对局未准入 |
-| `rule-atom:wave4/spawn-round-ability-lock@1` | When the faction sets its structure, suppress its abilities except Structure for that round, then restore the correct abilities after cleanup; do not silently grant SUMMON semantics. | 条件几何组件已验，完整回合／正式对局待 |
+| `rule-atom:wave4/spawn-round-ability-lock@1` | When the faction sets its structure, suppress its abilities except Structure for that round, then restore the correct abilities after cleanup; do not silently grant SUMMON semantics. | 80mm工程几何下SET、两轮原生回合及后继已验；正式几何待 |
 | `rule-atom:wave4/shield-scaled-effect-value@1` | Use remaining shield points to derive attack/IMPACT dice or detonation damage with each printed rounding rule. Withdrawn Archon source only. | Archon 撤下来源专属，暂不实施 |
 | `rule-atom:wave4/shield-reservoir-damage-payment@1` | Reduce a friendly pending damage batch by spending this source shield reservoir with the exact optional/fixed amount and shielded requirements. Conflicting withdrawn Archon drafts. | Archon 撤下来源专属，暂不实施 |
 | `rule-atom:wave4/target-card-exhaustion-waiver@1` | Once per round, waive exhaustion of a non-Faction card targeting the carrier, without readying an already exhausted card or changing other payment requirements. Withdrawn Archon source only. | Archon 撤下来源专属，暂不实施 |
@@ -143,12 +143,12 @@
 | `unit:infested_marine/devastating-charge-assault-phase@1` | 已有原子 | attack | 0 | 无源级阻断；接线待验 |
 | `unit:infested_marine/wild-mutation-combat-phase@1` | 数据变化 | attack | 0 | 无源级阻断；接线待验 |
 | `unit:infested_marine/strike-combat-phase@1` | 数据变化 | attack | 0 | 无源级阻断；接线待验 |
-| `unit:infested_missile_turret/detection-any-phase@1` | 已有原子新组合 | characteristic | 0 | 无源级阻断；接线待验 |
-| `unit:infested_missile_turret/source-of-creep-any-phase@1` | 已有原子 | asset | 0 | 无源级阻断；接线待验 |
-| `unit:infested_missile_turret/infestation-any-phase@1` | 已有原子新组合 | supplyLoss / characteristic | 0 | 无源级阻断；接线待验 |
-| `unit:infested_missile_turret/structure-any-phase@1` | 已有原子 | lifecycle | 0 | 无源级阻断；接线待验 |
-| `unit:infested_missile_turret/firefly-missiles-assault-phase@1` | 数据变化 | attack | 0 | 无源级阻断；接线待验 |
-| `unit:infested_missile_turret/ocular-overwatch-assault-phase@1` | 已有原子新组合 | reaction / attack | 0 | 无源级阻断；接线待验 |
+| `unit:infested_missile_turret/detection-any-phase@1` | 已有原子新组合 | characteristic | 0 | 已绑定；条件几何下实际查询消费者已验 |
+| `unit:infested_missile_turret/source-of-creep-any-phase@1` | 已有原子 | asset | 0 | 已绑定；条件几何下实际查询消费者已验 |
+| `unit:infested_missile_turret/infestation-any-phase@1` | 已有原子新组合 | supplyLoss / characteristic | 0 | 已显式绑定；工程几何下原生／Web后继已验 |
+| `unit:infested_missile_turret/structure-any-phase@1` | 已有原子 | lifecycle | 0 | 已绑定；条件几何下实际查询消费者已验 |
+| `unit:infested_missile_turret/firefly-missiles-assault-phase@1` | 数据变化 | attack | 0 | 已显式绑定；工程几何下原生／Web后继已验 |
+| `unit:infested_missile_turret/ocular-overwatch-assault-phase@1` | 已有原子新组合 | reaction / attack | 0 | 已显式绑定；工程几何下原生／Web后继已验 |
 | `unit:infested_siege_tank/large-any-phase@1` | 已有原子 | characteristic | 0 | NATIVE_ZERG_CP_RESOURCE_POLICY_UNRESOLVED |
 | `unit:infested_siege_tank/heavy-plating-any-phase@1` | 已有原子 | characteristic | 0 | NATIVE_ZERG_CP_RESOURCE_POLICY_UNRESOLVED |
 | `unit:infested_siege_tank/mode-transformation-movement-phase@1` | 已有原子 | characteristic | 0 | NATIVE_ZERG_CP_RESOURCE_POLICY_UNRESOLVED |
@@ -238,7 +238,7 @@
 | `card:robotics_support_bay/master-of-robotics-any@1` | 已有原子新组合 | characteristic | 0 | 无源级阻断；接线待验 |
 | `card:stukov_s_forces/ashes-of-the-ued-any@1` | 新增语义 | builder / payment / characteristic | 2 | 建军／运行时组件已验；完整房间待 |
 | `card:stukov_s_forces/infestation-any@1` | 已有原子新组合 | builder | 0 | 必选Virus建军已验；完整房间待 |
-| `card:stukov_s_forces/hostile-incubation-any@1` | 新增语义 | lifecycle / characteristic | 1 | 无源级阻断；接线待验 |
+| `card:stukov_s_forces/hostile-incubation-any@1` | 新增语义 | lifecycle / characteristic | 1 | 工程几何下SET与两完整原生回合已验 |
 | `card:tal_darim/proxy-pylon-any@1` | 新增语义 | lifecycle / characteristic | 1 | 无源级阻断；接线待验 |
 | `card:tal_darim/chain-of-ascension-any@1` | 新增语义 | supply / characteristic | 1 | 无源级阻断；接线待验 |
 | `card:tal_darim/4-or-more-any@1` | 新增语义 | supply / characteristic | 1 | 无源级阻断；接线待验 |
@@ -264,4 +264,4 @@ node scripts/verify-wave4-wave3-cold-read.mjs build/wave4-web/host/run-qI3May
 
 组件验收和旧房冷读复用本树已备的 Wave3 冻结缓存与 W4-01 隔离房；这些命令不读 5483 玩家服务。旧房的状态、绑定、完整回放和元数据字节均匹配 W4-01 原证据，没有新增动作。
 
-11 条时点、三条 Creep 及 Stukov 跨种族建军／运行时转换已完成各自范围的消费者验收，见 [Stukov 记录](stukov-army-wiring.zh-CN.md)。18 个新合同当前实现 3；Hostile 设置与回合锁已在用户允许的截图估算几何下验过，见 [本批记录](hostile-incubation-wiring.zh-CN.md)。炮塔还有三条定义、完整回合／Web待接，随后推进其余 15 个合同及新单位完整行为和几何。组件、正式房间与 Web 分别验收。付费模型、K3、AI 对局、复盘与生产发布继续暂停。
+11 条时点、三条 Creep 及 Stukov 跨种族建军／运行时转换已完成各自范围的消费者验收，见 [Stukov 记录](stukov-army-wiring.zh-CN.md)。18 个新合同当前实现 3；Hostile 设置与回合锁已在用户允许的截图估算几何下验过，见 [本批记录](hostile-incubation-wiring.zh-CN.md)。炮塔七条定义现已显式绑定，Firefly 解析、Infestation／Ocular 后继、两轮原生完整回合与三个 Web 后继通过；见[后继与回合记录](turret-combat-wiring.zh-CN.md)。本批新增原子 0，随后推进其余 15 个合同及新单位完整行为和几何。组件、正式房间与 Web 分别验收。付费模型、K3、AI 对局、复盘与生产发布继续暂停。

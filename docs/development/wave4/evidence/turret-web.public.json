@@ -1,0 +1,134 @@
+{
+  "schema": "starcraft_tmg_wave4_turret_web_verification_v1",
+  "status": "passed_scoped",
+  "runRef": "build/wave4-web/turret-combat/web-acceptance-v5",
+  "results": [
+    {
+      "kind": "ocular-use",
+      "definitionId": "unit:infested_missile_turret/ocular-overwatch-assault-phase@1",
+      "sourceRoomId": "wave4-turret-ocular-use",
+      "sourceStateHash": "0a6d8ced5eace1b4bb13673dafe3bc402b9b56871e7ab86ff498cdae82c15636",
+      "sourcePrefixReceipts": 2,
+      "trace": [
+        {
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:infested_missile_turret/ocular-overwatch-assault-phase@1",
+          "sideKey": "player1",
+          "stateRevision": 1,
+          "stateHash": "df1fc29ce2c27b6666dba1139af4dcd93905d3c27a6480035da7cd589c8101a4"
+        },
+        {
+          "actionType": "ranged_attack",
+          "definitionId": null,
+          "sideKey": "player1",
+          "stateRevision": 2,
+          "stateHash": "1b02617529e69a3dc569d6abfb3978c1e1bad59c0d9963e8e6f9e3a36ba19e64"
+        }
+      ],
+      "signedActions": 2,
+      "twoSeatsVerified": true,
+      "explicitHumanConfirmation": true,
+      "previewReadOnly": true,
+      "replayMatchesCurrent": true,
+      "seatRecoveryReentryVerified": true,
+      "pageErrors": []
+    },
+    {
+      "kind": "infestation-use",
+      "definitionId": "unit:infested_missile_turret/infestation-any-phase@1",
+      "sourceRoomId": "wave4-turret-infestation-use",
+      "sourceStateHash": "0b3280a0cdc9015c3d1aebe3ebd3a0e7ea9e7facbfaa736bad1e8cf5f6740c0a",
+      "sourcePrefixReceipts": 1,
+      "trace": [
+        {
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:infested_missile_turret/infestation-any-phase@1",
+          "sideKey": "player1",
+          "stateRevision": 1,
+          "stateHash": "fdc0cece1f6ee15aacb63e72d4ca3c7300fbd58fb996ba2030dc4f67e59f40bc"
+        },
+        {
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null,
+          "sideKey": "player2",
+          "stateRevision": 2,
+          "stateHash": "af77b9b26b2dcf02ccb2f62c674a352cc61cd34876f50718b6c802043ed6c170"
+        },
+        {
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null,
+          "sideKey": "player1",
+          "stateRevision": 3,
+          "stateHash": "a42e806091aa468336b968dd99b6e032a97c3f8aa6eac82ed5c59bb5a349b09d"
+        },
+        {
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null,
+          "sideKey": "player2",
+          "stateRevision": 4,
+          "stateHash": "f97e5250769df8ca11c3d7560e3d286413d15d8458fc601bb653b9fe0da42d27"
+        }
+      ],
+      "signedActions": 4,
+      "twoSeatsVerified": true,
+      "explicitHumanConfirmation": true,
+      "previewReadOnly": true,
+      "replayMatchesCurrent": true,
+      "seatRecoveryReentryVerified": true,
+      "pageErrors": []
+    },
+    {
+      "kind": "infestation-restoration",
+      "definitionId": "unit:infested_missile_turret/infestation-any-phase@1",
+      "sourceRoomId": "wave4-turret-infestation-restoration",
+      "sourceStateHash": "ea489a8bf9880d6678cbc049c802b6b6f812e7fb735e78b2e7dfcf8214a2fe29",
+      "sourcePrefixReceipts": 1,
+      "trace": [
+        {
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:infested_missile_turret/infestation-any-phase@1",
+          "sideKey": "player1",
+          "stateRevision": 1,
+          "stateHash": "1d3b0971ccec75951842d08e0408086fe2378d98547a61bfd3b9a603c09bc976"
+        },
+        {
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null,
+          "sideKey": "player2",
+          "stateRevision": 2,
+          "stateHash": "7760ddf68453c8d3684b3021f2d008b39ad14b96c0678d7c1a8aa982c3328412"
+        },
+        {
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null,
+          "sideKey": "player1",
+          "stateRevision": 3,
+          "stateHash": "4dcc03ca22a29818b12bff502cdcec1d6e29d70afa1e60d0bfa6a9aceef6e726"
+        },
+        {
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:medic/restoration-any-phase@1",
+          "sideKey": "player2",
+          "stateRevision": 4,
+          "stateHash": "25dd6ae91fea6435b75192ea768f886c49b48e59db3fcfdec4b31e4554ac1156"
+        }
+      ],
+      "signedActions": 4,
+      "twoSeatsVerified": true,
+      "explicitHumanConfirmation": true,
+      "previewReadOnly": true,
+      "replayMatchesCurrent": true,
+      "seatRecoveryReentryVerified": true,
+      "pageErrors": []
+    }
+  ],
+  "signedActions": 10,
+  "estimatedRoundBaseMillimetres": 80,
+  "officialPhysicalAuthority": false,
+  "sourceHeldDefinitions": 39,
+  "fullWave4LobbyBuilderAdmission": false,
+  "fullMatchAdmission": false,
+  "wave3PlayerRoomsTouched": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

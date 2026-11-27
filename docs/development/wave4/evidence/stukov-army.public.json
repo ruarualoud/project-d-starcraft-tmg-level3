@@ -1,7 +1,7 @@
 {
   "schema": "starcraft_tmg_wave4_stukov_army_verification_v1",
   "status": "passed",
-  "runRef": "build/wave4-web/stukov-army/run-KPcizl",
+  "runRef": "build/wave4-web/stukov-army/run-odolZ7",
   "sourceManifestHash": "63342e7ac823d0a234f00095b2c3491793e6c3860cfc85e16a8b2f480a346acf",
   "datasetHash": "66a15120a2f995707e3b5271753c754b581050ec14665a2eb4245f2651e1ae25",
   "candidateManifestHash": "aedc53f8c1a04d133c41d8b9cfe91ec4427168d8d34cdf65b74cf79ced534880",

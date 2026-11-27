@@ -1,0 +1,45 @@
+{
+  "schema": "starcraft_tmg_wave4_turret_combat_verification_v1",
+  "status": "passed_conditional_geometry",
+  "runRef": "build/wave4-web/turret-combat/run-1ZvMFx",
+  "sourceDefinitionIds": [
+    "unit:auto_turret/overwatch-assault-phase@1",
+    "unit:auto_turret/gauss-cannon-assault-phase@1",
+    "unit:auto_turret/structure-any-phase@1",
+    "unit:raven/railguns-assault-phase@1"
+  ],
+  "syntaxReviewHash": "5f215eb93e6138347fa18b77ad3557bb8888dc24b8b13612b4d24dbbb258d654",
+  "results": [
+    {
+      "id": "auto-overwatch-control",
+      "kind": "overwatch",
+      "use": true,
+      "autoControl": true,
+      "roomId": "wave4-turret-auto-overwatch-control",
+      "directoryRef": "build/wave4-web/turret-combat/run-1ZvMFx/auto-overwatch-control",
+      "signedActions": 4,
+      "stateHash": "371bbe8c6bec2cd995c31a1922fadcf7265fcdc32de882855f1666d0352109db",
+      "runtimeHash": "7ba59d42a6a81af445e45259725ec82df7b897cc779b3c34b03cc681a980f52f",
+      "idempotencyVerified": true,
+      "coldReplay": true,
+      "sourceDefinitionIds": [
+        "unit:auto_turret/overwatch-assault-phase@1",
+        "unit:auto_turret/gauss-cannon-assault-phase@1",
+        "unit:auto_turret/structure-any-phase@1",
+        "unit:raven/railguns-assault-phase@1"
+      ]
+    }
+  ],
+  "newGameAtoms": 0,
+  "implementedCumulativeNewGameAtoms": 3,
+  "sourceHeldDefinitions": 39,
+  "estimatedRoundBaseMillimetres": 80,
+  "officialPhysicalAuthority": false,
+  "nativeRoundTransitionVerified": false,
+  "fullMatchAdmission": false,
+  "webAcceptance": false,
+  "wave3PlayerRoomsTouched": false,
+  "modelCalls": 0,
+  "trainingTruth": false,
+  "verificationScope": "legacy_auto_turret_current_snapshot_control"
+}

@@ -1,17 +1,31 @@
 import { hashStarcraftTmgContract as hash } from '../authoritative-engine/referee-crypto-v1.mjs';
+import { allowsOfficialSpawnRoundSpecialAbilityV1 } from './official-spawn-round-ability-lock-v1.mjs';
 
 export const OFFICIAL_AUTO_TURRET_OVERWATCH_DEFINITION_ID = 'unit:auto_turret/overwatch-assault-phase@1';
 export const OFFICIAL_AUTO_TURRET_GAUSS_CANNON_DEFINITION_ID = 'unit:auto_turret/gauss-cannon-assault-phase@1';
 export const OFFICIAL_OVERWATCH_PARENT_KEY = 'pendingOfficialAutoTurretOverwatch';
 export const OFFICIAL_OVERWATCH_ATOM_ID = 'rule-atom:source-bound-overwatch-outside-activation-attack-v1';
 export const OFFICIAL_OVERWATCH_PROFILE_KEY = 'army_units:auto_turret::assault::Gauss Cannon';
+export const OFFICIAL_OCULAR_OVERWATCH_DEFINITION_ID = 'unit:infested_missile_turret/ocular-overwatch-assault-phase@1';
+export const OFFICIAL_FIREFLY_PROFILE_KEY = 'army_units:infested_missile_turret::assault::Firefly Missiles';
+const sources = Object.freeze({
+  [OFFICIAL_AUTO_TURRET_OVERWATCH_DEFINITION_ID]: Object.freeze({ definitionId: OFFICIAL_AUTO_TURRET_OVERWATCH_DEFINITION_ID,
+    recordKey: 'army_units:auto_turret', abilityName: 'Overwatch', profileKey: OFFICIAL_OVERWATCH_PROFILE_KEY,
+    structureDefinitionId: 'unit:auto_turret/structure-any-phase@1', weaponDefinitionId: OFFICIAL_AUTO_TURRET_GAUSS_CANNON_DEFINITION_ID }),
+  [OFFICIAL_OCULAR_OVERWATCH_DEFINITION_ID]: Object.freeze({ definitionId: OFFICIAL_OCULAR_OVERWATCH_DEFINITION_ID,
+    recordKey: 'army_units:infested_missile_turret', abilityName: 'Ocular Overwatch', profileKey: OFFICIAL_FIREFLY_PROFILE_KEY,
+    structureDefinitionId: 'unit:infested_missile_turret/structure-any-phase@1',
+    weaponDefinitionId: 'unit:infested_missile_turret/firefly-missiles-assault-phase@1' }),
+});
+export function getOfficialOverwatchSourceSpecV1(definitionId) { return sources[definitionId] || null; }
 const withoutHash = value => Object.fromEntries(Object.entries(value).filter(([key]) => key !== 'parentHash'));
 
 export function readOfficialOverwatchAttackGrantV1(state) {
   const parent = state[OFFICIAL_OVERWATCH_PARENT_KEY];
   if (!parent || parent.stage !== 'attack') return null;
   const bundle = state.officialReactionFamilySourceBundle;
-  const route = bundle?.routes.find(row => row.definitionId === OFFICIAL_AUTO_TURRET_OVERWATCH_DEFINITION_ID);
+  const spec = getOfficialOverwatchSourceSpecV1(parent.sourceDefinitionId || OFFICIAL_AUTO_TURRET_OVERWATCH_DEFINITION_ID);
+  const route = bundle?.routes.find(row => row.definitionId === spec?.definitionId);
   const resolution = state.officialReactionResolutionHistory?.find(row => row.triggerHash === parent.triggerHash);
   const effect = resolution?.effects.find(row => row.effectKind === 'overwatch_ranged_attack');
   const source = state.pieces.find(row => row.id === parent.sourcePieceId);
@@ -24,8 +38,9 @@ export function readOfficialOverwatchAttackGrantV1(state) {
     || resolution.timing !== 'outside_activation' || resolution.resolutionHash !== parent.resolutionHash
     || !effect || effect.definitionId !== route.definitionId || effect.sourceFeatureHash !== route.sourceFeatureHash
     || effect.sourcePieceId !== source?.id || effect.targetPieceId !== parent.targetPieceId
-    || effect.sideKey !== source?.sideKey || source.officialUnitRecordKey !== 'army_units:auto_turret'
-    || parent.profileKey !== OFFICIAL_OVERWATCH_PROFILE_KEY) {
+    || effect.sideKey !== source?.sideKey || source.officialUnitRecordKey !== spec?.recordKey
+    || !allowsOfficialSpawnRoundSpecialAbilityV1(state, source, spec.abilityName)
+    || parent.profileKey !== spec.profileKey || effect.weaponProfileKey !== spec.profileKey) {
     throw Error('OVERWATCH_ATTACK_GRANT_INVALID');
   }
   return { sourcePieceId: source.id, sideKey: source.sideKey, targetPieceId: parent.targetPieceId,

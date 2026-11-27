@@ -494,7 +494,7 @@ export function verifyOfficialModelBaseGeometryDataBundleV2(bundle) {
 
 // Reuse reviewed ordinary footprints only when the complete unit payload is
 // unchanged. Newly added units and settings-dependent outlines remain missing.
-export function rebindOfficialUnchangedModelGeometryV2({ context, previousBundle }) {
+export function rebindOfficialUnchangedModelGeometryV2({ context, previousBundle, retainReviewedRavenOutline = false }) {
   const manifest = assertOfficialReleaseSourceV2(context, context || {});
   verifyOfficialModelBaseGeometryDataBundleV2(previousBundle);
   const unitRecordKeys = context.dataset.recordIndex.filter(row => row.recordType === 'unit'
@@ -505,15 +505,23 @@ export function rebindOfficialUnchangedModelGeometryV2({ context, previousBundle
     const record = context.dataset.recordsByKey[recordKey];
     const prior = previousBundle.profiles.find(row => row.recordKey === recordKey);
     if (prior && prior.payloadHash !== record.payloadHash) fail('MODEL_GEOMETRY_REBIND_UNIT_CHANGED', recordKey);
-    if (prior && ['round', 'rectangle'].includes(prior.baseShape)) {
-      profiles.push({ ...structuredClone(prior), sourceRecordHash: record.sourceRecordHash, payloadHash: record.payloadHash });
+    if (prior && (['round', 'rectangle'].includes(prior.baseShape)
+      || retainReviewedRavenOutline === true && recordKey === 'army_units:raven'
+        && prior.baseShape === 'measured_contour' && prior.ravenOutlineSource?.shape === 'measured_contour')) {
+      const outline = prior.baseShape === 'measured_contour' ? ravenGeometryFields(context) : {};
+      if (prior.baseShape === 'measured_contour' && Object.entries(outline).some(([field,value]) =>
+        !isDeepStrictEqual(field === 'ravenOutlineSource' ? without(value,['communityProfileHash']) : value,
+          field === 'ravenOutlineSource' ? without(prior[field],['communityProfileHash']) : prior[field]))) {
+        fail('RAVEN_REBIND_OUTLINE_CHANGED');
+      }
+      profiles.push({ ...structuredClone(prior), ...outline, sourceRecordHash: record.sourceRecordHash, payloadHash: record.payloadHash });
     } else {
       missingProfiles.push({ recordKey, unitName: record.payload.name,
         reason: 'NO_UNCHANGED_ORDINARY_REVIEWED_FOOTPRINT', required: 'Reviewed geometry bound to this release; no inferred dimensions.',
         sourceRefs: [{ previousGeometryBundleHash: previousBundle.bundleHash }] });
     }
   }
-  const body = { ...without(previousBundle, ['bundleHash']), version: '2.0.0',
+  const body = { ...without(previousBundle, ['bundleHash']), version: retainReviewedRavenOutline ? '2.2.0' : '2.0.0',
     sourceLockHash: manifest.source.sourceRevisionHash, sourceSnapshotHash: context.snapshot.snapshotHash,
     normalizedDatasetHash: context.dataset.datasetHash, priorGeometryBundleHash: previousBundle.bundleHash,
     unitRecordKeys, profiles, missingProfiles, profileDenominatorComplete: missingProfiles.length === 0 };

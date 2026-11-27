@@ -35,7 +35,7 @@
   },
   "formalMatchGate": {
     "passedDefinitions": 0,
-    "webAcceptance": "old_card_timing_scoped_passed",
+    "webAcceptance": "old_card_timing_and_turret_successors_scoped_passed",
     "fullWave4Admission": false
   },
   "sourceHeldDefinitions": [
@@ -275,9 +275,9 @@
     }
   ],
   "next": [
-    "Wire Infestation transfer and Ocular Overwatch with native attack continuations; resolve strict Firefly source parsing before admitting the turret weapon",
-    "Verify full round progression and Web only for the admitted scope; the 80mm screenshot estimate remains conditional engineering geometry",
-    "Wire Stukov/Infested Marine/Infested Trooper gameplay and reviewed geometry; implement the remaining fifteen atom contracts; preserve all 39 source holds and paused work"
+    "W4-02：炮塔7/7焦点定义已绑定；继续Stukov／Infested Marine／Infested Trooper完整行为和几何，按依赖完成其余15个新增合同。",
+    "80mm继续仅工程估算；正式几何、完整军表组合（含两种Overwatch来源共存）及全回合Web仍待。39条来源阻断保持隔离。",
+    "能力准入后再推进W4-03完整发布选择、Builder／工厂／大厅及W4-04双浏览器新军表；Wave3与全部暂停项保持。"
   ],
   "modelCalls": 0,
   "trainingTruth": false,
@@ -309,7 +309,7 @@
     "perIdAnalysisComplete": true,
     "oldCardTimingNativeDefinitions": 11,
     "newUnitAndFactionEndToEnd": false,
-    "builderAndLobbyReleaseSelection": "scoped_stukov_and_hostile_conditional_geometry_verified_full_release_and_lobby_pending",
+    "builderAndLobbyReleaseSelection": "scoped_stukov_hostile_and_turret_combat_verified_full_release_and_lobby_pending",
     "requiredNewGameAtoms": 18,
     "implementedNewGameAtoms": 3,
     "sourceHeldDefinitions": 39,
@@ -319,7 +319,10 @@
       "army_units:stukov",
       "army_units:infested_marine",
       "army_units:infested_trooper"
-    ]
+    ],
+    "turretBoundDefinitions": 7,
+    "turretNativeCompleteRounds": 2,
+    "turretWebSuccessorFlows": 3
   },
   "runtimeVerificationByDefinition": [
     {
@@ -970,11 +973,13 @@
       ],
       "evidenceRefs": [
         "docs/development/wave4/evidence/hostile-incubation.public.json",
-        "docs/development/wave4/evidence/hostile-native-estimate.public.json"
+        "docs/development/wave4/evidence/hostile-native-estimate.public.json",
+        "docs/development/wave4/evidence/turret-round.public.json"
       ],
-      "verificationScope": "Conditional 80mm image-estimate component; one signed SET action plus R1/R2 query counterfactuals; no complete round progression",
+      "verificationScope": "Conditional 80mm image-estimate SET followed by two complete native rounds, R1 lock and R2 unlock; no Web SET or formal room admission",
       "webVerified": false,
-      "fullMatchAdmission": false
+      "fullMatchAdmission": false,
+      "nativeRoundTransitionVerified": true
     },
     {
       "definitionId": "unit:infested_missile_turret/detection-any-phase@1",
@@ -1008,11 +1013,13 @@
       ],
       "evidenceRefs": [
         "docs/development/wave4/evidence/hostile-incubation.public.json",
-        "docs/development/wave4/evidence/hostile-native-estimate.public.json"
+        "docs/development/wave4/evidence/hostile-native-estimate.public.json",
+        "docs/development/wave4/evidence/turret-round.public.json"
       ],
-      "verificationScope": "Conditional 80mm image-estimate component; one signed SET action plus R1/R2 query counterfactuals; no complete round progression",
+      "verificationScope": "Prior conditional R1/R2 actual query proof retained; same source binding installed in two complete native rounds. No new direct Web action claimed for this passive definition.",
       "webVerified": false,
-      "fullMatchAdmission": false
+      "fullMatchAdmission": false,
+      "installedInNativeCompleteRoundProof": true
     },
     {
       "definitionId": "unit:infested_missile_turret/source-of-creep-any-phase@1",
@@ -1038,28 +1045,53 @@
       ],
       "evidenceRefs": [
         "docs/development/wave4/evidence/hostile-incubation.public.json",
-        "docs/development/wave4/evidence/hostile-native-estimate.public.json"
+        "docs/development/wave4/evidence/hostile-native-estimate.public.json",
+        "docs/development/wave4/evidence/turret-round.public.json"
       ],
-      "verificationScope": "Conditional 80mm image-estimate component; one signed SET action plus R1/R2 query counterfactuals; no complete round progression",
+      "verificationScope": "Prior conditional R1/R2 actual query proof retained; same source binding installed in two complete native rounds. No new direct Web action claimed for this passive definition.",
       "webVerified": false,
-      "fullMatchAdmission": false
+      "fullMatchAdmission": false,
+      "installedInNativeCompleteRoundProof": true
     },
     {
       "definitionId": "unit:infested_missile_turret/infestation-any-phase@1",
       "classification": "existing_atoms_new_combination",
       "newAtomIds": [],
       "sourceCompiled": true,
-      "executionBound": false,
+      "executionBound": true,
       "nativePlacementVerifiedWithEstimatedGeometry": false,
       "nativeQueryConsumerVerified": false,
-      "consumerRefs": [],
+      "consumerRefs": [
+        {
+          "file": "packages/product-composition/official-infestation-transfer-runtime-v1.mjs",
+          "exportName": "createOfficialInfestationTransferRuntimeV1"
+        },
+        {
+          "file": "packages/product-composition/official-infestation-transfer-facts-v1.mjs",
+          "exportName": "resolveOfficialInfestationTransferTargetsV1"
+        },
+        {
+          "file": "packages/product-composition/official-infestation-transfer-facts-v1.mjs",
+          "exportName": "applyOfficialInfestationTransferStatusV1"
+        },
+        {
+          "file": "packages/product-composition/official-reaction-family-adapter-v1.mjs",
+          "exportName": "createOfficialReactionFamilyAdapterV1"
+        }
+      ],
       "evidenceRefs": [
         "docs/development/wave4/evidence/hostile-incubation.public.json",
-        "docs/development/wave4/evidence/hostile-native-estimate.public.json"
+        "docs/development/wave4/evidence/hostile-native-estimate.public.json",
+        "docs/development/wave4/evidence/turret-combat.public.json",
+        "docs/development/wave4/evidence/turret-round.public.json",
+        "docs/development/wave4/evidence/turret-web.public.json",
+        "docs/development/wave4/evidence/firefly-attack.public.json",
+        "docs/development/wave4/evidence/overwatch-compat.public.json"
       ],
-      "verificationScope": "Unbound; Firefly strict source parser or native reaction/attack continuation pending",
-      "webVerified": false,
-      "fullMatchAdmission": false
+      "verificationScope": "Native positive-to-zero Supply and already-zero destruction; optional transfer, paid Restoration, decline, ownership restoration; signed-prefix Web successors under estimated geometry",
+      "webVerified": true,
+      "fullMatchAdmission": false,
+      "nativeCombatSuccessorsVerified": true
     },
     {
       "definitionId": "unit:infested_missile_turret/structure-any-phase@1",
@@ -1081,48 +1113,104 @@
       ],
       "evidenceRefs": [
         "docs/development/wave4/evidence/hostile-incubation.public.json",
-        "docs/development/wave4/evidence/hostile-native-estimate.public.json"
+        "docs/development/wave4/evidence/hostile-native-estimate.public.json",
+        "docs/development/wave4/evidence/turret-round.public.json"
       ],
-      "verificationScope": "Conditional 80mm image-estimate component; one signed SET action plus R1/R2 query counterfactuals; no complete round progression",
+      "verificationScope": "Prior conditional R1/R2 actual query proof retained; same source binding installed in two complete native rounds. No new direct Web action claimed for this passive definition.",
       "webVerified": false,
-      "fullMatchAdmission": false
+      "fullMatchAdmission": false,
+      "installedInNativeCompleteRoundProof": true
     },
     {
       "definitionId": "unit:infested_missile_turret/firefly-missiles-assault-phase@1",
       "classification": "data_change",
       "newAtomIds": [],
       "sourceCompiled": true,
-      "executionBound": false,
+      "executionBound": true,
       "nativePlacementVerifiedWithEstimatedGeometry": false,
       "nativeQueryConsumerVerified": false,
-      "consumerRefs": [],
+      "consumerRefs": [
+        {
+          "file": "packages/source-data/official-reviewed-firefly-syntax-v1.mjs",
+          "exportName": "readOfficialReviewedFireflySurgeSyntaxV1"
+        },
+        {
+          "file": "packages/source-data/official-attack-profile-catalogue-v1.mjs",
+          "exportName": "createOfficialAttackProfileCatalogueV3"
+        },
+        {
+          "file": "packages/product-composition/official-ranged-family-adapter-v1.mjs",
+          "exportName": "createOfficialRangedFamilySourceBundleV2"
+        },
+        {
+          "file": "packages/product-composition/official-selected-roster-ranged-action-runtime-v1.mjs",
+          "exportName": "createOfficialSelectedRosterRangedActionRuntimeV1"
+        },
+        {
+          "file": "packages/rule-atoms/official-overwatch-attack-policy-v1.mjs",
+          "exportName": "readOfficialOverwatchAttackGrantV1"
+        }
+      ],
       "evidenceRefs": [
         "docs/development/wave4/evidence/hostile-incubation.public.json",
-        "docs/development/wave4/evidence/hostile-native-estimate.public.json"
+        "docs/development/wave4/evidence/hostile-native-estimate.public.json",
+        "docs/development/wave4/evidence/turret-combat.public.json",
+        "docs/development/wave4/evidence/turret-round.public.json",
+        "docs/development/wave4/evidence/turret-web.public.json",
+        "docs/development/wave4/evidence/firefly-attack.public.json",
+        "docs/development/wave4/evidence/overwatch-compat.public.json"
       ],
-      "verificationScope": "Unbound; Firefly strict source parser or native reaction/attack continuation pending",
-      "webVerified": false,
-      "fullMatchAdmission": false
+      "verificationScope": "Native Ocular to Firefly ranged/defence/damage/casualty completion, decline and spawn-round suppression; R2 native full-round and signed-prefix Web successor under estimated geometry",
+      "webVerified": true,
+      "fullMatchAdmission": false,
+      "nativeCombatSuccessorsVerified": true
     },
     {
       "definitionId": "unit:infested_missile_turret/ocular-overwatch-assault-phase@1",
       "classification": "existing_atoms_new_combination",
       "newAtomIds": [],
       "sourceCompiled": true,
-      "executionBound": false,
+      "executionBound": true,
       "nativePlacementVerifiedWithEstimatedGeometry": false,
       "nativeQueryConsumerVerified": false,
-      "consumerRefs": [],
+      "consumerRefs": [
+        {
+          "file": "packages/product-composition/official-reaction-family-adapter-v1.mjs",
+          "exportName": "createOfficialReactionFamilyAdapterV1"
+        },
+        {
+          "file": "packages/product-composition/official-auto-turret-overwatch-runtime-v1.mjs",
+          "exportName": "createOfficialAutoTurretOverwatchRuntimeV1"
+        },
+        {
+          "file": "packages/product-composition/official-selected-roster-ranged-action-runtime-v1.mjs",
+          "exportName": "inspectOfficialAutoTurretOverwatchShotV1"
+        },
+        {
+          "file": "packages/rule-atoms/official-overwatch-attack-policy-v1.mjs",
+          "exportName": "readOfficialOverwatchAttackGrantV1"
+        },
+        {
+          "file": "packages/product-composition/official-selected-roster-ranged-action-runtime-v1.mjs",
+          "exportName": "createOfficialSelectedRosterRangedActionRuntimeV1"
+        }
+      ],
       "evidenceRefs": [
         "docs/development/wave4/evidence/hostile-incubation.public.json",
-        "docs/development/wave4/evidence/hostile-native-estimate.public.json"
+        "docs/development/wave4/evidence/hostile-native-estimate.public.json",
+        "docs/development/wave4/evidence/turret-combat.public.json",
+        "docs/development/wave4/evidence/turret-round.public.json",
+        "docs/development/wave4/evidence/turret-web.public.json",
+        "docs/development/wave4/evidence/firefly-attack.public.json",
+        "docs/development/wave4/evidence/overwatch-compat.public.json"
       ],
-      "verificationScope": "Unbound; Firefly strict source parser or native reaction/attack continuation pending",
-      "webVerified": false,
-      "fullMatchAdmission": false
+      "verificationScope": "Native Ocular to Firefly ranged/defence/damage/casualty completion, decline and spawn-round suppression; R2 native full-round and signed-prefix Web successor under estimated geometry",
+      "webVerified": true,
+      "fullMatchAdmission": false,
+      "nativeCombatSuccessorsVerified": true
     }
   ],
-  "executionStatus": "hostile_incubation_native_component_verified_with_user_authorized_estimated_geometry",
+  "executionStatus": "turret_seven_definitions_bound_native_round_and_Web_successors_verified_conditional_engineering_geometry",
   "creepBuilderGate": {
     "verifiedDefinitions": 3,
     "legalCreepChoices": 5,
@@ -1232,7 +1320,7 @@
     },
     {
       "atomId": "rule-atom:wave4/spawn-round-ability-lock@1",
-      "status": "implemented_native_component_verified_conditional_image_geometry",
+      "status": "implemented_native_round_verified_conditional_image_geometry",
       "definitionIds": [
         "card:stukov_s_forces/hostile-incubation-any@1"
       ],
@@ -1292,11 +1380,14 @@
       ],
       "evidenceRefs": [
         "docs/development/wave4/evidence/hostile-incubation.public.json",
-        "docs/development/wave4/evidence/hostile-native-estimate.public.json"
+        "docs/development/wave4/evidence/hostile-native-estimate.public.json",
+        "docs/development/wave4/evidence/turret-round.public.json",
+        "docs/development/wave4/evidence/turret-web.public.json"
       ],
       "verifiedWithOfficialPhysicalGeometry": false,
-      "nativeRoundTransitionVerified": false,
-      "fullMatchAdmission": false
+      "nativeRoundTransitionVerified": true,
+      "fullMatchAdmission": false,
+      "webSuccessorLockConsumed": true
     }
   ],
   "stukovArmyGate": {
@@ -1330,7 +1421,7 @@
   },
   "hostileIncubationGate": {
     "sourceDefinitions": 7,
-    "boundDefinitions": 4,
+    "boundDefinitions": 7,
     "selectedRecords": 102,
     "sourceRecords": 119,
     "newAtoms": 1,
@@ -1342,20 +1433,58 @@
     "baseEstimateRef": "content/source-releases/wave4-20261127/infested-turret-base-estimate-v1.json",
     "baseEstimateHash": "9fd4ef4671d395003a703183a3ffb829ad13a9fa659bfc610d739afbe02f989a",
     "officialPhysicalAuthority": false,
-    "unboundDefinitionIds": [
-      "unit:infested_missile_turret/infestation-any-phase@1",
-      "unit:infested_missile_turret/firefly-missiles-assault-phase@1",
-      "unit:infested_missile_turret/ocular-overwatch-assault-phase@1"
-    ],
+    "unboundDefinitionIds": [],
     "normalGeometryError": "MODEL_BASE_GEOMETRY_SOURCE_MISSING:army_units:infested_missile_turret:NO_UNCHANGED_ORDINARY_REVIEWED_FOOTPRINT",
-    "weaponError": "OFFICIAL_ATTACK_SURGE_UNKNOWN:army_units:infested_missile_turret:assault:Firefly Missiles:Light. Armoured (D3)",
     "evidenceRefs": [
       "docs/development/wave4/evidence/hostile-incubation.public.json",
-      "docs/development/wave4/evidence/hostile-native-estimate.public.json"
+      "docs/development/wave4/evidence/hostile-native-estimate.public.json",
+      "docs/development/wave4/evidence/turret-combat.public.json",
+      "docs/development/wave4/evidence/turret-round.public.json",
+      "docs/development/wave4/evidence/turret-web.public.json",
+      "docs/development/wave4/evidence/firefly-attack.public.json",
+      "docs/development/wave4/evidence/overwatch-compat.public.json"
     ],
     "formalStandardAndSkirmishAdmissionRejected": true,
-    "nativeRoundTransitionVerified": false,
+    "nativeRoundTransitionVerified": true,
     "fullMatchAdmission": false,
-    "webAcceptance": false
+    "webAcceptance": "turret_successors_scoped_passed",
+    "weaponSourceReviewed": true,
+    "weaponSyntaxReviewRef": "content/source-releases/wave4-20261127/review/firefly-syntax.json",
+    "nativePlacementWebVerified": false
+  },
+  "turretCombatGate": {
+    "focusDefinitionCount": 7,
+    "originalDefinitionCount": 556,
+    "pendingOutsideFocus": 549,
+    "newGameAtoms": 0,
+    "implementedCumulativeAtoms": 3,
+    "nativeBranches": 7,
+    "nativeSignedActions": 28,
+    "nativeIdempotencyVerified": true,
+    "nativeColdReplayVerified": true,
+    "nativeCompleteRounds": 2,
+    "nativeRoundSignedActions": 41,
+    "nativeRoundColdReplayVerified": true,
+    "oldAutoTurretControlSignedActions": 4,
+    "webRooms": 3,
+    "webSignedActions": 10,
+    "webScope": "successors_of_verified_signed_native_prefixes",
+    "webStartsAtLobby": false,
+    "webTwoCompleteRounds": false,
+    "presentationTestsPassed": 7,
+    "estimatedRoundBaseMillimetres": 80,
+    "officialPhysicalAuthority": false,
+    "sourceHeldDefinitions": 39,
+    "formalStandardAndSkirmishAdmissionRejected": true,
+    "fullMatchAdmission": false,
+    "fullWave4Admission": false,
+    "combinedAutoAndOcularBundleAdmitted": false,
+    "evidenceRefs": [
+      "docs/development/wave4/evidence/turret-combat.public.json",
+      "docs/development/wave4/evidence/turret-round.public.json",
+      "docs/development/wave4/evidence/turret-web.public.json",
+      "docs/development/wave4/evidence/firefly-attack.public.json",
+      "docs/development/wave4/evidence/overwatch-compat.public.json"
+    ]
   }
 }

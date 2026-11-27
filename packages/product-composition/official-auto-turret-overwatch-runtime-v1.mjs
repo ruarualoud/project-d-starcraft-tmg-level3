@@ -2,7 +2,7 @@ import { isDeepStrictEqual } from 'node:util';
 import { hashStarcraftTmgContract as hash } from '../authoritative-engine/referee-crypto-v1.mjs';
 import { hasOfficialFaqReactionPolicyV13 } from '../rule-atoms/official-faq-reaction-policy-v13.mjs';
 import { OFFICIAL_AUTO_TURRET_OVERWATCH_DEFINITION_ID, OFFICIAL_OVERWATCH_PARENT_KEY,
-  OFFICIAL_OVERWATCH_PROFILE_KEY, OFFICIAL_OVERWATCH_ATOM_ID, readOfficialOverwatchAttackGrantV1 }
+  OFFICIAL_OVERWATCH_ATOM_ID, readOfficialOverwatchAttackGrantV1, getOfficialOverwatchSourceSpecV1 }
   from '../rule-atoms/official-overwatch-attack-policy-v1.mjs';
 import { inspectOfficialAutoTurretOverwatchShotV1, OFFICIAL_SELECTED_ROSTER_RANGED_CASUALTY_ACTION_TYPE }
   from './official-selected-roster-ranged-action-runtime-v1.mjs';
@@ -16,12 +16,15 @@ const live = piece => piece?.isOnField === true && !piece.isDestroyed && Number(
 
 export function createOfficialAutoTurretOverwatchRuntimeV1({ state: initial, reactionAdapter, hasUnsettledAction }) {
   const bundle = initial.officialReactionFamilySourceBundle;
+  const routes = bundle?.routes.filter(row => row.activationEndOwner === 'current_source_v1') || [];
+  const spec = routes.length === 1 && getOfficialOverwatchSourceSpecV1(routes[0].definitionId);
   if (!reactionAdapter || !hasOfficialFaqReactionPolicyV13(initial) || typeof hasUnsettledAction !== 'function'
-    || !bundle?.definitionIds.includes(OFFICIAL_AUTO_TURRET_OVERWATCH_DEFINITION_ID)) {
+    || !spec) {
     throw Error('OVERWATCH_REACTION_CONSUMERS_REQUIRED');
   }
-  const descriptor = { runtimeId, runtimeVersion: '1.0.0', sourceBundleHash: bundle.bundleHash,
-    sourceDefinitionId: OFFICIAL_AUTO_TURRET_OVERWATCH_DEFINITION_ID,
+  const ocular = spec.definitionId !== OFFICIAL_AUTO_TURRET_OVERWATCH_DEFINITION_ID;
+  const descriptor = { runtimeId, runtimeVersion: ocular ? '1.1.0' : '1.0.0', sourceBundleHash: bundle.bundleHash,
+    sourceDefinitionId: spec.definitionId,
     actions: [], ruleAtomIds: [OFFICIAL_OVERWATCH_ATOM_ID, 'rule-atom:faq-v1.3-outside-activation-per-phase'],
     triggerKind: 'unit_activation_ended', outsideActivation: true, attackSource: 'shared_numeric_ranged',
     fullMatchCoverage: false, trainingTruth: false };
@@ -40,7 +43,7 @@ export function createOfficialAutoTurretOverwatchRuntimeV1({ state: initial, rea
     return parent;
   }
   function availability(state, targetPieceId) {
-    return state.pieces.filter(piece => live(piece) && piece.officialUnitRecordKey === 'army_units:auto_turret')
+    return state.pieces.filter(piece => live(piece) && piece.officialUnitRecordKey === spec.recordKey)
       .map(piece => inspectOfficialAutoTurretOverwatchShotV1(state, { sourcePieceId: piece.id, targetPieceId }));
   }
   function restore(transition, parent, outcome) {
@@ -54,10 +57,11 @@ export function createOfficialAutoTurretOverwatchRuntimeV1({ state: initial, rea
     if (parent.resumeActivationWindow) next.selectedRosterActivationWindow = clone(parent.resumeActivationWindow);
     else delete next.selectedRosterActivationWindow;
     delete next[parentKey];
-    const event = { type: 'auto_turret_overwatch_completed', triggerHash: parent.triggerHash,
+    const event = { type: ocular ? 'ocular_overwatch_completed' : 'auto_turret_overwatch_completed', triggerHash: parent.triggerHash,
       targetPieceId: parent.targetPieceId, sourcePieceId: parent.sourcePieceId || null,
       outcome, resumedSideKey: parent.resumeSideKey, trainingTruth: false };
-    next.officialAutoTurretOverwatchHistory = [...(next.officialAutoTurretOverwatchHistory || []), event];
+    const historyKey = ocular ? 'officialOcularOverwatchHistory' : 'officialAutoTurretOverwatchHistory';
+    next[historyKey] = [...(next[historyKey] || []), event];
     next.log.push({ round: Number(next.round), phase: next.phase,
       action: { actionType: 'complete_auto_turret_overwatch' }, events: [clone(event)] });
     return { ...transition, state: next, events: [...transition.events, event] };
@@ -91,7 +95,7 @@ export function createOfficialAutoTurretOverwatchRuntimeV1({ state: initial, rea
       parent.reactionOffered ? 'declined' : 'no_reaction_available');
     const source = next.pieces.find(row => row.id === effect.sourcePieceId);
     next[parentKey] = seal({ ...withoutHash(parent), stage: 'attack', sourcePieceId: source.id,
-      profileKey: OFFICIAL_OVERWATCH_PROFILE_KEY, resolutionHash: resolution.resolutionHash,
+      profileKey: spec.profileKey, ...(ocular ? { sourceDefinitionId: spec.definitionId } : {}), resolutionHash: resolution.resolutionHash,
       actorHadActivationFlags: Object.hasOwn(source, 'activatedPhases'),
       actorActivationFlags: clone(source.activatedPhases || {}),
       attackHistoryLength: (next.rangedActionHistory || []).length });
@@ -112,7 +116,7 @@ export function createOfficialAutoTurretOverwatchRuntimeV1({ state: initial, rea
     const opened = reactionAdapter.openReactionWindow(state, { triggerKind: 'unit_activation_ended',
       activeSideKey: target.sideKey, phase: state.phase, activationId: null,
       sourceActionHash: hash(action), context: { targetPieceId: target.id, endedUnitId: target.id,
-        eligibleOverwatchSourceIds: eligible, weaponProfileKey: OFFICIAL_OVERWATCH_PROFILE_KEY } });
+        eligibleOverwatchSourceIds: eligible, weaponProfileKey: spec.profileKey } });
     const next = clone(opened.state);
     next[parentKey] = seal({ schema: 'starcraft_tmg_auto_turret_overwatch_parent_v1',
       stage: 'reaction', round: Number(state.round), phase: state.phase, targetPieceId: target.id,
@@ -167,11 +171,11 @@ export function createOfficialAutoTurretOverwatchRuntimeV1({ state: initial, rea
         sourceActionHash: hash({ queryKind: 'auto_turret_overwatch', stateHash: hash(state), targetPieceId }),
         context: { targetPieceId, endedUnitId: targetPieceId,
           eligibleOverwatchSourceIds: shots.filter(row => row.legal).map(row => row.sourcePieceId),
-          weaponProfileKey: OFFICIAL_OVERWATCH_PROFILE_KEY },
+           weaponProfileKey: spec.profileKey },
       }).state);
       for (let seat = 0; seat < 2 && projected.pendingOfficialReactionWindow; seat++) {
         const menu = reactionAdapter.legalSpace(projected);
-        for (const domain of menu.parameterDomains.filter(row => row.definitionId === OFFICIAL_AUTO_TURRET_OVERWATCH_DEFINITION_ID)) {
+        for (const domain of menu.parameterDomains.filter(row => row.definitionId === spec.definitionId)) {
           reactionSourceIds.add(domain.sourceInstanceId);
         }
         const pass = menu.parameterDomains.find(row => row.actionType === 'pass_reaction_family_window');
@@ -180,7 +184,7 @@ export function createOfficialAutoTurretOverwatchRuntimeV1({ state: initial, rea
       }
     } else if (parent?.stage === 'reaction') {
       for (const domain of reactionAdapter.legalSpace(state).parameterDomains.filter(row =>
-        row.definitionId === OFFICIAL_AUTO_TURRET_OVERWATCH_DEFINITION_ID)) reactionSourceIds.add(domain.sourceInstanceId);
+        row.definitionId === spec.definitionId)) reactionSourceIds.add(domain.sourceInstanceId);
     }
     return { schema: 'starcraft_tmg_auto_turret_overwatch_query_v1', stateHash: hash(state),
       pending: clone(parent), conditionalShotAvailability: shots,

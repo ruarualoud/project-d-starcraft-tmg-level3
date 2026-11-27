@@ -2,6 +2,7 @@ import { assertOfficialReleaseSourceV2 } from "./official-release-context-v2.mjs
 import { hashStarcraftTmgContract } from
   "../authoritative-engine/referee-crypto-v1.mjs";
 import { createOfficialAbilityEffectIrCatalogueV1 } from './official-ability-effect-ir-v1.mjs';
+import { readOfficialReviewedFireflySurgeSyntaxV1 } from './official-reviewed-firefly-syntax-v1.mjs';
 import { verifyCommandCenterSnapshot } from
   "../rule-atoms/official-live-source-snapshots-v1.mjs";
 import {
@@ -192,7 +193,8 @@ function parseAttackProfile(record, upgrade, allowTemplates = false, reviewedKin
   if (hitThreshold < 2 || hitThreshold > 6) fail("OFFICIAL_ATTACK_HIT_INVALID", context);
   const templateMatch = allowTemplates ? match[3].trim().match(/^(BT|FT)(?:\+(\d+))?$/u) : null;
   const rateOfAttack = templateMatch ? null : positiveInteger(match[3], "OFFICIAL_ATTACK_ROA_INVALID", context);
-  const parsedSurge = parseSurge(match[6], context, allowTemplates);
+  const sourceSyntaxReview = readOfficialReviewedFireflySurgeSyntaxV1(record, upgrade, match[6]);
+  const parsedSurge = parseSurge(sourceSyntaxReview?.parserValue ?? match[6], context, allowTemplates);
   if (['BT', 'FT'].includes(parsedSurge.surge?.diceExpression)
     && parsedSurge.surge.diceExpression !== templateMatch?.[1]) fail('OFFICIAL_ATTACK_TEMPLATE_SURGE_MISMATCH', context);
   const requiresSiegeMode = allowTemplates && String(match[7] || '').trim() === 'SIEGE MODE Status';
@@ -224,6 +226,7 @@ function parseAttackProfile(record, upgrade, allowTemplates = false, reviewedKin
     surge: parsedSurge.surge,
     effects,
     sourceTextHash: hashStarcraftTmgContract(description),
+    ...(sourceSyntaxReview ? { sourceSyntaxReview } : {}),
     canAffectRules: false,
     trainingTruth: false,
   };

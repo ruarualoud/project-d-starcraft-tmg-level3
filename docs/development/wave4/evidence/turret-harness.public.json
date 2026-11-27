@@ -1,0 +1,59 @@
+{
+  "schema": "starcraft_tmg_wave4_turret_harness_loop_v1",
+  "harnessLoopUsed": true,
+  "targetGames": [
+    "starcraft-tmg"
+  ],
+  "promptPackRoutes": [
+    {
+      "route": "fact_probe_prompt",
+      "invoked": false,
+      "mode": "offline_contract_verification",
+      "modelCalls": 0
+    }
+  ],
+  "harnessToolsCalled": [
+    "createEnvelope",
+    "legalSpace",
+    "preview",
+    "explicit_human_confirmation",
+    "apply",
+    "idempotency_reapply",
+    "cold_replay",
+    "web_parameter_form",
+    "seat_projection",
+    "recovery_ticket_exchange"
+  ],
+  "uiTraceEvidence": [
+    "docs/development/wave4/evidence/turret-web.public.json",
+    "docs/development/wave4/evidence/turret-web-build.public.json",
+    "docs/development/wave4/evidence/turret-firefly-desktop.png",
+    "docs/development/wave4/evidence/turret-restoration-mobile.png"
+  ],
+  "agentDecisionEvidence": {
+    "status": "not_applicable",
+    "reason": "paid_models_K3_AI_games_and_postgame_review_remain_paused",
+    "modelCalls": 0
+  },
+  "memoryTraceEvidence": [],
+  "trainingTraceCandidates": [],
+  "rollbackOrDemotionRules": [
+    "source_record_or_payload_change_disables_Firefly_syntax_review",
+    "physical_geometry_confirmation_required_before_formal_room_admission",
+    "39_held_definitions_remain_excluded",
+    "scoped_round_and_Web_success_never_imply_full_Wave4_admission"
+  ],
+  "userVisibleChecks": [
+    "Firefly weapon name and explicit enemy target in action form",
+    "Infestation chosen recipient preserved after transfer or removed after paid Restoration",
+    "Preview is read-only and requires human confirmation",
+    "both seats refresh and recover to the signed revision"
+  ],
+  "sourceHeldDefinitions": 39,
+  "estimatedRoundBaseMillimetres": 80,
+  "officialPhysicalAuthority": false,
+  "wave3PlayerRoomsTouched": false,
+  "productionPublished": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

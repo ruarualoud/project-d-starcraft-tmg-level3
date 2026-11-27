@@ -1,4 +1,7 @@
 import { allowsOfficialSpawnRoundSpecialAbilityV1 } from '../rule-atoms/official-spawn-round-ability-lock-v1.mjs';
+import { OFFICIAL_OCULAR_OVERWATCH_DEFINITION_ID } from '../rule-atoms/official-overwatch-attack-policy-v1.mjs';
+import { OFFICIAL_INFESTATION_TRANSFER_DEFINITION_ID, resolveOfficialInfestationTransferTargetsV1,
+  applyOfficialInfestationTransferStatusV1 } from './official-infestation-transfer-facts-v1.mjs';
 import { WAVE4_REACTION_REVISIONS } from '../../content/source-releases/wave4-20261127/ability-review-v1.mjs';
 import { projectOfficialRangedFamilyModifiersV1 } from './official-ranged-family-projection-v1.mjs';
 import { OFFICIAL_OPTICAL_FLARE_DEFINITION_ID } from './official-targeted-active-ability-policy-v1.mjs';
@@ -62,6 +65,7 @@ const TRIGGER_KINDS = new Set([
   "damage_received",
   "debuff_received",
   "friendly_supply_reduced",
+  "infested_enemy_removed",
   "hidden_lost",
   "ranged_attack_declared",
   "reserve_entered_non_entry",
@@ -515,6 +519,21 @@ const LEGACY_REVIEWED_REACTION_COMPONENTS_V2 = Object.freeze({
       rangeInches: 8, weaponName: 'Gauss Cannon', effectDuration: 'this_attack',
       activationEndOwner: 'current_source_v1', explicitStructureSource: true }),
   }),
+  [OFFICIAL_OCULAR_OVERWATCH_DEFINITION_ID]: Object.freeze({
+    recordKey: 'army_units:infested_missile_turret', sourceKind: 'unit_feature', resourceType: 'BM', phase: 'assault',
+    abilityName: 'Ocular Overwatch', resourceCost: 0,
+    sourceText: 'When an Enemy Flying Unit ends its Activation Within 14". This Unit immediately performs a Ranged Attack against that Enemy Unit.',
+    spec: Object.freeze({ effectKind: 'overwatch_ranged_attack', triggerKind: 'unit_activation_ended',
+      rangeInches: 14, weaponName: 'Firefly Missiles', requiredTargetTag: 'flying', effectDuration: 'this_attack',
+      activationEndOwner: 'current_source_v1', explicitStructureSource: true }),
+  }),
+  [OFFICIAL_INFESTATION_TRANSFER_DEFINITION_ID]: Object.freeze({
+    recordKey: 'army_units:infested_missile_turret', sourceKind: 'unit_feature', resourceType: 'BM',
+    abilityName: 'Infestation', resourceCost: 0,
+    sourceText: 'When the Supply of an Enemy Unit with the INFESTATION Status is reduced to 0, or when that Unit is Destroyed, you can apply the INFESTATION Status to another Enemy Unit Within 8" of that Unit. For the purposes of resolving Special Abilities, this effect is treated as a DEBUFF.',
+    spec: Object.freeze({ effectKind: 'infestation_transfer', triggerKind: 'infested_enemy_removed',
+      explicitStructureSource: true, transferRangeMilliInches: 8000 }),
+  }),
   [OFFICIAL_SUPPRESSION_SHELLS_DEFINITION_ID]: Object.freeze({
     recordKey: 'army_units:spec_ops_marauder__marauder_', sourceKind: 'unit_feature',
     resourceType: 'CP', phase: 'assault', abilityName: 'Suppression Shells', resourceCost: 1,
@@ -837,6 +856,7 @@ const REACTION_RECIPIENT_ROLES = Object.freeze({
   followup_move_towards_attacker: "source_unit", resource_cost_discount: "payment_reference",
   overwatch_ranged_attack: "source_unit",
   refresh_after_friendly_supply_loss: "source_unit",
+  infestation_transfer: "source_unit",
 });
 function reactionRecipient(state, window, route, instance) {
   const role = REACTION_RECIPIENT_ROLES[route.effectKind];
@@ -871,6 +891,9 @@ function routeEligible(state, window, route, instance) {
   const target = targetFor(window, state);
   const attacker = attackerFor(window, state);
   const source = instance.sourcePiece;
+  if (route.effectKind === 'infestation_transfer') {
+    return resolveOfficialInfestationTransferTargetsV1(state, window.context, source).length > 0;
+  }
   if (route.effectKind === 'refresh_after_friendly_supply_loss') {
     return Boolean(source && window.context.eligibleSources?.some(row => row.sourcePieceId === source.id)
       && Number(source.structureRules?.specialAbilitiesDisabledThroughRound ?? -1) < Number(state.round)
@@ -1129,6 +1152,12 @@ function domainFor(state, window, route, instance, paymentCardInstanceIds,
     body.constraints.friendlySupplyLosses = clone(window.context.eligibleSources.find(row =>
       row.sourcePieceId === instance.sourceInstanceId).losses);
   }
+  if (route.effectKind === 'infestation_transfer') {
+    body.parameterSchema.required.push('targetUnitId');
+    body.parameterSchema.targetUnitId = { enum: resolveOfficialInfestationTransferTargetsV1(state, window.context, instance.sourcePiece) };
+    body.constraints.fallenUnitId = window.context.infestationWitness.fallenPiece.id;
+    body.constraints.triggerWitnessHash = window.context.infestationWitness.witnessHash;
+  }
   if (consumeChoice) body.parameterSchema.required.push('sacrificePieceId', 'sacrificeModelId');
   return seal(body, "domainId");
 }
@@ -1225,6 +1254,11 @@ function instantiate(bundle, state, domain, parameters = {}) {
   }
   const canonicalParameters = pass ? {} : { paymentCardInstanceIds,
     ...(followupTargetUnitId ? { followupTargetUnitId } : {}) };
+  if (!pass && route.effectKind === 'infestation_transfer') {
+    if (!domain.parameterSchema.targetUnitId.enum.includes(parameters.targetUnitId)
+      || Object.keys(parameters).some(key => !domain.parameterSchema.required.includes(key))) fail('INFESTATION_TRANSFER_TARGET_INVALID');
+    canonicalParameters.targetUnitId = parameters.targetUnitId;
+  }
   if (!pass && route.effectKind === 'refresh_after_friendly_supply_loss') {
     if (Object.keys(parameters).some(key => !domain.parameterSchema.required.includes(key))
       || !domain.parameterSchema.cardInstanceId.enum.includes(parameters.cardInstanceId)) {
@@ -1563,6 +1597,13 @@ function reactionEffect(route, state, window, action) {
     effect.refreshedCardInstanceId = action.reactionPlan.canonicalParameters.cardInstanceId;
   } else if (route.effectKind === 'overwatch_ranged_attack') {
     effect.weaponProfileKey = route.recordKey + '::assault::' + route.weaponName;
+  } else if (route.effectKind === 'infestation_transfer') {
+    const status = applyOfficialInfestationTransferStatusV1(state, route, source,
+      action.reactionPlan.canonicalParameters.targetUnitId, window.context);
+    effect.targetPieceId = status.targetPieceId;
+    effect.statusEffectHash = status.statusEffectHash;
+    effect.fallenUnitId = window.context.infestationWitness.fallenPiece.id;
+    effect.triggerWitnessHash = window.context.infestationWitness.witnessHash;
   }
   return seal(effect, "effectHash");
 }

@@ -268,6 +268,7 @@ describe("Slice 132 authoritative battlefield presentation", () => {
       backgroundVisibleByDefault: true,
       terrainVisibleByDefault: true,
       backgroundRulesAuthority: false,
+      mapArtOverlays: [],
     });
     expect(scene.models.slice(0, 3).map((entry) => entry.baseWidthMilliInches))
       .toEqual([1260, 1575, 3150]);
@@ -276,14 +277,12 @@ describe("Slice 132 authoritative battlefield presentation", () => {
     expect(scene.models[2].baseWidthMilliInches! / scene.models[0].baseWidthMilliInches!)
       .toBeCloseTo(2.5, 8);
     expect(scene.markers.map((entry) => entry.id)).toEqual([
-      "centre",
       "board-mission-marker",
       "effect",
-      "marker-4",
       "official-marker",
     ]);
-    expect(scene.markers.find((entry) => entry.id === "centre"))
-      .toMatchObject({ widthMilliInches: 6000, depthMilliInches: 6000 });
+    // Live Rules markers supersede setup snapshots and demonstration circles.
+    expect(scene.markers.find((entry) => entry.id === "centre")).toBeUndefined();
     expect(scene.tokens).toHaveLength(1);
     expect(scene.tokens[0]).toMatchObject({
       id: "official-token",
@@ -310,12 +309,7 @@ describe("Slice 132 authoritative battlefield presentation", () => {
         depthMilliInches: 1260,
         geometryRenderable: true,
       });
-    expect(scene.markers.find((entry) => entry.id === "marker-4"))
-      .toMatchObject({
-        xMilliInches: 27_000,
-        yMilliInches: 6_000,
-        geometryRenderable: false,
-      });
+    expect(scene.markers.find((entry) => entry.id === "marker-4")).toBeUndefined();
     expect(scene.finiteActions).toHaveLength(11);
     expect(scene.previewPath).toEqual([
       { xMilliInches: 4_000, yMilliInches: 7_000 },

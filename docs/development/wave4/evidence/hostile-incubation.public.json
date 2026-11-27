@@ -1,7 +1,7 @@
 {
   "schema": "starcraft_tmg_wave4_hostile_incubation_verification_v1",
   "status": "passed_with_admission_holds",
-  "runRef": "build/wave4-web/hostile-incubation/run-yVlUZG",
+  "runRef": "build/wave4-web/hostile-incubation/run-4po7ts",
   "candidateManifestHash": "90d72a3366ded11e5770f804f5173f4ed2e89093c9e7c603ca8582a79782c34a",
   "sourceDefinitionIds": [
     "card:stukov_s_forces/hostile-incubation-any@1",
@@ -93,20 +93,21 @@
     "hostileIncubation": "6acc5364db5ad31365557aa424bf8a58abd7623ee1ab30ccb28735c43024acd5",
     "structure": "c4af8d57b79930952196fbb15ba34c9a18316da353fe78cb7b394b6aabab0aaa",
     "detection": "f7d7ea83d21e6142ac1778c49f62567140c93a70a2122265b137f38c7dcb6e4a",
-    "sourceOfCreep": "ad173648f368eff79e592e6c5df564c1a04effe596899fbb49c165d1644dacb7"
+    "sourceOfCreep": "ad173648f368eff79e592e6c5df564c1a04effe596899fbb49c165d1644dacb7",
+    "reactions": "9d0f4bc4d76572082bae44b60d3dcdefaba342f13e8fbe691eb7989604aeaf3a",
+    "ranged": "5d4aac91125f1bda3ec6549af4d8110a563a1ae7301a9cb75fa6fce2011e4ea2",
+    "weaponCatalogue": "cd86b50b5f13f2826efde97ec564ba09d43bcfd96d43234ba66fe6cfe8c84e66"
   },
-  "boundDefinitionCount": 4,
-  "unboundDefinitionIds": [
-    "unit:infested_missile_turret/infestation-any-phase@1",
-    "unit:infested_missile_turret/firefly-missiles-assault-phase@1",
-    "unit:infested_missile_turret/ocular-overwatch-assault-phase@1"
-  ],
+  "boundDefinitionCount": 7,
+  "unboundDefinitionIds": [],
   "coldLockReadVerified": true,
   "cleanupCannotUnlockEarly": true,
   "markerTamperRejected": true,
   "generatedUnitArmyPurchaseRejected": true,
   "geometryError": "MODEL_BASE_GEOMETRY_SOURCE_MISSING:army_units:infested_missile_turret:NO_UNCHANGED_ORDINARY_REVIEWED_FOOTPRINT",
-  "weaponError": "OFFICIAL_ATTACK_SURGE_UNKNOWN:army_units:infested_missile_turret:assault:Firefly Missiles:Light. Armoured (D3)",
+  "weaponSourceReviewed": true,
+  "weaponSyntaxReviewHash": "5f215eb93e6138347fa18b77ad3557bb8888dc24b8b13612b4d24dbbb258d654",
+  "weaponSyntaxScopeRejections": 7,
   "nativePlacementVerified": false,
   "turretFullGameplayVerified": false,
   "fullMatchAdmission": false,

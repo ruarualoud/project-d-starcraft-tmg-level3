@@ -14,6 +14,9 @@ import { createOfficialUnitLifecycleFamilyDefinitionBindingsV1 } from '../packag
 import { createOfficialAbilityEffectIrCatalogueV1, createOfficialAbilitySourcePhasePolicyV1 } from '../packages/source-data/official-ability-effect-ir-v1.mjs';
 import { createOfficialGeneratedUnitDataBundleV2 } from '../packages/source-data/official-generated-unit-data-bundle-v2.mjs';
 import { createOfficialAttackProfileCatalogueV3 } from '../packages/source-data/official-attack-profile-catalogue-v1.mjs';
+import { readOfficialReviewedFireflySurgeSyntaxV1 } from '../packages/source-data/official-reviewed-firefly-syntax-v1.mjs';
+import { createOfficialReactionFamilySourceBundleV2, createOfficialReactionFamilyDefinitionBindingsV1 } from '../packages/product-composition/official-reaction-family-adapter-v1.mjs';
+import { createOfficialRangedFamilySourceBundleV2, createOfficialRangedFamilyDefinitionBindingsV1 } from '../packages/product-composition/official-ranged-family-adapter-v1.mjs';
 import { createOfficialReleaseRosterStateV2 } from '../packages/product-composition/official-release-roster-state-v2.mjs';
 import { createOfficialArmyBuilderQueryPortV1 } from '../packages/roster-strategist/army-builder-query-port-v1.mjs';
 import { hashStarcraftTmgContract as hash } from '../packages/authoritative-engine/referee-crypto-v1.mjs';
@@ -61,12 +64,31 @@ assert.equal(bindOfficialSpawnRoundAbilityLockV1(piece, policy, 1).lockHash, loc
 const state = { round: 1, pieces: [piece], officialStructureSourceBundle: structure };
 const names = record.payload.upgrades.map(feature => feature.name);
 const structureAdapter = createOfficialStructureFamilyAdapterV1(structure);
+const weaponCatalogue = createOfficialAttackProfileCatalogueV3({ context, recordKeys: [key] });
+const firefly = weaponCatalogue.profiles.find(profile => profile.weaponName === 'Firefly Missiles');
+assert.deepEqual(firefly.surge.targetTags, ['armoured', 'light']);
+assert.equal(firefly.sourceSyntaxReview.sourceTextRewritten, false);
+// The reviewed punctuation never authorizes other sources or changed fields.
+const fireflyUpgrade = record.payload.upgrades.find(row => row.name === 'Firefly Missiles');
+const syntax = firefly.sourceSyntaxReview.sourceValue;
+assert.equal(readOfficialReviewedFireflySurgeSyntaxV1({ ...record, recordKey: 'army_units:auto_turret' }, fireflyUpgrade, syntax), null);
+assert.equal(readOfficialReviewedFireflySurgeSyntaxV1(record, { ...fireflyUpgrade, name: 'Other Weapon' }, syntax), null);
+assert.equal(readOfficialReviewedFireflySurgeSyntaxV1(record, fireflyUpgrade, 'Light. Armoured (D6)'), null);
+for (const field of ['sourceRecordHash', 'payloadHash']) assert.throws(() =>
+  readOfficialReviewedFireflySurgeSyntaxV1({ ...record, [field]: 'changed' }, fireflyUpgrade, syntax), /FIREFLY_REVIEWED_SYNTAX_SOURCE_MISMATCH/);
+for (const change of [{ phase: 'Combat Phase' }, { activation: '1 BM' }]) assert.throws(() =>
+  readOfficialReviewedFireflySurgeSyntaxV1(record, { ...fireflyUpgrade, ...change }, syntax), /FIREFLY_REVIEWED_SYNTAX_SOURCE_MISMATCH/);
+const reactions = createOfficialReactionFamilySourceBundleV2({ catalogue,
+  definitionIds: [sourceId('infestation-any-phase@1'), sourceId('ocular-overwatch-assault-phase@1')] });
+const ranged = createOfficialRangedFamilySourceBundleV2({ catalogue,
+  definitionIds: [sourceId('firefly-missiles-assault-phase@1')], attackProfileCatalogue: weaponCatalogue });
 const boundCatalogue = createOfficialAbilityEffectIrCatalogueV1({ dataset, identityCatalogue: inputs.identities,
   sourceDefinitionIds: scope.definitionIds, sourcePhasePolicy: createOfficialAbilitySourcePhasePolicyV1({ dataset, includeInlineCardPhases: true }),
   executionBindings: [...createOfficialUnitLifecycleFamilyDefinitionBindingsV1(lifecycle),
     ...createOfficialCharacteristicStatusFamilyDefinitionBindingsV1(detection),
+    ...createOfficialReactionFamilyDefinitionBindingsV1(reactions), ...createOfficialRangedFamilyDefinitionBindingsV1(ranged),
     ...creep.routes.map(route => ({ sourceFeatureHash: route.sourceFeatureHash, adapterId: 'official-battlefield-asset-family-adapter-v1', adapterVersion: '1.0.0', capability: route.runtimeRole })), ...structureAdapter.definitionBindings] });
-assert.equal(boundCatalogue.denominator.executableExact, 4);
+assert.equal(boundCatalogue.denominator.executableExact, 7);
 const checks = [];
 for (const round of [1, 2]) {
   state.round = round;
@@ -116,10 +138,6 @@ assert.throws(() => createOfficialReleaseRosterStateV2({ context,
   candidatesBySide: { player1: candidate('player1'), player2: candidate('player2') }, sourceDefinitionIds: scope.definitionIds,
   unitLifecycleDefinitionIds: lifecycle.definitionIds, structureDefinitionIds: structure.definitionIds,
   includeAbilitySourcePhases: true }), error => error.message === geometryError);
-let weaponError;
-try { createOfficialAttackProfileCatalogueV3({ context, recordKeys: [key] }); }
-catch (error) { weaponError = error.message; }
-assert.match(weaponError, /OFFICIAL_ATTACK_SURGE_UNKNOWN:.*Light\. Armoured/u);
 const consumerRefs = [
   ['packages/product-composition/official-unit-lifecycle-family-adapter-v1.mjs', 'createOfficialUnitLifecycleFamilySourceBundleV2'],
   ['packages/product-composition/official-unit-lifecycle-family-adapter-v1.mjs', 'createOfficialUnitLifecycleFamilyAdapterV1'],
@@ -139,14 +157,17 @@ const result = { schema: 'starcraft_tmg_wave4_hostile_incubation_verification_v1
   atomId: policy.ruleAtomId, implementedNewGameAtoms: 3, nativeVerifiedNewGameAtoms: 2,
   selectedRecords: 102, sourceRecords: 119, sourceHeldDefinitions: 39, checks, consumerRefs,
   sourceBindings: { hostileIncubation: lifecycle.bundleHash, structure: structure.bundleHash,
-    detection: detection.bundleHash, sourceOfCreep: creep.bundleHash },
+    detection: detection.bundleHash, sourceOfCreep: creep.bundleHash, reactions: reactions.bundleHash,
+    ranged: ranged.bundleHash, weaponCatalogue: weaponCatalogue.catalogueHash },
   boundDefinitionCount: boundCatalogue.denominator.executableExact,
-  unboundDefinitionIds: [sourceId('infestation-any-phase@1'), sourceId('firefly-missiles-assault-phase@1'), sourceId('ocular-overwatch-assault-phase@1')],
+  unboundDefinitionIds: [],
   coldLockReadVerified: true, cleanupCannotUnlockEarly: true, markerTamperRejected: true,
-  generatedUnitArmyPurchaseRejected: true, geometryError, weaponError,
+  generatedUnitArmyPurchaseRejected: true, geometryError, weaponSourceReviewed: true,
+  weaponSyntaxReviewHash: firefly.sourceSyntaxReview.reviewHash,
+  weaponSyntaxScopeRejections: 7,
   nativePlacementVerified: false, turretFullGameplayVerified: false, fullMatchAdmission: false,
   webAcceptance: false, modelCalls: 0, trainingTruth: false };
 await save(runRef + '/result.json', result);
 await save('docs/development/wave4/evidence/hostile-incubation.public.json', result);
 console.log(JSON.stringify({ status: result.status, implementedAtoms: 3, nativeVerifiedAtoms: 2,
-  sourceDefinitions: 7, geometryError, weaponError, nativePlacementVerified: false }));
+  sourceDefinitions: 7, boundDefinitions: 7, geometryError, weaponSourceReviewed: true, nativePlacementVerified: false }));

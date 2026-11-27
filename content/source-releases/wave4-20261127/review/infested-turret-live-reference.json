@@ -1,0 +1,301 @@
+{
+  "name": "projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/army_units/infested_missile_turret",
+  "fields": {
+    "upgrades": {
+      "arrayValue": {
+        "values": [
+          {
+            "mapValue": {
+              "fields": {
+                "name": {
+                  "stringValue": "Detection"
+                },
+                "linkedTo": {
+                  "stringValue": ""
+                },
+                "description": {
+                  "stringValue": "While Enemy Units are Within 8\" of this Unit, they lose the HIDDEN Status."
+                },
+                "activation": {
+                  "stringValue": "\u003cPassive\u003e"
+                },
+                "phase": {
+                  "stringValue": "Any Phase"
+                },
+                "costS": {
+                  "integerValue": "0"
+                },
+                "costL": {
+                  "integerValue": "0"
+                }
+              }
+            }
+          },
+          {
+            "mapValue": {
+              "fields": {
+                "name": {
+                  "stringValue": "Source of Creep"
+                },
+                "linkedTo": {
+                  "stringValue": ""
+                },
+                "description": {
+                  "stringValue": "A Friendly or Enemy Ground Zerg Unit Within 6\" of this Unit, counts as being ON CREEP."
+                },
+                "activation": {
+                  "stringValue": "\u003cPassive\u003e"
+                },
+                "phase": {
+                  "stringValue": "Any Phase"
+                },
+                "costS": {
+                  "integerValue": "0"
+                },
+                "costL": {
+                  "integerValue": "0"
+                }
+              }
+            }
+          },
+          {
+            "mapValue": {
+              "fields": {
+                "name": {
+                  "stringValue": "Infestation"
+                },
+                "linkedTo": {
+                  "stringValue": ""
+                },
+                "description": {
+                  "stringValue": "When the Supply of an Enemy Unit with the INFESTATION Status is reduced to 0, or when that Unit is Destroyed, you can apply the INFESTATION Status to another Enemy Unit Within 8\" of that Unit. For the purposes of resolving Special Abilities, this effect is treated as a DEBUFF."
+                },
+                "activation": {
+                  "stringValue": "\u003cReaction\u003e\n(0 Biomass)"
+                },
+                "phase": {
+                  "stringValue": "Any Phase"
+                },
+                "costS": {
+                  "integerValue": "0"
+                },
+                "costL": {
+                  "integerValue": "0"
+                }
+              }
+            }
+          },
+          {
+            "mapValue": {
+              "fields": {
+                "name": {
+                  "stringValue": "Structure"
+                },
+                "linkedTo": {
+                  "stringValue": ""
+                },
+                "description": {
+                  "stringValue": "This Unit cannot be Activated in any Phase and cannot perform actions. Additionally, its Current Supply Value is treated as 0, and it can never Control or Contest Mission Markers, ignoring the standard Zero Supply Exception. This Unit cannot be a target of an ability, unless stated otherwise."
+                },
+                "activation": {
+                  "stringValue": "\u003cPassive\u003e"
+                },
+                "phase": {
+                  "stringValue": "Any Phase"
+                },
+                "costS": {
+                  "integerValue": "0"
+                },
+                "costL": {
+                  "integerValue": "0"
+                }
+              }
+            }
+          },
+          {
+            "mapValue": {
+              "fields": {
+                "name": {
+                  "stringValue": "Firefly Missiles"
+                },
+                "linkedTo": {
+                  "stringValue": ""
+                },
+                "description": {
+                  "stringValue": "RANGE: 14'' | TARGET: Flying | RoA: 8 | HIT: 4+ | DMG: 1\nSURGE: Light. Armoured (D3)\n\nANTI-EVADE (1)"
+                },
+                "activation": {
+                  "stringValue": ""
+                },
+                "phase": {
+                  "stringValue": "Assault Phase"
+                },
+                "costS": {
+                  "integerValue": "0"
+                },
+                "costL": {
+                  "integerValue": "0"
+                }
+              }
+            }
+          },
+          {
+            "mapValue": {
+              "fields": {
+                "name": {
+                  "stringValue": "Ocular Overwatch"
+                },
+                "linkedTo": {
+                  "stringValue": ""
+                },
+                "description": {
+                  "stringValue": "When an Enemy Flying Unit ends its Activation Within 14\". This Unit immediately performs a Ranged Attack against that Enemy Unit."
+                },
+                "activation": {
+                  "stringValue": "\u003cReaction\u003e\n(0 Biomass)"
+                },
+                "phase": {
+                  "stringValue": "Assault Phase"
+                },
+                "costS": {
+                  "integerValue": "0"
+                },
+                "costL": {
+                  "integerValue": "0"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "id": {
+      "stringValue": "infested_missile_turret"
+    },
+    "squadProfile": {
+      "arrayValue": {
+        "values": [
+          {
+            "mapValue": {
+              "fields": {
+                "tier": {
+                  "integerValue": "1"
+                },
+                "modelCount": {
+                  "stringValue": "-"
+                },
+                "supply": {
+                  "integerValue": "0"
+                }
+              }
+            }
+          },
+          {
+            "mapValue": {
+              "fields": {
+                "tier": {
+                  "integerValue": "2"
+                },
+                "modelCount": {
+                  "stringValue": "1-1"
+                },
+                "supply": {
+                  "integerValue": "0"
+                }
+              }
+            }
+          },
+          {
+            "mapValue": {
+              "fields": {
+                "tier": {
+                  "integerValue": "3"
+                },
+                "modelCount": {
+                  "stringValue": "-"
+                },
+                "supply": {
+                  "integerValue": "0"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "large": {
+      "mapValue": {
+        "fields": {
+          "supply": {
+            "integerValue": "0"
+          },
+          "models": {
+            "integerValue": "0"
+          },
+          "cost": {
+            "integerValue": "0"
+          }
+        }
+      }
+    },
+    "faction": {
+      "stringValue": "Zerg"
+    },
+    "tags": {
+      "stringValue": "Armoured, Biological, Infested, Ground"
+    },
+    "keywords": {
+      "stringValue": "Zerg, Stukov's Forces"
+    },
+    "small": {
+      "mapValue": {
+        "fields": {
+          "cost": {
+            "integerValue": "0"
+          },
+          "models": {
+            "integerValue": "1"
+          },
+          "supply": {
+            "integerValue": "0"
+          }
+        }
+      }
+    },
+    "combatRange": {
+      "stringValue": "5"
+    },
+    "name": {
+      "stringValue": "Infested Missile Turret"
+    },
+    "unitType": {
+      "stringValue": "Other"
+    },
+    "stats": {
+      "mapValue": {
+        "fields": {
+          "evade": {
+            "stringValue": "-"
+          },
+          "shield": {
+            "stringValue": "-"
+          },
+          "speed": {
+            "stringValue": "-"
+          },
+          "size": {
+            "stringValue": "3"
+          },
+          "armor": {
+            "stringValue": "5+"
+          },
+          "hp": {
+            "stringValue": "8"
+          }
+        }
+      }
+    }
+  },
+  "createTime": "2026-11-24T10:20:23.156107Z",
+  "updateTime": "2026-11-24T10:20:23.156107Z"
+}
