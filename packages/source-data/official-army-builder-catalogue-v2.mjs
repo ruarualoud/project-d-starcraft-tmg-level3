@@ -20,9 +20,10 @@ function requireValue(condition, detail) {
   if (!condition) throw new Error(`ARMY_BUILDER_CATALOGUE_SOURCE_INVALID:${detail}`);
 }
 
-function compileUnits(dataset) {
+function compileUnits(dataset, selectedRecordKeys) {
   return indexed(dataset.recordIndex.filter(row => row.recordType === 'unit'
-    && row.authorityDisposition === 'official_current_product_candidate').map(row => {
+    && row.authorityDisposition === 'official_current_product_candidate'
+    && (!selectedRecordKeys || selectedRecordKeys.has(row.recordKey))).map(row => {
     const record = getOfficialCurrentProductRecord(dataset, row.recordKey);
     const unit = record.payload;
     requireValue(races.has(unit.faction) && [...slotTypes, 'Other'].includes(unit.unitType), row.recordKey);
@@ -43,11 +44,12 @@ function compileUnits(dataset) {
 }
 
 // These are finite source-backed purchase constraints. They do not rank a roster.
-function compileConstraints(dataset, units, cards) {
+function compileConstraints(dataset, units, cards, selectedRecordKeys) {
   const constraints = [];
   const seen = new Set();
   for (const record of Object.values(dataset.recordsByKey)) {
     if (!['unit', 'tactical_card'].includes(record.recordType)) continue;
+    if (selectedRecordKeys && !selectedRecordKeys.has(record.recordKey)) continue;
     for (const feature of record.payload.upgrades || record.payload.boosts || []) {
       const text = feature.description || '';
       const exclusive = text.match(/^During Army Building, your army cannot include both the (.+) Unit and the (.+) Unit\.$/u);
@@ -186,22 +188,38 @@ export function createOfficialReleaseCardCatalogueV2({ context, legacyCardDataBu
   return result;
 }
 
-export function createOfficialArmyBuilderCatalogueV2({ dataset, snapshot, releaseContext, legacyPolicyBundle }) {
+export function createOfficialArmyBuilderCatalogueV2({ dataset, snapshot, releaseContext, legacyPolicyBundle,
+  sourceRecordKeys }) {
   assertOfficialReleaseSourceV2(releaseContext, { dataset, snapshot });
   verifyOfficialUnitCompositionUpgradeDataBundleV1(legacyPolicyBundle);
   const legacyBudget = legacyPolicyBundle.armyResourceBudgetDataBundle;
   const legacyFactions = legacyBudget.factionArmyEligibilityDataBundle;
-  const bundle = (kind, template, fields) => bindReleaseBundle({ dataset, releaseContext, kind, template, fields });
-  const cards = compileOfficialCardBuildPaymentProfilesV2(dataset, null);
+  const availableRecordKeys = dataset.recordIndex.filter(row => ['unit', 'tactical_card'].includes(row.recordType)
+    && row.authorityDisposition === 'official_current_product_candidate').map(row => row.recordKey).sort();
+  if (sourceRecordKeys !== undefined) requireValue(Array.isArray(sourceRecordKeys) && sourceRecordKeys.length > 0
+    && new Set(sourceRecordKeys).size === sourceRecordKeys.length
+    && sourceRecordKeys.every(key => availableRecordKeys.includes(key)), 'source_record_selection');
+  const selectedRecordKeys = sourceRecordKeys === undefined ? null : new Set(sourceRecordKeys);
+  const catalogueSelection = selectedRecordKeys ? {
+    scope: 'explicit_record_subset', sourceRecordCount: availableRecordKeys.length,
+    sourceRecordKeysHash: hash(availableRecordKeys), selectedRecordKeys: [...selectedRecordKeys].sort(),
+    excludedRecordKeys: availableRecordKeys.filter(key => !selectedRecordKeys.has(key)),
+    fullReleaseAdmission: false,
+  } : null;
+  const bundle = (kind, template, fields) => bindReleaseBundle({ dataset, releaseContext, kind, template,
+    fields: { ...(catalogueSelection ? { catalogueSelection } : {}), ...fields } });
+  const allCards = compileOfficialCardBuildPaymentProfilesV2(dataset, null);
+  const cards = selectedRecordKeys ? { profiles: allCards.profiles.filter(row => selectedRecordKeys.has(row.recordKey)),
+    sourceIndex: allCards.sourceIndex.filter(row => selectedRecordKeys.has(row.recordKey)) } : allCards;
   const cardDataBundle = bundle('cards', legacyFactions.cardDataBundle, {
     cardProfiles: cards.profiles, cardProfileIndexHash: hash(cards.profiles),
     cardSourceIndex: cards.sourceIndex, cardSourceIndexHash: hash(cards.sourceIndex) });
-  const units = compileUnits(dataset);
+  const units = compileUnits(dataset, selectedRecordKeys);
   const unitDataBundle = bundle('units', legacyFactions.unitDataBundle, {
     unitProfiles: units, unitProfileIndexHash: hash(units),
     unitSourceIndex: sourceIndex(units), unitSourceIndexHash: hash(sourceIndex(units)) });
   const factionRows = compileOfficialFactionArmyProfilesV2(dataset, cardDataBundle, unitDataBundle, null);
-  const armyBuildingConstraints = compileConstraints(dataset, units, cards.profiles);
+  const armyBuildingConstraints = compileConstraints(dataset, units, cards.profiles, selectedRecordKeys);
   const factionArmyEligibilityDataBundle = bundle('factions', legacyFactions, {
     raceTags: legacyFactions.raceTags, armySlotTypes: slotTypes,
     subFactionTags: factionRows.subFactionTags, engagementScales: legacyFactions.engagementScales,

@@ -1,0 +1,43 @@
+{
+  "harnessLoopUsed": true,
+  "targetGames": [
+    "starcraft-tmg"
+  ],
+  "promptPackRoutes": [],
+  "harnessToolsCalled": [
+    "compile_exact_source",
+    "Builder.enumerate",
+    "Builder.evaluate",
+    "StandardFactory.armyAudit",
+    "RosterRegistry",
+    "RoomCardResources",
+    "ReleaseResolver.coldImport",
+    "git_baseline_compatibility"
+  ],
+  "uiTraceEvidence": [],
+  "agentDecisionEvidence": null,
+  "memoryTraceEvidence": [],
+  "trainingTraceCandidates": [],
+  "rollbackOrDemotionRules": [
+    "Source review, dataset or scope drift rejects the scoped compiler",
+    "Source-held records remain outside the catalogue",
+    "The complete source denominator and excluded record keys accompany every scoped catalogue and Builder receipt",
+    "Only army_building is available; missing battle components reject battle admission"
+  ],
+  "userVisibleChecks": [
+    "Three Creep @2 subjects reuse the existing exactly-one constraint; zero new game atoms",
+    "Five legal choices across three factions preserve costs and per-owner card resources",
+    "Sixteen negative cases reject missing, extra, duplicate or wrong-faction Creep selections",
+    "Fresh resolver imports preserve five dual rosters, audits and card resources exactly",
+    "Wave3 compiler output remains byte-equivalent against commit 97bc694 with identical inputs"
+  ],
+  "evidence": [
+    "docs/development/wave4/evidence/creep-builder.public.json",
+    "docs/development/wave4/evidence/ability-diff.public.json"
+  ],
+  "implementedNewGameAtoms": 0,
+  "modelCalls": 0,
+  "fullWave4WebAcceptance": false,
+  "fullWave4NewDataProductWiring": false,
+  "productionPromoted": false
+}

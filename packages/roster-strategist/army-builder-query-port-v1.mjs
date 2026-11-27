@@ -310,6 +310,7 @@ export function createOfficialArmyBuilderQueryPortV1(input = {}) {
     return { portId, portVersion: ARMY_BUILDER_QUERY_PORT_VERSION,
       ...(releaseBinding ? { releaseBinding: clone(releaseBinding) } : {}),
       ...(bundle.sourceBinding ? { sourceBinding: clone(bundle.sourceBinding) } : {}),
+      ...(bundle.catalogueSelection ? { catalogueSelection: clone(bundle.catalogueSelection) } : {}),
       candidateInputContract: clone(ARMY_BUILDER_CANDIDATE_INPUT_CONTRACT_V1),
       unitCompositionUpgradeDataBundleHash: bundle.bundleHash,
       readOnly: true, providerCalls: 0, trainingTruth: false };

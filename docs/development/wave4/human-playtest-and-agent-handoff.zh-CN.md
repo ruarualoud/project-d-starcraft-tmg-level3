@@ -2,7 +2,7 @@
 
 本分支首项已通过：[W4-01 候选与兼容验收](candidate-acceptance.zh-CN.md)。U98/C88/R50 候选已冻结；500／2000 分旧房的跨版拒绝、同席重交、签名动作与冷回放通过。下一项从 W4-02 能力差分继续，Wave4 Web 对战尚未准出。
 
-W4-02 已完成 [156 条逐 ID 差分](ability-diff.zh-CN.md)，需 18 个新增游戏原子，当前实现 0；另 3 个仅属 Archon 撤下来源的候选合同暂不实施。11 条旧卡时点修订已通过 [原生与 Web 局部接线](native-timing-wiring.zh-CN.md)：原生 68 条主链回执，另 21 条零护甲池负例回执；Web 11/11、31 条回执。它们是既有能力的说明修订，使用未改旧单位的条件棋位。**整版新数据仍未接完**：三条 Creep 主体、新单位／势力、完整 Builder／大厅、工厂及媒体仍待接线。当前官方集合不含 Archon，原生感染机械 CP 与阶段拼写问题仍隔离，共 39 条定义保持源级阻断。接续 [当前接线进度](../../../coordination/wave4/ability-wiring-progress.json)。
+W4-02 已完成 [156 条逐 ID 差分](ability-diff.zh-CN.md)，需 18 个新增游戏原子，当前实现 0；另 3 个仅属 Archon 撤下来源的候选合同暂不实施。11 条旧卡时点修订已通过 [原生与 Web 局部接线](native-timing-wiring.zh-CN.md)：原生 68 条主链回执，另 21 条零护甲池负例回执；Web 11/11、31 条回执。另 [三条 Creep 主体修订](creep-builder-wiring.zh-CN.md) 已通过同源 Builder、工厂建军审核、军表注册与卡资源生成，5 组双侧军表冷导入一致、16 个反例拒绝。**整版新数据仍未接完**：新单位／势力、完整 Builder／大厅、房间开局及媒体仍待接线；本批建军目录明确排除 25 条新增记录。当前官方集合不含 Archon，原生感染机械 CP 与阶段拼写问题仍隔离，共 39 条定义保持源级阻断。接续 [当前接线进度](../../../coordination/wave4/ability-wiring-progress.json)。
 
 Wave3 人人候选为 2.99.12，Git 基线为 `codex/wave3-human-playtest@857b313`；本分支已继承双席军表修复 `85add09`。2000 分两席分别写入达拉姆和扎加拉的自建军表，房间逐项匹配双方单位、规模、升级及卡；两浏览器均以各自席位成功进入。[双席实测](../wave3/evidence/wave3-human-media/independent-rosters.public.json)。500 分另经正式服务验证客席先提交、房主后提交，两人进入同一房间。[500 分记录](../wave3/evidence/wave3-human-media/independent-rosters-500.public.json)。完整 Ticket28 仍为 9/16。下一阶段先交付 Wave4 的 Web 双人对战。原生 M25 等测试机，付费模型、历史对局和学习实验继续暂停。
 

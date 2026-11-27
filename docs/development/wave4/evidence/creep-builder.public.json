@@ -1,0 +1,367 @@
+{
+  "schema": "starcraft_tmg_wave4_creep_builder_evidence_v1",
+  "status": "passed",
+  "runRef": "build/wave4-web/creep-builder/run-eVxAHr",
+  "releaseId": "wave4-u98-c88-r50-creep-builder-v1",
+  "manifestHash": "cc3c4d21a803555783667889b0ee6b90355fb1202ba157c14caaced091dc6494",
+  "datasetHash": "66a15120a2f995707e3b5271753c754b581050ec14665a2eb4245f2651e1ae25",
+  "sourceSnapshotHash": "60ca66a0a1f3eca17f6cea3ac49f6aaa71e0e1b2b957407156c94630acf20c80",
+  "builderHash": "a6e11952033f104ac2083325c4bdc71861d13e6166aa70f6a36ed73b8c006bac",
+  "catalogueSelection": {
+    "scope": "explicit_record_subset",
+    "sourceRecordCount": 119,
+    "sourceRecordKeysHash": "9bda02694d462ac87e34ecec47766b9e74b4020a44d941a60460c01a0d054492",
+    "selectedRecordKeys": [
+      "army_units:adept",
+      "army_units:artanis",
+      "army_units:auto_turret",
+      "army_units:bile_launcher",
+      "army_units:corpser__roach_",
+      "army_units:defiler",
+      "army_units:goliath",
+      "army_units:high_templar",
+      "army_units:holo_decoy",
+      "army_units:hydralisk",
+      "army_units:immortal",
+      "army_units:jim_raynor",
+      "army_units:kerrigan",
+      "army_units:kerrigan_swarm_raptor__zergling_",
+      "army_units:marauder",
+      "army_units:marine",
+      "army_units:medic",
+      "army_units:nerazim_watchers__adept_",
+      "army_units:nova_assault_mode",
+      "army_units:nova_stealth_mode",
+      "army_units:omega_worm",
+      "army_units:point_defense_drone",
+      "army_units:praetor_guard__zealot_",
+      "army_units:pylon",
+      "army_units:queen",
+      "army_units:raptor__zergling_",
+      "army_units:ravager",
+      "army_units:raven",
+      "army_units:raynor_s_raider__marine_",
+      "army_units:roach",
+      "army_units:roachling",
+      "army_units:sabotage_drone",
+      "army_units:sentry",
+      "army_units:siege_tank",
+      "army_units:spec_ops_marauder__marauder_",
+      "army_units:stalker",
+      "army_units:swarmling__zergling_",
+      "army_units:tassadar",
+      "army_units:twilight_templar__high_templar_",
+      "army_units:vile__roach_",
+      "army_units:vileling__zergling_",
+      "army_units:zagara",
+      "army_units:zealot",
+      "army_units:zeratul",
+      "army_units:zergling",
+      "tactical_cards:academy",
+      "tactical_cards:accelerating_creep",
+      "tactical_cards:armory",
+      "tactical_cards:barracks",
+      "tactical_cards:barracks__proxy_",
+      "tactical_cards:barracks__tech_lab_",
+      "tactical_cards:cocoon",
+      "tactical_cards:daelaam",
+      "tactical_cards:defiler_mound",
+      "tactical_cards:dropship",
+      "tactical_cards:engineering_bay",
+      "tactical_cards:evolution_chamber",
+      "tactical_cards:factory",
+      "tactical_cards:factory__tech_lab_",
+      "tactical_cards:forge",
+      "tactical_cards:gate_chronoboosted",
+      "tactical_cards:gateway",
+      "tactical_cards:hatchery",
+      "tactical_cards:hydralisk_den",
+      "tactical_cards:kerrigan_s_swarm",
+      "tactical_cards:khalai",
+      "tactical_cards:lair",
+      "tactical_cards:malignant_creep",
+      "tactical_cards:nerazim",
+      "tactical_cards:nexus",
+      "tactical_cards:nova_covert_ops",
+      "tactical_cards:observer",
+      "tactical_cards:orbital_command",
+      "tactical_cards:overcharged_nexus",
+      "tactical_cards:overlord",
+      "tactical_cards:overseer",
+      "tactical_cards:power_field",
+      "tactical_cards:raynor_s_raiders",
+      "tactical_cards:reactive_creep",
+      "tactical_cards:roach_warren",
+      "tactical_cards:robotics_facility",
+      "tactical_cards:spawning_pool",
+      "tactical_cards:spawning_pool__six_pool_",
+      "tactical_cards:supply_depot",
+      "tactical_cards:templar_archives",
+      "tactical_cards:templar_caste",
+      "tactical_cards:terran_armed_forces",
+      "tactical_cards:twilight_council",
+      "tactical_cards:vanadium_plating",
+      "tactical_cards:void_seeker",
+      "tactical_cards:warp_gate",
+      "tactical_cards:warp_prism",
+      "tactical_cards:zagara_s_swarm",
+      "tactical_cards:zerg_swarm"
+    ],
+    "excludedRecordKeys": [
+      "army_units:alarak",
+      "army_units:archon",
+      "army_units:firebat",
+      "army_units:infested_goliath",
+      "army_units:infested_marine",
+      "army_units:infested_missile_turret",
+      "army_units:infested_siege_tank",
+      "army_units:infested_trooper",
+      "army_units:phasing_scarab",
+      "army_units:reaver",
+      "army_units:scarab",
+      "army_units:slayer__stalker_",
+      "army_units:solarite_scarab",
+      "army_units:stukov",
+      "army_units:tal_darim_pylon",
+      "tactical_cards:barracks__reactor_",
+      "tactical_cards:healing_pathogen",
+      "tactical_cards:hive",
+      "tactical_cards:hungering_infestation",
+      "tactical_cards:infested_barracks",
+      "tactical_cards:infested_command_center",
+      "tactical_cards:robotics_support_bay",
+      "tactical_cards:stukov_s_forces",
+      "tactical_cards:tal_darim",
+      "tactical_cards:weighted_pustule"
+    ],
+    "fullReleaseAdmission": false
+  },
+  "scopeRef": "content/source-releases/wave4-20261127/creep-builder-scope-v1.json",
+  "scopeHash": "5c76742b4661b4620ff0932175bfe2083d6d52bbe97b46cde4a5eb6bf29bb9dd",
+  "definitions": [
+    {
+      "definitionId": "card:kerrigan_s_swarm/zerg-creep-any@2",
+      "sourceFeatureHash": "feb7b277ff4b128fad9ee44afe3a07234af1b8b2e63b404f84c5405c232bbd85",
+      "constraintSourceDefinitionHash": "e4933d2861d12d94e6c22c44d4730d64eab74ec9c9aaad461c2e0554542407ae",
+      "newAtoms": 0,
+      "classification": "existing_atom",
+      "legal": [
+        {
+          "recordKey": "tactical_cards:accelerating_creep",
+          "vespeneSpent": 0,
+          "menuReceiptHash": "5661e6e738f3217afb20a4ed38063aadf1c374feeafccde048342954b99ca46f",
+          "auditHash": "7b9ba9da8933c9f1cb51c042dce94236e594b57c8a0f11803531c88224e36f8c",
+          "registryHash": "89c71b3be91c8b48d088a4259230d8f6b8ca86f9759b7f9dc14b95749393b429"
+        },
+        {
+          "recordKey": "tactical_cards:malignant_creep",
+          "vespeneSpent": 10,
+          "menuReceiptHash": "5661e6e738f3217afb20a4ed38063aadf1c374feeafccde048342954b99ca46f",
+          "auditHash": "bfd2ddd0b48421106c91bc34a057adc91b8693be506e8036cf3df7127559e5fa",
+          "registryHash": "2c1e70effbaf2573287f9a6e3b6daf9c7c4cc4734e3969b930505d307a3b2c43"
+        }
+      ],
+      "illegal": [
+        {
+          "cards": [],
+          "builderStatus": "illegal",
+          "rejectionKind": "tactical_group",
+          "rulesErrorCode": "ARMY_EXACTLY_ONE_TACTICAL_GROUP_REQUIRED",
+          "otherOwnerCardCannotSatisfyOwnRequirement": true
+        },
+        {
+          "cards": [
+            "tactical_cards:accelerating_creep",
+            "tactical_cards:malignant_creep"
+          ],
+          "builderStatus": "illegal",
+          "rejectionKind": "tactical_group",
+          "rulesErrorCode": "ARMY_EXACTLY_ONE_TACTICAL_GROUP_REQUIRED",
+          "otherOwnerCardCannotSatisfyOwnRequirement": true
+        },
+        {
+          "cards": [
+            "tactical_cards:accelerating_creep",
+            "tactical_cards:accelerating_creep"
+          ],
+          "builderStatus": "unknown",
+          "rejectionKind": "unknown_rules_outcome",
+          "rulesErrorCode": "UNIQUE_CARD_SINGLE_COPY_LIMIT",
+          "otherOwnerCardCannotSatisfyOwnRequirement": true
+        }
+      ],
+      "ineligible": [
+        {
+          "recordKey": "tactical_cards:reactive_creep",
+          "rulesErrorCode": "FACTION_TAG_MISMATCH"
+        }
+      ],
+      "opposingOwnerMissingRejected": true
+    },
+    {
+      "definitionId": "card:zagara_s_swarm/zerg-creep-any@2",
+      "sourceFeatureHash": "5d7346e9ff7906f94c51c06f56b65006e78cdf01d76b6e169afd6292739e61fb",
+      "constraintSourceDefinitionHash": "03ad8e4fc9ec4f077bb5af4a1e8cc9191c11b5c1cea2b72f81ebe3448e20a325",
+      "newAtoms": 0,
+      "classification": "existing_atom",
+      "legal": [
+        {
+          "recordKey": "tactical_cards:accelerating_creep",
+          "vespeneSpent": 0,
+          "menuReceiptHash": "ad59d8bea34cb6edee89ca23905c52e75bf281009ec9f6169488acccb2ab0901",
+          "auditHash": "d1e5aeea094d5d242cf040b516bc8cbbb458a18317c4575a7f56c34a30b97495",
+          "registryHash": "3288194f3d004517690de98f0ba2faee508e3e76bc38957ee513e42f9d8c8193"
+        },
+        {
+          "recordKey": "tactical_cards:reactive_creep",
+          "vespeneSpent": 10,
+          "menuReceiptHash": "ad59d8bea34cb6edee89ca23905c52e75bf281009ec9f6169488acccb2ab0901",
+          "auditHash": "5a2a441bbcac11b0f9c993ef18641905ee780b3ad4a43deabf30e02ad8a870a5",
+          "registryHash": "c801d54cacb742c59226c89c1d1e9570e77a807abeb2de78206de4758c8a70c5"
+        }
+      ],
+      "illegal": [
+        {
+          "cards": [],
+          "builderStatus": "illegal",
+          "rejectionKind": "tactical_group",
+          "rulesErrorCode": "ARMY_EXACTLY_ONE_TACTICAL_GROUP_REQUIRED",
+          "otherOwnerCardCannotSatisfyOwnRequirement": true
+        },
+        {
+          "cards": [
+            "tactical_cards:accelerating_creep",
+            "tactical_cards:malignant_creep"
+          ],
+          "builderStatus": "illegal",
+          "rejectionKind": "faction_eligibility",
+          "rulesErrorCode": "FACTION_TAG_MISMATCH",
+          "otherOwnerCardCannotSatisfyOwnRequirement": true
+        },
+        {
+          "cards": [
+            "tactical_cards:accelerating_creep",
+            "tactical_cards:accelerating_creep"
+          ],
+          "builderStatus": "unknown",
+          "rejectionKind": "unknown_rules_outcome",
+          "rulesErrorCode": "UNIQUE_CARD_SINGLE_COPY_LIMIT",
+          "otherOwnerCardCannotSatisfyOwnRequirement": true
+        }
+      ],
+      "ineligible": [
+        {
+          "recordKey": "tactical_cards:malignant_creep",
+          "rulesErrorCode": "FACTION_TAG_MISMATCH"
+        }
+      ],
+      "opposingOwnerMissingRejected": true
+    },
+    {
+      "definitionId": "card:zerg_swarm/zerg-creep-any@2",
+      "sourceFeatureHash": "13ac8aff456e391a6ac73eb764dfe95859a9ebc262cb9d9bfafcf30ffaeffd9c",
+      "constraintSourceDefinitionHash": "e4933d2861d12d94e6c22c44d4730d64eab74ec9c9aaad461c2e0554542407ae",
+      "newAtoms": 0,
+      "classification": "existing_atom",
+      "legal": [
+        {
+          "recordKey": "tactical_cards:accelerating_creep",
+          "vespeneSpent": 0,
+          "menuReceiptHash": "59e3be92d64af1e98ab4a6df00bb6a27b6ecc62cc92086216c84a0fa9d2ca529",
+          "auditHash": "e460b56dcebf25915a6dd6b2077f54c068cdccc357425eadcf66aa228ac318d8",
+          "registryHash": "3ed639bc276f1a88e7463c4681224a388ad7564a28b3b5530da5625b600d7fc9"
+        }
+      ],
+      "illegal": [
+        {
+          "cards": [],
+          "builderStatus": "illegal",
+          "rejectionKind": "tactical_group",
+          "rulesErrorCode": "ARMY_EXACTLY_ONE_TACTICAL_GROUP_REQUIRED",
+          "otherOwnerCardCannotSatisfyOwnRequirement": true
+        },
+        {
+          "cards": [
+            "tactical_cards:accelerating_creep",
+            "tactical_cards:malignant_creep"
+          ],
+          "builderStatus": "illegal",
+          "rejectionKind": "faction_eligibility",
+          "rulesErrorCode": "FACTION_TAG_MISMATCH",
+          "otherOwnerCardCannotSatisfyOwnRequirement": true
+        },
+        {
+          "cards": [
+            "tactical_cards:accelerating_creep",
+            "tactical_cards:accelerating_creep"
+          ],
+          "builderStatus": "unknown",
+          "rejectionKind": "unknown_rules_outcome",
+          "rulesErrorCode": "UNIQUE_CARD_SINGLE_COPY_LIMIT",
+          "otherOwnerCardCannotSatisfyOwnRequirement": true
+        }
+      ],
+      "ineligible": [
+        {
+          "recordKey": "tactical_cards:malignant_creep",
+          "rulesErrorCode": "FACTION_TAG_MISMATCH"
+        },
+        {
+          "recordKey": "tactical_cards:reactive_creep",
+          "rulesErrorCode": "FACTION_TAG_MISMATCH"
+        }
+      ],
+      "opposingOwnerMissingRejected": true
+    }
+  ],
+  "consumerRefs": [
+    {
+      "file": "packages/source-data/official-army-builder-catalogue-v2.mjs",
+      "exportName": "createOfficialArmyBuilderCatalogueV2"
+    },
+    {
+      "file": "packages/roster-strategist/army-builder-query-port-v1.mjs",
+      "exportName": "createOfficialArmyBuilderQueryPortV1"
+    },
+    {
+      "file": "packages/rule-atoms/official-faction-army-eligibility-rules-kernel-v1.mjs",
+      "exportName": "resolveOfficialArmySlotAuditV1"
+    },
+    {
+      "file": "packages/product-composition/official-faction-army-building-card-requirements-v1.mjs",
+      "exportName": "validateOfficialFactionRequiredTacticalCardGroupsV1"
+    },
+    {
+      "file": "packages/product-composition/official-standard-room-factory-v1.mjs",
+      "exportName": "buildOfficialRoomArmyAuditV1"
+    },
+    {
+      "file": "packages/source-data/official-roster-disclosure-data-bundle-v1.mjs",
+      "exportName": "createOfficialRoomRosterDisclosureDataBundleV1"
+    },
+    {
+      "file": "packages/rule-atoms/official-roster-disclosure-rules-kernel-v1.mjs",
+      "exportName": "resolveOfficialRosterRegistryAuditV1"
+    },
+    {
+      "file": "packages/product-composition/official-standard-room-factory-v1.mjs",
+      "exportName": "createOfficialRoomCardResourcesV1"
+    }
+  ],
+  "legalRosters": 5,
+  "coldImportedRosters": 5,
+  "negativeCases": 16,
+  "nativeFactoryArmyAudits": true,
+  "rosterRegistryAndRoomCardResources": true,
+  "battlePurposeAdmissionRejected": true,
+  "fullRoomOpening": false,
+  "webUiAcceptance": false,
+  "fullWave4Admission": false,
+  "newGameAtoms": 0,
+  "sourceHeldDefinitions": 39,
+  "wave3BuilderByteEquivalent": true,
+  "baselineCommit": "97bc694a1dde3eb6d96335391dc507f3d7b4b54d",
+  "wave3PlayerRoomsTouched": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

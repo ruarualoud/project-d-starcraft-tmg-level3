@@ -63,6 +63,19 @@ export function verifyOfficialArmyBuilderReleaseBundleV2(bundle, kind) {
     && bundle.sourcePolicy?.refreshDuringDevelopment === false
     && bundle.sourcePolicy?.commandCenterRole === 'primary_army_building_facts', 'source_policy');
   requireValue(bundle.bundleHash === hash(without(bundle, 'bundleHash')), 'bundle_hash');
+  const selection = bundle.catalogueSelection;
+  if (selection !== undefined) {
+    const selected = selection.selectedRecordKeys;
+    const excluded = selection.excludedRecordKeys;
+    requireValue(selection.scope === 'explicit_record_subset' && selection.fullReleaseAdmission === false
+      && Array.isArray(selected) && selected.length > 0 && Array.isArray(excluded)
+      && [...selected, ...excluded].every(key => typeof key === 'string')
+      && new Set([...selected, ...excluded]).size === selection.sourceRecordCount
+      && selected.length + excluded.length === selection.sourceRecordCount
+      && selection.sourceRecordKeysHash === hash([...selected, ...excluded].sort()), 'catalogue_selection');
+    const rows = kind === 'cards' ? bundle.cardProfiles : kind === 'units' ? bundle.unitProfiles : [];
+    requireValue(rows.every(row => selected.includes(row.recordKey)), 'catalogue_selection_profiles');
+  }
   requireValue(bundle.ruleClauseIndexHash === hash(bundle.ruleClauses), 'rule_clauses');
   for (const name of indexes[kind]) {
     const rows = bundle[name];
@@ -79,6 +92,12 @@ export function verifyOfficialArmyBuilderReleaseBundleV2(bundle, kind) {
   for (const [key, childKind] of children[kind] || []) {
     verifyOfficialArmyBuilderReleaseBundleV2(bundle[key], childKind);
     requireValue(hash(bundle[key].sourceBinding) === hash(bundle.sourceBinding), `${key}_binding`);
+    requireValue(hash(bundle[key].catalogueSelection ?? null) === hash(selection ?? null), `${key}_selection`);
+  }
+  if (selection && kind === 'factions') {
+    const compiledKeys = [...bundle.cardDataBundle.cardProfiles, ...bundle.unitDataBundle.unitProfiles]
+      .map(row => row.recordKey).sort();
+    requireValue(hash(compiledKeys) === hash([...selection.selectedRecordKeys].sort()), 'catalogue_selection_coverage');
   }
   if (kind === 'units') {
     for (const unit of bundle.unitProfiles) {
