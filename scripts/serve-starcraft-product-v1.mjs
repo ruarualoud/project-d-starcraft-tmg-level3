@@ -7,6 +7,8 @@ import { createStarcraftProductRoomHostV1 } from './support/starcraft-product-ro
 import { loadWave3HumanMatchSetupsV1, wave3HumanMapConfiguration } from '../packages/product-composition/wave3-human-match-v1.mjs';
 import { createTicket27RosterRoomProcessHostV1 } from './support/ticket27-roster-room-process-host-v1.mjs';
 import { createRosterPlanningSecureDeliberationFactoryV1 } from '../packages/roster-planning-workspace/roster-planning-secure-deliberation-factory-v1.mjs';
+import {createProductCompanionLiveProviderV1} from '../packages/secure-provider-runtime/companion-live-provider-v1.mjs';
+import {createWave3OpenAICompanionProfileV1,estimateWave3OpenAICompanionUsageV1} from '../content/provider/wave3-openai-companion-profile-v1.mjs';
 
 import { createSlice249LearningRoomRouterV1 } from './support/slice249-learning-room-router-v1.mjs';
 
@@ -59,13 +61,21 @@ async function main(){
   const dataDirectory=path.resolve(arg('data-directory',path.join(ROOT,'build/starcraft-product-v1')));
   const learningFile=arg('learning-config-file',null);
   const learningDefinitions=learningFile?JSON.parse(await readFile(path.resolve(learningFile),'utf8')).definitions:[];
+  const companionProvider=arg('companion-provider',null);
+  if(companionProvider&&companionProvider!=='openai')throw Error('PRODUCT_COMPANION_PROVIDER_NOT_APPROVED');
+  const companionProfile=companionProvider==='openai'
+    ? createWave3OpenAICompanionProfileV1(arg('companion-model','gpt-5.4-mini')):null;
   const handle=await createStarcraftProductServerV1({dataDirectory,learningDefinitions,
+    ...(companionProfile?{companionProfile,companionMaxDispatches:3,
+      companionProviderFactory:options=>createProductCompanionLiveProviderV1({...options,providerProfile:companionProfile,maxDispatches:3,
+        usagePricer:estimateWave3OpenAICompanionUsageV1})}:{}),
     offlineWave3MatchVersion:wave3Candidate,
     webRoot:path.resolve(arg('web-root',path.join(ROOT,'apps/starcraft-tmg-expo/dist-product'))),
     fixtureRoot:arg('fixture-root',recovery?.fixtureRoot ?? ROOT),mapConfiguration,
     port:Number(arg('port','4173')),liveEnabled:!offline});
   const entry={url:handle.origin+'/match',armyUrl:handle.armyUrl,pid:process.pid,
-    dataDirectory,liveEnabled:!process.argv.includes('--offline')};
+    dataDirectory,liveEnabled:!process.argv.includes('--offline'),
+    ...(companionProfile?{companionProvider:companionProfile.provider,companionModel:companionProfile.model,companionMaxDispatches:3}:{})};
   await writeFile(path.join(dataDirectory,'service.json'),JSON.stringify(entry)+'\n',{mode:0o600});
   console.log(JSON.stringify(entry));
   for(const signal of ['SIGINT','SIGTERM'])process.once(signal,()=>void handle.close().finally(()=>process.exit(0)));

@@ -18,16 +18,19 @@ export function ProductRoomProviderPanel() {
     const entered=key;setKey('');
     try {
       const r=remove?await productRoomKey.revoke():await productRoomKey.replace(entered);
-      if(!r.ok)throw Error('rejected');
+      if(!r.ok)throw Error(r.reason||'rejected');
       setStatus(r.provider);setEditing(!r.provider.configured);
-    }catch{setError(zh?'保存失败，请确认 Key 和房间连接后重试。':'Could not save. Check your key and room connection.');}
+    }catch(e){setError(e instanceof Error&&e.message==='PRODUCT_OPENAI_API_KEY_REQUIRED'
+      ?(zh?'请输入完整的 OpenAI API 密钥；tracking ID 不能用于调用。':'Enter the full OpenAI API key; a tracking ID cannot authenticate requests.')
+      :(zh?'保存失败，请确认 Key 和房间连接后重试。':'Could not save. Check your key and room connection.'));}
     finally{setBusy(false);}
   }
   const button=(label:string,action:()=>void,disabled=false)=><Pressable accessibilityRole="button"
     disabled={disabled||busy} accessibilityState={{disabled:disabled||busy}} onPress={action}
     style={[styles.button,(disabled||busy)&&{opacity:.45}]}><Text style={styles.buttonText}>{label}</Text></Pressable>;
+  const providerName=status?.providerId==='openai-api-direct'?'OpenAI':'DeepSeek';
   return <View style={styles.panel} testID="product-room-provider-panel">
-    <View style={styles.row}><Text style={styles.title}>{zh?'本房 AI · DeepSeek':'Room AI · DeepSeek'}</Text>
+    <View style={styles.row}><Text style={styles.title}>{(zh?'本房 AI · ':'Room AI · ')+providerName}</Text>
       <Text style={styles.detail}>{status?.configured?(zh?'已设置你的 Key':'Your key is set'):(zh?'等待你的 Key':'Your key is needed')}</Text>
       {status?.configured&&button(zh?'更换':'Change',()=>setEditing(!editing))}
       {status?.configured&&button(zh?'移除':'Remove',()=>void operate(true))}</View>
@@ -35,10 +38,13 @@ export function ProductRoomProviderPanel() {
       ?(zh?'你的副官和机器对手使用这份 Key。':'Your adjutant and AI opponent use this key.')
       :(zh?'仅供你自己的副官使用，对方使用自己的 Key。':'Only your adjutant uses this key. Your opponent uses their own.')}
       {zh?' 仅在本次服务运行期间保留；关闭服务后需重新输入。':' Kept for this server session only.'}</Text>
+      {!!status?.model&&<Text style={styles.detail}>{status.model}{status.maxDispatches
+        ?(zh?` · 本席本次实验最多 ${status.maxDispatches} 次请求，无自动重试`:` · Up to ${status.maxDispatches} requests for this seat's experiment; no automatic retry`):''}</Text>}
       <View style={styles.row}><TextInput secureTextEntry autoCapitalize="none" autoCorrect={false}
-        value={key} onChangeText={setKey} editable={!busy} placeholder={zh?'输入你的 DeepSeek API Key':'Enter your DeepSeek API key'}
-        accessibilityLabel={zh?'DeepSeek API Key':'DeepSeek API key'} placeholderTextColor="#71899d" style={styles.input}/>
-        {button(busy?(zh?'正在保存…':'Saving…'):(zh?'启用本房 AI':'Enable room AI'),()=>void operate(),!key.trim())}</View></>}
+        value={key} onChangeText={setKey} editable={!busy} placeholder={(zh?'输入你的 ':'Enter your ')+providerName+' API Key'}
+        accessibilityLabel={providerName+' API Key'} placeholderTextColor="#71899d" style={styles.input}/>
+        {button(busy?(zh?'正在保存…':'Saving…'):(zh?'启用本房 AI':'Enable room AI'),()=>void operate(),!key.trim()||!status?.enabled)}</View></>}
+    {status?.enabled===false&&<Text style={styles.detail}>{zh?'本服务的模型调用尚未开启。':'Model requests are disabled on this service.'}</Text>}
     {busy&&<Text style={styles.detail}>{zh?'已开始的请求结束后会应用更改。':'Changes apply after any current request finishes.'}</Text>}
     {!!error&&<Text accessibilityRole="alert" style={styles.error}>{error}</Text>}
   </View>;

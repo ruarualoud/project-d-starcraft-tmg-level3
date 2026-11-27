@@ -162,8 +162,16 @@ export async function createStarcraftProductRoomHostV1(input) {
       const item={record,fixture,adapter,companion,persistence,roomStore,botStore,journal,
         withLearningService:(seat,factory,operation)=>userKeys.use(seat,'postgame-learning',factory,operation),
         providerStatus:seat=>({...userKeys.status(seat),ownerSeat:seat,
+          providerId:input.companionProfile?.provider||'deepseek-openai-compatible-direct',
+          model:input.companionProfile?.model||'deepseek-flash',
+          enabled:input.liveEnabled!==false||Boolean(input.companionProviderFactory||companionProvider),
+          maxDispatches:input.companionMaxDispatches??null,
           usedFor:record.matchMode==='user_vs_agent'&&seat==='player1'?['companion','opponent']:['companion']}),
         async setUserKey(seat,apiKey){
+          if(input.companionProfile?.provider==='openai-api-direct'&&apiKey!==null&&record.matchMode!=='human_vs_human')
+            fail('PRODUCT_OPENAI_HUMAN_COMPANION_ONLY');
+          if(input.companionProfile?.provider==='openai-api-direct'&&apiKey!==null&&!/^sk-[A-Za-z0-9_-]{16,}$/.test(apiKey.trim()))
+            fail('PRODUCT_OPENAI_API_KEY_REQUIRED');
           await userKeys.replace(seat,apiKey);
           if(seat==='player1'&&apiKey!==null)await item.startAI();
           return item.providerStatus(seat);
@@ -442,7 +450,7 @@ export async function createStarcraftProductRoomHostV1(input) {
           await item.setUserKey(viewer.seatKey,method==='DELETE'?null:body.apiKey);
         return response({ok:true,provider});
       } catch(error){
-        if(error.code==='PRODUCT_API_KEY_INVALID')return response({ok:false,reason:error.code},400);
+        if(['PRODUCT_API_KEY_INVALID','PRODUCT_OPENAI_API_KEY_REQUIRED','PRODUCT_OPENAI_HUMAN_COMPANION_ONLY'].includes(error.code))return response({ok:false,reason:error.code},400);
         throw error;
       }
     }

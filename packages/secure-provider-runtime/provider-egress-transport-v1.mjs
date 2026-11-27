@@ -456,6 +456,12 @@ function requestBody(request, binding) {
     body.thinking = { type: "disabled" };
     body.reasoning_effort = "low";
   }
+  if(binding.providerId==='openai-api-direct') {
+    // The approved OpenAI profile records provider-default sampling. Some
+    // reasoning models reject sampling arguments even at their default values.
+    delete body.temperature;
+    delete body.top_p;
+  }
   if (binding.responseFormatMode !== "prompt_only") {
     body.response_format = { type: "json_object" };
   }
