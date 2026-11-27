@@ -4,6 +4,7 @@ import {
   ActivityIndicator,
   Animated,
   Image,
+  Linking,
   type ImageSourcePropType,
   Platform,
   Pressable,
@@ -1942,6 +1943,11 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
           ? (zh ? `已连接 · 剩余 ${roomProvider.remainingDispatches} 次请求` : `Connected · ${roomProvider.remainingDispatches} requests left`)
           : (zh ? '已连接' : 'Connected')}</Text>
       <Text style={styles.chatStatusMeta}>{zh ? '普通聊天不带军表和棋盘；问到战局时才读取对应信息。仅在你发送或继续消息时调用，不会自动移动棋子。' : 'Ordinary chat omits the army and board; battle questions load only the requested information. Requests run only when you send or continue; no automatic piece movement.'}</Text>
+      {(chat.conversation?.knowledgeLibraries || []).map((library: any) => <Text
+        key={library.libraryRef.id} style={styles.chatStatusMeta} testID="companion-chat-lore-availability">
+        {zh ? `凯瑞甘资料 v${library.libraryRef.version} · 当前时代可用 ${library.eligibleRecords}/${library.totalRecords} 条 · ${library.eraLabel}。按问题取材，来源显示在新回复下方；这是主线资料样板，未覆盖全部小说与台词。`
+          : `Kerrigan lore v${library.libraryRef.version} · ${library.eligibleRecords}/${library.totalRecords} records available in this era. Question-based retrieval; new replies show supplied sources. Main-story sample, not every novel or line.`}
+      </Text>)}
     </View>;
     const provider = chat.statusResult?.provider;
     const persistence = chat.statusResult?.persistence;
@@ -2031,10 +2037,11 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
    */
   function worldbookOriginClass(entry: any) {
     const tier = String(entry?.scopeTier || "");
+    const refs: string[] = entry?.provenance?.sourceRefs || [];
+    if (refs.some((ref) => String(ref).startsWith('lore-library://'))) return 'independent_library';
     if (tier === "character") return "sealed_package";
     if (tier === "persona") return "persona_derived";
     if (tier === "chat") return "chat_session";
-    const refs: string[] = entry?.provenance?.sourceRefs || [];
     if (refs.some((ref) => String(ref).startsWith("fixture://"))) {
       return "product_global_fixture";
     }
@@ -2073,6 +2080,7 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
           {chat.worldbook
             ? `${zh ? "世界书来源" : "worldbook origins"}: `
               + `${zh ? "封存包(正式内容)" : "sealed package (formal)"} ${originCounts.sealed_package || 0}`
+              + (originCounts.independent_library ? ` · ${zh ? "独立角色资料库(按问题检索)" : "independent lore library (question-selected)"} ${originCounts.independent_library}` : '')
               + ` · ${zh ? "人设派生" : "persona-derived"} ${originCounts.persona_derived || 0}`
               + ` · ${zh ? "会话注册" : "chat session"} ${originCounts.chat_session || 0}`
               + ` · ${zh ? "产品全局" : "product global"} ${originCounts.product_global || 0}`
@@ -2083,6 +2091,9 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
               ? "世界书：未载入 — 使用「读取世界书」；绝不伪造条目。"
               : "worldbook: not loaded — use Read worldbook; entries are never fabricated.")}
         </Text>
+        {!!originCounts.independent_library && <Text style={styles.gapCode}>
+          {zh ? '资料库列表是本时代可检索候选；每条消息只选取相关条目，不会整本注入。' : 'The library lists era-eligible candidates; each message loads only relevant records.'}
+        </Text>}
         <Text style={styles.gapCode} testID="companion-chat-continuity-memory">
           {memory
             ? `${zh ? "记忆" : "memory"}: ${zh ? "摘要版本" : "summary versions"} ${summaryVersions.length}`
@@ -2855,6 +2866,13 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
                   </Text>
                 </View>
                 <Text style={styles.messageText}>{message.content}</Text>
+                {!!message.knowledge?.sources?.length && <View testID={`companion-chat-sources-${message.turnSequence}`}>
+                  <Text style={styles.chatStatusMeta}>{zh ? '本次参考资料（回复措辞为角色演绎）' : 'Sources supplied for this reply (phrasing is roleplay)'}</Text>
+                  {message.knowledge.sources.filter((source: any) => /^https:\/\/news\.blizzard\.com\//u.test(source.url || '')).map((source: any) => <Pressable key={source.id}
+                    accessibilityRole="link" onPress={() => { void Linking.openURL(source.url); }}>
+                    <Text style={styles.chatStatusMeta}>{source.title} ↗</Text>
+                  </Pressable>)}
+                </View>}
               </View>
             );
           }) : (

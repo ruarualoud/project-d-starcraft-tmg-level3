@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import {sealCompanionLoreLibraryV1, companionLoreAvailabilityV1, eligibleCompanionLoreV1, selectCompanionLoreV1, companionLoreInstructionsV1} from '../companion-backend-module-v1/lore-knowledge-v1.mjs';
 import { projectCompanionRequestedContextV1, selectCompanionRoomContextSectionsV1 } from './companion-room-context-v1.mjs';
 
 import { hashStarcraftTmgContract } from "../authoritative-engine/transition-v1.mjs";
@@ -115,7 +116,7 @@ function packageParticipantId(packageRef) {
   return `companion-${hashStarcraftTmgContract(packageRef).slice(0, 24)}`;
 }
 
-function publicConversation(binding, state, extra = {}, userLabel = null) {
+function basePublicConversation(binding, state, extra = {}, userLabel = null) {
   return deepFreeze({
     ok: true,
     schemaVersion: `${STARCRAFT_TMG_COMPANION_ROOM_SESSION_SERVICE_VERSION}.conversation`,
@@ -167,6 +168,7 @@ function publicConversation(binding, state, extra = {}, userLabel = null) {
       mentions: [...turn.mentions],
       turnHash: turn.turnHash,
       source: clone(turn.source),
+      knowledge: clone(turn.receipts?.find(receipt => receipt.kind === 'companion_lore_evidence_v1')?.knowledge ?? null),
     })),
     checkpointCount: state.checkpoints.length,
     branchCount: Object.keys(state.branches).length,
@@ -295,6 +297,14 @@ function safeProviderReceipt(receipt) {
   };
 }
 
+function companionReplyReceipts(completed) {
+  return [safeProviderReceipt(completed.receipt), ...(completed.knowledge ? [{
+    kind: 'companion_lore_evidence_v1', receiptId: 'lore-' + completed.receipt.receiptId,
+    sourceRef: 'lore-library://' + completed.knowledge.libraryRef.id + '/' + completed.knowledge.libraryRef.version,
+    knowledge: clone(completed.knowledge),
+  }] : [])];
+}
+
 export function createStarcraftTmgCompanionRoomSessionServiceV1(options = {}) {
   const roomRuntime = options.roomRuntime;
   const backend = options.companionBackend;
@@ -315,6 +325,35 @@ export function createStarcraftTmgCompanionRoomSessionServiceV1(options = {}) {
     ? options.createId
     : () => `sc-companion-${randomUUID()}`;
   const queues = new Map();
+  const knowledgeLibraries = new Map();
+  for (const input of options.knowledgeLibraries || []) {
+    const library = sealCompanionLoreLibraryV1(input);
+    if (knowledgeLibraries.has(library.companionPackageId)) throw new Error('COMPANION_LORE_LIBRARY_CONFLICT');
+    knowledgeLibraries.set(library.companionPackageId, library);
+  }
+  const loreFor = packageId => knowledgeLibraries.get(packageId);
+  function publicConversation(binding, state, extra = {}, userLabel = null) {
+    const libraries = binding.companions.flatMap(companion => {
+      const library = loreFor(companion.packageRef.id);
+      return library ? [{participantId: companion.participantId,
+        ...companionLoreAvailabilityV1(library, companion.eraId)}] : [];
+    });
+    return basePublicConversation(binding, state, {...extra, knowledgeLibraries: libraries}, userLabel);
+  }
+  function loreWorldbookEntries(library, records) {
+    return records.map(row => createWorldbookEntry({
+      entryId: row.id, label: row.titleZh, scope: 'character', triggers: [{kind: 'always'}],
+      priority: 20, tokenBudget: 1024,
+      content: JSON.stringify({title: row.titleZh, summary: row.summaryZh, claimClass: row.claimClass,
+        historicalStateThroughRank: row.validThroughRank ?? null}),
+      provenance: {sourceKind: 'official_summary', author: 'Project D', license: 'proprietary-development-internal',
+        sourceRefs: [`lore-library://${library.libraryId}/${library.version}#${library.integrity.hash}`,
+          ...row.sourceIds.map(id => library.sources.find(source => source.id === id).url)],
+        notes: 'Question-selected, era-filtered primary-source paraphrase; not official dialogue.'},
+      sourceReceipts: row.sourceIds.map(id => ({receiptId: row.id+'-'+id,
+        sourceRef: library.sources.find(source => source.id === id).url})),
+    }));
+  }
 
   // Slice 266d: deterministic worldbook trigger wiring. Global-tier entries
   // are product-construction constants (validated and sealed at startup);
@@ -549,6 +588,10 @@ export function createStarcraftTmgCompanionRoomSessionServiceV1(options = {}) {
       if (packages.some((pkg) => !pkg.supportedSeats.includes("player_seat"))) {
         return rejection("COMPANION_PACKAGE_SEAT_UNSUPPORTED");
       }
+      for (const pkg of packages) {
+        const library = loreFor(pkg.packageId);
+        if (library) companionLoreAvailabilityV1(library, input.eraIds?.[pkg.packageId] || pkg.defaultEraId);
+      }
       const conversationId = requiredString(createId(), "generated conversationId", 160);
       const userParticipantId = `user-${authenticated.binding.principalScopeHash.slice(0, 24)}`;
       // The seat's current persona names the human participant (versioned
@@ -667,7 +710,9 @@ export function createStarcraftTmgCompanionRoomSessionServiceV1(options = {}) {
       if (authenticated.rejection) return authenticated.rejection;
       const packageIds = uniqueStrings(input.packageIds, "packageIds");
       const candidates = (await listScopeBindings(authenticated.binding))
-        .filter((binding) => sameCompanionSet(binding, packageIds));
+        .filter((binding) => sameCompanionSet(binding, packageIds)
+          && binding.companions.every(companion => !input.eraIds?.[companion.packageRef.id]
+            || companion.eraId === input.eraIds[companion.packageRef.id]));
       const active = await latestActiveBinding(candidates);
       if (active) {
         return publicConversation(active.binding, active.state, {
@@ -707,6 +752,8 @@ export function createStarcraftTmgCompanionRoomSessionServiceV1(options = {}) {
       return rejection("COMPANION_PACKAGE_BINDING_STALE");
     }
     const pkg = packageResult.package;
+    const library = loreFor(pkg.packageId);
+    const loreSelection = library ? selectCompanionLoreV1(library, companion.eraId, scanText) : null;
     const memoryScope = {
       packageId: pkg.packageId,
       companionId: participant.participantId,
@@ -733,14 +780,18 @@ export function createStarcraftTmgCompanionRoomSessionServiceV1(options = {}) {
         loaded.state.memoryScope,
       ],
       extraEntries: [
-        ...characterWorldbookEntries(pkg),
+        ...(library ? loreWorldbookEntries(library, loreSelection.records) : characterWorldbookEntries(pkg)),
         ...(personaEntry ? [personaEntry] : []),
         ...globalWorldbookEntries,
       ],
     });
     const requestId = `companion-${loaded.conversationId}-${loaded.state.turnCounter + 1}`;
-    const systemContent = systemPrompt(pkg, loaded.binding, companion.eraId,
-      loaded.state.participants);
+    const systemContent = loreSelection
+      ? ["You are Sarah Kerrigan (莎拉·凯瑞甘), the player's read-only StarCraft companion. Speak calmly and firmly; be willing to discuss the supplied history. This voice is Project D role configuration, not an official quotation.",
+        companionLoreInstructionsV1(loreSelection),
+        'Use only supplied player-visible material and source-backed lore. Rules/LegalSpace/Preview/Apply/Replay are external authority. No room mutations, no opponent private knowledge. Distinguish facts, interpretation and original roleplay; never reveal hidden chain-of-thought.',
+        `Bound seat: ${loaded.binding.seatKey}; mode: ${loaded.binding.mode}. Answer only as Sarah Kerrigan.`].join('\n')
+      : systemPrompt(pkg, loaded.binding, companion.eraId, loaded.state.participants);
     const messages = [
       { role: "system", content: systemContent },
       { role: "system", content: contextMessage(contextAssembly, roomContext) },
@@ -753,7 +804,7 @@ export function createStarcraftTmgCompanionRoomSessionServiceV1(options = {}) {
     // Author's Note below, which is user-configured and depth/frequency-gated.
     let packageAuthorsNoteInjected = null;
     const packageAuthorNote = packageAuthorNoteOf(pkg);
-    if (packageAuthorNote) {
+    if (packageAuthorNote && !loreSelection) {
       const noteText = `${packageAuthorNote.note}${String(packageAuthorNote.noteZh || "").trim()
         ? ` ${packageAuthorNote.noteZh}` : ""}`;
       const position = Math.min(2, messages.length);
@@ -820,6 +871,8 @@ export function createStarcraftTmgCompanionRoomSessionServiceV1(options = {}) {
         contextAssemblyHash: contextAssembly.assemblyHash,
         authorsNoteInjected: clone(authorsNoteInjected),
         roomMutationAuthority: false,
+        ...(loreSelection ? {responseMode: loreSelection.responseMode,
+          loreLibraryRef: loreSelection.availability.libraryRef} : {}),
       },
     });
     if (!completed?.ok) return completed;
@@ -836,6 +889,16 @@ export function createStarcraftTmgCompanionRoomSessionServiceV1(options = {}) {
         tokens: section.tokens,
         truncated: section.truncated === true,
       }));
+    const usedLoreIds = new Set(firedWorldbook.map(row => row.entryId));
+    const usedLoreRecords = loreSelection?.records.filter(row => usedLoreIds.has(row.id)) || [];
+    const usedSourceIds = new Set(usedLoreRecords.flatMap(row => row.sourceIds));
+    const knowledge = loreSelection ? {
+      libraryRef: loreSelection.availability.libraryRef, eraId: companion.eraId,
+      eraLabel: loreSelection.availability.eraLabel, responseMode: loreSelection.responseMode, eraLimited: loreSelection.eraLimited,
+      selectedEntryIds: usedLoreRecords.map(row => row.id),
+      sources: loreSelection.sources.filter(source => usedSourceIds.has(source.id)),
+      attribution: 'Sources supplied for this response; generated phrasing is not official dialogue.',
+    } : null;
     const personaProfile = personaProfileOf(pkg);
     const sessionMemoryLayers = [...new Set(contextAssembly.sections
       .map((section) => section.layer)
@@ -843,6 +906,7 @@ export function createStarcraftTmgCompanionRoomSessionServiceV1(options = {}) {
         "relationship_state", "durable_memory"].includes(layer)))];
     return deepFreeze({
       ...clone(completed),
+      knowledge,
       contextAssembly: {
         assemblyHash: contextAssembly.assemblyHash,
         tokensUsed: contextAssembly.tokensUsed,
@@ -970,7 +1034,7 @@ export function createStarcraftTmgCompanionRoomSessionServiceV1(options = {}) {
         expectedTurnSequence: loaded.state.turnCounter + 1,
         content: completed.response.content,
         mentions: [],
-        receipts: [safeProviderReceipt(completed.receipt)],
+        receipts: companionReplyReceipts(completed),
       });
       replies.push({
         participantId: pending,
@@ -1244,7 +1308,11 @@ export function createStarcraftTmgCompanionRoomSessionServiceV1(options = {}) {
           packageId: companion.packageRef.id,
           version: companion.packageRef.version,
         });
-        if (packageResult.ok) characterEntries.push(...characterWorldbookEntries(packageResult.package));
+        if (packageResult.ok) {
+          const library = loreFor(packageResult.package.packageId);
+          characterEntries.push(...(library ? loreWorldbookEntries(library, eligibleCompanionLoreV1(library, companion.eraId))
+            : characterWorldbookEntries(packageResult.package)));
+        }
       }
       const { personaKey, record: personaRecord } = await loadPersonaRecord(loaded.binding);
       const personaEntry = personaWorldbookEntry(personaKey, personaRecord);
@@ -1678,7 +1746,7 @@ export function createStarcraftTmgCompanionRoomSessionServiceV1(options = {}) {
             participantId: branch.ownerParticipantId,
             content: completed.response.content,
             mentions: [],
-            receipts: [safeProviderReceipt(completed.receipt)],
+            receipts: companionReplyReceipts(completed),
           },
         );
         return deepFreeze({

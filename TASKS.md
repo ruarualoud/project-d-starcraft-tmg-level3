@@ -15,4 +15,6 @@
 
 - [x] 六位副官资料与实际消费审计完成：34 条简介 facts／28 关系标签／31 时代，但世界书仅 18 条、正文合计 3155 英文字符。真实组包核对发现 facts／关系／来源字典未提升，且条目时代过滤与故事回复方式有共同缺口；先接线修体验估计 2–3 人日，六位基础故事可用共 10–16 人日。仅形成审计和工作量报告，未补写角色包、调用模型或改动房间。
 
-证据：[真人写表修复](docs/development/wave3/player-roster-fixes-2026-11-27.zh-CN.md)、[比赛军表出处](docs/development/wave3/longshanks-polish-terran-tank-roster.zh-CN.md)、[OpenAI 三次真实副官试用](docs/development/wave3/openai-companion-trial-2026-11-27.zh-CN.md)、[按需上下文与玩家试聊](docs/development/wave3/companion-context-on-demand-2026-11-27.zh-CN.md)、[六位副官资料缺口与工作量](docs/development/wave3/companion-data-gap-audit-2026-11-27.zh-CN.md)。
+- [x] 凯瑞甘主线资料样板：独立 26 条（18 经历／8 关系）、8 时代、默认可检索 24 条；按问题选取、来源持久回执与链接、故事模式已接通。旧人物包与历史保持，离线回归、Native 上下文回归、Web 导出通过，类型新增诊断 0；真实模型调用 0。5483 已更新，真实页面显示 v1.0.0／24/26 与独立资料库 24 条；原 12 条聊天及 r0 保留。原 6 次已用完，新增 3 次手动试聊待用户确认，Key 待原页面重填。
+
+证据：[凯瑞甘资料样板与检索](docs/development/wave3/kerrigan-lore-prototype-2026-11-27.zh-CN.md)、[真人写表修复](docs/development/wave3/player-roster-fixes-2026-11-27.zh-CN.md)、[比赛军表出处](docs/development/wave3/longshanks-polish-terran-tank-roster.zh-CN.md)、[OpenAI 三次真实副官试用](docs/development/wave3/openai-companion-trial-2026-11-27.zh-CN.md)、[按需上下文与玩家试聊](docs/development/wave3/companion-context-on-demand-2026-11-27.zh-CN.md)、[六位副官资料缺口与工作量](docs/development/wave3/companion-data-gap-audit-2026-11-27.zh-CN.md)。

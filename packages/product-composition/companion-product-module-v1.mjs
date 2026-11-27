@@ -324,6 +324,7 @@ export function createStarcraftTmgCompanionProductModuleV1(options = {}) {
   const service = createStarcraftTmgCompanionRoomSessionServiceV1({
     roomRuntime,
     companionBackend: backend,
+    knowledgeLibraries: options.knowledgeLibraries || [],
     now,
     ...(typeof options.createId === "function" ? { createId: options.createId } : {}),
     ...(options.contextTokenBudget !== undefined

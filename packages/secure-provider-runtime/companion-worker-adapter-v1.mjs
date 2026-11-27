@@ -3,10 +3,14 @@ const clone = value => structuredClone(value);
 function ensure(condition, code, detail) { if (!condition) throw Object.assign(new Error(code), {code, detail}); }
 const LIVE_ALLOWED_CHANNELS = Object.freeze(['companion_reply']);
 const LIVE_OUTPUT_BUDGET = resolveCompanionProviderOutputBudgetV1({allowedChannels:[...LIVE_ALLOWED_CHANNELS]});
+const STORY_OUTPUT_BUDGET = resolveCompanionProviderOutputBudgetV1({allowedChannels:[...LIVE_ALLOWED_CHANNELS],textFloorUnits:1024,ceilingUnits:1536});
+const isLoreStory = request => ['lore_story','lore_relationship'].includes(request.metadata?.responseMode)
+  && request.metadata?.loreLibraryRef?.id === 'starcraft-tmg.kerrigan-lore';
 export const LIVE_ADAPTER_ID = "secure-worker-live-byok-v1";
 export const LIVE_ADAPTER_NETWORK = "isolated_worker_https_egress";
 
 export function liveProviderRequestFromCompanion(request, maxPromptBytes=1024*1024) {
+  const story = isLoreStory(request);
   const promptNodes = request.messages.map((message, index) => ({
     nodeType: `companion_${message.role}`,
     authority: message.role === "system" ? "platform" : "participant",
@@ -14,7 +18,8 @@ export function liveProviderRequestFromCompanion(request, maxPromptBytes=1024*10
     content: message.content,
   }));
   const userMessage = "以上是按序排列的同伴角色设定与会话上下文（promptNodes）。"
-    + "请以该同伴的身份，只用一到两句简短中文回复指挥官的最后一句话，"
+    + (story ? "请以该同伴的身份，用两到三段简短中文回答最后的问题，先讲清选入资料能支持的具体经历或关系；不要用战术口号搪塞。"
+      : "请以该同伴的身份，只用一到两句简短中文回复指挥官的最后一句话，")
     + "仅依据其中的公开信息，不要编造规则事实。"
     + "输出严格 JSON：{\"channels\":{\"companion_reply\":{\"text\":\"<回复文本>\"}}}";
   const body = {
@@ -28,7 +33,7 @@ export function liveProviderRequestFromCompanion(request, maxPromptBytes=1024*10
       allowedChannels: [...LIVE_ALLOWED_CHANNELS],
       decisionCandidateSource: "forbidden",
     },
-    maxOutputUnits: LIVE_OUTPUT_BUDGET.maxOutputUnits,
+    maxOutputUnits: (story ? STORY_OUTPUT_BUDGET : LIVE_OUTPUT_BUDGET).maxOutputUnits,
   };
   const byteLength = Buffer.byteLength(JSON.stringify(body), "utf8");
   ensure(byteLength <= maxPromptBytes,
@@ -143,7 +148,7 @@ export function createLiveCompanionProviderAdapter(options = {}) {
     // mid-string cut is a typed truncation failure with budget diagnostics.
     const classification = classifyCompanionProviderOutputV1(output, {
       allowedChannels: [...LIVE_ALLOWED_CHANNELS],
-      budgetUnits: LIVE_OUTPUT_BUDGET.maxOutputUnits,
+      budgetUnits: providerRequest.maxOutputUnits,
     });
     if (classification.kind === "output_budget_truncated") {
       // The physical call happened but the output budget cut the sealed
@@ -153,7 +158,7 @@ export function createLiveCompanionProviderAdapter(options = {}) {
       observation.failure = {
         code: "LIVE_PROVIDER_OUTPUT_BUDGET_TRUNCATED",
         classification: clone(classification),
-        budget: clone(LIVE_OUTPUT_BUDGET),
+        budget: clone(isLoreStory(request) ? STORY_OUTPUT_BUDGET : LIVE_OUTPUT_BUDGET),
         receipt: clone(receipt),
       };
       return rejection("LIVE_PROVIDER_OUTPUT_BUDGET_TRUNCATED",
