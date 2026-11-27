@@ -22,7 +22,7 @@
 
 房间完整压缩投影仍可用于明确的组合查询，本场约 63.3 KB。单位模型按共享属性编码；地形另有无损矩形差分游程编码，可逐个单元还原原始 footprint 与 originalFootprint，非矩形及已改变原始几何走原样回退。普通聊天不发送这些单元，地形摘要的外接范围明确不是实际占地，不得据此推导通行、碰撞或视线。
 
-对话历史保留在持久会话中；每次请求仅取最近最多 16 条完整消息／约 16 KiB，最后一条消息不截断。遗漏历史明确告知模型，不伪造摘要或记忆。OpenAI 发送前还有 96 KiB 请求体上限，超限在领取请求额度与网络发送前拒绝；不会因本地校验失败消耗试用次数。用量日志新增 `promptBytes` 数字，不写入 prompt 正文或任何凭据。
+对话历史保留在持久会话中；每次请求仅取最近最多 16 条完整消息／约 16 KiB，最后一条消息不截断。遗漏历史明确告知模型，不伪造摘要或记忆。OpenAI 发送前还有 96 KiB 内部 Provider 请求封包上限，超限在领取请求额度与网络发送前拒绝；不会因本地校验失败消耗试用次数。HTTP 层的字段与转义另有封装开销，这不是精确 token 上限。用量日志新增 `promptBytes` 数字，度量这个内部封包，不写入 prompt 正文或任何凭据。
 
 ## 额度与界面
 
@@ -36,7 +36,7 @@
 
 ## 证据与边界
 
-- `node scripts/verify-wave3-companion-context.mjs` 通过。使用已脱敏且可复现的本场军表／地图，Native 工厂建独立 QA 房间；验证真实会话组装、26 条历史完整保留、闲聊 → 坦克查询 → 闲聊路由不粘连，工作台总读取 1 次、闲聊读取 0 次，棋盘修订／状态 hash 不变。完整请求体分别为 9403／13151／9426 字节。注入的回复明确为 `OFFLINE_CONTEXT_FIXTURE`，不冒充模型回复。证据目录 `build/playtest-web/context-regression/41acef4b-0f5f-4384-983a-a40f14fdf83f`。
+- `node scripts/verify-wave3-companion-context.mjs` 通过。使用已脱敏且可复现的本场军表／地图，Native 工厂建独立 QA 房间；验证真实会话组装、26 条历史完整保留、闲聊 → 坦克查询 → 闲聊路由不粘连，工作台总读取 1 次、闲聊读取 0 次，棋盘修订／状态 hash 不变。内部 Provider 请求封包分别为 9403／13151／9426 字节，未声称是实际 HTTP body 或模型计费 token。注入的回复明确为 `OFFLINE_CONTEXT_FIXTURE`，不冒充模型回复。证据目录 `build/playtest-web/context-regression/41acef4b-0f5f-4384-983a-a40f14fdf83f`。
 - `node scripts/verify-wave3-openai-companion.mjs` 验证固定 OpenAI 端点、旧上限、显式累计新增额度、换 Key／重启不重置、过大请求零发送／零额度消耗、缩小后可恢复、限额原因传到界面，以及输出和凭据隔离。真实模型调用为 0。
 - Web 静态导出使用本树已安装的 Tailwind／Expo；未安装依赖。直接从仓库根运行 NativeWind 的配置读取曾失败，改用已有静态 CSS 预编译流程后导出成功。
 - 用 TypeScript 编译器读取 Git HEAD 的两个原始组件作为基线，当前／基线均 43 项既有诊断，新增 0；不宣称全量类型检查通过。
