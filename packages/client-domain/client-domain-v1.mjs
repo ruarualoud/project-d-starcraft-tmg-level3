@@ -167,7 +167,7 @@ export function createStarcraftTmgLearningProductClientV1({clientDomain,baseUrl=
 }
 
 export function createStarcraftTmgProductRoomKeyClientV1({clientDomain,baseUrl='',fetchImpl=globalThis.fetch}) {
-  async function request(method,apiKey) {
+  async function request(method,apiKey,remember=false) {
     let invoke=HOSTED_PHYSICAL_INGRESS.get(clientDomain);
     if(!invoke&&COMPANION_PRODUCT_MOUNTED_DOMAINS.size===1){
       const [mounted]=COMPANION_PRODUCT_MOUNTED_DOMAINS;invoke=HOSTED_PHYSICAL_INGRESS.get(mounted);
@@ -176,11 +176,11 @@ export function createStarcraftTmgProductRoomKeyClientV1({clientDomain,baseUrl='
     return invoke(async({roomId,seatToken})=>{
       const result=await fetchImpl(`${baseUrl}/starcraft-tmg-level3/product/v1/rooms/${encodeURIComponent(roomId)}/provider-key`,{
         method,headers:{'content-type':'application/json',authorization:`Bearer ${seatToken}`},
-        ...(method==='POST'?{body:JSON.stringify({apiKey})}:{})});
+        ...(method==='POST'?{body:JSON.stringify({apiKey,...(remember?{remember:true}:{})})}:{})});
       return result.json();
     });
   }
-  return Object.freeze({read:()=>request('GET'),replace:apiKey=>request('POST',apiKey),revoke:()=>request('DELETE')});
+  return Object.freeze({read:()=>request('GET'),replace:(apiKey,{remember=false}={})=>request('POST',apiKey,remember),revoke:()=>request('DELETE')});
 }
 // The product mounts the Client Domain behind the role-Agent session client,
 // which wraps the base domain in a NEW frozen object (the exact four-operation

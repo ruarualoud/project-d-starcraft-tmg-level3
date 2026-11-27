@@ -216,7 +216,7 @@ interface Level3ClientDomainContextValue {
   companionProduct: StarcraftTmgCompanionProductClient;
   hostedPhysical: { operate(taskId: string, operation: 'delegate' | 'complete' | 'dispute', reason?: string): Promise<any> };
   learningProduct: { request(method: 'GET'|'POST', suffix?: string, body?: unknown): Promise<any> };
-  productRoomKey: { read(): Promise<any>; replace(key: string): Promise<any>; revoke(): Promise<any> };
+  productRoomKey: { read(): Promise<any>; replace(key: string,options?:{remember?:boolean}): Promise<any>; revoke(): Promise<any> };
   bindRoom(input: BindRoomInput): Promise<StarcraftTmgClientResult>;
   ingestRoomUrl(url: string): Promise<RoomAccessIngressResult>;
   dispatch(intent: StarcraftTmgClientIntent): Promise<StarcraftTmgClientResult>;

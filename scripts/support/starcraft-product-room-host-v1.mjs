@@ -21,6 +21,7 @@ import { COMPANION_CATALOGUE_V1 } from '../../content/characters/companion-catal
 import { STARCRAFT_TMG_HOSTED_BOT_SEAT_API_PREFIX, STARCRAFT_TMG_HOSTED_BOT_SEAT_HTTP_VERSION } from '../../packages/client-domain/hosted-bot-seat-transport-v1.mjs';
 import { createOfficialCompetitiveMapConfiguratorV1 } from '../../packages/product-composition/official-competitive-map-configurator-v1.mjs';
 import { createProductRoomCredentialsV1 } from '../../packages/secure-provider-runtime/product-room-credentials-v1.mjs';
+import {createProductRoomCredentialStoreV1} from '../../packages/secure-provider-runtime/product-room-credential-store-v1.mjs';
 import { createProductCompanionLiveProviderV1, readProductCompanionDispatchUsageV1 } from '../../packages/secure-provider-runtime/companion-live-provider-v1.mjs';
 
 export const PRODUCT_PREFIX = '/starcraft-tmg-level3/product/v1';
@@ -112,7 +113,11 @@ export async function createStarcraftProductRoomHostV1(input) {
       const journal=createSqliteStarcraftTmgMatchDecisionJournalV1({filename:path.join(directory,'memory.sqlite')});
       try {
       let startingAI=null, aiAttached=false;
-      const userKeys=createProductRoomCredentialsV1();
+      const credentialStore=input.companionProfile?.provider==='openai-api-direct'&&record.matchMode==='human_vs_human'
+        ?createProductRoomCredentialStoreV1({directory:path.join(directory,'companion-credentials'),codec:privatePayloadCodec,
+          roomId:record.roomId,providerId:input.companionProfile.provider}):null;
+      const userKeys=createProductRoomCredentialsV1({credentialStore});
+      await userKeys.restore();
       const companionFactory=input.companionProviderFactory||createProductCompanionLiveProviderV1;
       const fixture=record.releaseSetup
         ? await openWave3HumanMatch({root,record,roomStore,refereeCrypto})
@@ -182,12 +187,12 @@ export async function createStarcraftProductRoomHostV1(input) {
             ? await readProductCompanionDispatchUsageV1({dataDirectory:path.join(directory,'companion-provider',seat),
               providerProfile:input.companionProfile,maxDispatches:input.companionMaxDispatches}):{}),
           usedFor:record.matchMode==='user_vs_agent'&&seat==='player1'?['companion','opponent']:['companion']}),
-        async setUserKey(seat,apiKey){
+        async setUserKey(seat,apiKey,{remember=false}={}){
           if(input.companionProfile?.provider==='openai-api-direct'&&apiKey!==null&&record.matchMode!=='human_vs_human')
             fail('PRODUCT_OPENAI_HUMAN_COMPANION_ONLY');
           if(input.companionProfile?.provider==='openai-api-direct'&&apiKey!==null&&!/^sk-[A-Za-z0-9_-]{16,}$/.test(apiKey.trim()))
             fail('PRODUCT_OPENAI_API_KEY_REQUIRED');
-          await userKeys.replace(seat,apiKey);
+          await userKeys.replace(seat,apiKey,{remember});
           if(seat==='player1'&&apiKey!==null)await item.startAI();
           return item.providerStatus(seat);
         },
@@ -457,12 +462,12 @@ export async function createStarcraftProductRoomHostV1(input) {
         ||!viewer.capabilities?.includes('apply'))
         return response({ok:false,reason:'AUTHENTICATION_REQUIRED'},401);
       if(!['GET','POST','DELETE'].includes(method))return response({ok:false,reason:'METHOD_NOT_ALLOWED'},405);
-      if(Object.keys(body).some(k=>method!=='POST'||k!=='apiKey')
-        ||(method==='POST'&&typeof body.apiKey!=='string'))
+      if(Object.keys(body).some(k=>method!=='POST'||!['apiKey','remember'].includes(k))
+        ||(method==='POST'&&(typeof body.apiKey!=='string'||body.remember!==undefined&&typeof body.remember!=='boolean')))
         return response({ok:false,reason:'PRODUCT_CREDENTIAL_FIELDS_INVALID'},400);
       try {
         const provider=method==='GET'?await item.providerStatus(viewer.seatKey):
-          await item.setUserKey(viewer.seatKey,method==='DELETE'?null:body.apiKey);
+          await item.setUserKey(viewer.seatKey,method==='DELETE'?null:body.apiKey,{remember:body.remember===true});
         return response({ok:true,provider});
       } catch(error){
         if(['PRODUCT_API_KEY_INVALID','PRODUCT_OPENAI_API_KEY_REQUIRED','PRODUCT_OPENAI_HUMAN_COMPANION_ONLY'].includes(error.code))return response({ok:false,reason:error.code},400);

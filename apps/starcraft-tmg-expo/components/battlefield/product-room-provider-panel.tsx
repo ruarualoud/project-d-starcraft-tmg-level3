@@ -17,7 +17,7 @@ export function ProductRoomProviderPanel() {
     if(busy)return;setBusy(true);setError('');
     const entered=key;setKey('');
     try {
-      const r=remove?await productRoomKey.revoke():await productRoomKey.replace(entered);
+      const r=remove?await productRoomKey.revoke():await productRoomKey.replace(entered,{remember:status?.canPersistCredentials===true});
       if(!r.ok)throw Error(r.reason||'rejected');
       setStatus(r.provider);setEditing(!r.provider.configured);
     }catch(e){setError(e instanceof Error&&e.message==='PRODUCT_OPENAI_API_KEY_REQUIRED'
@@ -31,7 +31,7 @@ export function ProductRoomProviderPanel() {
   const providerName=status?.providerId==='openai-api-direct'?'OpenAI':'DeepSeek';
   return <View style={styles.panel} testID="product-room-provider-panel">
     <View style={styles.row}><Text style={styles.title}>{(zh?'本房 AI · ':'Room AI · ')+providerName}</Text>
-      <Text style={styles.detail}>{status?.configured?(zh?'已设置你的 Key':'Your key is set'):(zh?'等待你的 Key':'Your key is needed')}</Text>
+      <Text style={styles.detail}>{status?.configured?(status.persisted?(zh?'已加密保存 · 重启自动恢复':'Saved encrypted · restored on restart'):(zh?'已设置你的 Key':'Your key is set')):(zh?'等待你的 Key':'Your key is needed')}</Text>
       {status?.configured&&button(zh?'更换':'Change',()=>setEditing(!editing))}
       {status?.configured&&button(zh?'移除':'Remove',()=>void operate(true))}</View>
     {!!status?.model&&<Text style={styles.detail}>{status.model}{Number.isSafeInteger(status.remainingDispatches)
@@ -40,13 +40,16 @@ export function ProductRoomProviderPanel() {
     {(editing||!status?.configured)&&<><Text style={styles.detail}>{status?.usedFor?.includes('opponent')
       ?(zh?'你的副官和机器对手使用这份 Key。':'Your adjutant and AI opponent use this key.')
       :(zh?'仅供你自己的副官使用，对方使用自己的 Key。':'Only your adjutant uses this key. Your opponent uses their own.')}
-      {zh?' 仅在本次服务运行期间保留；关闭服务后需重新输入。':' Kept for this server session only.'}</Text>
+      {status?.canPersistCredentials
+        ?(zh?' 启用后在本机本房加密保存，重启自动恢复；点「移除」会删除保存的 Key。':' Enabling saves this room key encrypted on this machine and restores it after restart. Remove deletes the saved key.')
+        :(zh?' 仅在本次服务运行期间保留；关闭服务后需重新输入。':' Kept for this server session only.')}</Text>
+      {!!status?.savedCredentialError&&<Text accessibilityRole="alert" style={styles.error}>{zh?'保存的 Key 无法解密，请重新填写并保存。':'The saved key could not be read. Enter and save it again.'}</Text>}
       {!!status?.model&&<Text style={styles.detail}>{status.model}{status.maxDispatches
         ?(zh?` · 本席本次实验最多 ${status.maxDispatches} 次请求，无自动重试`:` · Up to ${status.maxDispatches} requests for this seat's experiment; no automatic retry`):''}</Text>}
       <View style={styles.row}><TextInput secureTextEntry autoCapitalize="none" autoCorrect={false}
         value={key} onChangeText={setKey} editable={!busy} placeholder={(zh?'输入你的 ':'Enter your ')+providerName+' API Key'}
         accessibilityLabel={providerName+' API Key'} placeholderTextColor="#71899d" style={styles.input}/>
-        {button(busy?(zh?'正在保存…':'Saving…'):(zh?'启用本房 AI':'Enable room AI'),()=>void operate(),!key.trim()||!status?.enabled)}</View></>}
+        {button(busy?(zh?'正在保存…':'Saving…'):(status?.canPersistCredentials?(zh?'启用并保存本房 AI':'Enable and remember room AI'):(zh?'启用本房 AI':'Enable room AI')),()=>void operate(),!key.trim()||!status?.enabled)}</View></>}
     {status?.enabled===false&&<Text style={styles.detail}>{zh?'本服务的模型调用尚未开启。':'Model requests are disabled on this service.'}</Text>}
     {busy&&<Text style={styles.detail}>{zh?'已开始的请求结束后会应用更改。':'Changes apply after any current request finishes.'}</Text>}
     {!!error&&<Text accessibilityRole="alert" style={styles.error}>{error}</Text>}

@@ -1,14 +1,15 @@
-// Product keys are ephemeral, scoped to the authenticated room seat. Provider
-// instances never fall back to a machine credential. A rotation lets the one
+// Product keys are scoped to the authenticated room seat. An explicit product
+// store can remember a consented key. Providers never use a machine fallback.
+// A rotation lets the one
 // already-started request finish, then closes its workers before using new bytes.
 const fail = code => { throw Object.assign(new Error(code), {code}); };
-export function createProductRoomCredentialsV1() {
+export function createProductRoomCredentialsV1({credentialStore=null}={}) {
   const slots = new Map();
   let closed = false;
   function slot(seat) {
     if (!['player1','player2'].includes(seat)) fail('PRODUCT_PLAYER_SEAT_REQUIRED');
     if (!slots.has(seat)) slots.set(seat, {bytes:null, epoch:0, changing:false,
-      queue:Promise.resolve(), providers:new Map()});
+      queue:Promise.resolve(), providers:new Map(),persisted:false,savedCredentialError:null});
     return slots.get(seat);
   }
   function enqueue(s, fn) {
@@ -25,10 +26,12 @@ export function createProductRoomCredentialsV1() {
   function status(seat) {
     const s=slot(seat);
     return {configured:!closed&&Boolean(s.bytes),changing:s.changing,
-      persisted:false,requiresReentryAfterServerRestart:true,
+      persisted:s.persisted,requiresReentryAfterServerRestart:!s.persisted,
+      ...(credentialStore?{canPersistCredentials:true,persistenceKind:credentialStore.kind,
+        savedCredentialError:s.savedCredentialError}:{}),
       inFlightRequestMayFinish:true};
   }
-  async function replace(seat, apiKey=null) {
+  async function replace(seat, apiKey=null,{remember=false}={}) {
     if(closed)fail('PRODUCT_CREDENTIAL_SERVICE_CLOSED');
     let bytes=null;
     if(apiKey!==null) {
@@ -39,9 +42,12 @@ export function createProductRoomCredentialsV1() {
     const s=slot(seat),epoch=++s.epoch;s.changing=true;
     try {
       return await enqueue(s,async()=>{
+        if(remember&&!credentialStore)fail('PRODUCT_CREDENTIAL_PERSISTENCE_UNAVAILABLE');
+        if(remember&&bytes)await credentialStore.write(seat,bytes);
+        else if(credentialStore)await credentialStore.remove(seat);
         await clear(s);
         if(closed||s.epoch!==epoch)fail('PRODUCT_CREDENTIAL_CHANGED');
-        s.bytes=bytes;bytes=null;s.changing=false;
+        s.bytes=bytes;bytes=null;s.changing=false;s.persisted=Boolean(remember&&s.bytes);s.savedCredentialError=null;
         return status(seat);
       });
     } finally {bytes?.fill(0);if(s.epoch===epoch)s.changing=false;}
@@ -64,7 +70,19 @@ export function createProductRoomCredentialsV1() {
       return operation(s.providers.get(kind));
     });
   }
-  return {status,replace,use,async close(){
+  async function restore(){
+    if(closed)fail('PRODUCT_CREDENTIAL_SERVICE_CLOSED');
+    if(!credentialStore)return;
+    for(const seat of ['player1','player2']){
+      const s=slot(seat);
+      await enqueue(s,async()=>{
+        if(s.bytes)return;
+        try{s.bytes=await credentialStore.read(seat);s.persisted=Boolean(s.bytes);s.savedCredentialError=null;}
+        catch{s.bytes=null;s.persisted=false;s.savedCredentialError='PRODUCT_SAVED_CREDENTIAL_UNREADABLE';}
+      });
+    }
+  }
+  return {status,replace,use,restore,async close(){
     closed=true;
     for(const s of slots.values()) {++s.epoch;await enqueue(s,()=>clear(s));}
   }};
