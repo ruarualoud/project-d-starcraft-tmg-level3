@@ -15,6 +15,7 @@ import { RosterPlanningWorkspacePanel } from '@/components/roster-planning/roste
 import type { Faction, ArmyList, UnitCard, TacticalCard, RosterUnit, UnitType, Upgrade, GameCard } from '@/lib/types';
 import { FACTION_COLORS, RESOURCE_META } from '@/lib/types';
 import * as Clipboard from 'expo-clipboard';
+import {rosterValidationMessage, useRosterValidation} from '@/lib/roster-validation';
 
 const FACTIONS: Faction[] = ['Terran', 'Zerg', 'Protoss'];
 
@@ -193,6 +194,10 @@ function ArmyEditor({setupData}:{setupData?:SetupData}) {
   const [importText, setImportText] = useState('');
   // Track which tab to show in edit view (persists across addUnit navigation)
   const [editTab, setEditTab] = useState<'command' | 'roster'>('command');
+  const validationArmy=useMemo(()=>currentArmy&&step==='edit'
+    ? {...currentArmy,officialDatasetHash:catalogueSource.officialDatasetHash}:null,
+    [currentArmy,step,catalogueSource.officialDatasetHash]);
+  const validation=useRosterValidation(lineupId,validationArmy);
 
   if (!officialCatalogueAvailable) {
     return (
@@ -424,6 +429,8 @@ function ArmyEditor({setupData}:{setupData?:SetupData}) {
       gameCards={gameCards}
       tab={editTab}
       onTabChange={setEditTab}
+      validationMessage={validation.reason?rosterValidationMessage(validation.reason,cards,lang):''}
+      validationChecking={validation.checking}
       onUpdate={(updated) => setCurrentArmy(updated)}
       onSave={async (forceOverride?: boolean) => {
         if (!forceOverride) {
@@ -517,7 +524,7 @@ function MineralsInput({ value, onChange }: { value: number; onChange: (v: numbe
 }
 
 // --- Army Edit View ---
-function ArmyEditView({ army, cards, units, allCards, gameCards, tab, onTabChange, onUpdate, onSave, onBack, onAddUnit, onShare }: {
+function ArmyEditView({ army, cards, units, allCards, gameCards, tab, onTabChange, onUpdate, onSave, onBack, onAddUnit, onShare, validationMessage, validationChecking }: {
   army: ArmyList;
   cards: TacticalCard[];
   units: UnitCard[];
@@ -530,6 +537,8 @@ function ArmyEditView({ army, cards, units, allCards, gameCards, tab, onTabChang
   onBack: () => void;
   onAddUnit: () => void;
   onShare: () => void;
+  validationMessage: string;
+  validationChecking: boolean;
 }) {
   const { t, lang, rulesText } = useI18n();
   // Scroll position preservation
@@ -537,6 +546,8 @@ function ArmyEditView({ army, cards, units, allCards, gameCards, tab, onTabChang
   const scrollYRef = React.useRef(0);
   const prevRosterLenRef = React.useRef(army.roster.length);
   const [showCardDetails, setShowCardDetails] = useState(false);
+  const [expandedRoster,setExpandedRoster] = useState<number|null>(null);
+  const [innateOpen,setInnateOpen] = useState<Record<number,boolean>>({});
 
   // When roster changes (add/remove), restore scroll position
   React.useEffect(() => {
@@ -656,7 +667,7 @@ function ArmyEditView({ army, cards, units, allCards, gameCards, tab, onTabChang
           <Pressable onPress={onShare} style={({ pressed }) => [s.topBtn, pressed && { opacity: 0.7 }]}>
             <Text style={s.topBtnText}>{t('share')}</Text>
           </Pressable>
-          <Pressable onPress={onSave} style={({ pressed }) => [s.topBtn, { backgroundColor: '#22c55e20', borderColor: '#22c55e' }, pressed && { opacity: 0.7 }]}>
+          <Pressable onPress={()=>onSave()} style={({ pressed }) => [s.topBtn, { backgroundColor: '#22c55e20', borderColor: '#22c55e' }, pressed && { opacity: 0.7 }]}>
             <Text style={[s.topBtnText, { color: '#22c55e' }]}>{t('save')}</Text>
           </Pressable>
         </View>
@@ -693,6 +704,14 @@ function ArmyEditView({ army, cards, units, allCards, gameCards, tab, onTabChang
       )}
 
       {/* Minerals Input */}
+      {validationChecking&&<Text style={s.resourceSourceLine}>{uiText(lang,'Checking roster…','正在校验军表…')}</Text>}
+      {!!validationMessage&&<View style={s.warningBanner}>
+        <Text testID="army-native-validation" accessibilityRole="alert" style={s.warningText}>{validationMessage}</Text>
+        <Text style={s.warningText}>{uiText(lang,'You can save this draft. Correct the issues before submitting.','草稿仍可保存，修正问题后才能提交。')}</Text>
+        <Pressable accessibilityRole="button" onPress={()=>{onTabChange('command');setOpenSections(s=>({...s,tactical:true}));}}>
+          <Text style={s.topBtnText}>{uiText(lang,'Edit command cards','前往指挥选卡')}</Text>
+        </Pressable>
+      </View>}
       <MineralsInput
         value={army.mineralsLimit}
         onChange={(v) => onUpdate({ ...army, mineralsLimit: v })}
@@ -1067,16 +1086,23 @@ function ArmyEditView({ army, cards, units, allCards, gameCards, tab, onTabChang
                 const canSwitch = (ru.size === 'small' && canSwitchToLarge) || (ru.size === 'large' && canSwitchToSmall);
                 const purchasableUpgrades = getPurchasableUpgrades(ru.availableUpgrades, ru.size);
                 const innateAbilities = getInnateAbilities(ru.availableUpgrades, ru.size);
+                const expanded=expandedRoster===idx;
+                const selectedUpgrades=ru.activeUpgrades.map(i=>ru.availableUpgrades[i]).filter(Boolean);
+                const totalCost=ru.baseCost+selectedUpgrades.reduce((sum,u)=>sum+(ru.size==='small'?u.costS:u.costL),0);
 
                 return (
                   <View key={idx} style={s.rosterCard}>
                     <View style={s.rosterHeader}>
-                      <View style={{ flex: 1 }}>
+                      <Pressable accessibilityRole="button" accessibilityState={{expanded}}
+                        testID={'roster-unit-toggle-'+idx} style={{flex:1}}
+                        onPress={()=>setExpandedRoster(expanded?null:idx)}>
                         <Text style={s.rosterName}>{ru.name}</Text>
                         <Text style={s.rosterSub}>
-                          {ru.unitType} · {ru.size === 'small' ? t('smallLabel') : t('largeLabel')} · {ru.baseCost}M · {ru.supply} slot/supply
+                          {ru.unitType} · {ru.size === 'small' ? t('smallLabel') : t('largeLabel')} · {totalCost}M · {ru.supply} slot/supply
                         </Text>
-                      </View>
+                        <Text style={s.rosterSub}>{selectedUpgrades.map(u=>u.name).join(' · ')||uiText(lang,'No upgrades selected','未选升级')}</Text>
+                        <Text style={s.topBtnText}>{expanded?uiText(lang,'Collapse ▲','收起 ▲'):uiText(lang,'Edit upgrades / details ▼','编辑升级／详情 ▼')}</Text>
+                      </Pressable>
                       <View style={{ flexDirection: 'row', gap: 6 }}>
                         {canSwitch && (
                           <Pressable
@@ -1090,6 +1116,7 @@ function ArmyEditView({ army, cards, units, allCards, gameCards, tab, onTabChang
                         )}
                         <Pressable
                           onPress={() => {
+                            setExpandedRoster(null);setInnateOpen({});
                             const newRoster = [...army.roster];
                             newRoster.splice(idx, 1);
                             onUpdate({ ...army, roster: newRoster });
@@ -1101,25 +1128,8 @@ function ArmyEditView({ army, cards, units, allCards, gameCards, tab, onTabChang
                       </View>
                     </View>
 
-                    {/* Innate abilities (non-selectable, cost = 0) */}
-                    {innateAbilities.length > 0 && (
-                      <View style={s.innateSection}>
-                        <Text style={s.innateSectionLabel}>{t('innateAbilities')}</Text>
-                        {innateAbilities.map((a, abilityIndex) => (
-                          <View key={`${a.name}-${abilityIndex}`} style={s.abilityRow}>
-                            <Text style={s.innateText}>{a.name}</Text>
-                            {!!abilityTimingCostText(a, lang) && <Text style={s.abilityMeta}>{abilityTimingCostText(a, lang)}</Text>}
-                            {!!abilityCostSourceText(a, army, allCards, resMeta.short, lang) && (
-                              <Text style={s.abilitySource}>{abilityCostSourceText(a, army, allCards, resMeta.short, lang)}</Text>
-                            )}
-                            {!!a.description && <Text style={s.boostDesc}>{rulesText(a.description)}</Text>}
-                          </View>
-                        ))}
-                      </View>
-                    )}
-
                     {/* Purchasable upgrades (cost > 0) */}
-                    {purchasableUpgrades.length > 0 && (
+                    {expanded&&purchasableUpgrades.length > 0 && (
                       <View style={s.upgradesSection}>
                         <Text style={s.upgSectionLabel}>{t('optionalUpgrades')}</Text>
                         {purchasableUpgrades.map(({ upg, idx: ui }) => {
@@ -1128,6 +1138,10 @@ function ArmyEditView({ army, cards, units, allCards, gameCards, tab, onTabChang
                           return (
                             <Pressable
                               key={ui}
+                              accessibilityRole="checkbox"
+                              accessibilityLabel={upg.name+' +'+cost+'M'}
+                              accessibilityState={{checked:active}}
+                              testID={'roster-upgrade-'+idx+'-'+ui}
                               onPress={() => {
                                 const newRoster = [...army.roster];
                                 const newRu = { ...newRoster[idx] };
@@ -1142,11 +1156,12 @@ function ArmyEditView({ army, cards, units, allCards, gameCards, tab, onTabChang
                               style={({ pressed }) => [s.upgRow, active && { borderColor: '#22d3ee', backgroundColor: '#22d3ee10' }, pressed && { opacity: 0.7 }]}
                             >
                               <View style={{ flex: 1 }}>
-                                <Text style={[s.upgName, active && { color: '#22d3ee' }]}>{upg.name}</Text>
+                                <Text style={[s.upgName, active && { color: '#22d3ee' }]}>{active?'☑':'☐'} {upg.name}</Text>
                                 {!!abilityTimingCostText(upg, lang) && <Text style={s.abilityMeta}>{abilityTimingCostText(upg, lang)}</Text>}
                                 {!!abilityCostSourceText(upg, army, allCards, resMeta.short, lang) && (
                                   <Text style={s.abilitySource}>{abilityCostSourceText(upg, army, allCards, resMeta.short, lang)}</Text>
                                 )}
+                                {!!upg.description&&<Text style={s.boostDesc}>{rulesText(upg.description)}</Text>}
                               </View>
                               <Text style={s.upgCost}>+{cost}M</Text>
                             </Pressable>
@@ -1154,6 +1169,19 @@ function ArmyEditView({ army, cards, units, allCards, gameCards, tab, onTabChang
                         })}
                       </View>
                     )}
+                    {expanded&&purchasableUpgrades.length===0&&<Text style={s.resourceSourceLine}>
+                      {uiText(lang,'This profile has no purchasable upgrades. Innate abilities are included.','该规模没有可购买升级；固有能力已包含在单位中。')}
+                    </Text>}
+                    {expanded&&innateAbilities.length>0&&<SectionDisclosure title={t('innateAbilities')}
+                      count={innateAbilities.length} open={Boolean(innateOpen[idx])}
+                      onToggle={()=>setInnateOpen(s=>({...s,[idx]:!s[idx]}))}>
+                      <View style={s.innateSection}>{innateAbilities.map((a,abilityIndex)=><View key={`${a.name}-${abilityIndex}`} style={s.abilityRow}>
+                        <Text style={s.innateText}>{a.name}</Text>
+                        {!!abilityTimingCostText(a,lang)&&<Text style={s.abilityMeta}>{abilityTimingCostText(a,lang)}</Text>}
+                        {!!abilityCostSourceText(a,army,allCards,resMeta.short,lang)&&<Text style={s.abilitySource}>{abilityCostSourceText(a,army,allCards,resMeta.short,lang)}</Text>}
+                        {!!a.description&&<Text style={s.boostDesc}>{rulesText(a.description)}</Text>}
+                      </View>)}</View>
+                    </SectionDisclosure>}
                   </View>
                 );
               })

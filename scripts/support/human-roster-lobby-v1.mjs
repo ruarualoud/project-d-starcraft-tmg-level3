@@ -63,12 +63,14 @@ export function createHumanRosterLobby({directory, prefix, setupFor, compile, st
       }
       if(!op && method==='GET') return reply(200,{ok:true,lineup:projection(s,side)});
       if(op==='enter' && method==='POST' && s.roomId) return reply(200,{ok:true,joinUrl:await enter(s.roomId,side)});
-      if(op!=='submit'||method!=='POST') return error(409,'LINEUP_OPERATION_UNAVAILABLE');
+      if(!['submit','validate'].includes(op)||method!=='POST') return error(409,'LINEUP_OPERATION_UNAVAILABLE');
       if(Object.keys(body).some(k=>!['army','preset'].includes(k)) || Boolean(body.army)===Boolean(body.preset)) return error(422,'SUBMIT_ONE_OWN_ROSTER');
       if(s.roomId) return reply(200,{ok:true,lineup:projection(s,side)});
       const binding=setupFor(s.setupId);
       if(!binding || binding.version!==s.version || binding.sourceHash!==s.sourceHash) return error(409,'LINEUP_RELEASE_CHANGED');
       const recipe=await compile(s.setupId,side,body);
+      // The same frozen Native audit as submission, without changing either seat or opening a room.
+      if(op==='validate') return reply(200,{ok:true,valid:true});
       s[side]={recipe,label:String(body.army?.name || body.preset).slice(0,120)};
       if(s.player1 && s.player2){
         // Save both seats before opening; a retry recovers the room through its lineup ID.

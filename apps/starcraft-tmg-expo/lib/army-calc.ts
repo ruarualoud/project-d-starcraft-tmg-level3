@@ -258,7 +258,8 @@ export function textToArmy(text: string, cards: TacticalCard[], units: UnitCard[
       }
 
       // Parse tactical card (supports multiplier like "x2")
-      const tcMatch = line.match(/^\[(?:TC|战术卡)\]\s*(.+?)(?:\s*x(\d+))?\s*\(/);
+      // Only the final price annotation delimits the name: building names can contain parentheses.
+      const tcMatch = line.match(/^\[(?:TC|战术卡)\]\s*(.+?)(?:\s+x(\d+))?\s*\(\d+\s*(?:gas|气)\)\s*$/i);
       if (tcMatch) {
         const tc = cards.find(c => !c.isFactionCard && c.name === tcMatch[1] && c.faction === faction);
         const count = tcMatch[2] ? parseInt(tcMatch[2]) : 1;

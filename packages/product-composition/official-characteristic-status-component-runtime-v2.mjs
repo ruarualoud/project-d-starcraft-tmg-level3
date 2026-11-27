@@ -627,14 +627,16 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
   const independentRestoration = route => includeIndependentSupportReactions && includeReleaseOpticalFlareRestoration
     && route.triggerKind === 'debuff_received' && route.effectKind === 'remove_debuffs'
     && (!includeHits || includeReleaseInheritedHitsReactions);
-  const supportDamage = Boolean(zealousRound || hallucination && reactionBundle.routes.some(route=>route.definitionId==='card:daelaam/dae-uhl-any@1')
+  const independentMedicDamage = Boolean(includeIndependentSupportReactions && medicLifeSupport
+    && includeRanged && includeMelee && includeTransfusionMeleeOwner);
+  const supportDamage = Boolean(independentMedicDamage || zealousRound || hallucination && reactionBundle.routes.some(route=>route.definitionId==='card:daelaam/dae-uhl-any@1')
     || reactionBundle?.routes.some(independentFixedDamage));
   const ownsMeleeDamageContinuation = supportDamage || khassarMeleeDamageContinuation || Boolean(releaseZergTargets && instinctiveReaction && zagaraTransfusion);
   const ownsRangedDamageContinuation = supportDamage || khassarRangedDamageContinuation || inheritedRangedHitDebuff
     || Boolean(releaseZergTargets && darkSwarmReaction && zagaraTransfusion);
   const hasIndependentReleaseOwner = route => releaseZergTargets && (
     route.definitionId === zagaraTransfusion?.definitionId
-    || headShotSource && route.effectKind === 'ranged_declaration_keywords'
+    || declarationSource && includeRanged && route.effectKind === 'ranged_declaration_keywords'
     || route.chargeDeclarationOwner === 'current_source_v1'
     || lunge && route.requiresRangedTargetSnapshot
     || includeBeforeRangedEvadeReaction && includeBeforeMeleeEvadeReaction && route.triggerKind === 'before_evade_roll'
@@ -650,7 +652,8 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
     && !independentFixedDamage(route) && !independentRestoration(route)
     && !(hallucination && includeReleaseOpticalFlareRestoration && route.triggerKind==='debuff_received' && route.effectKind==='remove_debuffs')
     && !(photonEntry && route===photonRoute)
-    && !(supportDamage && (route.definitionId===zealousRound?.definitionId || route.definitionId==='card:daelaam/dae-uhl-any@1'))
+    && !(supportDamage && (route.definitionId===zealousRound?.definitionId || route.definitionId==='card:daelaam/dae-uhl-any@1'
+      || independentMedicDamage && route===medicLifeSupport))
     && !(khassarTargetDamageContinuation && route.definitionId === zagaraTransfusion?.definitionId)
     && !(postPlaceSource && route.triggerKind === 'after_place')
     && !(friendlySupplyLossReaction && route.triggerKind === 'friendly_supply_reduced')
@@ -930,7 +933,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
     ? createOfficialBlastTemplateAttackRuntimeV1({ state: spatialState, coverageRuntime: templateCoverage,
       precisionChoiceSupported: includePrecisionChoices, pointDefenseChoiceSupported: includePointDefenseChoices,
       armourChoiceSupported: includeArmourChoices, armourReactionSupported: includeArmourReactions }) : null;
-  const transfusionTemplate = Boolean((zagaraTransfusion || reactionBundle?.routes.some(independentFixedDamage)) && templateAttack && includeTransfusionTemplateOwner);
+  const transfusionTemplate = Boolean((zagaraTransfusion || independentMedicDamage || reactionBundle?.routes.some(independentFixedDamage)) && templateAttack && includeTransfusionTemplateOwner);
   const ownsTemplateDamageReaction = state => (transfusionTemplate || lunge || includeBeforeTemplateEvadeReaction)
     && templateAttack?.ownsDamageReactionWindow(state);
   const rangedDeclaration = declarationSource ? createOfficialRangedDeclarationReactionRuntimeV1({ state: spatialState,
@@ -1073,7 +1076,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
     consumeDefenceBeforeFollowUp: includeAutomaticHitsDefenceContinuation,
     independentlyOwnedReactionTriggers: [...(photonEntry ? ['reserve_entered_non_entry'] : []), ...(afterChargeRoll ? ['after_charge_roll'] : []), ...(spatialState?.officialReleaseDroneAssaultTiming
       && reactionBundle?.routes.some(route => route.chargeDeclarationOwner === 'current_source_v1') ? ['charge_declared'] : []),
-      ...((standRoute || rangedDeclaration && headShotSource || includeReleaseBileAssaultOrder && inheritedRangedHitDebuff && targetReactions) ? ['ranged_attack_declared'] : []),
+      ...((standRoute || rangedDeclaration || includeReleaseBileAssaultOrder && inheritedRangedHitDebuff && targetReactions) ? ['ranged_attack_declared'] : []),
       ...(overwatchSource && (spatialState.officialTurretActivationEndOwner === 'overwatch_v1'
         || seekerCast && spatialState.officialSeekerAssaultTiming) ? ['unit_activation_ended'] : []),
       ...(hiddenLossReactions ? ['hidden_lost'] : []),

@@ -1777,7 +1777,7 @@ export function createOfficialCreepCardComponentAdapterV2(bundle) {
   if (bundle.schema !== 'starcraft_tmg_official_battlefield_asset_family_source_bundle_v2'
     || bundle.routes.some(row => !isReserveBeaconRoute(row) && !['creep_token_place',
       'creep_stay_displacement', 'creep_removal', 'detection_indicator', 'on_creep_speed_active', 'on_creep_speed_passive',
-      'stationary_evade', 'orders', 'pylon_reserve_deploy', 'pylon_pe_discount', 'source_of_creep', 'on_creep_dodge', 'on_creep_impact', 'force_field_place', 'shade_precision'].includes(row.effectKind))) {
+      'stationary_evade', 'orders', 'pylon_reserve_deploy', 'pylon_pe_discount', 'source_of_creep', 'on_creep_dodge', 'on_creep_impact', 'force_field_place', 'shade_precision', 'marker_armour'].includes(row.effectKind))) {
     fail('BATTLEFIELD_ASSET_CREEP_COMPONENT_SOURCE_REQUIRED');
   }
   const bindings = bundle.routes.map(row => ({

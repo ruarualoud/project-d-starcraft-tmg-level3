@@ -336,9 +336,10 @@ export async function createStarcraftProductRoomHostV1(input) {
       let record;
       try{record=JSON.parse(await readFile(path.join(roomsDirectory,id,'room.private.json'),'utf8'));}
       catch(e){if(e.code==='ENOENT')continue;throw e;}
-      if(record.lineupId!==lineupId || !record.credentials) continue;
+      if(record.lineupId!==lineupId) continue;
       if(record.admissionStatus==='preparing'){
-        await open(record);record.admissionStatus='ready';await save(path.join(roomsDirectory,id,'room.private.json'),record);
+        await open(record);record.admissionStatus='ready';delete record.setupError;
+        await save(path.join(roomsDirectory,id,'room.private.json'),record);
       }
       if(record.admissionStatus==='ready') return record.roomId;
     }
@@ -367,7 +368,7 @@ export async function createStarcraftProductRoomHostV1(input) {
     const query=request.query instanceof URLSearchParams?Object.fromEntries(request.query):request.query||{};
     if(pathname.startsWith(PRODUCT_PREFIX+'/lineups')){
       try{return await lineups(request);}catch(e){
-        if(/^(PRODUCT_ROSTER_SELECTION_|STANDARD_ROOM_|SKIRMISH_500_ROOM_|军表|请选择|请先添加|单位或规模|升级选择)/.test(e.code||e.message)) return response({ok:false,reason:e.message},422);
+        if(/^(PRODUCT_ROSTER_SELECTION_|STANDARD_ROOM_|SKIRMISH_500_ROOM_|FACTION_REQUIRED_TACTICAL_GROUP_CARDINALITY_INVALID:|军表|请选择|请先添加|单位或规模|升级选择)/.test(e.code||e.message)) return response({ok:false,reason:e.message},422);
         throw e;
       }
     }

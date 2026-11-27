@@ -6,6 +6,7 @@ import {useData} from '@/lib/data-context';
 import {useLevel3ClientDomain} from '@/lib/level3/client-domain-provider';
 import {useI18n} from '@/lib/i18n';
 import {ScreenContainer} from '@/components/screen-container';
+import {rosterValidationMessage, useRosterValidation} from '@/lib/roster-validation';
 
 const prefix='/starcraft-tmg-level3/product/v1';
 type Lineup = {id:string;setupId:string;side:string;ready:boolean;submitted:boolean;otherSubmitted:boolean;label:string|null;invite?:string};
@@ -26,7 +27,7 @@ export default function PrepareMatch(){
     if(invite)setInvitedId(invite.split('.')[0]);
   },[]);
   const id=routeId || invitedId;
-  const {armyLists,catalogueSource}=useData(), {ingestRoomUrl}=useLevel3ClientDomain(), router=useRouter();
+  const {armyLists,catalogueSource,cards}=useData(), {ingestRoomUrl}=useLevel3ClientDomain(), router=useRouter();
   const zh=useI18n().lang!=='en';
   const [state,setState]=useState<Lineup>(),[setup,setSetup]=useState<Setup>();
   const [choice,setChoice]=useState(''),[error,setError]=useState(''),[busy,setBusy]=useState(false);
@@ -46,6 +47,9 @@ export default function PrepareMatch(){
   },[id,catalogueSource.officialDatasetHash]);
   async function perform(fn:()=>Promise<void>){setBusy(true);setError('');try{await fn();}catch(e){setError(e instanceof Error?e.message:String(e));}finally{setBusy(false);}}
   const own=armyLists.filter(a=>a.mineralsLimit===setup?.minerals && (a.officialDatasetHash??catalogueSource.officialDatasetHash)===setup?.officialDatasetHash);
+  const selectedArmy=own.find(a=>a.id===choice);
+  const selectedPreset=setup?.presets.find(p=>p.id===choice)?.id;
+  const validation=useRosterValidation(state&&!state.ready?id:undefined,selectedArmy,selectedPreset);
   const share=state?.invite && typeof window!=='undefined'?window.location.origin+'/prepare#rosterJoin='+encodeURIComponent(id+'.'+state.invite):'';
   function button(label:string,action:()=>void,testID:string,disabled=false,selected=false){
     return <Pressable accessibilityRole="button" accessibilityState={{disabled,selected}} key={testID} testID={testID} onPress={action} disabled={disabled||busy}
@@ -57,7 +61,7 @@ export default function PrepareMatch(){
       <Text style={s.text}>{setup.scale} · {setup.minerals} · {setup.mission} · {state.side==='player1'?(zh?'玩家一':'Player 1'):(zh?'玩家二':'Player 2')}</Text>
       {share&&<><Text style={s.text}>{zh?'让另一位玩家打开此链接，提交自己的军表。':'Invite the other player to submit their roster.'}</Text>
         <Text selectable testID="lineup-invite-link" style={s.link}>{share}</Text>
-        {button(zh?'复制邀请':'Copy invitation',()=>void perform(()=>Clipboard.setStringAsync(share)),'lineup-copy')}</>}
+        {button(zh?'复制邀请':'Copy invitation',()=>void perform(async()=>{await Clipboard.setStringAsync(share);}),'lineup-copy')}</>}
       <Text style={s.text} testID="lineup-status">{zh?'我的军表':'My roster'} · {state.submitted?state.label:(zh?'待提交':'Pending')}　{zh?'对方':'Opponent'} · {state.otherSubmitted?(zh?'已提交':'Submitted'):(zh?'待提交':'Pending')}</Text>
       {!state.ready&&<>
         {button(zh?'编写／导入我的军表':'Build / import my roster',()=>router.push({pathname:'/army',params:{lineupId:id,...(setup.id==='legacy-standard'?{}:{matchSetupId:setup.id})}}),'lineup-edit')}
@@ -66,9 +70,11 @@ export default function PrepareMatch(){
         {own.map(a=>button(a.name,()=>setChoice(a.id),'lineup-army-'+a.id,false,choice===a.id))}
         <Text style={s.text}>{zh?'也可以使用预设':'Or choose a preset'}</Text>
         {setup.presets.map(p=>button(p.label,()=>setChoice(p.id),'lineup-preset-'+p.id,false,choice===p.id))}
+        {validation.checking&&<Text style={s.text}>{zh?'正在校验军表…':'Checking roster…'}</Text>}
+        {!!validation.reason&&<Text testID="lineup-validation" accessibilityRole="alert" style={s.err}>{rosterValidationMessage(validation.reason,cards,zh?'zh':'en')}</Text>}
         {button(zh?'提交我的军表':'Submit my roster',()=>void perform(async()=>{
           const army=own.find(a=>a.id===choice);setState((await api(base+'/submit',army?{army}:{preset:choice})).lineup);
-        }),'lineup-submit',!choice)}
+        }),'lineup-submit',!choice||!validation.valid)}
       </>}
       {button(zh?'查看双方状态':'Refresh seats',()=>void perform(async()=>setState((await api(base)).lineup)),'lineup-refresh')}
       {state.ready&&button(zh?'以我的席位进入对战':'Enter as my seat',()=>void perform(async()=>{
@@ -76,7 +82,7 @@ export default function PrepareMatch(){
         if(!result.ok)throw Error(result.rejection?.code||'ROOM_JOIN_FAILED');router.dismissTo('/match');
       }),'lineup-enter')}
     </>}
-    {!!error&&<Text selectable accessibilityRole="alert" style={s.err}>{error}</Text>}
+    {!!error&&<Text selectable accessibilityRole="alert" style={s.err}>{rosterValidationMessage(error,cards,zh?'zh':'en')}</Text>}
   </ScrollView></ScreenContainer>;
 }
 const s=StyleSheet.create({panel:{padding:22,gap:12,maxWidth:800,width:'100%',alignSelf:'center'},heading:{fontSize:23,fontWeight:'700',color:'#def3fb'},label:{color:'#dcf3fc'},text:{color:'#a8c3d5'},link:{color:'#6dd7ed'},err:{color:'#ffb5a0'},button:{borderColor:'#335a70',borderWidth:1,padding:12,borderRadius:6,backgroundColor:'#0e2332'},selected:{borderColor:'#62d8ec',backgroundColor:'#123a4b'},disabled:{opacity:0.45}});
