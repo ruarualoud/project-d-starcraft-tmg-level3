@@ -275,9 +275,9 @@
     }
   ],
   "next": [
-    "W4-02：补Universal Carrier的感染敌军损失→HEAL后继与三张Virus卡Stukov’s Creep，再接Stukov／Infested Marine／Infested Trooper。",
-    "按逐ID账补其余13个新增合同及其他新增单位／势力，保持39条来源隔离与估算几何边界。",
-    "按Wave3模式完成W4-03整版发布选择、Builder／大厅、玩家查询与媒体，然后验W4-04的500／2000分Web双席。"
+    "W4-02：接Stukov／Infested Marine／Infested Trooper的完整规则与实际消费者。",
+    "按逐ID账补其余13个候选合同（含3个仅撤回Archon来源合同）及其他新增单位／势力；39条来源隔离。",
+    "按Wave3模式完成W4-03整版发布选择、Builder／大厅、玩家查询与媒体，再验W4-04的500／2000分Web双席。"
   ],
   "modelCalls": 0,
   "trainingTruth": false,
@@ -1321,9 +1321,144 @@
       ],
       "verificationScope": "Blink/Strategic Recall locked, ordinary Move legal; clean Native/Web controls; mixed Mass Recall excludes infected unit. Set endpoints and round-end choice restriction wired; full native Adept/Ravager round-end combination remains pending.",
       "fullMatchAdmission": false
+    },
+    {
+      "definitionId": "card:healing_pathogen/universal-carrier-any@1",
+      "classification": "existing_atoms_new_combination",
+      "newAtomIds": [],
+      "sourceCompiled": true,
+      "executionBound": true,
+      "nativeSuccessorsVerified": true,
+      "nativeQueryConsumerVerified": false,
+      "webVerified": true,
+      "consumerRefs": [
+        {
+          "file": "packages/source-data/official-universal-carrier-source-v1.mjs",
+          "exportName": "compileOfficialUniversalCarrierSpecV1"
+        },
+        {
+          "file": "packages/product-composition/official-universal-carrier-runtime-v1.mjs",
+          "exportName": "createOfficialUniversalCarrierRuntimeV1"
+        },
+        {
+          "file": "packages/rule-atoms/official-heal-resolution-kernel-v1.mjs",
+          "exportName": "createOfficialHealResolutionKernelV1"
+        }
+      ],
+      "evidenceRefs": [
+        "docs/development/wave4/evidence/universal-carrier.public.json",
+        "docs/development/wave4/evidence/universal-carrier-web.public.json"
+      ],
+      "verificationScope": "Actual infected enemy supply reduction or zero-supply destruction; capped HEAL, no reaction/card consumption, Infestation/Restoration successors and negative controls.",
+      "fullMatchAdmission": false
+    },
+    {
+      "definitionId": "card:healing_pathogen/stukov-s-creep-any@1",
+      "classification": "existing_atoms_new_combination",
+      "newAtomIds": [],
+      "sourceCompiled": true,
+      "executionBound": true,
+      "nativeSuccessorsVerified": true,
+      "nativeQueryConsumerVerified": false,
+      "webVerified": true,
+      "consumerRefs": [
+        {
+          "file": "packages/product-composition/official-battlefield-asset-family-adapter-v1.mjs",
+          "exportName": "createOfficialBattlefieldAssetFamilySourceBundleV2"
+        },
+        {
+          "file": "packages/product-composition/official-current-product-state-facts-v1.mjs",
+          "exportName": "resolveOfficialCurrentProductSideCapabilityV1"
+        },
+        {
+          "file": "packages/product-composition/official-battlefield-displacement-source-v1.mjs",
+          "exportName": "createOfficialBattlefieldDisplacementSourceV1"
+        },
+        {
+          "file": "packages/product-composition/official-battlefield-asset-family-adapter-v1.mjs",
+          "exportName": "consumeOfficialBattlefieldAssetMovementLifecycleV1"
+        }
+      ],
+      "evidenceRefs": [
+        "docs/development/wave4/evidence/virus-creep.public.json",
+        "docs/development/wave4/evidence/virus-creep-displacement.public.json",
+        "docs/development/wave4/evidence/virus-creep-web.public.json"
+      ],
+      "verificationScope": "Actual roster Virus card, native Creep Spread token, STAY IN PLAY/displacement binding, enemy Move end exact footprint removal; Healing Pathogen full-round cleanup, Hungering Infestation exact displacement query and signed move; other movement/PLACE combinations remain tracked.",
+      "fullMatchAdmission": false
+    },
+    {
+      "definitionId": "card:weighted_pustule/stukov-s-creep-any@1",
+      "classification": "existing_atoms_new_combination",
+      "newAtomIds": [],
+      "sourceCompiled": true,
+      "executionBound": true,
+      "nativeSuccessorsVerified": true,
+      "nativeQueryConsumerVerified": false,
+      "webVerified": true,
+      "consumerRefs": [
+        {
+          "file": "packages/product-composition/official-battlefield-asset-family-adapter-v1.mjs",
+          "exportName": "createOfficialBattlefieldAssetFamilySourceBundleV2"
+        },
+        {
+          "file": "packages/product-composition/official-current-product-state-facts-v1.mjs",
+          "exportName": "resolveOfficialCurrentProductSideCapabilityV1"
+        },
+        {
+          "file": "packages/product-composition/official-battlefield-displacement-source-v1.mjs",
+          "exportName": "createOfficialBattlefieldDisplacementSourceV1"
+        },
+        {
+          "file": "packages/product-composition/official-battlefield-asset-family-adapter-v1.mjs",
+          "exportName": "consumeOfficialBattlefieldAssetMovementLifecycleV1"
+        }
+      ],
+      "evidenceRefs": [
+        "docs/development/wave4/evidence/virus-creep.public.json",
+        "docs/development/wave4/evidence/virus-creep-displacement.public.json",
+        "docs/development/wave4/evidence/virus-creep-web.public.json"
+      ],
+      "verificationScope": "Actual roster Virus card, native Creep Spread token, STAY IN PLAY/displacement binding, enemy Move end exact footprint removal; Healing Pathogen full-round cleanup, Hungering Infestation exact displacement query and signed move; other movement/PLACE combinations remain tracked.",
+      "fullMatchAdmission": false
+    },
+    {
+      "definitionId": "card:hungering_infestation/stukov-s-creep-any@1",
+      "classification": "existing_atoms_new_combination",
+      "newAtomIds": [],
+      "sourceCompiled": true,
+      "executionBound": true,
+      "nativeSuccessorsVerified": true,
+      "nativeQueryConsumerVerified": true,
+      "webVerified": true,
+      "consumerRefs": [
+        {
+          "file": "packages/product-composition/official-battlefield-asset-family-adapter-v1.mjs",
+          "exportName": "createOfficialBattlefieldAssetFamilySourceBundleV2"
+        },
+        {
+          "file": "packages/product-composition/official-current-product-state-facts-v1.mjs",
+          "exportName": "resolveOfficialCurrentProductSideCapabilityV1"
+        },
+        {
+          "file": "packages/product-composition/official-battlefield-displacement-source-v1.mjs",
+          "exportName": "createOfficialBattlefieldDisplacementSourceV1"
+        },
+        {
+          "file": "packages/product-composition/official-battlefield-asset-family-adapter-v1.mjs",
+          "exportName": "consumeOfficialBattlefieldAssetMovementLifecycleV1"
+        }
+      ],
+      "evidenceRefs": [
+        "docs/development/wave4/evidence/virus-creep.public.json",
+        "docs/development/wave4/evidence/virus-creep-displacement.public.json",
+        "docs/development/wave4/evidence/virus-creep-web.public.json"
+      ],
+      "verificationScope": "Actual roster Virus card, native Creep Spread token, STAY IN PLAY/displacement binding, enemy Move end exact footprint removal; Healing Pathogen full-round cleanup, Hungering Infestation exact displacement query and signed move; other movement/PLACE combinations remain tracked.",
+      "fullMatchAdmission": false
     }
   ],
-  "executionStatus": "virus_restrictions_native_and_Web_scoped_verified_full_Wave4_human_update_in_progress",
+  "executionStatus": "Virus_successors_native_round_and_Web_scoped_verified_full_Wave4_update_in_progress",
   "creepBuilderGate": {
     "verifiedDefinitions": 3,
     "legalCreepChoices": 5,
@@ -1715,17 +1850,36 @@
     "sourceHeldDefinitions": 39,
     "fullWave4Admission": false,
     "webScope": "three_initial_frozen_authorities_and_one_signed_native_infestation_prefix",
-    "remainingVirusDefinitions": [
-      "card:healing_pathogen/universal-carrier-any@1",
-      "card:healing_pathogen/stukov-s-creep-any@1",
-      "card:weighted_pustule/stukov-s-creep-any@1",
-      "card:hungering_infestation/stukov-s-creep-any@1"
-    ],
+    "remainingVirusDefinitions": [],
     "evidenceRefs": [
       "docs/development/wave4/evidence/virus-restrictions.public.json",
       "docs/development/wave4/evidence/virus-mass-recall.public.json",
       "docs/development/wave4/evidence/virus-web.public.json",
       "docs/development/wave4/evidence/virus-audit.public.json"
     ]
+  },
+  "virusSuccessorGate": {
+    "definitionIds": [
+      "card:healing_pathogen/universal-carrier-any@1",
+      "card:healing_pathogen/stukov-s-creep-any@1",
+      "card:weighted_pustule/stukov-s-creep-any@1",
+      "card:hungering_infestation/stukov-s-creep-any@1"
+    ],
+    "newGameAtoms": 0,
+    "implementedCumulativeAtoms": 5,
+    "nativeCases": 8,
+    "nativeSignedActions": 43,
+    "nativeCompletedRounds": 1,
+    "webRooms": 4,
+    "webSignedActions": 8,
+    "evidenceRefs": [
+      "docs/development/wave4/evidence/universal-carrier.public.json",
+      "docs/development/wave4/evidence/universal-carrier-web.public.json",
+      "docs/development/wave4/evidence/virus-creep.public.json",
+      "docs/development/wave4/evidence/virus-creep-displacement.public.json",
+      "docs/development/wave4/evidence/virus-creep-web.public.json"
+    ],
+    "fullWave4Admission": false,
+    "sourceHeldDefinitions": 39
   }
 }

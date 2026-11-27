@@ -4,15 +4,15 @@
 
 当前执行 T28-W4-02。
 Ticket 23 / Slice 249；整体 33/36；剩余 248、249、250。
-状态日期：2026-11-27T18:14:51.126Z。本页由 coordination/current-development.json 生成，不追加历史。
+状态日期：2026-11-27T18:56:20.326Z。本页由 coordination/current-development.json 生成，不追加历史。
 
-Wave4人人对战长任务进行中。156条逐ID差分完成；新增原子累计5/18，本批两项Virus限制通过原生7分支20动作、Web4房7动作及当前代码冷重放审计。继续补Universal Carrier、Virus菌毯与新增单位，再完成整版发布、建军、房间、媒体和500／2000分Web。39条来源隔离，80mm仅工程估算。
+Wave4人人对战长任务进行中。156条逐ID差分完成；新增原子累计5/18。Universal Carrier与三张Virus菌毯新增组合接线通过原生8分支43动作、1完整回合和Web4房8动作。继续新单位／势力，再完成整版发布、建军、房间、媒体与500／2000分Web；39来源隔离，炮塔80mm仅工程估算。
 
 运行限制：本分支仅推进Wave4人人对战，按Wave3模式补齐数据、规则、建军、房间、媒体和Web双席；使用5484及build/wave4-web，按可验证成果提交推送。其他同步开发线不在本分支展开；付费模型、K3、AI对局、复盘与生产发布继续暂停。
 
 | 工作 | 实现 | 产品交接 | 真实产出 | 策略效果 |
 |---|---|---|---|---|
-| Wave4人人更新：5/18原子；Virus限制原生／Web已验 | 部分完成 | 部分完成 | 不适用 | 不适用 |
+| Wave4人人更新：5/18原子；Virus HEAL／菌毯后继已验 | 部分完成 | 部分完成 | 不适用 | 不适用 |
 | Wave4 W4-01 候选与旧版兼容 | 已实现 | 已通过 | 已产出 | 不适用 |
 | 开发环境六项改进 | 已实现 | 已通过 | 不适用 | 不适用 |
 | WikiSkill | 已实现 | 部分完成 | 已产出 | 未能证明 |
@@ -23,12 +23,13 @@ Wave4人人对战长任务进行中。156条逐ID差分完成；新增原子累�
 | T27/S272 军表与 Plan／Teach，P0–P6 验收 3/7 | 部分完成 | 部分完成 | 部分完成 | 未测效果 |
 
 下一步：
-1. W4-02：补Universal Carrier的感染敌军损失→HEAL后继与三张Virus卡Stukov’s Creep，再接Stukov／Infested Marine／Infested Trooper。
-2. 按逐ID账补其余13个新增合同及其他新增单位／势力，保持39条来源隔离与估算几何边界。
-3. 按Wave3模式完成W4-03整版发布选择、Builder／大厅、玩家查询与媒体，然后验W4-04的500／2000分Web双席。
+1. W4-02：接Stukov／Infested Marine／Infested Trooper的完整规则与实际消费者。
+2. 按逐ID账补其余13个候选合同（含3个仅撤回Archon来源合同）及其他新增单位／势力；39条来源隔离。
+3. 按Wave3模式完成W4-03整版发布选择、Builder／大厅、玩家查询与媒体，再验W4-04的500／2000分Web双席。
 
 ## Navigation
 
+- 查看Virus HEAL、菌毯与原生回合／Web后继：[Virus完整后继接线](docs/development/wave4/virus-successors-wiring.zh-CN.md)
 - 继续Wave4人人对战长任务的下一验收出口：[Wave4更新总清单](coordination/wave4/implementation-plan.json)
 - 查看Virus新增2原子、实际消费者和原生／Web范围：[Virus限制接线](docs/development/wave4/virus-restrictions-wiring.zh-CN.md)
 - 查看Firefly来源适配、两种反应完整后继及原生回合／Web边界：[炮塔完整后继与局部验收](docs/development/wave4/turret-combat-wiring.zh-CN.md)

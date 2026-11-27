@@ -294,6 +294,11 @@ function compileRoute(definition, { explicitSource = false } = {}) {
       ...(explicitSource && definition.definitionId === OFFICIAL_DROPSHIP_DUST_OFF_DEFINITION_ID
         ? { reserveBeaconLanding: true } : {}),
       ...(explicitSource && definition.definitionId === OFFICIAL_VENTRAL_SACS_DEFINITION_ID ? { ventralSacsLanding: true } : {}) };
+  } else if (name === "Stukov's Creep" && ['healing_pathogen','weighted_pustule','hungering_infestation'].some(card=>
+    definition.recordKey==='tactical_cards:'+card&&definition.definitionId==='card:'+card+'/stukov-s-creep-any@1')
+    && definition.activationKind==='passive'&&definition.phase==='any'&&text==="Stukov's Creep <Passive> <Any Phase>: If an Enemy Unit ends a Move, Deploy, Run, Charge or Disengage action Within 1\" of a Friendly Creep Tumor token, remove that token from the battlefield. Creep Tumor tokens have STAY IN PLAY and DISPLACEMENT.") {
+    spec={effectKind:'stukov_creep',actionKind:'automatic_consumer',stayInPlay:true,displacement:true,
+      triggerActions:['move','deploy','run','charge','disengage'],rangeInches:1,placeDoesNotTrigger:true};
   } else if (name === "Creep Removal") {
     spec = { effectKind: "creep_removal", actionKind: "automatic_consumer",
       triggerActions: ["move", "deploy", "run", "charge", "disengage"],
@@ -496,6 +501,9 @@ function reviewedBattlefieldModifierSource(row) {
       && row.sourceText === 'A Friendly or Enemy Ground Zerg Unit Within 6" of this Unit, counts as being ON CREEP.') {
     return 'source_of_creep';
   }
+  if (['healing_pathogen','weighted_pustule','hungering_infestation'].some(card=>
+    row.recordKey==='tactical_cards:'+card&&row.definitionId==='card:'+card+'/stukov-s-creep-any@1')
+    &&row.abilityName==="Stukov's Creep"&&row.sourceText==="Stukov's Creep <Passive> <Any Phase>: If an Enemy Unit ends a Move, Deploy, Run, Charge or Disengage action Within 1\" of a Friendly Creep Tumor token, remove that token from the battlefield. Creep Tumor tokens have STAY IN PLAY and DISPLACEMENT.")return 'stukov_creep';
   if (['tactical_cards:reactive_creep', 'tactical_cards:accelerating_creep', 'tactical_cards:malignant_creep'].includes(row.recordKey)) {
     const cardId = row.recordKey.split(':')[1];
     if (row.definitionId === 'card:reactive_creep/reactive-tissue-any@1'
@@ -570,6 +578,8 @@ function matchesReviewedBattlefieldComponent(row) {
     return row.actionKind === 'query_modifier' && row.requiresStatus === 'stationary'
       && row.firstRangedAttackPerRound === true && row.onCreepEvadeModifier === 1;
   }
+  if (row.effectKind === 'stukov_creep') return row.actionKind==='automatic_consumer'&&row.stayInPlay===true&&row.displacement===true
+    &&row.rangeInches===1&&row.placeDoesNotTrigger===true&&isDeepStrictEqual(row.triggerActions,['move','deploy','run','charge','disengage']);
   if (row.effectKind === 'creep_stay_displacement') {
     return row.actionKind === 'automatic_consumer' && row.stayInPlay === true && row.displacement === true;
   }
@@ -1672,7 +1682,8 @@ function lifecycle(bundle, stateInput, request = {}) {
         });
         if (!removal.enabled) continue;
         const exactSource = removal.sources.find(row => row.recordKey === "tactical_cards:reactive_creep"
-          || (row.adapterKind === "battlefield_asset_family" && ["tactical_cards:accelerating_creep", "tactical_cards:malignant_creep"].includes(row.recordKey)
+          || (row.adapterKind === "battlefield_asset_family" && ["tactical_cards:accelerating_creep", "tactical_cards:malignant_creep",
+            "tactical_cards:healing_pathogen", "tactical_cards:weighted_pustule", "tactical_cards:hungering_infestation"].includes(row.recordKey)
             && bundle?.schema === "starcraft_tmg_official_battlefield_asset_family_source_bundle_v2"));
         const exact = exactSource ? evaluateOfficialWithinWhollyWithinV1({
           state, dataBundle: state.officialModelBaseGeometryDataBundle,
@@ -1780,7 +1791,7 @@ export function createOfficialCreepCardComponentAdapterV2(bundle) {
   verifyOfficialBattlefieldAssetFamilySourceBundleV1(bundle);
   if (bundle.schema !== 'starcraft_tmg_official_battlefield_asset_family_source_bundle_v2'
     || bundle.routes.some(row => !isReserveBeaconRoute(row) && !['creep_token_place',
-      'creep_stay_displacement', 'creep_removal', 'detection_indicator', 'on_creep_speed_active', 'on_creep_speed_passive',
+      'creep_stay_displacement', 'creep_removal', 'stukov_creep', 'detection_indicator', 'on_creep_speed_active', 'on_creep_speed_passive',
       'stationary_evade', 'orders', 'pylon_reserve_deploy', 'pylon_pe_discount', 'source_of_creep', 'on_creep_dodge', 'on_creep_impact', 'force_field_place', 'shade_precision'].includes(row.effectKind))) {
     fail('BATTLEFIELD_ASSET_CREEP_COMPONENT_SOURCE_REQUIRED');
   }

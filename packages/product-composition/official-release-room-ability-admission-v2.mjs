@@ -1185,7 +1185,8 @@ export function createOfficialReleaseRoomAbilityRuntimeV2({ context, state, useE
   let creepDisplacement = null;
   const nativeCreep = (selectedAssetIds.includes('card:accelerating_creep/living-glob-of-tissue-any@1')
     || selectedAssetIds.includes('card:reactive_creep/living-glob-of-tissue-any@1')
-    || selectedAssetIds.includes('card:malignant_creep/living-glob-of-tissue-any@1'))
+    || selectedAssetIds.includes('card:malignant_creep/living-glob-of-tissue-any@1')
+    || actionState.officialBattlefieldAssetFamilySourceBundle?.routes.some(route=>route.effectKind==='stukov_creep'))
     && (lifecycleIds.includes(OFFICIAL_QUEEN_SPAWN_CREEP_DEFINITION_ID) || actionState.officialBattlefieldAssetFamilySourceBundle?.routes.some(route => route.effectKind === 'creep_token_place'));
   const tunnel = includeRavagerTunnel && (cocoonMorph || selected.has('unit:ravager/deep-tunnel-movement-phase@1'));
   const shade = includeNerazimNative && selected.has('unit:nerazim_watchers__adept_/psionic-transfer-movement-phase@1');

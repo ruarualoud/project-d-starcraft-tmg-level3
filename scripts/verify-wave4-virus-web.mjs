@@ -47,6 +47,11 @@ async function operate(page,item,choice,parameterized) {
       await form.getByLabel('纵向位置（英寸）',{exact:true}).fill('10');
     }
     if(await form.getByText('支付卡牌',{exact:true}).count())await form.getByText('支付卡牌',{exact:true}).locator('..').getByRole('button').first().click();
+    if(choice.actionType==='choose_universal_carrier_heal')await form.getByRole('button',{name:item.healTarget,exact:true}).click();
+    if(item.flow==='creep-place'){
+      await form.getByLabel('横向位置（英寸）',{exact:true}).fill(String(item.coordinate.xMilliInches/1000));
+      await form.getByLabel('纵向位置（英寸）',{exact:true}).fill(String(item.coordinate.yMilliInches/1000));
+    }
     if(choice.effectKind==='infestation_transfer')await form.getByRole('button',{name:'recipient',exact:true}).click();
   }
   await page.screenshot({path:path.join(directory,item.kind+'-r'+before.stateRevision+'-form.png')});
@@ -95,7 +100,7 @@ try {
       let primaryUsed=false,shotUsed=false,restorationUsed=false;
       for(let step=0;step<12;step++) {
         const aggregate=await current(item);const state=aggregate.envelope.state;
-        if(primaryUsed&&!state.pendingOfficialReactionWindow&&!state.pendingOfficialAutoTurretOverwatch
+        if(primaryUsed&&!state.pendingOfficialUniversalCarrier&&!state.pendingOfficialReactionWindow&&!state.pendingOfficialAutoTurretOverwatch
           &&!state.pendingOfficialInfestationTransfer&&!state.pendingCurrentProductRangedCasualtyChoice)break;
         const owner=state.activeSideKey;assert.ok(pages[owner]);
         const menu=await legal(pages[owner]);
@@ -110,7 +115,7 @@ try {
         let choice;
         if(!primaryUsed)choice=menu.parameterDomains.find(row=>item.id==='infected-ordinary-move'?row.actionType==='move'&&row.pieceId==='enemy':item.id==='clean-blink'?row.definitionId==='unit:stalker/blink-movement-phase@1':item.id==='clean-recall'?row.definitionId==='card:nexus/strategic-recall-any@1':row.definitionId===item.definitionId);
         else if(item.kind==='ocular-use'&&!shotUsed)choice=menu.parameterDomains.find(row=>row.weaponName==='Firefly Missiles');
-        else if(item.kind==='growing-restoration-exception'&&!restorationUsed)choice=menu.parameterDomains.find(row=>row.definitionId==='unit:medic/restoration-any-phase@1');
+        else if((item.kind==='growing-restoration-exception'||item.flow==='carrier-restoration')&&!restorationUsed)choice=menu.parameterDomains.find(row=>row.definitionId==='unit:medic/restoration-any-phase@1'||item.flow==='carrier-restoration'&&row.effectKind==='infestation_transfer');
         choice ||= menu.parameterDomains.find(row=>row.actionType==='pass_reaction_family_window')||menu.parameterDomains[0];
         const schema=choice?.sourceDomain?.parameterSchema||choice?.parameterSchema;
         let parameterized=Boolean(schema?.required?.length);
@@ -122,10 +127,16 @@ try {
         if(choice.definitionId==='unit:medic/restoration-any-phase@1')restorationUsed=true;
       }
       const final=await current(item);assert.ok(primaryUsed);
-      if(item.kind==='growing-restoration-exception') {
+      if(item.kind==='growing-restoration-exception'||item.flow==='carrier-restoration') {
+        if(item.flow==='carrier-restoration'){assert.equal(final.envelope.state.pieces.find(piece=>piece.id===item.healTarget).damageMarker,0);assert.equal(final.envelope.state.officialUniversalCarrierHistory.at(-1).healResolution.effectiveHeal,1);}
         const recipient=final.envelope.state.pieces.find(piece=>piece.id==='recipient');
         assert.equal(recipient.statuses.some(status=>String(status.statusName||status).toLowerCase()==='infestation'),false);
         assert.equal(restorationUsed,true);
+      } else if(item.flow==='creep-place'){
+        const state=final.envelope.state;const token=state.board.tokens.find(t=>t.tokenKind==='creep_tumor');
+        assert.ok(token);assert.equal(token.stayInPlay,true);
+        assert.equal(state.officialBattlefieldAssetBindings.find(b=>b.assetId===token.tokenId).displacement,true);
+        assert.ok(state.officialBattlefieldAssetFamilySourceBundle.definitionIds.includes(item.creepId));
       } else {
         const enemy=final.envelope.state.pieces.find(piece=>piece.id==='enemy');
         if(item.kind==='clean-recall')assert.equal(enemy.isInReserves,true);
@@ -155,8 +166,8 @@ try {
 } finally {await browser.close();}
 const result={schema:'starcraft_tmg_wave4_virus_web_verification_v1',status:'passed_scoped',
   runRef:path.relative(root,directory),results,signedActions:results.reduce((sum,row)=>sum+row.signedActions,0),
-  conditionalTurretGeometryInRestorationCaseOnly:true,sourceHeldDefinitions:39,
+  conditionalTurretGeometryInRestorationCaseOnly:service.rooms.some(item=>item.id==='growing-restoration-exception'||item.flow==='carrier-restoration'),sourceHeldDefinitions:39,
   fullWave4LobbyBuilderAdmission:false,fullMatchAdmission:false,wave3PlayerRoomsTouched:false,modelCalls:0,trainingTruth:false};
 await atomicWrite(path.join(directory,'web-result.public.json'),JSON.stringify(result,null,2)+'\n');
-await atomicWrite(path.join(root,'docs/development/wave4/evidence/virus-web.public.json'),JSON.stringify(result,null,2)+'\n');
+await atomicWrite(path.join(root,'docs/development/wave4/evidence/'+(process.argv[3]||'virus-web.public.json')),JSON.stringify(result,null,2)+'\n');
 console.log(JSON.stringify({status:result.status,signedActions:result.signedActions,rooms:results.length}));

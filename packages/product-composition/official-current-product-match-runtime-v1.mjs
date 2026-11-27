@@ -1668,7 +1668,9 @@ function createCurrentProductMatchRuntime(input, scale, releaseOpening) {
     } : {}),
     ...(releaseCreepDisplacementQuery ? { queryCreepDisplacement: (current, domain, request, options) =>
       queryTokenMovement(current, domain, request, options) } : {}),
-    ...(rosterIncrement.includeZergTargetReactions && state.officialBattlefieldDisplacementPolicy?.movementQueriesReady ? {
+    ...((rosterIncrement.includeZergTargetReactions || input.engineeringRoundScope
+      && native?.battlefieldModifierBundle?.routes.some(route=>route.effectKind==='stukov_creep'))
+      && state.officialBattlefieldDisplacementPolicy?.movementQueriesReady ? {
       queryBattlefieldTokenDisplacement: (current, domain, request, options) =>
         queryTokenMovement(current, domain, request, options, true),
     } : {}),

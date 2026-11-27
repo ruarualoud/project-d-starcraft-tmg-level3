@@ -25,7 +25,7 @@ function nativeCreepSources(state) {
     : [];
   const queen = lifecycle?.routes.find(route => route.definitionId === OFFICIAL_QUEEN_SPAWN_CREEP_DEFINITION_ID
     && route.effectKind === 'spawn_creep_tumor');
-  const passive = assets?.routes.find(route => route.effectKind === 'creep_stay_displacement');
+  const passive = assets?.routes.find(route => ['creep_stay_displacement','stukov_creep'].includes(route.effectKind));
   if (!passive || (!cards.length && !queen)) return [];
   verifyOfficialBattlefieldAssetFamilySourceBundleV1(assets);
   const sources = [{ kind: 'creep_card', sourceBundleHash: assets.bundleHash, routes: cards }];
@@ -97,7 +97,7 @@ export function createOfficialBattlefieldDisplacementSourceV1({ state,
   return seal({ schema: 'starcraft_tmg_battlefield_displacement_source_v1', version: nativeSources.length ? '1.1.0' : '1.0.0', sources,
     sourceSnapshotHash: roster.sourceSnapshotHash, normalizedDatasetHash: roster.normalizedDatasetHash,
     creepPassiveSources: roster.passiveBindings.filter(row => ['living_glob_of_tissue', 'creep_stay_displacement',
-      'creep_removal'].includes(row.effectKind)).map(row => structuredClone(row)),
+      'creep_removal','stukov_creep'].includes(row.effectKind)).map(row => structuredClone(row)),
     creepScope: nativeSources.length ? 'source_bound_creep_tumor_tokens' : 'bombard_created_source_bound_tokens',
     trainingTruth: false }, 'bundleHash');
 }

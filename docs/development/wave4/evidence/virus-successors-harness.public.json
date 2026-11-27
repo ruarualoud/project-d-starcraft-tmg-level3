@@ -1,0 +1,50 @@
+{
+  "schema": "starcraft_tmg_wave4_virus_successors_harness_v1",
+  "harnessLoopUsed": true,
+  "targetGames": [
+    "starcraft-tmg"
+  ],
+  "promptPackRoutes": [
+    {
+      "route": "fact_probe_prompt",
+      "mode": "offline_contract_verification",
+      "invoked": false,
+      "modelCalls": 0
+    }
+  ],
+  "harnessToolsCalled": [
+    "legalSpace",
+    "preview",
+    "explicit_human_confirmation",
+    "apply",
+    "idempotency_reapply",
+    "cold_replay",
+    "battlefield_token_displacement",
+    "web_parameter_form",
+    "seat_recovery_exchange"
+  ],
+  "uiTraceEvidence": [
+    "docs/development/wave4/evidence/universal-carrier-web.public.json",
+    "docs/development/wave4/evidence/virus-creep-web.public.json"
+  ],
+  "agentDecisionEvidence": {
+    "status": "not_applicable",
+    "modelCalls": 0
+  },
+  "memoryTraceEvidence": [],
+  "trainingTraceCandidates": [],
+  "rollbackOrDemotionRules": [
+    "exact_source_text_and_hash_required",
+    "passive_HEAL_does_not_consume_reaction_allowance_or_card_resources",
+    "native_token_binding_and_exact_footprint_required",
+    "unknown_geometry_or_source_holds_do_not_enter_full_match"
+  ],
+  "userVisibleChecks": [
+    "HEAL target form completes and resumes Infestation/Restoration",
+    "three actual Virus cards create stay-in-play displacement tokens",
+    "readonly displacement coordinate proof precedes signed movement",
+    "two seats confirm, replay and recover"
+  ],
+  "modelCalls": 0,
+  "trainingTruth": false
+}

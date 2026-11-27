@@ -1,7 +1,7 @@
 import { hashStarcraftTmgContract as hash } from '../authoritative-engine/referee-crypto-v1.mjs';
 import { createOfficialPhysicalFootprintV1, createOfficialModelBaseFootprintV1,
   createOfficialBattlefieldTokenPhysicalFootprintV1,
-  evaluateOfficialPhysicalFootprintRelationV1, officialTerrainBlocksModelPlacementV1,
+   evaluateOfficialPhysicalFootprintRelationV1, officialTerrainBlocksModelPlacementV1, createOfficialTerrainCellFootprintsV1,
   OFFICIAL_PHYSICAL_GEOMETRY_TOLERANCE_MILLI_INCHES_V1 as collisionTolerance }
   from './official-model-base-geometry-rules-kernel-v1.mjs';
 import { verifyOfficialBattlefieldTokenV1 } from './official-battlefield-token-marker-rules-kernel-v1.mjs';
@@ -50,14 +50,10 @@ export function createOfficialTokenDisplacementSceneV1({ state, pieceId, movemen
     verifyOfficialBattlefieldTokenV1(row, state.officialBattlefieldTokenMarkerRegistry);
     return createOfficialDisplacementTokenFootprintV1(row);
   });
-  const terrainObstacles = state.board.terrain.filter(row => !row.isRemoved && officialTerrainBlocksModelPlacementV1(row)).map(row => {
+  const terrainObstacles = state.board.terrain.filter(row => !row.isRemoved && officialTerrainBlocksModelPlacementV1(row)).flatMap(row => {
     const rectangle = row.footprint;
     if (rectangle?.shape !== 'axis_aligned_rectangle') throw Error('TOKEN_DISPLACEMENT_TERRAIN_GEOMETRY_UNSUPPORTED');
-    const width = rectangle.maxXMilliInches - rectangle.minXMilliInches;
-    const depth = rectangle.maxYMilliInches - rectangle.minYMilliInches;
-    return createOfficialPhysicalFootprintV1({ objectId: row.id, kind: 'terrain', shape: 'rectangle',
-      center: { xMilliInches: rectangle.minXMilliInches + width / 2, yMilliInches: rectangle.minYMilliInches + depth / 2 },
-      widthMilliInches: width, depthMilliInches: depth });
+    return createOfficialTerrainCellFootprintsV1(row);
   });
   return seal({ schema: 'starcraft_tmg_token_displacement_scene_v1', version, policyHash,
     coordinateQuantumMilliInches: 1, widthMilliInches: Math.round(state.board.widthInches * 1000),

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-11-27T18:14:51.126Z",
+  "updatedAt": "2026-11-27T18:56:20.326Z",
   "ticket": 23,
   "slice": 249,
   "completion": "33/36",
@@ -9,15 +9,15 @@
     249,
     250
   ],
-  "summary": "Wave4人人对战长任务进行中。156条逐ID差分完成；新增原子累计5/18，本批两项Virus限制通过原生7分支20动作、Web4房7动作及当前代码冷重放审计。继续补Universal Carrier、Virus菌毯与新增单位，再完成整版发布、建军、房间、媒体和500／2000分Web。39条来源隔离，80mm仅工程估算。",
+  "summary": "Wave4人人对战长任务进行中。156条逐ID差分完成；新增原子累计5/18。Universal Carrier与三张Virus菌毯新增组合接线通过原生8分支43动作、1完整回合和Web4房8动作。继续新单位／势力，再完成整版发布、建军、房间、媒体与500／2000分Web；39来源隔离，炮塔80mm仅工程估算。",
   "runPolicy": "本分支仅推进Wave4人人对战，按Wave3模式补齐数据、规则、建军、房间、媒体和Web双席；使用5484及build/wave4-web，按可验证成果提交推送。其他同步开发线不在本分支展开；付费模型、K3、AI对局、复盘与生产发布继续暂停。",
   "items": [
     {
       "id": "wave4-ability-diff",
-      "title": "Wave4人人更新：5/18原子；Virus限制原生／Web已验",
+      "title": "Wave4人人更新：5/18原子；Virus HEAL／菌毯后继已验",
       "implementation": {
         "status": "partial",
-        "note": "逐ID差分156/156；累计5/18新增原子。两项Virus限制与实际反应／放置／回收／查询消费者已接；整版新单位、规则、发布和产品仍在进行。",
+        "note": "逐ID差分156/156；累计5/18新增原子。本批四条已有原子新组合通过实际HEAL、token留场／位移／移除消费者；整版更新继续。",
         "evidence": [
           "content/source-releases/wave4-20261127/abilities/ability-diff.json",
           "docs/development/wave4/evidence/ability-diff.public.json",
@@ -37,12 +37,17 @@
           "docs/development/wave4/evidence/virus-restrictions.public.json",
           "docs/development/wave4/evidence/virus-mass-recall.public.json",
           "docs/development/wave4/evidence/virus-web.public.json",
-          "docs/development/wave4/evidence/virus-audit.public.json"
+          "docs/development/wave4/evidence/virus-audit.public.json",
+          "docs/development/wave4/evidence/universal-carrier.public.json",
+          "docs/development/wave4/evidence/universal-carrier-web.public.json",
+          "docs/development/wave4/evidence/virus-creep.public.json",
+          "docs/development/wave4/evidence/virus-creep-displacement.public.json",
+          "docs/development/wave4/evidence/virus-creep-web.public.json"
         ]
       },
       "productHandoff": {
         "status": "partial",
-        "note": "Virus原生7分支20动作、Web4房7动作及当前代码冷重放通过；炮塔7/7及前批原生回合证据保留。完整Builder／大厅、媒体及两种规模的Web人人验收仍待。",
+        "note": "本批原生8分支43动作、1完整回合及Web4房8动作通过；实际位移查询与冷重放通过。完整Builder／大厅、媒体及两种规模Web人人验收仍待。",
         "evidence": [
           "docs/development/wave4/evidence/native-armour-timing.public.json",
           "docs/development/wave4/evidence/native-other-timing.public.json",
@@ -62,7 +67,12 @@
           "docs/development/wave4/evidence/virus-restrictions.public.json",
           "docs/development/wave4/evidence/virus-mass-recall.public.json",
           "docs/development/wave4/evidence/virus-web.public.json",
-          "docs/development/wave4/evidence/virus-audit.public.json"
+          "docs/development/wave4/evidence/virus-audit.public.json",
+          "docs/development/wave4/evidence/universal-carrier.public.json",
+          "docs/development/wave4/evidence/universal-carrier-web.public.json",
+          "docs/development/wave4/evidence/virus-creep.public.json",
+          "docs/development/wave4/evidence/virus-creep-displacement.public.json",
+          "docs/development/wave4/evidence/virus-creep-web.public.json"
         ]
       },
       "liveOutput": {
@@ -676,11 +686,16 @@
     }
   ],
   "next": [
-    "W4-02：补Universal Carrier的感染敌军损失→HEAL后继与三张Virus卡Stukov’s Creep，再接Stukov／Infested Marine／Infested Trooper。",
-    "按逐ID账补其余13个新增合同及其他新增单位／势力，保持39条来源隔离与估算几何边界。",
-    "按Wave3模式完成W4-03整版发布选择、Builder／大厅、玩家查询与媒体，然后验W4-04的500／2000分Web双席。"
+    "W4-02：接Stukov／Infested Marine／Infested Trooper的完整规则与实际消费者。",
+    "按逐ID账补其余13个候选合同（含3个仅撤回Archon来源合同）及其他新增单位／势力；39条来源隔离。",
+    "按Wave3模式完成W4-03整版发布选择、Builder／大厅、玩家查询与媒体，再验W4-04的500／2000分Web双席。"
   ],
   "navigation": [
+    {
+      "when": "查看Virus HEAL、菌毯与原生回合／Web后继",
+      "title": "Virus完整后继接线",
+      "path": "docs/development/wave4/virus-successors-wiring.zh-CN.md"
+    },
     {
       "when": "继续Wave4人人对战长任务的下一验收出口",
       "title": "Wave4更新总清单",

@@ -82,11 +82,11 @@ function creepTumorRows(state) {
 
 const CAPABILITY_EFFECT_KINDS = Object.freeze({
   creep_tumor_stay_in_play_and_displacement: new Set([
-    "creep_stay_displacement",
+    "creep_stay_displacement", "stukov_creep",
     "living_glob_of_tissue",
   ]),
   creep_tumor_enemy_action_removal: new Set([
-    "creep_removal",
+    "creep_removal", "stukov_creep",
   ]),
 });
 

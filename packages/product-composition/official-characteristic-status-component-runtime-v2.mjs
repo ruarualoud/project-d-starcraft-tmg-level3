@@ -1,3 +1,4 @@
+import { createOfficialUniversalCarrierRuntimeV1 } from './official-universal-carrier-runtime-v1.mjs';
 import { verifyOfficialSpawnRoundAbilityLockPolicyV1, allowsOfficialSpawnRoundSpecialAbilityV1 } from '../rule-atoms/official-spawn-round-ability-lock-v1.mjs';
 import { readOfficialFactionUnitConversionV1 } from '../rule-atoms/official-faction-unit-conversion-v1.mjs';
 import { createOfficialArtanisDashContinuationV1 } from './official-artanis-second-charge-v1.mjs';
@@ -705,6 +706,10 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
       || includeHits || includeArmourOrdinals
       || spatialState?.officialBattlefieldAssetFamilySourceBundle?.schema === 'starcraft_tmg_official_battlefield_asset_family_source_bundle_v2' });
   const characteristicRoutes = bundle?.routes || [];
+  const universalCarrier = characteristicRoutes.some(route => route.effectKind === 'universal_carrier')
+    ? createOfficialUniversalCarrierRuntimeV1({ sourceBundle: bundle }) : null;
+  if (universalCarrier && (!includeRanged && !includeMelee && !includeHits || !isDeepStrictEqual(bundle,spatialState.officialCharacteristicStatusFamilySourceBundle))) throw Error('UNIVERSAL_CARRIER_NATIVE_PRODUCER_AND_SOURCE_REQUIRED');
+  if (spatialState.pendingOfficialUniversalCarrier && !universalCarrier) throw Error('UNIVERSAL_CARRIER_PARENT_SOURCE_REQUIRED');
   const infestationRestrictions = characteristicRoutes.some(route => ['infestation_reaction_lock','infestation_placement_reserve_lock'].includes(route.effectKind));
   if (infestationRestrictions && !isDeepStrictEqual(bundle,spatialState.officialCharacteristicStatusFamilySourceBundle)) throw Error('INFESTATION_RESTRICTION_SOURCE_BUNDLE_MISMATCH');
   const ravenMissile = characteristicRoutes.find(route => route.definitionId === OFFICIAL_RAVEN_ANTI_ARMOUR_MISSILE_DEFINITION_ID);
@@ -917,13 +922,17 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
     if (missingConsumer) throw Error('REACTIVE_CREEP_TOKEN_CONSUMERS_REQUIRED');
   }
   if (includeReleaseMalignantCreep && !melee) throw Error('MALIGNANT_CREEP_CHARGE_CONSUMER_REQUIRED');
+  if (battlefieldModifierBundle?.routes.some(route=>route.effectKind==='stukov_creep')
+    && (battlefieldModifierBundle.routes.some(route=>route.effectKind==='creep_token_place')
+      || spatialState.officialUnitLifecycleFamilySourceBundle?.routes.some(route=>route.effectKind==='spawn_creep_tumor'))
+    && !battlefieldDisplacementSource?.sources.some(row=>row.kind==='creep_card')) throw Error('STUKOV_CREEP_DISPLACEMENT_CONSUMER_REQUIRED');
   const reactiveTissue = battlefieldModifierBundle?.routes.some(route => route.effectKind === 'on_creep_dodge');
   if (reactiveTissue && (!ranged || !melee)) throw Error('REACTIVE_TISSUE_ATTACK_CONSUMERS_REQUIRED');
   if (Boolean(battlefieldModifierBundle) !== (spatialState ? hasOfficialArmourThresholdPolicyV1(spatialState) : false)) {
     throw Error('CHARACTERISTIC_ARMOUR_THRESHOLD_POLICY_REQUIRED');
   }
   const activeBattlefieldAssets = battlefieldModifierBundle?.routes.some(route => route.actionKind === 'active_ability') === true;
-  const battlefieldModifierAdapter = battlefieldModifierBundle && (activeBattlefieldAssets
+  const battlefieldModifierAdapter = battlefieldModifierBundle && (activeBattlefieldAssets || battlefieldModifierBundle.routes.some(route=>route.effectKind==='stukov_creep')
     ? createOfficialCreepCardComponentAdapterV2(battlefieldModifierBundle)
     : createOfficialBattlefieldModifierComponentAdapterV1(battlefieldModifierBundle));
   const meleeAtomIds = [...new Set((melee?.descriptor.routes || []).flatMap(row => row.ruleAtomIds))].sort();
@@ -1506,7 +1515,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
     eligibility: khassarEligibility, state: spatialState, includeRun: includeKhassarRun || includeKhassarCharge || includeKhassarCombatExecution,
     enumerateNative, instantiateNative: instantiate, applyNative: apply,
   }) : null;
-  const version = includeReleaseMoundAssaultOrder ? '3.221.0' : includeBilePhysicalPlacement && bile ? '3.220.0' : psionicRoundEnd?.scheduledEffects ? '3.219.0' : includeReleaseBileAssaultOrder ? '3.218.0' : releaseZergTargets ? '3.217.0' : includePsionicStormAssaultSameName ? '3.216.0'
+  const version = universalCarrier ? '3.222.0' : includeReleaseMoundAssaultOrder ? '3.221.0' : includeBilePhysicalPlacement && bile ? '3.220.0' : psionicRoundEnd?.scheduledEffects ? '3.219.0' : includeReleaseBileAssaultOrder ? '3.218.0' : releaseZergTargets ? '3.217.0' : includePsionicStormAssaultSameName ? '3.216.0'
     : includePsionicStormTokenCleanup ? '3.215.0'
     : includePsionicStormNamedOverlapChoices ? '3.214.0'
     : stormCast ? '3.213.0'
@@ -1554,7 +1563,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
     ...(ancestralWisdom ? [ancestralWisdom.descriptor.ruleAtomId] : []),
     ...(khassarMovement?.descriptor.ruleAtomIds || []), ...(khassarCharge?.descriptor.ruleAtomIds || []),
     ...khassarAttacks.flatMap(owner => owner.descriptor.ruleAtomIds)])].sort();
-  const actionTypes = [...(stormCast && !stormCast.descriptor.awaitingCenterMeasurement ? [stormCast.descriptor.actionType] : []),
+  const actionTypes = [...(universalCarrier?.descriptor.actions || []), ...(stormCast && !stormCast.descriptor.awaitingCenterMeasurement ? [stormCast.descriptor.actionType] : []),
     ...(stormPhaseEnd?.descriptor.actions || []), ...(seekerPhaseEnd?.descriptor.actionTypes || []), ...khassarAttacks.flatMap(owner => owner.descriptor.actionTypes), ...(khassarCharge?.descriptor.actionTypes || []), ...(khassarMovement?.descriptor.actionTypes || []), ...(ancestralWisdom?.descriptor.actions || []), ...(executorsWill?.descriptor.actions || []), ...(poisonousEssence?.descriptor.actions || []),...(bombardReplacement?.descriptor.actions || []), ...(sabotageDronePhaseEnd?.descriptor.actions || []), ...(chargeDeclaration ? ['roll_declared_charge'] : []), ...(cardRefresh?.descriptor.actions || []), ...(holoRoundEnd?.descriptor.actions || []), ...(immediateSummonedMove ? ['decline_summoned_move'] : []), ...(cleanupContinuation?.descriptor.actions || []),...(personalTransport ? ['resolve_personal_transport'] : []), ...(rangedDeclaration?.descriptor.actions || []),...(adapter ? ['resolve_characteristic_status_ability'] : []), ...(spatial?.descriptor.actions || []),
     ...(psionic ? transferRoutes ? [...new Set(psionicSource.routes.map(row => row.actionType))] : ['set_psionic_transfer_shade'] : []),
     ...(psionicRoundEnd?.descriptor.actions || []),
@@ -1750,6 +1759,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
     ...(ourMindsAsOne ? { ourMindsAsOnePaymentSourceRouteHash: ourMindsAsOne.routeHash } : {}),
     ...(friendlySupplyLossReaction ? { friendlySupplyLossReaction: friendlySupplyLossReaction.descriptor } : {}),
     ...(infestationTransfer ? { infestationTransfer: infestationTransfer.descriptor } : {}),
+    ...(universalCarrier ? { universalCarrier: universalCarrier.descriptor } : {}),
     ...(ancestralWisdom ? { ancestralWisdomPaymentRuntime: ancestralWisdom.descriptor } : {}),
     ...(psionicStormSourceRules ? { psionicStormSourceRules: psionicStormSourceRules.descriptor } : {}),
     ...(stormPhaseEnd ? { stormPhaseEnd: stormPhaseEnd.descriptor } : {}),
@@ -1813,7 +1823,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
       ...(weaponAdapter?.bindingForDomain(sourceDomain) || {}),
       sourceDomain, ruleAtomIds: sourceDomain.ruleAtomIds || (sourceRuntimeKind === 'template'
         ? templateAttack.descriptor.ruleAtomIds : [atomId]),
-      ...((spatial || poisonousEssence || seekerPhaseEnd || stormPhaseEnd) ? { sourceRuntimeKind } : {}) };
+      ...((spatial || poisonousEssence || seekerPhaseEnd || stormPhaseEnd || universalCarrier) ? { sourceRuntimeKind } : {}) };
     if (displacement && ['spatial', 'melee', 'relocation'].includes(sourceRuntimeKind)) {
       body.parameterSchema = { ...body.parameterSchema, tokenDisplacements: { type: 'array', optional: true,
         requiredWhen: battlefieldDisplacementSource ? 'actual_leading_model_overlaps_source_token'
@@ -1849,6 +1859,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
     return null;
   }
   function enumerate(state, options = {}) {
+    if (universalCarrier?.pending(state)) return { ...meleeEnumeration(state,universalCarrier.enumerate(state,options),'universal_carrier'), releasePhaseControl:'blocked' };
     assertTargetedAbilityPolicy(state);
     const parent = ancestralWisdom?.pending(state);
     if (parent?.stage === 'reaction') return meleeEnumeration(state, reactionAdapter.legalSpace(state, options), 'reaction');
@@ -2148,6 +2159,12 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
     if (!admitted) throw Error('RELEASE_RANGED_CONTINUATION_REQUIRED');
   }
   function instantiate(state, domain, parameters) {
+    if (universalCarrier?.pending(state)) {
+      const current=enumerate(state).parameterDomains.find(row=>row.domainId===domain?.domainId);
+      if(!current||!isDeepStrictEqual(current,domain)||domain.sourceRuntimeKind!=='universal_carrier')throw Error('UNIVERSAL_CARRIER_DOMAIN_STALE');
+      const value=universalCarrier.instantiate(state,domain.sourceDomain,parameters);
+      return {canonicalParameters:value.canonicalParameters,action:wrapAction(state,value.action,'universal_carrier')};
+    }
     assertRangedContinuationOwner(state, domain);
     const prepared = instantiateNative(state, domain, parameters);
     const parent = ancestralWisdom?.pending(state);
@@ -2504,6 +2521,10 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
   function applySource(state, action, options) {
     if (action.executorId !== runtimeId || action.executorVersion !== version
       || action.sourceActionHash !== hash(action.sourceAction)) throw Error('CHARACTERISTIC_COMPONENT_ACTION_INVALID');
+    if (universalCarrier?.pending(state)) {
+      if(action.sourceRuntimeKind!=='universal_carrier')throw Error('UNIVERSAL_CARRIER_CHOICE_REQUIRED');
+      return universalCarrier.apply(state,action.sourceAction,options);
+    }
     if (lunge?.pending(state)) {
       if (action.sourceRuntimeKind !== OFFICIAL_RANGED_LUNGE_CONTINUATION_KIND) throw Error('LUNGE_REACTION_CHOICE_REQUIRED');
       return lunge.apply(state, action.sourceAction, options);
@@ -2897,10 +2918,12 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
       : binding.owner.apply(state, action.sourceAction, options);
   }
   function apply(state,action,options) {
+    if(universalCarrier?.pending(state))return applySource(state,action,options);
     artanisDash?.assertAction(state,action);
     const applied=applyNative(state,action,options);
     const dash=artanisDash ? artanisDash.afterTransition(state,applied) : applied;
-    return photonEntry ? photonEntry.afterTransition(state,dash,action) : dash;
+    const completed=photonEntry ? photonEntry.afterTransition(state,dash,action) : dash;
+    return universalCarrier ? universalCarrier.afterTransition(state,completed,action) : completed;
   }
   function applyNative(state, action, options) {
     assertRangedContinuationOwner(state, action);
@@ -3364,6 +3387,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
     if (cardRefresh?.pending(state)) throw Error('RANGED_CARD_REFRESH_CHOICE_REQUIRED');
     if (friendlySupplyLossReaction?.pending(state)) throw Error('FRIENDLY_SUPPLY_LOSS_REACTION_CHOICE_REQUIRED');
     if (infestationTransfer?.pending(state)) throw Error('INFESTATION_TRANSFER_REACTION_CHOICE_REQUIRED');
+    if (universalCarrier?.pending(state)) throw Error('UNIVERSAL_CARRIER_CHOICE_REQUIRED');
     if (ancestralWisdom?.pending(state)) throw Error('ANCESTRAL_WISDOM_PAYMENT_CONTINUATION_REQUIRED');
     if (holoRoundEnd && ['round_end', 'cleanup_and_refresh'].includes(request.eventKind)
       && (holoRoundEnd.pending(state) || holoRoundEnd.canStart(state))) throw Error('HOLO_ROUND_END_CHOICES_REQUIRED');
@@ -3375,7 +3399,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
     if (rangedDeclaration?.pending(state)) throw Error('RANGED_DECLARATION_ATTACK_CONTINUATION_REQUIRED');
     if (hiddenLossReactions?.pending(state)) throw Error('HIDDEN_LOSS_REACTION_CONTINUATION_REQUIRED');
     if (closeRanksReactions && displacement.pending(state)) throw Error('PSIONIC_DISPLACEMENT_CLOSE_RANKS_CONTINUATION_REQUIRED');
-    if (!guardianShield && !ourMindsAsOne && !khalasGift && !executorsWill && !forceWallTraversal && !feedback && !farsight && !scourgeQueen && !zagaraBroodmother && !poisonousEssence && !overwatch && !sabotageDronePhaseEnd && !holoRoundEnd && !unitLifecycleAdapter && !bileUpgrades && !psionicRoundEnd && !hiddenLossReactions && !targetedMeleeCritical && !markedTargetFirstWeapon && !vilelingFoundation && !defilerMeleeFoundation && !markerAreas && !coordinatedStrike && !stationaryFirstRanged && !plasmaArmourSource && !alloyArmourSource && !superStimpack && !commandoStimpack && !chargeDeclaration) throw Error('CHARACTERISTIC_UNIT_LIFECYCLE_CONSUMER_REQUIRED');
+    if (!battlefieldModifierBundle?.routes.some(route=>route.effectKind==='stukov_creep') && !guardianShield && !ourMindsAsOne && !khalasGift && !executorsWill && !forceWallTraversal && !feedback && !farsight && !scourgeQueen && !zagaraBroodmother && !poisonousEssence && !overwatch && !sabotageDronePhaseEnd && !holoRoundEnd && !unitLifecycleAdapter && !bileUpgrades && !psionicRoundEnd && !hiddenLossReactions && !targetedMeleeCritical && !markedTargetFirstWeapon && !vilelingFoundation && !defilerMeleeFoundation && !markerAreas && !coordinatedStrike && !stationaryFirstRanged && !plasmaArmourSource && !alloyArmourSource && !superStimpack && !commandoStimpack && !chargeDeclaration) throw Error('CHARACTERISTIC_UNIT_LIFECYCLE_CONSUMER_REQUIRED');
     if (psionicRoundEnd && request.eventKind === 'round_end'
       && (psionicRoundEnd.pending(state) || psionicRoundEnd.hasOutstanding(state))) throw Error('PSIONIC_TRANSFER_ROUND_END_CHOICES_REQUIRED');
     const prepared = psionicRoundEnd && request.eventKind === 'cleanup_and_refresh' ? psionicRoundEnd.cleanup(state) : state;
@@ -3405,7 +3429,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
     ...(chargeDeclaration ? { chargeDeclaration } : {}),
     ...(cardRefresh ? { cardRefresh } : {}),
     ...(unitLifecycleAdapter ? { unitLifecycleBundle, unitLifecycleAdapter } : {}),
-    ...(releaseZergTargets && darkSwarmLifecycle || guardianShield || ourMindsAsOne || khalasGift || executorsWill || forceWallTraversal || feedback || farsight || scourgeQueen || zagaraBroodmother || poisonousEssence || overwatch || sabotageDronePhaseEnd || holoRoundEnd || unitLifecycleAdapter || bileUpgrades || psionicRoundEnd || hiddenLossReactions || targetedMeleeCritical || markedTargetFirstWeapon || vilelingFoundation || defilerMeleeFoundation || markerAreas || coordinatedStrike || stationaryFirstRanged || plasmaArmourSource || alloyArmourSource || superStimpack || commandoStimpack || chargeDeclaration ? { lifecycle } : {}),
+    ...(battlefieldModifierBundle?.routes.some(route=>route.effectKind==='stukov_creep') || releaseZergTargets && darkSwarmLifecycle || guardianShield || ourMindsAsOne || khalasGift || executorsWill || forceWallTraversal || feedback || farsight || scourgeQueen || zagaraBroodmother || poisonousEssence || overwatch || sabotageDronePhaseEnd || holoRoundEnd || unitLifecycleAdapter || bileUpgrades || psionicRoundEnd || hiddenLossReactions || targetedMeleeCritical || markedTargetFirstWeapon || vilelingFoundation || defilerMeleeFoundation || markerAreas || coordinatedStrike || stationaryFirstRanged || plasmaArmourSource || alloyArmourSource || superStimpack || commandoStimpack || chargeDeclaration ? { lifecycle } : {}),
     ...(relocationAdapter ? { relocationBundle, relocationAdapter, postPlaceReactions } : {}),
     ...(reactionAdapter ? { reactionBundle, reactionAdapter, router } : {}),
     ...(registeredStorm ? { router, registeredStorm } : {}),

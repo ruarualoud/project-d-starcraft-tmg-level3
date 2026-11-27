@@ -1,0 +1,230 @@
+{
+  "schema": "starcraft_tmg_wave4_virus_creep_native_v1",
+  "status": "passed_scoped",
+  "runRef": "build/wave4-web/virus-creep/run-tqLTvi",
+  "results": [
+    {
+      "definitionId": "card:healing_pathogen/stukov-s-creep-any@1",
+      "roomId": "wave4-creep-healing_pathogen",
+      "directoryRef": "build/wave4-web/virus-creep/run-tqLTvi/healing_pathogen",
+      "tokenId": "asset:1:creep_token_place:1",
+      "signedActions": 20,
+      "stateHash": "cde79ec97b17569cafc22151bae8d363bbd94ac65831ee0ff8a784b71c3b2eaa",
+      "runtimeHash": "2da850c5de7bb75bb24de811250c944e6b93cfd31969f7ddb051215907bc33ea",
+      "nativeRoundsCompleted": 1,
+      "stayInPlayAfterCleanup": true,
+      "enemyMoveEndRemoval": true,
+      "removal": {
+        "type": "creep_tumor_removed",
+        "tokenId": "asset:1:creep_token_place:1",
+        "triggeringActionType": "move",
+        "movingPieceId": "enemy",
+        "sourceFeatureHash": "78712834e355479c4f8c1b83882fdc86e353eb372d072069548496960c70117b",
+        "measurementResultHash": "50470edeb0f6f3f240d608fa1e961a8aaaf20e7e038f58bcbe1f0e4947838177",
+        "trainingTruth": false
+      },
+      "coldReplay": true,
+      "idempotencyVerified": true,
+      "trace": [
+        {
+          "revision": 1,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round"
+        },
+        {
+          "revision": 2,
+          "phase": "movement",
+          "actionType": "choose_first_actor"
+        },
+        {
+          "revision": 3,
+          "phase": "movement",
+          "actionType": "resolve_battlefield_asset_ability"
+        },
+        {
+          "revision": 4,
+          "phase": "movement",
+          "actionType": "pass"
+        },
+        {
+          "revision": 5,
+          "phase": "movement",
+          "actionType": "pass"
+        },
+        {
+          "revision": 6,
+          "phase": "assault",
+          "actionType": "choose_first_actor"
+        },
+        {
+          "revision": 7,
+          "phase": "assault",
+          "actionType": "pass"
+        },
+        {
+          "revision": 8,
+          "phase": "assault",
+          "actionType": "pass"
+        },
+        {
+          "revision": 9,
+          "phase": "combat",
+          "actionType": "choose_first_actor"
+        },
+        {
+          "revision": 10,
+          "phase": "combat",
+          "actionType": "pass"
+        },
+        {
+          "revision": 11,
+          "phase": "combat",
+          "actionType": "pass"
+        },
+        {
+          "revision": 12,
+          "phase": "cleanup",
+          "actionType": "determine_current_product_mission_marker_control"
+        },
+        {
+          "revision": 13,
+          "phase": "cleanup",
+          "actionType": "score_mission"
+        },
+        {
+          "revision": 14,
+          "phase": "cleanup",
+          "actionType": "check_mission_end_game"
+        },
+        {
+          "revision": 15,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_end_of_round_effects"
+        },
+        {
+          "revision": 16,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_cleanup_refresh"
+        },
+        {
+          "revision": 17,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_next_round_initiative"
+        },
+        {
+          "revision": 18,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round"
+        },
+        {
+          "revision": 19,
+          "phase": "movement",
+          "actionType": "choose_first_actor"
+        },
+        {
+          "revision": 20,
+          "phase": "movement",
+          "actionType": "move"
+        }
+      ]
+    },
+    {
+      "definitionId": "card:weighted_pustule/stukov-s-creep-any@1",
+      "roomId": "wave4-creep-weighted_pustule",
+      "directoryRef": "build/wave4-web/virus-creep/run-tqLTvi/weighted_pustule-phase-v2",
+      "tokenId": "asset:1:creep_token_place:1",
+      "signedActions": 3,
+      "stateHash": "843e70f9abf4fe0145939376cfd90209c4cfe0f0d0f82a481a463f89e34039ca",
+      "runtimeHash": "5e2e7785e4dcfb4ca896411d128337b2ddbca55ecfb0c622ac0bdffe9e474691",
+      "nativeRoundsCompleted": 0,
+      "stayInPlayAfterCleanup": false,
+      "enemyMoveEndRemoval": true,
+      "removal": {
+        "type": "creep_tumor_removed",
+        "tokenId": "asset:1:creep_token_place:1",
+        "triggeringActionType": "move",
+        "movingPieceId": "enemy",
+        "sourceFeatureHash": "857a06be8c01f1d74bc1709ce44248cd6515955b02fd480cae8f019e645314f5",
+        "measurementResultHash": "50470edeb0f6f3f240d608fa1e961a8aaaf20e7e038f58bcbe1f0e4947838177",
+        "trainingTruth": false
+      },
+      "trace": [
+        {
+          "revision": 1,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "resolve_battlefield_asset_ability",
+          "definitionId": "card:hatchery/creep-spread-any@1"
+        },
+        {
+          "revision": 2,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "definitionId": null
+        },
+        {
+          "revision": 3,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "move",
+          "definitionId": null
+        }
+      ],
+      "coldReplay": true,
+      "idempotencyVerified": true
+    },
+    {
+      "definitionId": "card:hungering_infestation/stukov-s-creep-any@1",
+      "roomId": "wave4-creep-hungering_infestation",
+      "directoryRef": "build/wave4-web/virus-creep/run-tqLTvi/hungering_infestation-phase-v2",
+      "tokenId": "asset:1:creep_token_place:1",
+      "signedActions": 3,
+      "stateHash": "17624bd419b3ec4f4e53fba95e4993fcd0a3d4998c344efebc6091fcec746f78",
+      "runtimeHash": "252131c103aab724343f9c592f2e620028aa4c50c59478f9d1ff6a6009e0c5f2",
+      "nativeRoundsCompleted": 0,
+      "stayInPlayAfterCleanup": false,
+      "enemyMoveEndRemoval": true,
+      "removal": {
+        "type": "creep_tumor_removed",
+        "tokenId": "asset:1:creep_token_place:1",
+        "triggeringActionType": "move",
+        "movingPieceId": "enemy",
+        "sourceFeatureHash": "f90313d3b9ba704ab125596e3cc5d61409fbf542cb1b07e9ff84296b6446a57e",
+        "measurementResultHash": "50470edeb0f6f3f240d608fa1e961a8aaaf20e7e038f58bcbe1f0e4947838177",
+        "trainingTruth": false
+      },
+      "trace": [
+        {
+          "revision": 1,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "resolve_battlefield_asset_ability",
+          "definitionId": "card:hatchery/creep-spread-any@1"
+        },
+        {
+          "revision": 2,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "definitionId": null
+        },
+        {
+          "revision": 3,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "move",
+          "definitionId": null
+        }
+      ],
+      "coldReplay": true,
+      "idempotencyVerified": true
+    }
+  ],
+  "newGameAtoms": 0,
+  "implementedCumulativeAtoms": 5,
+  "sourceHeldDefinitions": 39,
+  "fullWave4Admission": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

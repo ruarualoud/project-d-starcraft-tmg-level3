@@ -1,0 +1,84 @@
+{
+  "schema": "starcraft_tmg_wave4_virus_web_verification_v1",
+  "status": "passed_scoped",
+  "runRef": "build/wave4-web/virus-creep/web-acceptance-v1",
+  "results": [
+    {
+      "kind": "healing_pathogen",
+      "definitionId": "card:hatchery/creep-spread-any@1",
+      "sourceRoomId": "wave4-creep-healing_pathogen",
+      "sourceStateHash": "67e18d93dc688aee8ab2405ab02aecf4cfacbaa0e43de37ddb318876d4e32014",
+      "sourcePrefixReceipts": 2,
+      "trace": [
+        {
+          "actionType": "resolve_battlefield_asset_ability",
+          "definitionId": "card:hatchery/creep-spread-any@1",
+          "sideKey": "player1",
+          "stateRevision": 1,
+          "stateHash": "c366652b97344ef1a1d0e9bba8a64cb2c7e4efbbd2138cb13e560bc451a51d50"
+        }
+      ],
+      "signedActions": 1,
+      "twoSeatsVerified": true,
+      "explicitHumanConfirmation": true,
+      "previewReadOnly": true,
+      "replayMatchesCurrent": true,
+      "seatRecoveryReentryVerified": true,
+      "pageErrors": []
+    },
+    {
+      "kind": "weighted_pustule",
+      "definitionId": "card:hatchery/creep-spread-any@1",
+      "sourceRoomId": "wave4-creep-weighted_pustule",
+      "sourceStateHash": "38996d3463419e4e2676abb49996b4592ffe2c455d49590d83c2bee00de0676b",
+      "sourcePrefixReceipts": 0,
+      "trace": [
+        {
+          "actionType": "resolve_battlefield_asset_ability",
+          "definitionId": "card:hatchery/creep-spread-any@1",
+          "sideKey": "player1",
+          "stateRevision": 1,
+          "stateHash": "f47897c627c8f936152fba6b315b8e1898764288f1e5f676fe22210b50071c7c"
+        }
+      ],
+      "signedActions": 1,
+      "twoSeatsVerified": true,
+      "explicitHumanConfirmation": true,
+      "previewReadOnly": true,
+      "replayMatchesCurrent": true,
+      "seatRecoveryReentryVerified": true,
+      "pageErrors": []
+    },
+    {
+      "kind": "hungering_infestation",
+      "definitionId": "card:hatchery/creep-spread-any@1",
+      "sourceRoomId": "wave4-creep-hungering_infestation",
+      "sourceStateHash": "5c32606565fd507b31e37b0a452ef89d591d3d8cf70bc7ac8797c0be5ff9f3da",
+      "sourcePrefixReceipts": 0,
+      "trace": [
+        {
+          "actionType": "resolve_battlefield_asset_ability",
+          "definitionId": "card:hatchery/creep-spread-any@1",
+          "sideKey": "player1",
+          "stateRevision": 1,
+          "stateHash": "ab4b46ea055a44424b6f1d54544babaeb39e36a2268adb4feaf46caa1eec1552"
+        }
+      ],
+      "signedActions": 1,
+      "twoSeatsVerified": true,
+      "explicitHumanConfirmation": true,
+      "previewReadOnly": true,
+      "replayMatchesCurrent": true,
+      "seatRecoveryReentryVerified": true,
+      "pageErrors": []
+    }
+  ],
+  "signedActions": 3,
+  "conditionalTurretGeometryInRestorationCaseOnly": false,
+  "sourceHeldDefinitions": 39,
+  "fullWave4LobbyBuilderAdmission": false,
+  "fullMatchAdmission": false,
+  "wave3PlayerRoomsTouched": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

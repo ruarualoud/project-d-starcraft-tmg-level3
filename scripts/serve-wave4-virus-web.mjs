@@ -6,6 +6,7 @@ import { loadWave4TurretInputs, bindWave4TurretRoom } from './support/wave4-turr
 import { createStarcraftTmgLevel3HttpAdapter } from '../packages/http-adapter/handler-v1.mjs';
 import { createRosterWorkspaceServerV1 } from './serve-ticket-27-slice-271-roster-workspace-v1.mjs';
 import { atomicWrite } from './lib/development-context.mjs';
+import { loadWave4VirusEffectsInputs } from './compile-wave4-virus-effects.mjs';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const read=async file=>JSON.parse(await fs.readFile(file,'utf8'));
@@ -15,15 +16,17 @@ const directory=path.resolve(process.argv[3]);
 assert.ok(directory.startsWith(path.join(root,'build/wave4-web')+path.sep));
 const webRoot=process.argv[4]?path.resolve(process.argv[4]):path.join(root,'apps/starcraft-tmg-expo/dist-product');
 if(process.argv[4])assert.ok(webRoot.startsWith(path.join(root,'build/wave4-web')+path.sep));
-const inputs=await loadWave4TurretInputs(root);
+const inputs=sourceResult.schema==='starcraft_tmg_wave4_virus_creep_native_v1'?await loadWave4VirusEffectsInputs(root):await loadWave4TurretInputs(root);
 const rooms=new Map();
-const service={liveEnabled:false,scope:'Wave4 Virus restrictions and allowed successors; native signed authority',rooms:[]};
-for(const spec of [
+const service={liveEnabled:false,scope:'Wave4 source-bound Native successors; scoped local Web acceptance',rooms:[]};
+const specs=process.argv[5]?await read(path.resolve(process.argv[5])):[
   {id:'infected-ordinary-move',initial:true},
   {id:'clean-blink',initial:true},
   {id:'clean-recall',initial:true},
   {id:'growing-restoration-exception',definitionId:'unit:infested_missile_turret/infestation-any-phase@1'},
-]) {  const proof=sourceResult.results.find(row=>row.id===spec.id);
+];
+assert.ok(Array.isArray(specs)&&specs.length&&specs.every(spec=>typeof spec.id==='string'&&(spec.initial||typeof spec.definitionId==='string')));
+for(const spec of specs) {  const proof=sourceResult.results.find(row=>row.id===spec.id||row.definitionId==='card:'+spec.id+'/stukov-s-creep-any@1');
   assert.ok(proof?.coldReplay);
   const sourceDirectory=path.join(root,proof.directoryRef);
   assert.ok(sourceDirectory.startsWith(path.join(root,'build/wave4-web')+path.sep));

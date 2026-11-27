@@ -1,0 +1,20 @@
+{
+  "schema": "starcraft_tmg_wave4_virus_creep_displacement_v1",
+  "status": "passed_scoped",
+  "runRef": "build/wave4-web/virus-creep/displacement-gtae99",
+  "roomId": "wave4-virus-creep-displacement",
+  "definitionId": "card:hungering_infestation/stukov-s-creep-any@1",
+  "tokenId": "asset:1:creep_token_place:1",
+  "signedActions": 3,
+  "stateHash": "80caccee036ab4663235773f8b36f4e76295408922c59afb5ffc2188de4c738b",
+  "queryReadOnly": true,
+  "queryReceiptHash": "ebb3a1874fda9ba48bd329a186015ee4277948b67152c22eb6abac5e49b2f108",
+  "exactBaseContact": true,
+  "displacementBeforeEnemyActionRemoval": true,
+  "coldReplay": true,
+  "newGameAtoms": 0,
+  "sourceHeldDefinitions": 39,
+  "fullWave4Admission": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

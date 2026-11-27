@@ -1,0 +1,8 @@
+[
+  {
+    "id": "destroyed-zero-supply",
+    "definitionId": "card:healing_pathogen/universal-carrier-any@1",
+    "flow": "carrier-restoration",
+    "healTarget": "actor"
+  }
+]

@@ -1,0 +1,66 @@
+{
+  "schema": "starcraft_tmg_wave4_virus_web_verification_v1",
+  "status": "passed_scoped",
+  "runRef": "build/wave4-web/universal-carrier/web-acceptance-v1",
+  "results": [
+    {
+      "kind": "destroyed-zero-supply",
+      "definitionId": "card:healing_pathogen/universal-carrier-any@1",
+      "sourceRoomId": "wave4-carrier-destroyed-zero-supply",
+      "sourceStateHash": "0ad73dce8d4d8b147e316be7bd50f90c0264b2002f0c9637e32bf69984f99191",
+      "sourcePrefixReceipts": 1,
+      "trace": [
+        {
+          "actionType": "choose_universal_carrier_heal",
+          "definitionId": "card:healing_pathogen/universal-carrier-any@1",
+          "sideKey": "player1",
+          "stateRevision": 1,
+          "stateHash": "3c5b0126101582f0c92bdf3e895e345d6c9bbbe49bce8842f42343fe03b6b981"
+        },
+        {
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:infested_missile_turret/infestation-any-phase@1",
+          "sideKey": "player1",
+          "stateRevision": 2,
+          "stateHash": "658bebffa554116f48f108b2226ff9ed8f97191da1b49542f5716bd7f6544366"
+        },
+        {
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null,
+          "sideKey": "player2",
+          "stateRevision": 3,
+          "stateHash": "7dcd7802925c0174128fc2fda2ab8178c5d72d8ca4da95cb6a5a08e5c27858b5"
+        },
+        {
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null,
+          "sideKey": "player1",
+          "stateRevision": 4,
+          "stateHash": "baba0c20d905da622e55d903fb346078bbe6383bb79b1407a682e989f47e8776"
+        },
+        {
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:medic/restoration-any-phase@1",
+          "sideKey": "player2",
+          "stateRevision": 5,
+          "stateHash": "12511d19aae9b4ddcac767cb69c102c4ad2a9653c986c0263cc91873198913a1"
+        }
+      ],
+      "signedActions": 5,
+      "twoSeatsVerified": true,
+      "explicitHumanConfirmation": true,
+      "previewReadOnly": true,
+      "replayMatchesCurrent": true,
+      "seatRecoveryReentryVerified": true,
+      "pageErrors": []
+    }
+  ],
+  "signedActions": 5,
+  "conditionalTurretGeometryInRestorationCaseOnly": true,
+  "sourceHeldDefinitions": 39,
+  "fullWave4LobbyBuilderAdmission": false,
+  "fullMatchAdmission": false,
+  "wave3PlayerRoomsTouched": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

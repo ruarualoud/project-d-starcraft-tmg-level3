@@ -1,0 +1,271 @@
+{
+  "schema": "starcraft_tmg_wave4_universal_carrier_native_v1",
+  "status": "passed_scoped",
+  "runRef": "build/wave4-web/universal-carrier/run-7ogsZu",
+  "results": [
+    {
+      "id": "destroyed-zero-supply",
+      "infected": true,
+      "heal": true,
+      "restore": true,
+      "roomId": "wave4-carrier-destroyed-zero-supply",
+      "directoryRef": "build/wave4-web/universal-carrier/run-7ogsZu/destroyed-zero-supply",
+      "sourceDefinitionIds": [
+        "card:stukov_s_forces/hostile-incubation-any@1",
+        "unit:infested_missile_turret/detection-any-phase@1",
+        "unit:infested_missile_turret/source-of-creep-any-phase@1",
+        "unit:infested_missile_turret/infestation-any-phase@1",
+        "unit:infested_missile_turret/structure-any-phase@1",
+        "unit:infested_missile_turret/firefly-missiles-assault-phase@1",
+        "unit:infested_missile_turret/ocular-overwatch-assault-phase@1",
+        "card:healing_pathogen/universal-carrier-any@1",
+        "unit:medic/restoration-any-phase@1"
+      ],
+      "signedActions": 6,
+      "stateHash": "a6f9c367820d893049ddfce4522d630c88d9e8bb6d44baa331e6a7bd15800081",
+      "runtimeHash": "ac5c195900f79671a432374b78121a4e4187be0cc36c2b60549968879902827a",
+      "targetUnitId": "actor",
+      "healingChoices": 1,
+      "healResolution": {
+        "schema": "starcraft_tmg_official_heal_resolution_v1",
+        "currentModelsBefore": 2,
+        "currentModelsAfter": 2,
+        "maxModels": 2,
+        "destroyedModelIdsBefore": [],
+        "destroyedModelIdsAfter": [],
+        "damageMarkerBefore": 1,
+        "healValue": 2,
+        "effectiveHeal": 1,
+        "discardedHeal": 1,
+        "damageMarkerAfter": 0,
+        "shieldValue": 0,
+        "statusesBefore": [],
+        "statusesAfter": [],
+        "shieldedBefore": false,
+        "shieldedAfter": false,
+        "shieldedStatusRestored": false,
+        "destroyedModelsReturned": 0,
+        "respawnPerformed": false,
+        "rulesTruth": "official_core_part_5_and_part_11_heal_exact_transition",
+        "trainingTruth": false,
+        "healResolutionHash": "906b05da2e3828492846bf8a2375cf1f26c8854d7692c22b1b3f60274ac4e75c"
+      },
+      "infestationRestorationCompleted": true,
+      "actualEnemyDestroyed": true,
+      "actualEnemyCurrentSupply": 0,
+      "trace": [
+        {
+          "revision": 1,
+          "sideKey": "player1",
+          "actionType": "ranged_attack",
+          "definitionId": null
+        },
+        {
+          "revision": 2,
+          "sideKey": "player1",
+          "actionType": "choose_universal_carrier_heal",
+          "definitionId": "card:healing_pathogen/universal-carrier-any@1"
+        },
+        {
+          "revision": 3,
+          "sideKey": "player1",
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:infested_missile_turret/infestation-any-phase@1"
+        },
+        {
+          "revision": 4,
+          "sideKey": "player2",
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null
+        },
+        {
+          "revision": 5,
+          "sideKey": "player1",
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null
+        },
+        {
+          "revision": 6,
+          "sideKey": "player2",
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:medic/restoration-any-phase@1"
+        }
+      ],
+      "idempotencyVerified": true,
+      "coldReplay": true
+    },
+    {
+      "id": "positive-supply-loss",
+      "infected": true,
+      "heal": true,
+      "positiveSupply": true,
+      "roomId": "wave4-carrier-positive-supply-loss",
+      "directoryRef": "build/wave4-web/universal-carrier/run-7ogsZu/positive-supply-loss",
+      "sourceDefinitionIds": [
+        "card:stukov_s_forces/hostile-incubation-any@1",
+        "unit:infested_missile_turret/detection-any-phase@1",
+        "unit:infested_missile_turret/source-of-creep-any-phase@1",
+        "unit:infested_missile_turret/infestation-any-phase@1",
+        "unit:infested_missile_turret/structure-any-phase@1",
+        "unit:infested_missile_turret/firefly-missiles-assault-phase@1",
+        "unit:infested_missile_turret/ocular-overwatch-assault-phase@1",
+        "card:healing_pathogen/universal-carrier-any@1",
+        "unit:medic/restoration-any-phase@1"
+      ],
+      "signedActions": 5,
+      "stateHash": "dc6c63eae0f880d302495a93b3611f44fe56c477b16d877363ebd2a7b1f1001e",
+      "runtimeHash": "24ee1b664f4d567d6c82798d670b650c23928d5e33e8c40c483144e014a17968",
+      "targetUnitId": "healee",
+      "healingChoices": 1,
+      "healResolution": {
+        "schema": "starcraft_tmg_official_heal_resolution_v1",
+        "currentModelsBefore": 3,
+        "currentModelsAfter": 3,
+        "maxModels": 3,
+        "destroyedModelIdsBefore": [],
+        "destroyedModelIdsAfter": [],
+        "damageMarkerBefore": 1,
+        "healValue": 2,
+        "effectiveHeal": 1,
+        "discardedHeal": 1,
+        "damageMarkerAfter": 0,
+        "shieldValue": 0,
+        "statusesBefore": [],
+        "statusesAfter": [],
+        "shieldedBefore": false,
+        "shieldedAfter": false,
+        "shieldedStatusRestored": false,
+        "destroyedModelsReturned": 0,
+        "respawnPerformed": false,
+        "rulesTruth": "official_core_part_5_and_part_11_heal_exact_transition",
+        "trainingTruth": false,
+        "healResolutionHash": "831033fa1f6e62ab2a8c761a94fee76356a5276cf51f3ffb867c41b4bbc67c66"
+      },
+      "infestationRestorationCompleted": false,
+      "actualEnemyDestroyed": false,
+      "actualEnemyCurrentSupply": 0,
+      "trace": [
+        {
+          "revision": 1,
+          "sideKey": "player1",
+          "actionType": "ranged_attack",
+          "definitionId": null
+        },
+        {
+          "revision": 2,
+          "sideKey": "player2",
+          "actionType": "ranged_attack",
+          "definitionId": null
+        },
+        {
+          "revision": 3,
+          "sideKey": "player1",
+          "actionType": "choose_universal_carrier_heal",
+          "definitionId": "card:healing_pathogen/universal-carrier-any@1"
+        },
+        {
+          "revision": 4,
+          "sideKey": "player2",
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null
+        },
+        {
+          "revision": 5,
+          "sideKey": "player1",
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null
+        }
+      ],
+      "idempotencyVerified": true,
+      "coldReplay": true
+    },
+    {
+      "id": "clean-no-trigger",
+      "infected": false,
+      "heal": false,
+      "roomId": "wave4-carrier-clean-no-trigger",
+      "directoryRef": "build/wave4-web/universal-carrier/run-7ogsZu/clean-no-trigger",
+      "sourceDefinitionIds": [
+        "card:stukov_s_forces/hostile-incubation-any@1",
+        "unit:infested_missile_turret/detection-any-phase@1",
+        "unit:infested_missile_turret/source-of-creep-any-phase@1",
+        "unit:infested_missile_turret/infestation-any-phase@1",
+        "unit:infested_missile_turret/structure-any-phase@1",
+        "unit:infested_missile_turret/firefly-missiles-assault-phase@1",
+        "unit:infested_missile_turret/ocular-overwatch-assault-phase@1",
+        "card:healing_pathogen/universal-carrier-any@1",
+        "unit:medic/restoration-any-phase@1"
+      ],
+      "signedActions": 1,
+      "stateHash": "8d33e3545703c4e2eeba242278a76196be6a5e4cad3e68519e4ab0700a923e47",
+      "runtimeHash": "ac5c195900f79671a432374b78121a4e4187be0cc36c2b60549968879902827a",
+      "targetUnitId": "actor",
+      "healingChoices": 0,
+      "healResolution": null,
+      "infestationRestorationCompleted": false,
+      "actualEnemyDestroyed": true,
+      "actualEnemyCurrentSupply": 0,
+      "trace": [
+        {
+          "revision": 1,
+          "sideKey": "player1",
+          "actionType": "ranged_attack",
+          "definitionId": null
+        }
+      ],
+      "idempotencyVerified": true,
+      "coldReplay": true
+    },
+    {
+      "id": "no-recipient-in-range",
+      "infected": true,
+      "heal": false,
+      "positiveSupply": true,
+      "outOfRange": true,
+      "roomId": "wave4-carrier-no-recipient-in-range",
+      "directoryRef": "build/wave4-web/universal-carrier/run-7ogsZu/no-recipient-in-range",
+      "sourceDefinitionIds": [
+        "card:stukov_s_forces/hostile-incubation-any@1",
+        "unit:infested_missile_turret/detection-any-phase@1",
+        "unit:infested_missile_turret/source-of-creep-any-phase@1",
+        "unit:infested_missile_turret/infestation-any-phase@1",
+        "unit:infested_missile_turret/structure-any-phase@1",
+        "unit:infested_missile_turret/firefly-missiles-assault-phase@1",
+        "unit:infested_missile_turret/ocular-overwatch-assault-phase@1",
+        "card:healing_pathogen/universal-carrier-any@1",
+        "unit:medic/restoration-any-phase@1"
+      ],
+      "signedActions": 2,
+      "stateHash": "b40b7a29408f30859e7f6c14f4863d5394f96424c66fcd51bc56f8ff07fea06c",
+      "runtimeHash": "24ee1b664f4d567d6c82798d670b650c23928d5e33e8c40c483144e014a17968",
+      "targetUnitId": "healee",
+      "healingChoices": 0,
+      "healResolution": null,
+      "infestationRestorationCompleted": false,
+      "actualEnemyDestroyed": false,
+      "actualEnemyCurrentSupply": 1,
+      "trace": [
+        {
+          "revision": 1,
+          "sideKey": "player1",
+          "actionType": "ranged_attack",
+          "definitionId": null
+        },
+        {
+          "revision": 2,
+          "sideKey": "player2",
+          "actionType": "ranged_attack",
+          "definitionId": null
+        }
+      ],
+      "idempotencyVerified": true,
+      "coldReplay": true
+    }
+  ],
+  "newGameAtoms": 0,
+  "implementedCumulativeAtoms": 5,
+  "sourceHeldDefinitions": 39,
+  "fullWave4Admission": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

@@ -1,0 +1,32 @@
+[
+  {
+    "id": "healing_pathogen",
+    "definitionId": "card:hatchery/creep-spread-any@1",
+    "flow": "creep-place",
+    "creepId": "card:healing_pathogen/stukov-s-creep-any@1",
+    "coordinate": {
+      "xMilliInches": 27000,
+      "yMilliInches": 34000
+    }
+  },
+  {
+    "id": "weighted_pustule",
+    "definitionId": "card:hatchery/creep-spread-any@1",
+    "flow": "creep-place",
+    "creepId": "card:weighted_pustule/stukov-s-creep-any@1",
+    "coordinate": {
+      "xMilliInches": 27000,
+      "yMilliInches": 34000
+    }
+  },
+  {
+    "id": "hungering_infestation",
+    "definitionId": "card:hatchery/creep-spread-any@1",
+    "flow": "creep-place",
+    "creepId": "card:hungering_infestation/stukov-s-creep-any@1",
+    "coordinate": {
+      "xMilliInches": 27000,
+      "yMilliInches": 34000
+    }
+  }
+]

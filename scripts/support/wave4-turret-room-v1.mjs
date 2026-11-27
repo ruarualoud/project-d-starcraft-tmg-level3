@@ -24,15 +24,15 @@ export async function loadWave4TurretInputs(root) {
 }
 const turretId = 'army_units:infested_missile_turret';
 const unit = (id, key) => ({ unitInstanceId: id, recordKey: 'army_units:' + key, compositionKind: 'small', upgrades: [] });
-export function createWave4TurretScene(inputs, { kind = 'overwatch', round = 2, suppress = false, zeroSupply = false, includeMelee = false, virusCard = 'healing_pathogen', enemyCard = 'armory', extraReactionDefinitionIds = [] } = {}) {
+export function createWave4TurretScene(inputs, { kind = 'overwatch', round = 2, suppress = false, zeroSupply = false, includeMelee = false, virusCard = 'healing_pathogen', enemyCard = 'armory', extraReactionDefinitionIds = [], includeUniversalCarrier = false, additionalFriendlyUnits = [], friendlyPositionsById = {} } = {}) {
   const infestation = kind === 'infestation';
-  const virusDefinitionId = ({hungering_infestation:'card:hungering_infestation/growing-infestation-any@1', weighted_pustule:'card:weighted_pustule/fetid-touch-any@1'})[virusCard];
+  const virusDefinitionId = includeUniversalCarrier && virusCard==='healing_pathogen' ? 'card:healing_pathogen/universal-carrier-any@1' : ({hungering_infestation:'card:hungering_infestation/growing-infestation-any@1', weighted_pustule:'card:weighted_pustule/fetid-touch-any@1'})[virusCard];
   const characteristicIds = ['unit:infested_missile_turret/detection-any-phase@1', ...(virusDefinitionId ? [virusDefinitionId] : [])];
   const sourceDefinitionIds = [...inputs.scope.definitionIds, ...(virusDefinitionId ? [virusDefinitionId] : []), ...extraReactionDefinitionIds,
     ...(infestation ? ['unit:medic/restoration-any-phase@1'] : ['unit:raven/railguns-assault-phase@1'])];
   const own = { sideKey: 'player1', scaleId: 'Standard', mineralBudget: 2000,
     factionRecordKey: 'tactical_cards:stukov_s_forces', tacticalCardRecordKeys: ['tactical_cards:' + virusCard],
-    units: [unit('actor', zeroSupply ? 'goliath' : 'hydralisk')] };
+    units: [unit('actor', zeroSupply ? 'goliath' : 'hydralisk'), ...additionalFriendlyUnits.map(row=>unit(row.id,row.key))] };
   const opponent = { sideKey: 'player2', scaleId: 'Standard', mineralBudget: 2000,
     factionRecordKey: 'tactical_cards:terran_armed_forces', tacticalCardRecordKeys: ['tactical_cards:' + enemyCard],
     units: infestation ? [unit('fallen', 'marine'), unit('recipient', 'marine'), unit('restorer', 'medic')]
@@ -61,12 +61,13 @@ export function createWave4TurretScene(inputs, { kind = 'overwatch', round = 2, 
     state.board.specialTerrainAgreement.terrainEntries.filter(entry => entry.terrainId === state.board.terrain[0].id) });
   const place = (piece, x, y) => {
     Object.assign(piece, { isOnField: true, isInReserves: false, deploymentStatus: 'deployed', leadingModelId: piece.models[0].id });
+    const triangle=piece.models.length===3&&additionalFriendlyUnits.some(row=>row.id===piece.id);
     piece.models.forEach((model, i) => Object.assign(model, { isOnField: true,
-      xInches: x + (i % 3) * (model.baseWidthInches + 0.05),
-      yInches: y + Math.floor(i / 3) * (model.baseDepthInches + 0.05), elevation: 'ground_level' }));
+      xInches: x + (triangle&&i===2?(model.baseWidthInches+0.05)/2:(i%3)*(model.baseWidthInches+0.05)),
+      yInches: y + (triangle&&i===2?(model.baseDepthInches+0.05)*Math.sqrt(3)/2:Math.floor(i/3)*(model.baseDepthInches+0.05)), elevation: 'ground_level' }));
   };
   for (const piece of state.pieces) {
-    const [x,y] = ({ actor: [10,10], enemy: [22,10], fallen: [20,10], recipient: [20,14], restorer: [24,15] })[piece.id];
+    const [x,y] = ({ actor: [10,10], enemy: [22,10], fallen: [20,10], recipient: [20,14], restorer: [24,15], ...friendlyPositionsById })[piece.id];
     place(piece,x,y);
   }
   if (infestation) {
@@ -121,13 +122,13 @@ export function createWave4LegacyOverwatchControlScene(inputs) {
   scenario:{kind:'legacy_auto_turret_current_snapshot_native_control',fullMatchAdmission:false,modelCalls:0}};
 }
 
-export async function bindWave4TurretRoom({ inputs, state, sourceDefinitionIds, runtimeOptions, scenario, directory, humanConfirmed = false, roundControl = false,
+export async function bindWave4TurretRoom({ inputs, state, sourceDefinitionIds, runtimeOptions, scenario, directory, humanConfirmed = false, roundControl = false, roundDefinitionIds,
   characteristicRuntimeDefinitionIds=['unit:infested_missile_turret/detection-any-phase@1'] }) {
   const sourceRuntimeFor = () => {
     const nativeActions = createOfficialCharacteristicStatusComponentRuntimeV2({ context: inputs.context,
       spatialState: state, definitionIds: characteristicRuntimeDefinitionIds, sourceDefinitionIds, ...runtimeOptions });
     return roundControl ? createOfficialEngineeringScopedRoundRuntimeV1({ context: inputs.context, state, nativeActions,
-      definitionIds: inputs.scope.definitionIds }) : nativeActions;
+      definitionIds: roundDefinitionIds || inputs.scope.definitionIds }) : nativeActions;
   };
   const runtimeFor = () => humanConfirmed ? createOfficialHumanConfirmedRuntimeV1(sourceRuntimeFor()) : sourceRuntimeFor();
   const runtime = runtimeFor();
@@ -140,7 +141,7 @@ export async function bindWave4TurretRoom({ inputs, state, sourceDefinitionIds, 
   const context = { ...inputs.context, manifest };
   const authority = createWave3ComponentEngineeringAuthorityV1({ context, state, scenario });
   await fs.mkdir(directory, { recursive: true });
-  for (const [name,value] of Object.entries({ authority, runtime: runtime.descriptor, scope: { sourceDefinitionIds, runtimeOptions, scenario, roundControl, characteristicRuntimeDefinitionIds } })) {
+  for (const [name,value] of Object.entries({ authority, runtime: runtime.descriptor, scope: { sourceDefinitionIds, runtimeOptions, scenario, roundControl, ...(roundDefinitionIds ? {roundDefinitionIds} : {}), characteristicRuntimeDefinitionIds } })) {
     await atomicWrite(path.join(directory,name+'.json'),JSON.stringify(value,null,2)+'\n');
   }
   return { context, authority, runtime, open: (options = {}) => openWave3EngineeringRoomV1({ directory, filename: 'room.sqlite',
