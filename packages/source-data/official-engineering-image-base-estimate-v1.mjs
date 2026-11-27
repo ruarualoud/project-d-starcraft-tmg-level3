@@ -3,7 +3,8 @@ import { hashStarcraftTmgContract as hash } from '../authoritative-engine/refere
 export function verifyOfficialEngineeringImageBaseEstimateV1(estimate) {
   const { estimateHash, ...body } = estimate || {};
   if (estimate?.schema !== 'starcraft_tmg_engineering_image_base_estimate_v1'
-    || estimateHash !== hash(body) || estimate.recordKey !== 'army_units:infested_missile_turret'
+    || estimateHash !== hash(body) || !['army_units:infested_missile_turret','army_units:stukov',
+      'army_units:infested_marine','army_units:infested_trooper'].includes(estimate.recordKey)
     || estimate.shape !== 'round' || !Number.isSafeInteger(estimate.diameterMillimetres) || estimate.diameterMillimetres <= 0
     || !Number.isSafeInteger(estimate.uncertaintyMillimetres?.minimum) || estimate.uncertaintyMillimetres.minimum <= 0
     || !Number.isSafeInteger(estimate.uncertaintyMillimetres?.maximum)

@@ -1,4 +1,5 @@
 import { OFFICIAL_ANCESTRAL_WISDOM_DEFINITION_ID } from './official-ancestral-wisdom-payment-v1.mjs';
+import {createOfficialStukovContextualSupplyRoutesV1} from '../source-data/official-stukov-infestation-source-v1.mjs';
 import { OFFICIAL_OUR_MINDS_AS_ONE_DEFINITION_ID } from './official-our-minds-as-one-v1.mjs';
 import { OFFICIAL_KHALAS_GIFT_DEFINITION_ID } from './official-khalas-gift-v1.mjs';
 import { createOfficialCleanupContinuationPolicyV1 } from './official-cleanup-continuation-runtime-v1.mjs';
@@ -280,6 +281,8 @@ export function createOfficialReleaseRosterStateV2({ context, candidatesBySide, 
       catalogue: abilityCatalogue(),
       definitionIds: characteristicDefinitionIds, canonicalResourceTypes: canonicalResourceTypes || sabotageDronePhaseEnd
         || reactionDefinitionIds?.includes(OFFICIAL_ANCESTRAL_WISDOM_DEFINITION_ID) });
+    const stukovSupplyRoutes=createOfficialStukovContextualSupplyRoutesV1(state.officialCharacteristicStatusFamilySourceBundle);
+    if(stukovSupplyRoutes.length)state.officialContextualSupplyModifierRoutes=[...(state.officialContextualSupplyModifierRoutes||[]),...stukovSupplyRoutes];
     if (characteristicDefinitionIds.includes(OFFICIAL_FORCE_WALL_DEFINITION_ID)) {
       state.officialBattlefieldAssetComponentProfile = getOfficialReleaseBattlefieldAssetComponentProfileV2(context);
       getOfficialForceWallFootprintV1(state);

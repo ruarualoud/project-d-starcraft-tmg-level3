@@ -1,3 +1,5 @@
+import {createOfficialStukovContextualSupplyRoutesV1} from '../source-data/official-stukov-infestation-source-v1.mjs';
+import {openOfficialInfestationSpreadRestorationWindowV1} from './official-reaction-family-adapter-v1.mjs';
 import { createOfficialUniversalCarrierRuntimeV1 } from './official-universal-carrier-runtime-v1.mjs';
 import { verifyOfficialSpawnRoundAbilityLockPolicyV1, allowsOfficialSpawnRoundSpecialAbilityV1 } from '../rule-atoms/official-spawn-round-ability-lock-v1.mjs';
 import { readOfficialFactionUnitConversionV1 } from '../rule-atoms/official-faction-unit-conversion-v1.mjs';
@@ -706,6 +708,10 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
       || includeHits || includeArmourOrdinals
       || spatialState?.officialBattlefieldAssetFamilySourceBundle?.schema === 'starcraft_tmg_official_battlefield_asset_family_source_bundle_v2' });
   const characteristicRoutes = bundle?.routes || [];
+  const stukovInfestation=characteristicRoutes.some(r=>['infestation_spread','infestation_activation_exchange','infected_enemy_mission_supply_penalty'].includes(r.effectKind));
+  if(stukovInfestation&&!isDeepStrictEqual(bundle,spatialState.officialCharacteristicStatusFamilySourceBundle))throw Error('STUKOV_INFESTATION_SOURCE_BUNDLE_MISMATCH');
+  const stukovSupplyRoutes=createOfficialStukovContextualSupplyRoutesV1(bundle);
+  if(stukovSupplyRoutes.length&&!isDeepStrictEqual(stukovSupplyRoutes,(spatialState.officialContextualSupplyModifierRoutes||[]).filter(r=>stukovSupplyRoutes.some(s=>s.definitionId===r.definitionId)).sort((a,b)=>a.definitionId.localeCompare(b.definitionId))))throw Error('STUKOV_CONTEXTUAL_SUPPLY_SOURCE_REQUIRED');
   const universalCarrier = characteristicRoutes.some(route => route.effectKind === 'universal_carrier')
     ? createOfficialUniversalCarrierRuntimeV1({ sourceBundle: bundle }) : null;
   if (universalCarrier && (!includeRanged && !includeMelee && !includeHits || !isDeepStrictEqual(bundle,spatialState.officialCharacteristicStatusFamilySourceBundle))) throw Error('UNIVERSAL_CARRIER_NATIVE_PRODUCER_AND_SOURCE_REQUIRED');
@@ -826,9 +832,12 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
       && (!state.officialSeekerAssaultTiming || row.pieceId === actor.id)) : null;
   const canRestoreFlare = includeReleaseOpticalFlareRestoration && reactionBundle?.routes.some(route =>
     route.triggerKind === 'debuff_received' && route.effectKind === 'remove_debuffs');
+  const canRestoreInfestation=characteristicRoutes.some(r=>r.effectKind==='infestation_spread')&&reactionBundle?.routes.some(r=>r.triggerKind==='debuff_received'&&r.effectKind==='remove_debuffs');
   const adapter = bundle ? createOfficialCharacteristicStatusFamilyAdapterV1(bundle, { authorizeSeekerCast,
-    ...(canRestoreFlare ? { afterApply: transition => openOfficialOpticalFlareRestorationWindowV1(
-      reactionBundle, transition, { recordSource: true }) } : {}) }) : null;
+    ...((canRestoreFlare||canRestoreInfestation) ? { afterApply: transition => {
+      const restored=canRestoreFlare?openOfficialOpticalFlareRestorationWindowV1(reactionBundle,transition,{recordSource:true}):transition;
+      return canRestoreInfestation?openOfficialInfestationSpreadRestorationWindowV1(reactionBundle,restored):restored;
+    } } : {}) }) : null;
   let weaponAdapter = null;
   if (spatialState && !isDeepStrictEqual(spatialState.officialModelGapTransitPolicy,
     OFFICIAL_PHYSICAL_GAP_TRANSIT_POLICY_V13)) throw Error('CHARACTERISTIC_SPATIAL_GAP_POLICY_REQUIRED');
@@ -1102,7 +1111,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
       ...(infestationTransfer ? ['infested_enemy_removed', 'debuff_received'] : []),
       ...(ancestralWisdom ? ['ability_cost_payment'] : []),
       ...((includeBeforeHitsEvadeReaction || includeIndependentRangedLungeOwner) && lunge ? ['after_ranged_attack_resolved'] : []),
-      ...((inheritedRestoration || includeBeforeHitsEvadeReaction && reactionBundle.routes.some(route => route.triggerKind === 'debuff_received'))
+      ...((canRestoreInfestation || inheritedRestoration || includeBeforeHitsEvadeReaction && reactionBundle.routes.some(route => route.triggerKind === 'debuff_received'))
         ? ['debuff_received'] : [])],
     ...(hitsAuthority ? { sourceAuthority: hitsAuthority } : {}) }) : null;
   const hitsChoices = includeHits ? createOfficialAutomaticHitsPoolChoiceRuntimeV1({ delegate: hits,
@@ -1515,7 +1524,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
     eligibility: khassarEligibility, state: spatialState, includeRun: includeKhassarRun || includeKhassarCharge || includeKhassarCombatExecution,
     enumerateNative, instantiateNative: instantiate, applyNative: apply,
   }) : null;
-  const version = universalCarrier ? '3.222.0' : includeReleaseMoundAssaultOrder ? '3.221.0' : includeBilePhysicalPlacement && bile ? '3.220.0' : psionicRoundEnd?.scheduledEffects ? '3.219.0' : includeReleaseBileAssaultOrder ? '3.218.0' : releaseZergTargets ? '3.217.0' : includePsionicStormAssaultSameName ? '3.216.0'
+  const version = stukovInfestation ? '3.223.0' : universalCarrier ? '3.222.0' : includeReleaseMoundAssaultOrder ? '3.221.0' : includeBilePhysicalPlacement && bile ? '3.220.0' : psionicRoundEnd?.scheduledEffects ? '3.219.0' : includeReleaseBileAssaultOrder ? '3.218.0' : releaseZergTargets ? '3.217.0' : includePsionicStormAssaultSameName ? '3.216.0'
     : includePsionicStormTokenCleanup ? '3.215.0'
     : includePsionicStormNamedOverlapChoices ? '3.214.0'
     : stormCast ? '3.213.0'
@@ -2340,6 +2349,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
       || Object.keys(parameters).some(key => !['activeUnitId', 'paymentCardInstanceIds', 'targetUnitId',
         ...(domain.sourceDomain?.effectKind === 'automatic_hits_engaged' ? ['targetOrder'] : []),
         ...(domain.sourceDomain?.effectKind === 'executors_will' ? ['targetUnitIds'] : []),
+         ...(domain.sourceDomain?.effectKind === 'infestation_activation_exchange' ? ['friendlyUnitId'] : []),
         ...(domain.sourceDomain?.effectKind === 'our_duty_is_unending' ? ['refreshCardInstanceIds'] : []),
         ...(domain.sourceDomain?.effectKind === 'broodmother_army_buff' ? ['broodmotherEffect'] : []),
         ...(['force_wall_pair', 'force_wall_push'].includes(domain.sourceDomain?.effectKind) ? ['positions'] : []),
@@ -2738,8 +2748,8 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
       const priorWindow = state.pendingOfficialReactionWindow;
       if (photonEntry && priorWindow.triggerKind==='reserve_entered_non_entry') return photonEntry.finish(state,transition);
       if (artanisDash && priorWindow.triggerKind==='after_successful_charge') return artanisDash.finishReaction(state,transition);
-      if (canRestoreFlare && !window && priorWindow.triggerKind === 'debuff_received'
-        && priorWindow.context.sourceDefinitionId === OFFICIAL_OPTICAL_FLARE_DEFINITION_ID) {
+      if ((canRestoreFlare||canRestoreInfestation) && !window && priorWindow.triggerKind === 'debuff_received'
+        && [OFFICIAL_OPTICAL_FLARE_DEFINITION_ID,'unit:stukov/spread-infestation-movement-phase@1','unit:infested_trooper/spread-infestation-any-phase@1'].includes(priorWindow.context.sourceDefinitionId)) {
         return { ...transition, state: consumeOfficialReactionFamilyResolutionV1(next, priorWindow.triggerHash).state };
       }
       if (afterChargeRoll && state.pendingOfficialReactionWindow?.triggerKind === 'after_charge_roll') {
@@ -3399,7 +3409,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
     if (rangedDeclaration?.pending(state)) throw Error('RANGED_DECLARATION_ATTACK_CONTINUATION_REQUIRED');
     if (hiddenLossReactions?.pending(state)) throw Error('HIDDEN_LOSS_REACTION_CONTINUATION_REQUIRED');
     if (closeRanksReactions && displacement.pending(state)) throw Error('PSIONIC_DISPLACEMENT_CLOSE_RANKS_CONTINUATION_REQUIRED');
-    if (!battlefieldModifierBundle?.routes.some(route=>route.effectKind==='stukov_creep') && !guardianShield && !ourMindsAsOne && !khalasGift && !executorsWill && !forceWallTraversal && !feedback && !farsight && !scourgeQueen && !zagaraBroodmother && !poisonousEssence && !overwatch && !sabotageDronePhaseEnd && !holoRoundEnd && !unitLifecycleAdapter && !bileUpgrades && !psionicRoundEnd && !hiddenLossReactions && !targetedMeleeCritical && !markedTargetFirstWeapon && !vilelingFoundation && !defilerMeleeFoundation && !markerAreas && !coordinatedStrike && !stationaryFirstRanged && !plasmaArmourSource && !alloyArmourSource && !superStimpack && !commandoStimpack && !chargeDeclaration) throw Error('CHARACTERISTIC_UNIT_LIFECYCLE_CONSUMER_REQUIRED');
+    if (!stukovInfestation && !battlefieldModifierBundle?.routes.some(route=>route.effectKind==='stukov_creep') && !guardianShield && !ourMindsAsOne && !khalasGift && !executorsWill && !forceWallTraversal && !feedback && !farsight && !scourgeQueen && !zagaraBroodmother && !poisonousEssence && !overwatch && !sabotageDronePhaseEnd && !holoRoundEnd && !unitLifecycleAdapter && !bileUpgrades && !psionicRoundEnd && !hiddenLossReactions && !targetedMeleeCritical && !markedTargetFirstWeapon && !vilelingFoundation && !defilerMeleeFoundation && !markerAreas && !coordinatedStrike && !stationaryFirstRanged && !plasmaArmourSource && !alloyArmourSource && !superStimpack && !commandoStimpack && !chargeDeclaration) throw Error('CHARACTERISTIC_UNIT_LIFECYCLE_CONSUMER_REQUIRED');
     if (psionicRoundEnd && request.eventKind === 'round_end'
       && (psionicRoundEnd.pending(state) || psionicRoundEnd.hasOutstanding(state))) throw Error('PSIONIC_TRANSFER_ROUND_END_CHOICES_REQUIRED');
     const prepared = psionicRoundEnd && request.eventKind === 'cleanup_and_refresh' ? psionicRoundEnd.cleanup(state) : state;
@@ -3429,7 +3439,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
     ...(chargeDeclaration ? { chargeDeclaration } : {}),
     ...(cardRefresh ? { cardRefresh } : {}),
     ...(unitLifecycleAdapter ? { unitLifecycleBundle, unitLifecycleAdapter } : {}),
-    ...(battlefieldModifierBundle?.routes.some(route=>route.effectKind==='stukov_creep') || releaseZergTargets && darkSwarmLifecycle || guardianShield || ourMindsAsOne || khalasGift || executorsWill || forceWallTraversal || feedback || farsight || scourgeQueen || zagaraBroodmother || poisonousEssence || overwatch || sabotageDronePhaseEnd || holoRoundEnd || unitLifecycleAdapter || bileUpgrades || psionicRoundEnd || hiddenLossReactions || targetedMeleeCritical || markedTargetFirstWeapon || vilelingFoundation || defilerMeleeFoundation || markerAreas || coordinatedStrike || stationaryFirstRanged || plasmaArmourSource || alloyArmourSource || superStimpack || commandoStimpack || chargeDeclaration ? { lifecycle } : {}),
+    ...(stukovInfestation || battlefieldModifierBundle?.routes.some(route=>route.effectKind==='stukov_creep') || releaseZergTargets && darkSwarmLifecycle || guardianShield || ourMindsAsOne || khalasGift || executorsWill || forceWallTraversal || feedback || farsight || scourgeQueen || zagaraBroodmother || poisonousEssence || overwatch || sabotageDronePhaseEnd || holoRoundEnd || unitLifecycleAdapter || bileUpgrades || psionicRoundEnd || hiddenLossReactions || targetedMeleeCritical || markedTargetFirstWeapon || vilelingFoundation || defilerMeleeFoundation || markerAreas || coordinatedStrike || stationaryFirstRanged || plasmaArmourSource || alloyArmourSource || superStimpack || commandoStimpack || chargeDeclaration ? { lifecycle } : {}),
     ...(relocationAdapter ? { relocationBundle, relocationAdapter, postPlaceReactions } : {}),
     ...(reactionAdapter ? { reactionBundle, reactionAdapter, router } : {}),
     ...(registeredStorm ? { router, registeredStorm } : {}),

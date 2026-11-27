@@ -1,0 +1,18 @@
+[
+  {
+    "id": "admiral-reactivate",
+    "definitionId": "unit:stukov/admiral-of-the-infested-movement-phase@1",
+    "flow": "admiral-exchange"
+  },
+  {
+    "id": "trooper-restoration",
+    "definitionId": "unit:infested_trooper/spread-infestation-any-phase@1",
+    "initial": true,
+    "flow": "trooper-restoration"
+  },
+  {
+    "id": "warden-round",
+    "definitionId": "unit:stukov/spread-infestation-movement-phase@1",
+    "flow": "stukov-spread"
+  }
+]

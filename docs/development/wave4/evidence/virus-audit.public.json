@@ -1,7 +1,7 @@
 {
   "schema": "starcraft_tmg_wave4_virus_current_consumer_audit_v1",
   "status": "passed",
-  "runRef": "build/wave4-web/virus-restrictions/audit-Z69ZOo",
+  "runRef": "build/wave4-web/virus-restrictions/audit-L7bOy6",
   "results": [
     {
       "id": "infected-ordinary-move",

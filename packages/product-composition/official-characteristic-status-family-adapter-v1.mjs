@@ -1,4 +1,6 @@
 import { compileOfficialUniversalCarrierSpecV1 } from '../source-data/official-universal-carrier-source-v1.mjs';
+import {compileOfficialStukovInfestationSpecV1} from '../source-data/official-stukov-infestation-source-v1.mjs';
+import {resolveOfficialInfestationActivationExchangeV1} from '../rule-atoms/official-infestation-activation-exchange-v1.mjs';
 import { compileOfficialInfestationRestrictionSpecV1 } from '../rule-atoms/official-infestation-restrictions-v1.mjs';
 import { allowsOfficialSpawnRoundSpecialAbilityV1 } from '../rule-atoms/official-spawn-round-ability-lock-v1.mjs';
 import { projectOfficialDeploymentSupplyV1 } from '../rule-atoms/official-deployment-supply-projection-v1.mjs';
@@ -314,7 +316,8 @@ function weaponKeyword(effectKind, weaponScope, keyword, value, extra = {}) {
 function compileRoute(definition, { explicitRelease = false } = {}) {
   const name = definition.definitionName;
   const text = definition.sourceText;
-  const restrictionSpec = compileOfficialInfestationRestrictionSpecV1(definition) || compileOfficialUniversalCarrierSpecV1(definition);
+  const restrictionSpec = compileOfficialInfestationRestrictionSpecV1(definition) || compileOfficialUniversalCarrierSpecV1(definition)
+    || compileOfficialStukovInfestationSpecV1(definition);
   if (restrictionSpec) return seal(baseSpec(definition, restrictionSpec), 'routeHash');
   let spec = null;
   if (definition.definitionId === OFFICIAL_RAVEN_ANTI_ARMOUR_MISSILE_DEFINITION_ID
@@ -1321,6 +1324,10 @@ function targetIds(state, route, actor, rangeMilliInches) {
       && unitWithin(state, actor, target, rangeMilliInches).within)
       .map((entry) => entry.id).sort();
   }
+  if (route.targetKind === 'visible_infected_enemy_within') {
+    return (state.pieces || []).filter(createOfficialVisibleEnemyWithinFilterV1(state, actor, rangeMilliInches))
+      .filter(target=>hasStatus(target,'infestation')).map(target=>target.id).sort();
+  }
   if (route.targetKind === 'visible_enemy_within'
     || route.targetKind === 'enemy_within' && abilityRequiresLineOfSight(state, route)) {
     return (state.pieces || []).filter(createOfficialVisibleEnemyWithinFilterV1(state, actor, rangeMilliInches))
@@ -1349,6 +1356,13 @@ function targetIds(state, route, actor, rangeMilliInches) {
       .map((entry) => entry.id).sort();
   }
   return [];
+}
+function admiralFriendlyIds(state,route,actor,enemy){
+  return state.pieces.filter(target=>target.sideKey===actor.sideKey&&activePiece(target)
+    &&tags(target).has('infested')&&!tags(target).has('unique')&&canOfficialUnitBeAbilityTargetV1(state,target)
+    &&allowsOfficialAbilityUnitRecipientV13(state,target)
+    &&unitWithin(state,enemy,target,route.friendlyRangeMilliInches).within
+    &&isOfficialUnitVisibleForActiveAbilityV1(state,actor,target)).map(target=>target.id).sort();
 }
 function engagedEnemyIds(state, actor) {
   return [...new Set(deriveOfficialEngagementGraphV2(state).modelEdges
@@ -1449,6 +1463,8 @@ function domainFor(state, route, instance, actor, available) {
       damageMarker: Number(actor.damageMarker || 0), purpose: "query_prediction",
     })) : null;
   const required = ["activeUnitId", "paymentCardInstanceIds"];
+  const admiral=route.effectKind==='infestation_activation_exchange';
+  if(admiral)required.push('friendlyUnitId');
   if (available.refreshChoices) required.push('refreshCardInstanceIds');
   const broodmotherChoices = route.effectKind === 'broodmother_army_buff'
     ? Object.keys(route.choices).filter(choice => !(state.activeAbilityUseHistory || []).some(entry =>
@@ -1487,6 +1503,8 @@ function domainFor(state, route, instance, actor, available) {
         minItems: hitsTargets.length, maxItems: hitsTargets.length, items: { enum: hitsTargets } } } : {}),
       activeUnitId: { const: actor.id },
       paymentCardInstanceIds: { enum: clone(available.payments) },
+      ...(admiral?{friendlyUnitId:{enum:['skip',...[...new Set(available.targets.flatMap(id=>
+        admiralFriendlyIds(state,route,actor,state.pieces.find(p=>p.id===id))))].sort()]}}:{}),
       ...(available.refreshChoices ? { refreshCardInstanceIds: { type: 'array', minItems: 0,
         maxItems: route.maxRefreshedCards, uniqueItems: true, items: { enum: available.refreshChoices } } } : {}),
       ...(broodmotherChoices ? { broodmotherEffect: { enum: broodmotherChoices } } : {}),
@@ -1664,6 +1682,13 @@ function instantiate(bundle, state, domain, parameters = {}, authorizeSeekerCast
     fail('CHARACTERISTIC_STATUS_TARGET_SELECTION_INVALID');
   }
   let automaticHits = null;
+  let friendlyUnitId;
+  if(route.effectKind==='infestation_activation_exchange'){
+    friendlyUnitId=parameters.friendlyUnitId;
+    const enemy=state.pieces.find(p=>p.id===targetUnitId);
+    if(!enemy||typeof friendlyUnitId!=='string'||(friendlyUnitId!=='skip'&&!admiralFriendlyIds(state,route,actor,enemy).includes(friendlyUnitId))
+      ||Object.keys(parameters).some(k=>!['activeUnitId','paymentCardInstanceIds','targetUnitId','friendlyUnitId'].includes(k)))fail('ADMIRAL_FRIENDLY_SELECTION_INVALID');
+  }else if(parameters.friendlyUnitId!==undefined)fail('CHARACTERISTIC_STATUS_UNEXPECTED_FRIENDLY_TARGET');
   const broodmotherEffect = parameters.broodmotherEffect;
   if (domain.parameterSchema.broodmotherEffect
     && !domain.parameterSchema.broodmotherEffect.enum.includes(broodmotherEffect)) {
@@ -1694,6 +1719,7 @@ function instantiate(bundle, state, domain, parameters = {}, authorizeSeekerCast
     automaticHits = { targetUnitIds: clone(order), hits: route.hits, damagePerHit: route.damagePerHit };
   }
   const canonicalParameters = { activeUnitId: actor.id,
+    ...(friendlyUnitId!==undefined?{friendlyUnitId}:{}),
     paymentCardInstanceIds, ...(targetUnitId ? { targetUnitId } : {}),
     ...(targetUnitIds ? { targetUnitIds: [...targetUnitIds].sort() } : {}),
     ...(refreshSelection ? { refreshCardInstanceIds: [...refreshCardInstanceIds].sort() } : {}),
@@ -1929,7 +1955,21 @@ function applyEffect(state, route, actor, action, events) {
   const targetId = action.characteristicStatusPlan.canonicalParameters.targetUnitId;
   const target = targetId ? state.pieces.find((entry) => entry.id === targetId) : actor;
   if (!target) fail("CHARACTERISTIC_STATUS_APPLY_TARGET_UNKNOWN", String(targetId || ""));
-  if (route.effectKind === 'our_duty_is_unending') {
+  if(route.effectKind==='infestation_spread'){
+    const prior=(target.statuses||[]).filter(s=>statusName(s)==='infestation').map(s=>s.statusEffectHash).filter(Boolean);
+    removeStatus(target,['infestation']);
+    state.board.effectMarkers=(state.board.effectMarkers||[]).filter(m=>!prior.includes(m.statusEffectHash));
+    const value=status(route,state,actor,target,{statusName:'INFESTATION',statusKind:'debuff',expiresAt:null});
+    addStatus(target,value);state.board.effectMarkers.push(markerFor(value));
+    events.push({type:'infestation_status_applied',sourcePieceId:actor.id,targetPieceId:target.id,
+      sourceDefinitionId:route.definitionId,statusEffectHash:value.statusEffectHash,trainingTruth:false});
+  }else if(route.effectKind==='infestation_activation_exchange'){
+    const id=action.characteristicStatusPlan.canonicalParameters.friendlyUnitId;
+    const resolution=resolveOfficialInfestationActivationExchangeV1({state,route,actor,enemy:target,
+      friendly:id==='skip'?null:state.pieces.find(p=>p.id===id),eligibleFriendlyUnitIds:admiralFriendlyIds(state,route,actor,target)});
+    state.officialInfestationActivationExchangeHistory=[...(state.officialInfestationActivationExchangeHistory||[]),resolution];
+    events.push({type:'infestation_activation_exchanged',...resolution});
+  }else if (route.effectKind === 'our_duty_is_unending') {
     const cardInstanceIds = action.characteristicStatusPlan.canonicalParameters.refreshCardInstanceIds;
     for (const cardInstanceId of cardInstanceIds) cardById(state, actor.sideKey, cardInstanceId).readiness = 'ready';
     events.push({ type: 'our_duty_tactical_cards_refreshed', sideKey: actor.sideKey,

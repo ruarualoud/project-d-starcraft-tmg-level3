@@ -2,7 +2,7 @@
 
 本分支只负责 Wave4 人人对战更新，按 Wave3 的更新模式补齐数据、规则、建军、房间、媒体和 Web 双席验收。其他同步开发线独立推进。当前分支是 `codex/wave4-web-pvp`，验收服务使用 5484，数据仅写入 `build/wave4-web/`；通过具名验收后提交并推送本分支。
 
-W4-01 已冻结 U98/C88/R50 候选。W4-02 的 156 条逐 ID 差分完成，需新增游戏原子 18 个；前批累计 3 个及炮塔七条定义、原生回合与 Web 后继见[炮塔报告](turret-combat-wiring.zh-CN.md)。[两项 Virus 限制](virus-restrictions-wiring.zh-CN.md)新增 2 个，累计 5/18，原生与 Web 已验；[Universal Carrier 与三张 Virus 菌毯](virus-successors-wiring.zh-CN.md)以 0 新增原子完成实际消费者，原生 8 分支 43 动作、1 完整回合和 Web 4 房 8 动作通过；继续新单位及其余来源。实时完成数与消费者以[接线账](../../../coordination/wave4/ability-wiring-progress.json)为准，组件通过不替代整版人人对战准入。
+W4-01 已冻结 U98/C88/R50 候选。W4-02 的 156 条逐 ID 差分完成，需新增游戏原子 18 个，当前累计 **6/18**；撤回 Archon 独占的另 3 个候选合同不计入18。炮塔与 Virus 后继见既有具名报告；[Stukov 本批](stukov-infestation-wiring.zh-CN.md)补齐五条感染／Supply／激活交换定义，原生 34 动作、1 完整回合和 Web 3 房 7 动作通过。继续三个单位的其余能力与整版更新，实时消费者以[接线账](../../../coordination/wave4/ability-wiring-progress.json)为准。
 
 ## 已核对的增量
 
@@ -33,7 +33,7 @@ W4-01 已冻结 U98/C88/R50 候选。W4-02 的 156 条逐 ID 差分完成，需�
 
 ## 继续保留的准入边界
 
-39 条来源阻断仍隔离：Archon 15 条、原生 Infested Goliath／Infested Siege Tank 23 条 CP 冲突、Alarak 阶段拼写 1 条。公开来源有冲突的记录解决后才准入。炮塔圆形 80 mm（60–100 mm）继续只作工程估算；正式物理几何另验。
+39 条来源阻断仍隔离：Archon 15 条、原生 Infested Goliath／Infested Siege Tank 23 条 CP 冲突、Alarak 阶段拼写 1 条。公开来源有冲突的记录解决后才准入。炮塔圆形 80 mm（60–100 mm）继续只作工程估算；正式物理几何另验。 Stukov 暂取40mm（32–50）、感染步兵暂取32mm（32–40），同为独立低置信度工程估算；正式上下文拒绝。
 
 付费模型、K3、AI 对局、复盘和生产发布继续暂停。本分支交付目标是可供玩家测试的本地 Wave4 人人对战。
 

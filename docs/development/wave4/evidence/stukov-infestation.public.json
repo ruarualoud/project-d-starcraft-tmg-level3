@@ -1,0 +1,471 @@
+{
+  "schema": "starcraft_tmg_wave4_stukov_infestation_native_v1",
+  "status": "passed_scoped",
+  "runRef": "build/wave4-web/stukov-units/infestation-KUeeuO",
+  "results": [
+    {
+      "id": "admiral-reactivate",
+      "exchange": true,
+      "roomId": "wave4-stukov-admiral-reactivate",
+      "directoryRef": "build/wave4-web/stukov-units/infestation-KUeeuO/admiral-reactivate",
+      "sourceDefinitionIds": [
+        "unit:stukov/commander-any-phase@1",
+        "unit:stukov/plague-warden-any-phase@1",
+        "unit:stukov/spread-infestation-movement-phase@1",
+        "unit:stukov/admiral-of-the-infested-movement-phase@1",
+        "unit:infested_trooper/spread-infestation-any-phase@1",
+        "unit:medic/restoration-any-phase@1"
+      ],
+      "signedActions": 7,
+      "stateHash": "03164f0a0eeed11e2cb91fa66752556390fc57aee854b1892324e960178dc738",
+      "runtimeHash": "d56d4ca83537e6d0f6497da2274620a4afe27e1aa3bf3fea4d880c142c5a4809",
+      "infectedProjection": {
+        "schema": "starcraft_tmg_official_contextual_supply_projection_v1",
+        "semanticVersion": "1.1.0",
+        "pieceId": "enemy",
+        "context": "mission_marker_control",
+        "baseSupply": 2,
+        "replacement": null,
+        "modifier": -1,
+        "floor": 0,
+        "effectiveSupply": 1,
+        "applicableDefinitionIds": [
+          "unit:stukov/plague-warden-any-phase@1"
+        ],
+        "currentSupplyStateNotMutated": true,
+        "rulesTruth": "official_contextual_supply_projection",
+        "trainingTruth": false,
+        "projectionHash": "e21baf853c76aa7ff5cfe06f6c7023fe5634fa76bb55105827972e8856c9234b"
+      },
+      "reactivatedMoveCompleted": true,
+      "trace": [
+        {
+          "revision": 1,
+          "phase": "movement",
+          "actionType": "resolve_characteristic_status_ability"
+        },
+        {
+          "revision": 2,
+          "phase": "movement",
+          "actionType": "pass_reaction_family_window"
+        },
+        {
+          "revision": 3,
+          "phase": "movement",
+          "actionType": "pass_reaction_family_window"
+        },
+        {
+          "revision": 4,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "resolve_characteristic_status_ability",
+          "definitionId": "unit:stukov/admiral-of-the-infested-movement-phase@1"
+        },
+        {
+          "revision": 5,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "finish_activation",
+          "definitionId": null
+        },
+        {
+          "revision": 6,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "definitionId": null
+        },
+        {
+          "revision": 7,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "move",
+          "definitionId": null
+        }
+      ],
+      "missionState": null,
+      "idempotencyVerified": true,
+      "coldReplay": true
+    },
+    {
+      "id": "admiral-skip",
+      "exchange": true,
+      "skip": true,
+      "roomId": "wave4-stukov-admiral-skip",
+      "directoryRef": "build/wave4-web/stukov-units/infestation-KUeeuO/admiral-skip",
+      "sourceDefinitionIds": [
+        "unit:stukov/commander-any-phase@1",
+        "unit:stukov/plague-warden-any-phase@1",
+        "unit:stukov/spread-infestation-movement-phase@1",
+        "unit:stukov/admiral-of-the-infested-movement-phase@1",
+        "unit:infested_trooper/spread-infestation-any-phase@1",
+        "unit:medic/restoration-any-phase@1"
+      ],
+      "signedActions": 4,
+      "stateHash": "0d6ce0b49fd5a0b3da57ec5d3930bfe57f6d5d10eeb92e098160ff0c078da51e",
+      "runtimeHash": "d56d4ca83537e6d0f6497da2274620a4afe27e1aa3bf3fea4d880c142c5a4809",
+      "infectedProjection": {
+        "schema": "starcraft_tmg_official_contextual_supply_projection_v1",
+        "semanticVersion": "1.1.0",
+        "pieceId": "enemy",
+        "context": "mission_marker_control",
+        "baseSupply": 2,
+        "replacement": null,
+        "modifier": -1,
+        "floor": 0,
+        "effectiveSupply": 1,
+        "applicableDefinitionIds": [
+          "unit:stukov/plague-warden-any-phase@1"
+        ],
+        "currentSupplyStateNotMutated": true,
+        "rulesTruth": "official_contextual_supply_projection",
+        "trainingTruth": false,
+        "projectionHash": "e21baf853c76aa7ff5cfe06f6c7023fe5634fa76bb55105827972e8856c9234b"
+      },
+      "reactivatedMoveCompleted": false,
+      "trace": [
+        {
+          "revision": 1,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "resolve_characteristic_status_ability",
+          "definitionId": "unit:stukov/spread-infestation-movement-phase@1"
+        },
+        {
+          "revision": 2,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null
+        },
+        {
+          "revision": 3,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null
+        },
+        {
+          "revision": 4,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "resolve_characteristic_status_ability",
+          "definitionId": "unit:stukov/admiral-of-the-infested-movement-phase@1"
+        }
+      ],
+      "missionState": null,
+      "idempotencyVerified": true,
+      "coldReplay": true
+    },
+    {
+      "id": "trooper-restoration",
+      "actor": "trooper",
+      "phase": "assault",
+      "restore": true,
+      "roomId": "wave4-stukov-trooper-restoration",
+      "directoryRef": "build/wave4-web/stukov-units/infestation-KUeeuO/trooper-restoration",
+      "sourceDefinitionIds": [
+        "unit:stukov/commander-any-phase@1",
+        "unit:stukov/plague-warden-any-phase@1",
+        "unit:stukov/spread-infestation-movement-phase@1",
+        "unit:stukov/admiral-of-the-infested-movement-phase@1",
+        "unit:infested_trooper/spread-infestation-any-phase@1",
+        "unit:medic/restoration-any-phase@1"
+      ],
+      "signedActions": 3,
+      "stateHash": "f1909350283ffe34d688c564fbd86e01ce9a21a778f66324686a5f4b4713d7b9",
+      "runtimeHash": "d56d4ca83537e6d0f6497da2274620a4afe27e1aa3bf3fea4d880c142c5a4809",
+      "infectedProjection": {
+        "schema": "starcraft_tmg_official_contextual_supply_projection_v1",
+        "semanticVersion": "1.1.0",
+        "pieceId": "enemy",
+        "context": "mission_marker_control",
+        "baseSupply": 2,
+        "replacement": null,
+        "modifier": -1,
+        "floor": 0,
+        "effectiveSupply": 1,
+        "applicableDefinitionIds": [
+          "unit:stukov/plague-warden-any-phase@1"
+        ],
+        "currentSupplyStateNotMutated": true,
+        "rulesTruth": "official_contextual_supply_projection",
+        "trainingTruth": false,
+        "projectionHash": "e21baf853c76aa7ff5cfe06f6c7023fe5634fa76bb55105827972e8856c9234b"
+      },
+      "reactivatedMoveCompleted": false,
+      "trace": [
+        {
+          "revision": 1,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "resolve_characteristic_status_ability",
+          "definitionId": "unit:infested_trooper/spread-infestation-any-phase@1"
+        },
+        {
+          "revision": 2,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null
+        },
+        {
+          "revision": 3,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:medic/restoration-any-phase@1"
+        }
+      ],
+      "missionState": null,
+      "idempotencyVerified": true,
+      "coldReplay": true
+    },
+    {
+      "id": "warden-round",
+      "fullRound": true,
+      "roomId": "wave4-stukov-warden-round",
+      "directoryRef": "build/wave4-web/stukov-units/infestation-KUeeuO/warden-round-native-start",
+      "sourceDefinitionIds": [
+        "unit:stukov/commander-any-phase@1",
+        "unit:stukov/plague-warden-any-phase@1",
+        "unit:stukov/spread-infestation-movement-phase@1",
+        "unit:stukov/admiral-of-the-infested-movement-phase@1",
+        "unit:infested_trooper/spread-infestation-any-phase@1",
+        "unit:medic/restoration-any-phase@1"
+      ],
+      "signedActions": 20,
+      "stateHash": "d0f83e66375f038a27aa8505564420a696b854365f2fd0fc5f824c5cae26abfd",
+      "runtimeHash": "d56d4ca83537e6d0f6497da2274620a4afe27e1aa3bf3fea4d880c142c5a4809",
+      "infectedProjection": {
+        "schema": "starcraft_tmg_official_contextual_supply_projection_v1",
+        "semanticVersion": "1.1.0",
+        "pieceId": "enemy",
+        "context": "mission_marker_control",
+        "baseSupply": 2,
+        "replacement": null,
+        "modifier": -1,
+        "floor": 0,
+        "effectiveSupply": 1,
+        "applicableDefinitionIds": [
+          "unit:stukov/plague-warden-any-phase@1"
+        ],
+        "currentSupplyStateNotMutated": true,
+        "rulesTruth": "official_contextual_supply_projection",
+        "trainingTruth": false,
+        "projectionHash": "e21baf853c76aa7ff5cfe06f6c7023fe5634fa76bb55105827972e8856c9234b"
+      },
+      "reactivatedMoveCompleted": false,
+      "trace": [
+        {
+          "revision": 1,
+          "round": 1,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "definitionId": null
+        },
+        {
+          "revision": 2,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "choose_first_actor",
+          "definitionId": null
+        },
+        {
+          "revision": 3,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "resolve_characteristic_status_ability",
+          "definitionId": "unit:stukov/spread-infestation-movement-phase@1"
+        },
+        {
+          "revision": 4,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null
+        },
+        {
+          "revision": 5,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null
+        },
+        {
+          "revision": 6,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "finish_activation",
+          "definitionId": null
+        },
+        {
+          "revision": 7,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "definitionId": null
+        },
+        {
+          "revision": 8,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "definitionId": null
+        },
+        {
+          "revision": 9,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "choose_first_actor",
+          "definitionId": null
+        },
+        {
+          "revision": 10,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "definitionId": null
+        },
+        {
+          "revision": 11,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "definitionId": null
+        },
+        {
+          "revision": 12,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "choose_first_actor",
+          "definitionId": null
+        },
+        {
+          "revision": 13,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "definitionId": null
+        },
+        {
+          "revision": 14,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "definitionId": null
+        },
+        {
+          "revision": 15,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "determine_current_product_mission_marker_control",
+          "definitionId": null
+        },
+        {
+          "revision": 16,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "score_mission",
+          "definitionId": null
+        },
+        {
+          "revision": 17,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "check_mission_end_game",
+          "definitionId": null
+        },
+        {
+          "revision": 18,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_end_of_round_effects",
+          "definitionId": null
+        },
+        {
+          "revision": 19,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_cleanup_refresh",
+          "definitionId": null
+        },
+        {
+          "revision": 20,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_next_round_initiative",
+          "definitionId": null
+        }
+      ],
+      "missionState": {
+        "schema": "starcraft_tmg_official_mission_runtime_state_v2",
+        "runtimeVersion": "2.0.0",
+        "runtimeHash": "2777925d3fcfe74bce1e8416f2195487b3489d72ed6af927c3e5796fb1245a25",
+        "missionRecordKey": "faction_cards:mission_hold_position",
+        "missionEffectIrHash": "562ad1c44bfa24c87076543b66316d92868632f25f7eb8ef8f25e89f2551e9d1",
+        "missionFamily": "hold_position",
+        "engagementScale": "Standard",
+        "markerAffinityByNumber": {
+          "1": "player1",
+          "2": "player2",
+          "3": "player1",
+          "4": "player2",
+          "5": null
+        },
+        "roundProgressByRound": {
+          "1": {
+            "startRoundApplied": true,
+            "scoringApplied": true,
+            "endGameChecked": true
+          }
+        },
+        "startRoundHistory": [
+          {
+            "round": 1,
+            "resolutionHash": "ad84afb4f7aa099ce2f532ef0939fe7779c6e5bf4c9405bf6b39213008822255",
+            "effects": [],
+            "trainingTruth": false
+          }
+        ],
+        "gatherHistory": [],
+        "scoringHistory": [
+          {
+            "round": 1,
+            "resolutionHash": "c456473854e1a13b0dbaeb78454684a4f805af5022210a87c8a84fe653bd54ee",
+            "resultingScores": {
+              "player1": 0,
+              "player2": 0
+            },
+            "trainingTruth": false
+          }
+        ],
+        "endGameHistory": [
+          {
+            "round": 1,
+            "resolutionHash": "37bcb946f2682c8c1ea67319ec257a5605892255036c5f4193968ea95dc9b7e8",
+            "terminal": false,
+            "winnerSideKey": null,
+            "result": "continue",
+            "reason": null,
+            "trainingTruth": false
+          }
+        ],
+        "sourceSnapshotHash": "60ca66a0a1f3eca17f6cea3ac49f6aaa71e0e1b2b957407156c94630acf20c80",
+        "normalizedDatasetHash": "66a15120a2f995707e3b5271753c754b581050ec14665a2eb4245f2651e1ae25",
+        "rulesTruth": "official_current_mission_runtime_state",
+        "trainingTruth": false,
+        "runtimeStateHash": "1bd521002eb25b8e470f7ac73b3435bf700322829647a020d2fdb2bab842fea6"
+      },
+      "idempotencyVerified": true,
+      "coldReplay": true
+    }
+  ],
+  "newGameAtoms": 1,
+  "implementedCumulativeAtoms": 6,
+  "sourceHeldDefinitions": 39,
+  "engineeringEstimatedUnitGeometry": true,
+  "fullWave4Admission": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

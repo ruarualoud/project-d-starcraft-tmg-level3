@@ -1,0 +1,54 @@
+{
+  "schema": "starcraft_tmg_wave4_stukov_harness_v1",
+  "harnessLoopUsed": true,
+  "targetGames": [
+    "starcraft-tmg"
+  ],
+  "promptPackRoutes": [
+    {
+      "route": "fact_probe_prompt",
+      "mode": "offline_contract_verification",
+      "invoked": false,
+      "modelCalls": 0
+    }
+  ],
+  "harnessToolsCalled": [
+    "actual_roster_factory",
+    "legalSpace",
+    "preview",
+    "explicit_human_confirmation",
+    "apply",
+    "idempotency_reapply",
+    "native_mission_start_and_cleanup",
+    "contextual_supply",
+    "cold_replay",
+    "web_parameter_form",
+    "seat_recovery_exchange"
+  ],
+  "uiTraceEvidence": [
+    "docs/development/wave4/evidence/stukov-infestation-web.public.json",
+    "docs/development/wave4/evidence/stukov-admiral-form.png",
+    "docs/development/wave4/evidence/stukov-restoration-mobile.png"
+  ],
+  "agentDecisionEvidence": {
+    "status": "not_applicable",
+    "modelCalls": 0
+  },
+  "memoryTraceEvidence": [],
+  "trainingTraceCandidates": [],
+  "rollbackOrDemotionRules": [
+    "source_text_phase_cost_or_route_mismatch_rejects",
+    "Admiral_targets_rechecked_for_range_side_status_Unique_and_visibility",
+    "task_supply_projection_does_not_mutate_base_supply_or_loss_ledger",
+    "estimated_bases_do_not_enter_formal_context",
+    "partial_unit_mechanics_do_not_complete_Wave4"
+  ],
+  "userVisibleChecks": [
+    "optional_friendly_unit_choice_has_skip",
+    "Trooper_infestation_resumes_Medic_Restoration",
+    "two_seats_confirm_replay_and_recover",
+    "native_marker_control_settles_two_to_one"
+  ],
+  "modelCalls": 0,
+  "trainingTruth": false
+}

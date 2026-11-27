@@ -9,7 +9,7 @@
     "records": 38,
     "requiredNewAtoms": 18,
     "withdrawnOnlyCandidateAtoms": 3,
-    "implementedNewGameAtoms": 5
+    "implementedNewGameAtoms": 6
   },
   "sourceCompilation": {
     "exactReactionRevisions": 11,
@@ -275,9 +275,9 @@
     }
   ],
   "next": [
-    "W4-02：接Stukov／Infested Marine／Infested Trooper的完整规则与实际消费者。",
-    "按逐ID账补其余13个候选合同（含3个仅撤回Archon来源合同）及其他新增单位／势力；39条来源隔离。",
-    "按Wave3模式完成W4-03整版发布选择、Builder／大厅、玩家查询与媒体，再验W4-04的500／2000分Web双席。"
+    "W4-02：补Stukov其余能力、感染步兵Precision／Plagued Munitions／Burrow Ambush／Detonation与武器后继。",
+    "继续其余12个需实现合同及其他新增单位／势力；3个撤回Archon独占合同另列，不计入18。39条来源隔离及估算几何边界保留。",
+    "完成W4-03整版发布、Builder／大厅、玩家查询与媒体，再验W4-04的500／2000分Web双席。"
   ],
   "modelCalls": 0,
   "trainingTruth": false,
@@ -1456,9 +1456,189 @@
       ],
       "verificationScope": "Actual roster Virus card, native Creep Spread token, STAY IN PLAY/displacement binding, enemy Move end exact footprint removal; Healing Pathogen full-round cleanup, Hungering Infestation exact displacement query and signed move; other movement/PLACE combinations remain tracked.",
       "fullMatchAdmission": false
+    },
+    {
+      "definitionId": "unit:stukov/commander-any-phase@1",
+      "classification": "existing_atom",
+      "newAtomIds": [],
+      "sourceCompiled": true,
+      "executionBound": true,
+      "nativeSuccessorsVerified": true,
+      "nativeQueryConsumerVerified": true,
+      "nativeMissionControlVerified": false,
+      "webVerified": false,
+      "webMissionControlPending": true,
+      "consumerRefs": [
+        {
+          "file": "packages/source-data/official-stukov-infestation-source-v1.mjs",
+          "exportName": "compileOfficialStukovInfestationSpecV1"
+        },
+        {
+          "file": "packages/source-data/official-stukov-infestation-source-v1.mjs",
+          "exportName": "createOfficialStukovContextualSupplyRoutesV1"
+        },
+        {
+          "file": "packages/rule-atoms/official-contextual-supply-projection-v1.mjs",
+          "exportName": "projectOfficialContextualSupplyValueV1"
+        }
+      ],
+      "evidenceRefs": [
+        "docs/development/wave4/evidence/stukov-infestation.public.json",
+        "docs/development/wave4/evidence/stukov-marker-proof.public.json",
+        "docs/development/wave4/evidence/stukov-geometry.public.json",
+        "docs/development/wave4/evidence/stukov-infestation-web.public.json"
+      ],
+      "engineeringEstimatedUnitGeometry": true,
+      "fullMatchAdmission": false
+    },
+    {
+      "definitionId": "unit:stukov/plague-warden-any-phase@1",
+      "classification": "existing_atoms_new_combination",
+      "newAtomIds": [],
+      "sourceCompiled": true,
+      "executionBound": true,
+      "nativeSuccessorsVerified": true,
+      "nativeQueryConsumerVerified": true,
+      "nativeMissionControlVerified": true,
+      "webVerified": false,
+      "webMissionControlPending": true,
+      "consumerRefs": [
+        {
+          "file": "packages/source-data/official-stukov-infestation-source-v1.mjs",
+          "exportName": "compileOfficialStukovInfestationSpecV1"
+        },
+        {
+          "file": "packages/source-data/official-stukov-infestation-source-v1.mjs",
+          "exportName": "createOfficialStukovContextualSupplyRoutesV1"
+        },
+        {
+          "file": "packages/rule-atoms/official-contextual-supply-projection-v1.mjs",
+          "exportName": "projectOfficialContextualSupplyValueV1"
+        }
+      ],
+      "evidenceRefs": [
+        "docs/development/wave4/evidence/stukov-infestation.public.json",
+        "docs/development/wave4/evidence/stukov-marker-proof.public.json",
+        "docs/development/wave4/evidence/stukov-geometry.public.json",
+        "docs/development/wave4/evidence/stukov-infestation-web.public.json"
+      ],
+      "engineeringEstimatedUnitGeometry": true,
+      "fullMatchAdmission": false
+    },
+    {
+      "definitionId": "unit:stukov/spread-infestation-movement-phase@1",
+      "classification": "existing_atoms_new_combination",
+      "newAtomIds": [],
+      "sourceCompiled": true,
+      "executionBound": true,
+      "nativeSuccessorsVerified": true,
+      "nativeQueryConsumerVerified": false,
+      "nativeMissionControlVerified": false,
+      "webVerified": true,
+      "webMissionControlPending": false,
+      "consumerRefs": [
+        {
+          "file": "packages/source-data/official-stukov-infestation-source-v1.mjs",
+          "exportName": "compileOfficialStukovInfestationSpecV1"
+        },
+        {
+          "file": "packages/product-composition/official-characteristic-status-family-adapter-v1.mjs",
+          "exportName": "createOfficialCharacteristicStatusFamilyAdapterV1"
+        },
+        {
+          "file": "packages/product-composition/official-reaction-family-adapter-v1.mjs",
+          "exportName": "openOfficialInfestationSpreadRestorationWindowV1"
+        }
+      ],
+      "evidenceRefs": [
+        "docs/development/wave4/evidence/stukov-infestation.public.json",
+        "docs/development/wave4/evidence/stukov-marker-proof.public.json",
+        "docs/development/wave4/evidence/stukov-geometry.public.json",
+        "docs/development/wave4/evidence/stukov-infestation-web.public.json"
+      ],
+      "engineeringEstimatedUnitGeometry": true,
+      "fullMatchAdmission": false
+    },
+    {
+      "definitionId": "unit:stukov/admiral-of-the-infested-movement-phase@1",
+      "classification": "new_semantics",
+      "newAtomIds": [
+        "rule-atom:wave4/infestation-activation-exchange@1"
+      ],
+      "sourceCompiled": true,
+      "executionBound": true,
+      "nativeSuccessorsVerified": true,
+      "nativeQueryConsumerVerified": false,
+      "nativeMissionControlVerified": false,
+      "webVerified": true,
+      "webMissionControlPending": false,
+      "consumerRefs": [
+        {
+          "file": "packages/source-data/official-stukov-infestation-source-v1.mjs",
+          "exportName": "compileOfficialStukovInfestationSpecV1"
+        },
+        {
+          "file": "packages/product-composition/official-characteristic-status-family-adapter-v1.mjs",
+          "exportName": "createOfficialCharacteristicStatusFamilyAdapterV1"
+        },
+        {
+          "file": "packages/rule-atoms/official-infestation-activation-exchange-v1.mjs",
+          "exportName": "resolveOfficialInfestationActivationExchangeV1"
+        },
+        {
+          "file": "packages/rule-atoms/official-phase-activation-availability-v1.mjs",
+          "exportName": "listOfficialPhaseActivationUnitIdsV1"
+        },
+        {
+          "file": "packages/product-composition/official-selected-roster-spatial-action-runtime-v1.mjs",
+          "exportName": "createOfficialSelectedRosterSpatialActionRuntimeV1"
+        }
+      ],
+      "evidenceRefs": [
+        "docs/development/wave4/evidence/stukov-infestation.public.json",
+        "docs/development/wave4/evidence/stukov-marker-proof.public.json",
+        "docs/development/wave4/evidence/stukov-geometry.public.json",
+        "docs/development/wave4/evidence/stukov-infestation-web.public.json"
+      ],
+      "engineeringEstimatedUnitGeometry": true,
+      "fullMatchAdmission": false
+    },
+    {
+      "definitionId": "unit:infested_trooper/spread-infestation-any-phase@1",
+      "classification": "existing_atoms_new_combination",
+      "newAtomIds": [],
+      "sourceCompiled": true,
+      "executionBound": true,
+      "nativeSuccessorsVerified": true,
+      "nativeQueryConsumerVerified": false,
+      "nativeMissionControlVerified": false,
+      "webVerified": true,
+      "webMissionControlPending": false,
+      "consumerRefs": [
+        {
+          "file": "packages/source-data/official-stukov-infestation-source-v1.mjs",
+          "exportName": "compileOfficialStukovInfestationSpecV1"
+        },
+        {
+          "file": "packages/product-composition/official-characteristic-status-family-adapter-v1.mjs",
+          "exportName": "createOfficialCharacteristicStatusFamilyAdapterV1"
+        },
+        {
+          "file": "packages/product-composition/official-reaction-family-adapter-v1.mjs",
+          "exportName": "openOfficialInfestationSpreadRestorationWindowV1"
+        }
+      ],
+      "evidenceRefs": [
+        "docs/development/wave4/evidence/stukov-infestation.public.json",
+        "docs/development/wave4/evidence/stukov-marker-proof.public.json",
+        "docs/development/wave4/evidence/stukov-geometry.public.json",
+        "docs/development/wave4/evidence/stukov-infestation-web.public.json"
+      ],
+      "engineeringEstimatedUnitGeometry": true,
+      "fullMatchAdmission": false
     }
   ],
-  "executionStatus": "Virus_successors_native_round_and_Web_scoped_verified_full_Wave4_update_in_progress",
+  "executionStatus": "Stukov_infestation_native_round_and_Web_scoped_verified_full_Wave4_update_in_progress",
   "creepBuilderGate": {
     "verifiedDefinitions": 3,
     "legalCreepChoices": 5,
@@ -1736,6 +1916,42 @@
         "docs/development/wave4/evidence/virus-audit.public.json"
       ],
       "fullMatchAdmission": false
+    },
+    {
+      "atomId": "rule-atom:wave4/infestation-activation-exchange@1",
+      "status": "implemented_scoped_native_and_web_verified_conditional_geometry",
+      "definitionIds": [
+        "unit:stukov/admiral-of-the-infested-movement-phase@1"
+      ],
+      "consumerRefs": [
+        {
+          "file": "packages/source-data/official-stukov-infestation-source-v1.mjs",
+          "exportName": "compileOfficialStukovInfestationSpecV1"
+        },
+        {
+          "file": "packages/product-composition/official-characteristic-status-family-adapter-v1.mjs",
+          "exportName": "createOfficialCharacteristicStatusFamilyAdapterV1"
+        },
+        {
+          "file": "packages/rule-atoms/official-infestation-activation-exchange-v1.mjs",
+          "exportName": "resolveOfficialInfestationActivationExchangeV1"
+        },
+        {
+          "file": "packages/rule-atoms/official-phase-activation-availability-v1.mjs",
+          "exportName": "listOfficialPhaseActivationUnitIdsV1"
+        },
+        {
+          "file": "packages/product-composition/official-selected-roster-spatial-action-runtime-v1.mjs",
+          "exportName": "createOfficialSelectedRosterSpatialActionRuntimeV1"
+        }
+      ],
+      "evidenceRefs": [
+        "docs/development/wave4/evidence/stukov-infestation.public.json",
+        "docs/development/wave4/evidence/stukov-marker-proof.public.json",
+        "docs/development/wave4/evidence/stukov-geometry.public.json",
+        "docs/development/wave4/evidence/stukov-infestation-web.public.json"
+      ],
+      "fullMatchAdmission": false
     }
   ],
   "stukovArmyGate": {
@@ -1881,5 +2097,36 @@
     ],
     "fullWave4Admission": false,
     "sourceHeldDefinitions": 39
+  },
+  "stukovUnitInfestationGate": {
+    "definitionIds": [
+      "unit:stukov/commander-any-phase@1",
+      "unit:stukov/plague-warden-any-phase@1",
+      "unit:stukov/spread-infestation-movement-phase@1",
+      "unit:stukov/admiral-of-the-infested-movement-phase@1",
+      "unit:infested_trooper/spread-infestation-any-phase@1"
+    ],
+    "newGameAtoms": 1,
+    "implementedCumulativeAtoms": 6,
+    "nativeCases": 4,
+    "nativeSignedActions": 34,
+    "nativeCompletedRounds": 1,
+    "nativeMarkerSupplyTotals": {
+      "player1": 2,
+      "player2": 1
+    },
+    "webRooms": 3,
+    "webSignedActions": 7,
+    "geometryAuthority": "conditional_engineering_images",
+    "evidenceRefs": [
+      "docs/development/wave4/evidence/stukov-infestation.public.json",
+      "docs/development/wave4/evidence/stukov-marker-proof.public.json",
+      "docs/development/wave4/evidence/stukov-geometry.public.json",
+      "docs/development/wave4/evidence/stukov-infestation-web.public.json",
+      "docs/development/wave4/evidence/stukov-web-build.public.json",
+      "docs/development/wave4/evidence/stukov-harness.public.json"
+    ],
+    "sourceHeldDefinitions": 39,
+    "fullWave4Admission": false
   }
 }

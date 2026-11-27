@@ -9,6 +9,7 @@ type Descriptor = { type?: string; const?: unknown; enum?: unknown[];
 type Point = { xMilliInches: number; yMilliInches: number };
 const labels: Record<string, string> = {
   activeUnitId: '行动单位', targetUnitId: '目标单位', targetPieceId: '目标单位',
+  friendlyUnitId: '友方单位（可跳过）',
   leadingModelId: '领队模型', modelId: '模型', unitId: '单位',
   paymentCardInstanceIds: '支付卡牌', choice: '能力选项', edgeSide: '进入边',
   entrySegmentId: '进场区段', anchorPieceId: '锚点单位', anchorModelId: '锚点模型',
@@ -23,6 +24,7 @@ const labels: Record<string, string> = {
   convertedFailedArmourDieIndices: '用 TOUGH 转为成功的护甲骰',
 };
 const choices: Record<string, string> = { top: '上边', bottom: '下边', left: '左边', right: '右边',
+  skip: '跳过',
   success: '成功', failure: '失败', distance_shortfall: '距离不足', declared_target_spread: '已声明目标相距过远',
   decline: '不整队', move: '整队移动', true: '是', false: '否' };
 function Button({ text, onPress, active = false, disabled = false }: {

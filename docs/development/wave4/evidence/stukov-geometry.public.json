@@ -1,0 +1,43 @@
+{
+  "schema": "starcraft_tmg_wave4_stukov_geometry_gate_v1",
+  "status": "passed_conditional_engineering",
+  "profiles": [
+    {
+      "recordKey": "army_units:stukov",
+      "diameterMillimetres": 40,
+      "uncertaintyMillimetres": {
+        "minimum": 32,
+        "maximum": 50
+      },
+      "estimateHash": "6b8ebbf1ff28204ea2fab643b7edb845b169e1a46cf80def53b2480427a244b5",
+      "officialPhysicalAuthority": false
+    },
+    {
+      "recordKey": "army_units:infested_marine",
+      "diameterMillimetres": 32,
+      "uncertaintyMillimetres": {
+        "minimum": 32,
+        "maximum": 40
+      },
+      "estimateHash": "44219d41f076a6dcb5f91a2f61989e81d02db4d32bbf282514299fbe377880ff",
+      "officialPhysicalAuthority": false
+    },
+    {
+      "recordKey": "army_units:infested_trooper",
+      "diameterMillimetres": 32,
+      "uncertaintyMillimetres": {
+        "minimum": 32,
+        "maximum": 40
+      },
+      "estimateHash": "7a39678ecd35fd3db28d511abe8e0e52a21429640ebabf907dee5000e7926601",
+      "officialPhysicalAuthority": false
+    }
+  ],
+  "sourceImageBytesVerifiedByCompiler": true,
+  "formalContextRejectsEstimatedGeometry": true,
+  "heldRecordsExcluded": true,
+  "sourceHeldDefinitions": 39,
+  "fullMatchAdmission": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

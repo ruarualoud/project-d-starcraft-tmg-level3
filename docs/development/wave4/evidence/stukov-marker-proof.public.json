@@ -1,0 +1,112 @@
+{
+  "schema": "starcraft_tmg_wave4_stukov_marker_proof_v1",
+  "status": "passed_scoped",
+  "roomId": "wave4-stukov-warden-round",
+  "runRef": "build/wave4-web/stukov-units/infestation-KUeeuO/warden-round-native-start",
+  "stateHash": "d0f83e66375f038a27aa8505564420a696b854365f2fd0fc5f824c5cae26abfd",
+  "sourceNativeSignedActions": 20,
+  "newSignedActions": 0,
+  "coldReplay": true,
+  "nativeBeforeInfectionSupply": {
+    "player1": 2,
+    "player2": 2
+  },
+  "nativeMarkerControl": {
+    "markerId": "mission-marker-1",
+    "markerNumber": 1,
+    "isActivated": true,
+    "markerElevation": "ground",
+    "markerLineOfSightEffectiveSize": 0,
+    "previousControlSideKey": null,
+    "nextControlSideKey": "player1",
+    "factionIndicatorSideKey": "player1",
+    "controlChanged": true,
+    "result": "higher_supply_reclaims_control",
+    "supplyTotals": {
+      "player1": 2,
+      "player2": 1
+    },
+    "contestingUnitsBySide": {
+      "player1": [
+        {
+          "unitId": "marine",
+          "baseSupply": 2,
+          "currentSupply": 2,
+          "supplyProjectionHash": "6e6b5a8da5d9be6baa1772611cf39a5cf440d2e1f2168254284721d6a098b13c",
+          "eligibleModelIds": [
+            "marine-model-1",
+            "marine-model-2",
+            "marine-model-4",
+            "marine-model-5"
+          ],
+          "lineOfSightResultHashes": [
+            "007f509f9201761792387a67a9e7ae756c5787a93b017c1d53a2b04dc5ce4d14",
+            "6b6f07ff689d5a6967d96ad31a6bb9796f18c8ad47e104fb61b9414727e2a8c1",
+            "a5085cff86bcc930547e974e06f450ef79d0129805b23eb0861cbdf3eef57cc4",
+            "b84812dfa739b624441a14d2c78c432fd4f0e6d2cafd4a26a3924655f7b3a9bc"
+          ]
+        }
+      ],
+      "player2": [
+        {
+          "unitId": "enemy",
+          "baseSupply": 2,
+          "currentSupply": 1,
+          "supplyProjectionHash": "e21baf853c76aa7ff5cfe06f6c7023fe5634fa76bb55105827972e8856c9234b",
+          "eligibleModelIds": [
+            "enemy-model-1",
+            "enemy-model-2",
+            "enemy-model-3",
+            "enemy-model-4",
+            "enemy-model-5",
+            "enemy-model-6",
+            "enemy-model-7",
+            "enemy-model-8"
+          ],
+          "lineOfSightResultHashes": [
+            "0b6cc4ce4625f31f5f256019b36dbe5122bb61d135b895cc90768f7a57da6f0d",
+            "0c857825e01a5d365a0f6ef770fb00f244812537c3dafe4415e45e7f2e1fbdd6",
+            "227a11d3b3af9b899f38dbdd96ee2d497f08bb5565d75631d4e4e3dd37903615",
+            "285b669a461dd6c6b3166895226ef104f69b3e5e9d5d8c5497480e1fdc39eb6f",
+            "3f5ec632183d32fd8700b174d55494162c5214b9956029072b8257bbd72c95f8",
+            "4c1b44c4f8769935ae2ae0fea7d132b9199bf72579fd7003febdd50eb01ceda9",
+            "814dd5f98384f08eab21be78564bc55be0880a76dac7ebc90ffed0751d490a3a",
+            "860d8e6e6e0159c91761635f7a754be5675b0ea1878caa17dad21a0a3ef48a83"
+          ]
+        }
+      ]
+    },
+    "ineligibleUnits": [
+      {
+        "unitId": "medic",
+        "sideKey": "player2",
+        "reason": "no_model_within_three_same_elevation_and_line_of_sight"
+      },
+      {
+        "unitId": "stukov",
+        "sideKey": "player1",
+        "reason": "no_model_within_three_same_elevation_and_line_of_sight"
+      },
+      {
+        "unitId": "trooper",
+        "sideKey": "player1",
+        "reason": "no_model_within_three_same_elevation_and_line_of_sight"
+      }
+    ]
+  },
+  "commanderDisengageSupply": 2,
+  "commanderPoolSupply": 1,
+  "enemyDisengageSupply": 2,
+  "baseSupplyUnchanged": true,
+  "supplyLossEntries": 0,
+  "readonlyHypotheticalControls": {
+    "sourceInReservesRemovesAura": true,
+    "zeroSupplyFloor": true,
+    "signedMovementClaimed": false
+  },
+  "engineeringEstimatedUnitGeometry": true,
+  "sourceHeldDefinitions": 39,
+  "fullWave4Admission": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

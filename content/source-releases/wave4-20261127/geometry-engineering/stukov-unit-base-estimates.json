@@ -1,0 +1,83 @@
+[
+  {
+    "schema": "starcraft_tmg_engineering_image_base_estimate_v1",
+    "recordKey": "army_units:stukov",
+    "sourceRecordHash": "ef2404cf82fbeb0d5bab3ce3e790134850d5f1bdef2f1170d54a538922ddf819",
+    "payloadHash": "bbbb1124dc1873b22a213f8f1d97ae5e107640a96ad78883bba5b750911d85b4",
+    "shape": "round",
+    "diameterMillimetres": 40,
+    "uncertaintyMillimetres": {
+      "minimum": 32,
+      "maximum": 50
+    },
+    "sourceImage": {
+      "ref": "content/source-releases/wave4-20261127/geometry-engineering/purification-7.webp",
+      "url": "https://starcraft-tmg.com/files/thumbs/products/STARCRAFT%C2%AE%20TWO%20PLAYER%20STARTER%20SET%20-%20PURIFICATION/Starter%207.jpg/auto_auto_crop.webp?ts=1794216789&pn=auto-webp",
+      "byteHash": "aac6ff9c58451ef94ae93e4d482f7600bf6c1a818821e957088e72d0aa14880d",
+      "byteLength": 176658
+    },
+    "method": "Round base visible in official paired Stukov/turret render; approximate width ratio 0.50 against the existing 80mm turret engineering estimate. Composite rendering scale is unconfirmed.",
+    "officialPage": "https://starcraft-tmg.com/shop/pre-orders/starcraft-two-player-starter-set-purification",
+    "reviewedAt": "2026-11-27T19:05:55.104Z",
+    "confidence": "low",
+    "officialPhysicalAuthority": false,
+    "usageScope": "conditional_engineering",
+    "productionRoomEligible": false,
+    "trainingTruth": false,
+    "estimateHash": "6b8ebbf1ff28204ea2fab643b7edb845b169e1a46cf80def53b2480427a244b5"
+  },
+  {
+    "schema": "starcraft_tmg_engineering_image_base_estimate_v1",
+    "recordKey": "army_units:infested_marine",
+    "sourceRecordHash": "12e5f075acc27dd49959dbb084697a60fc50da8ae27f7f1574f518d09e803d20",
+    "payloadHash": "0a5124e81cdcdc61bcc4a52bd31bef1645b3b9b9d62cd4fbb64747a2aba1db87",
+    "shape": "round",
+    "diameterMillimetres": 32,
+    "uncertaintyMillimetres": {
+      "minimum": 32,
+      "maximum": 40
+    },
+    "sourceImage": {
+      "ref": "content/source-releases/wave4-20261127/geometry-engineering/purification-4.webp",
+      "url": "https://starcraft-tmg.com/files/thumbs/products/STARCRAFT%C2%AE%20TWO%20PLAYER%20STARTER%20SET%20-%20PURIFICATION/Starter%203.jpg/auto_auto_crop.webp?ts=1794216802&pn=auto-webp",
+      "byteHash": "fe7ca3ecb48154f9095945d0962e6d7486e2b8a290da506379b78af46305c161",
+      "byteLength": 287082
+    },
+    "method": "Round rims visible on the official six-model Infested Marine kit render; provisional 32mm infantry base, with 32–40mm uncertainty. Trooper uses the same kit as an explicitly provisional variant; no unit-size statistic is used.",
+    "officialPage": "https://starcraft-tmg.com/shop/pre-orders/starcraft-two-player-starter-set-purification",
+    "reviewedAt": "2026-11-27T19:05:55.105Z",
+    "confidence": "low",
+    "officialPhysicalAuthority": false,
+    "usageScope": "conditional_engineering",
+    "productionRoomEligible": false,
+    "trainingTruth": false,
+    "estimateHash": "44219d41f076a6dcb5f91a2f61989e81d02db4d32bbf282514299fbe377880ff"
+  },
+  {
+    "schema": "starcraft_tmg_engineering_image_base_estimate_v1",
+    "recordKey": "army_units:infested_trooper",
+    "sourceRecordHash": "ace8c6852b08d71076a2933b5a5835d6805fc0830f60854f904d8a5ffe21631e",
+    "payloadHash": "454bde3489f4a9c9eff6521cf881d1a526ae33318dfdda7b252c1ca5be28821d",
+    "shape": "round",
+    "diameterMillimetres": 32,
+    "uncertaintyMillimetres": {
+      "minimum": 32,
+      "maximum": 40
+    },
+    "sourceImage": {
+      "ref": "content/source-releases/wave4-20261127/geometry-engineering/purification-4.webp",
+      "url": "https://starcraft-tmg.com/files/thumbs/products/STARCRAFT%C2%AE%20TWO%20PLAYER%20STARTER%20SET%20-%20PURIFICATION/Starter%203.jpg/auto_auto_crop.webp?ts=1794216802&pn=auto-webp",
+      "byteHash": "fe7ca3ecb48154f9095945d0962e6d7486e2b8a290da506379b78af46305c161",
+      "byteLength": 287082
+    },
+    "method": "Round rims visible on the official six-model Infested Marine kit render; provisional 32mm infantry base, with 32–40mm uncertainty. Trooper uses the same kit as an explicitly provisional variant; no unit-size statistic is used.",
+    "officialPage": "https://starcraft-tmg.com/shop/pre-orders/starcraft-two-player-starter-set-purification",
+    "reviewedAt": "2026-11-27T19:05:55.105Z",
+    "confidence": "low",
+    "officialPhysicalAuthority": false,
+    "usageScope": "conditional_engineering",
+    "productionRoomEligible": false,
+    "trainingTruth": false,
+    "estimateHash": "7a39678ecd35fd3db28d511abe8e0e52a21429640ebabf907dee5000e7926601"
+  }
+]

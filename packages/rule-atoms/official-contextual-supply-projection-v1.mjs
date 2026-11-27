@@ -186,6 +186,15 @@ export function projectOfficialContextualSupplyValueV1(input = {}) {
       floor = Math.max(floor, Number(route.minimumSupply));
       applicableDefinitionIds.push(route.definitionId);
     }
+    if(activePiece(piece)&&(piece.statuses||[]).some(s=>normalized(s?.statusName||s?.name||s)==='infestation')){
+      const penalties=routes.filter(route=>route.effectKind==='infected_enemy_mission_supply_penalty'&&route.contexts.includes(context));
+      for(const route of penalties){
+        if(route.supplyModifier!==-1||route.minimumSupply!==0||route.rangeMilliInches!==6000)fail('PLAGUE_WARDEN_SUPPLY_ROUTE_INVALID');
+        const source=state.pieces.find(candidate=>candidate.sideKey!==piece.sideKey&&candidate.officialUnitRecordKey===route.recordKey
+          &&activePiece(candidate)&&fieldedFeature(candidate,route)&&within(state,candidate,piece,route.rangeMilliInches));
+        if(source){modifier-=1;applicableDefinitionIds.push(route.definitionId);}
+      }
+    }
   }
   const afterReplacement = replacement === null ? baseSupply : replacement;
   const effectiveSupply = Math.max(floor, afterReplacement + modifier);

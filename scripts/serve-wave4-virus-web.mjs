@@ -7,6 +7,7 @@ import { createStarcraftTmgLevel3HttpAdapter } from '../packages/http-adapter/ha
 import { createRosterWorkspaceServerV1 } from './serve-ticket-27-slice-271-roster-workspace-v1.mjs';
 import { atomicWrite } from './lib/development-context.mjs';
 import { loadWave4VirusEffectsInputs } from './compile-wave4-virus-effects.mjs';
+import { loadWave4StukovUnitInputs } from './compile-wave4-stukov-units.mjs';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const read=async file=>JSON.parse(await fs.readFile(file,'utf8'));
@@ -16,7 +17,8 @@ const directory=path.resolve(process.argv[3]);
 assert.ok(directory.startsWith(path.join(root,'build/wave4-web')+path.sep));
 const webRoot=process.argv[4]?path.resolve(process.argv[4]):path.join(root,'apps/starcraft-tmg-expo/dist-product');
 if(process.argv[4])assert.ok(webRoot.startsWith(path.join(root,'build/wave4-web')+path.sep));
-const inputs=sourceResult.schema==='starcraft_tmg_wave4_virus_creep_native_v1'?await loadWave4VirusEffectsInputs(root):await loadWave4TurretInputs(root);
+const inputs=sourceResult.schema==='starcraft_tmg_wave4_stukov_infestation_native_v1'?await loadWave4StukovUnitInputs(root)
+  :sourceResult.schema==='starcraft_tmg_wave4_virus_creep_native_v1'?await loadWave4VirusEffectsInputs(root):await loadWave4TurretInputs(root);
 const rooms=new Map();
 const service={liveEnabled:false,scope:'Wave4 source-bound Native successors; scoped local Web acceptance',rooms:[]};
 const specs=process.argv[5]?await read(path.resolve(process.argv[5])):[

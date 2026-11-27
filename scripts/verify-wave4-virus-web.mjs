@@ -46,8 +46,15 @@ async function operate(page,item,choice,parameterized) {
       await form.getByLabel('横向位置（英寸）',{exact:true}).fill('25');
       await form.getByLabel('纵向位置（英寸）',{exact:true}).fill('10');
     }
-    if(await form.getByText('支付卡牌',{exact:true}).count())await form.getByText('支付卡牌',{exact:true}).locator('..').getByRole('button').first().click();
+    if(await form.getByText('支付卡牌',{exact:true}).count()){
+      const payments=form.getByText('支付卡牌',{exact:true}).locator('..');
+      if(item.flow==='admiral-exchange')await payments.getByRole('button',{name:'player1-tactical-2',exact:true}).click();
+      else await payments.getByRole('button').first().click();
+    }
     if(choice.actionType==='choose_universal_carrier_heal')await form.getByRole('button',{name:item.healTarget,exact:true}).click();
+    if(item.flow==='admiral-exchange')await form.getByText('友方单位（可跳过）',{exact:true}).locator('..').getByRole('button',{name:'marine',exact:true}).click();
+    if(['admiral-exchange','trooper-restoration','stukov-spread'].includes(item.flow)&&choice.actionType==='resolve_characteristic_status_ability')
+      await form.getByText('目标单位',{exact:true}).locator('..').getByRole('button',{name:'enemy',exact:true}).click();
     if(item.flow==='creep-place'){
       await form.getByLabel('横向位置（英寸）',{exact:true}).fill(String(item.coordinate.xMilliInches/1000));
       await form.getByLabel('纵向位置（英寸）',{exact:true}).fill(String(item.coordinate.yMilliInches/1000));
@@ -115,7 +122,7 @@ try {
         let choice;
         if(!primaryUsed)choice=menu.parameterDomains.find(row=>item.id==='infected-ordinary-move'?row.actionType==='move'&&row.pieceId==='enemy':item.id==='clean-blink'?row.definitionId==='unit:stalker/blink-movement-phase@1':item.id==='clean-recall'?row.definitionId==='card:nexus/strategic-recall-any@1':row.definitionId===item.definitionId);
         else if(item.kind==='ocular-use'&&!shotUsed)choice=menu.parameterDomains.find(row=>row.weaponName==='Firefly Missiles');
-        else if((item.kind==='growing-restoration-exception'||item.flow==='carrier-restoration')&&!restorationUsed)choice=menu.parameterDomains.find(row=>row.definitionId==='unit:medic/restoration-any-phase@1'||item.flow==='carrier-restoration'&&row.effectKind==='infestation_transfer');
+        else if((item.kind==='growing-restoration-exception'||item.flow==='carrier-restoration'||item.flow==='trooper-restoration')&&!restorationUsed)choice=menu.parameterDomains.find(row=>row.definitionId==='unit:medic/restoration-any-phase@1'||item.flow==='carrier-restoration'&&row.effectKind==='infestation_transfer');
         choice ||= menu.parameterDomains.find(row=>row.actionType==='pass_reaction_family_window')||menu.parameterDomains[0];
         const schema=choice?.sourceDomain?.parameterSchema||choice?.parameterSchema;
         let parameterized=Boolean(schema?.required?.length);
@@ -132,6 +139,15 @@ try {
         const recipient=final.envelope.state.pieces.find(piece=>piece.id==='recipient');
         assert.equal(recipient.statuses.some(status=>String(status.statusName||status).toLowerCase()==='infestation'),false);
         assert.equal(restorationUsed,true);
+      } else if(item.flow==='admiral-exchange'){
+        const state=final.envelope.state,enemy=state.pieces.find(p=>p.id==='enemy');
+        assert.equal(enemy.activatedPhases.movement,true);
+        assert.ok(!enemy.statuses.some(s=>String(s.statusName||s).toLowerCase()==='infestation'));
+        assert.equal(state.pieces.find(p=>p.id==='marine').activatedPhases.movement,false);
+      } else if(['trooper-restoration','stukov-spread'].includes(item.flow)){
+        const enemy=final.envelope.state.pieces.find(p=>p.id==='enemy');
+        assert.equal(enemy.statuses.some(s=>String(s.statusName||s).toLowerCase()==='infestation'),item.flow==='stukov-spread');
+        if(item.flow==='trooper-restoration')assert.equal(restorationUsed,true);
       } else if(item.flow==='creep-place'){
         const state=final.envelope.state;const token=state.board.tokens.find(t=>t.tokenKind==='creep_tumor');
         assert.ok(token);assert.equal(token.stayInPlay,true);
@@ -167,6 +183,7 @@ try {
 const result={schema:'starcraft_tmg_wave4_virus_web_verification_v1',status:'passed_scoped',
   runRef:path.relative(root,directory),results,signedActions:results.reduce((sum,row)=>sum+row.signedActions,0),
   conditionalTurretGeometryInRestorationCaseOnly:service.rooms.some(item=>item.id==='growing-restoration-exception'||item.flow==='carrier-restoration'),sourceHeldDefinitions:39,
+   engineeringEstimatedUnitGeometry:service.rooms.some(item=>['admiral-exchange','trooper-restoration','stukov-spread'].includes(item.flow)),
   fullWave4LobbyBuilderAdmission:false,fullMatchAdmission:false,wave3PlayerRoomsTouched:false,modelCalls:0,trainingTruth:false};
 await atomicWrite(path.join(directory,'web-result.public.json'),JSON.stringify(result,null,2)+'\n');
 await atomicWrite(path.join(root,'docs/development/wave4/evidence/'+(process.argv[3]||'virus-web.public.json')),JSON.stringify(result,null,2)+'\n');

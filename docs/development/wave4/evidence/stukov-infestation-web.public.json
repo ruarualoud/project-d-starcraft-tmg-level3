@@ -1,0 +1,113 @@
+{
+  "schema": "starcraft_tmg_wave4_virus_web_verification_v1",
+  "status": "passed_scoped",
+  "runRef": "build/wave4-web/stukov-units/web-acceptance-v1",
+  "results": [
+    {
+      "kind": "admiral-reactivate",
+      "definitionId": "unit:stukov/admiral-of-the-infested-movement-phase@1",
+      "sourceRoomId": "wave4-stukov-admiral-reactivate",
+      "sourceStateHash": "2516c57cf496ddfc89280a10260db754c4e66ffcd7a3e9f76e68dc6e6f547c76",
+      "sourcePrefixReceipts": 3,
+      "trace": [
+        {
+          "actionType": "resolve_characteristic_status_ability",
+          "definitionId": "unit:stukov/admiral-of-the-infested-movement-phase@1",
+          "sideKey": "player1",
+          "stateRevision": 1,
+          "stateHash": "6ee0ffc3c08b8ad28b36a54d6613a15ee4eef57d7cf55d5cb6a602a7d41c0fdd"
+        }
+      ],
+      "signedActions": 1,
+      "twoSeatsVerified": true,
+      "explicitHumanConfirmation": true,
+      "previewReadOnly": true,
+      "replayMatchesCurrent": true,
+      "seatRecoveryReentryVerified": true,
+      "pageErrors": []
+    },
+    {
+      "kind": "trooper-restoration",
+      "definitionId": "unit:infested_trooper/spread-infestation-any-phase@1",
+      "sourceRoomId": "wave4-stukov-trooper-restoration",
+      "sourceStateHash": "9e49c7d3588eccd06491d87d606e0c070fa79ca2c2eba46430d9226f3baf0e2e",
+      "sourcePrefixReceipts": 0,
+      "trace": [
+        {
+          "actionType": "resolve_characteristic_status_ability",
+          "definitionId": "unit:infested_trooper/spread-infestation-any-phase@1",
+          "sideKey": "player1",
+          "stateRevision": 1,
+          "stateHash": "78aca6455a21e60dd8b86547c7486234d24374334358a5b10c9936c583ce267f"
+        },
+        {
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null,
+          "sideKey": "player1",
+          "stateRevision": 2,
+          "stateHash": "a465c4c95b75e00953bc9a3cddefaf51c553723c7d0dae8c3b3bdc20fcfe25e2"
+        },
+        {
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:medic/restoration-any-phase@1",
+          "sideKey": "player2",
+          "stateRevision": 3,
+          "stateHash": "f1909350283ffe34d688c564fbd86e01ce9a21a778f66324686a5f4b4713d7b9"
+        }
+      ],
+      "signedActions": 3,
+      "twoSeatsVerified": true,
+      "explicitHumanConfirmation": true,
+      "previewReadOnly": true,
+      "replayMatchesCurrent": true,
+      "seatRecoveryReentryVerified": true,
+      "pageErrors": []
+    },
+    {
+      "kind": "warden-round",
+      "definitionId": "unit:stukov/spread-infestation-movement-phase@1",
+      "sourceRoomId": "wave4-stukov-warden-round",
+      "sourceStateHash": "d490b7b8e552a621ff93eaffafc0baad1584129cd1537e86275deeca236a99da",
+      "sourcePrefixReceipts": 2,
+      "trace": [
+        {
+          "actionType": "resolve_characteristic_status_ability",
+          "definitionId": "unit:stukov/spread-infestation-movement-phase@1",
+          "sideKey": "player1",
+          "stateRevision": 1,
+          "stateHash": "f206413e29bb677201f014732ad5e436b9b2b7242ad7bdb0d132e48b851cba7a"
+        },
+        {
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null,
+          "sideKey": "player1",
+          "stateRevision": 2,
+          "stateHash": "3784bd64df6f2cb905728824b7af5623cc156689361ad1742a5ce6169bb4e1b7"
+        },
+        {
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null,
+          "sideKey": "player2",
+          "stateRevision": 3,
+          "stateHash": "dbc9e460a9b544d788840f008bdb18bf6654e457ce78bd50d744ef87bad37376"
+        }
+      ],
+      "signedActions": 3,
+      "twoSeatsVerified": true,
+      "explicitHumanConfirmation": true,
+      "previewReadOnly": true,
+      "replayMatchesCurrent": true,
+      "seatRecoveryReentryVerified": true,
+      "pageErrors": []
+    }
+  ],
+  "signedActions": 7,
+  "conditionalTurretGeometryInRestorationCaseOnly": false,
+  "sourceHeldDefinitions": 39,
+  "engineeringEstimatedUnitGeometry": true,
+  "fullWave4LobbyBuilderAdmission": false,
+  "fullMatchAdmission": false,
+  "wave3PlayerRoomsTouched": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

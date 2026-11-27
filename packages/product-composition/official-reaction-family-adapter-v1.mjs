@@ -1730,6 +1730,14 @@ function apply(bundle, stateInput, request = {}, copyOwnedPassState = null) {
 export function openOfficialOpticalFlareRestorationWindowV1(bundle, transition, { recordSource = false } = {}) {
   const applied = transition.events.find(event => event.type === 'range_debuff_applied');
   if (transition.action.definitionId !== OFFICIAL_OPTICAL_FLARE_DEFINITION_ID || !applied) return transition;
+  return openAppliedAbilityDebuffRestorationWindow(bundle,transition,applied,{recordSource});
+}
+export function openOfficialInfestationSpreadRestorationWindowV1(bundle,transition){
+  if(!['unit:stukov/spread-infestation-movement-phase@1','unit:infested_trooper/spread-infestation-any-phase@1'].includes(transition.action.definitionId))return transition;
+  const applied=transition.events.find(event=>event.type==='infestation_status_applied');
+  return applied?openAppliedAbilityDebuffRestorationWindow(bundle,transition,applied,{recordSource:true}):transition;
+}
+function openAppliedAbilityDebuffRestorationWindow(bundle,transition,applied,{recordSource}){
   const { state, action } = transition;
   const sourceActionHash = hashStarcraftTmgContract(action);
   const input = { triggerKind: 'debuff_received', activeSideKey: action.sideKey, phase: state.phase,

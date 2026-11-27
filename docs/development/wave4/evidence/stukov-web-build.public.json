@@ -1,0 +1,18 @@
+{
+  "schema": "starcraft_tmg_wave4_stukov_units_offline_web_build_v1",
+  "status": "passed",
+  "offline": true,
+  "dependencyInstall": false,
+  "entryBundle": {
+    "ref": "build/wave4-web/stukov-units/web-bundle-v1/_expo/static/js/web/entry-d1e90e41f7d781c201674123ddc9e24f.js",
+    "byteHash": "015a8d3da34778a8034766a95bea22b1c882849e342b64f1bd1c08ff9f0e7add",
+    "bytes": 3824949
+  },
+  "formSourceRef": "apps/starcraft-tmg-expo/components/battlefield/native-action-form.tsx",
+  "formSourceByteHash": "2a65d1227a2691bb3b5e4237fe516f59c89aa74a4a08c769daf3e2d24557a160",
+  "productionPublished": false,
+  "modelCalls": 0,
+  "trainingTruth": false,
+  "webEvidenceRef": "docs/development/wave4/evidence/stukov-infestation-web.public.json",
+  "webRunRef": "build/wave4-web/stukov-units/web-acceptance-v1"
+}
