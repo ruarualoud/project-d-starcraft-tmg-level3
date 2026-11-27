@@ -1,0 +1,46 @@
+{
+  "schema": "starcraft_tmg_wave4_before_casualty_compat_v1",
+  "status": "passed_scoped",
+  "legacyResults": [],
+  "rangedHostAudits": [
+    {
+      "id": "marine-use",
+      "oneOriginalAttack": true,
+      "originalChoicePreserved": true,
+      "originalResolutionHash": "d1ca26d38b9d4513150da45583c1d4006863444fdfaffc92497bba2855dc2832",
+      "attackerSupplyLossEntries": 1,
+      "attackerDestroyed": true,
+      "newActions": 0,
+      "descriptorUnchanged": true,
+      "coldReplay": true
+    },
+    {
+      "id": "marine-decline",
+      "oneOriginalAttack": true,
+      "originalChoicePreserved": true,
+      "originalResolutionHash": "979fbc44239a2f0593b137af777008658cd154d536843da3876018d454e26264",
+      "attackerSupplyLossEntries": 0,
+      "attackerDestroyed": false,
+      "newActions": 0,
+      "descriptorUnchanged": true,
+      "coldReplay": true
+    },
+    {
+      "id": "trooper-use",
+      "oneOriginalAttack": true,
+      "originalChoicePreserved": true,
+      "originalResolutionHash": "893354de49724e3a37467fbee2c453984b13ff11b2bb7afb4176cff09d1c7a6f",
+      "attackerSupplyLossEntries": 0,
+      "attackerDestroyed": false,
+      "newActions": 0,
+      "descriptorUnchanged": true,
+      "coldReplay": true
+    }
+  ],
+  "nativeActionsAdded": 0,
+  "otherDetonationHostsPending": true,
+  "newGameAtomsImplemented": 0,
+  "implementedCumulativeAtoms": 6,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

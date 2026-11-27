@@ -4,15 +4,15 @@
 
 当前执行 T28-W4-02。
 Ticket 23 / Slice 249；整体 33/36；剩余 248、249、250。
-状态日期：2026-11-27T21:02:33.256Z。本页由 coordination/current-development.json 生成，不追加历史。
+状态日期：2026-11-27T21:30:36.694Z。本页由 coordination/current-development.json 生成，不追加历史。
 
-Wave4人人长任务进行中，原子6/18。感染步兵15条已验；Detonation远程父批次另3原生分支16动作、Web2房8动作及旧3房30动作冷重放通过，其他伤亡入口／嵌套仍待，未计新增原子准出。继续整版规则、发布／建军／房间／媒体和两种规模Web；39来源隔离及估算几何保持。
+Wave4人人长任务进行中，原子6/18。Detonation普通远程、近战/HITS及两层嵌套已验，本批6原生分支71动作（含无伤害对照）、Web2房8确认；旧30动作与v1远程16动作冷重放一致。委托/激活外和直接移除继续，未计完整新增原子。整版规则、发布/Builder/大厅/媒体及500/2000分Web仍待；39来源和估算几何保持。
 
 运行限制：本分支仅推进Wave4人人对战，按Wave3模式补齐数据、规则、建军、房间、媒体和Web双席；使用5484及build/wave4-web，按可验证成果提交推送。其他同步开发线不在本分支展开；付费模型、K3、AI对局、复盘与生产发布继续暂停。
 
 | 工作 | 实现 | 产品交接 | 真实产出 | 策略效果 |
 |---|---|---|---|---|
-| Wave4人人更新：6/18原子；Detonation远程后继已验 | 部分完成 | 部分完成 | 不适用 | 不适用 |
+| Wave4人人更新：6/18原子；Detonation普通攻击与嵌套已验 | 部分完成 | 部分完成 | 不适用 | 不适用 |
 | Wave4 W4-01 候选与旧版兼容 | 已实现 | 已通过 | 已产出 | 不适用 |
 | 开发环境六项改进 | 已实现 | 已通过 | 不适用 | 不适用 |
 | WikiSkill | 已实现 | 部分完成 | 已产出 | 未能证明 |
@@ -23,12 +23,13 @@ Wave4人人长任务进行中，原子6/18。感染步兵15条已验；Detonatio
 | T27/S272 军表与 Plan／Teach，P0–P6 验收 3/7 | 部分完成 | 部分完成 | 部分完成 | 未测效果 |
 
 下一步：
-1. W4-02：扩展Detonation至近战／HITS、双方嵌套及其他移除入口；继续Stukov其余能力和新卡。
+1. W4-02：继续Detonation的委托/激活外时点、Disengage/Consume/Bio-Kill Switch及完整回合；补Stukov其余能力。
 2. 继续其余12个需实现合同及其他新增单位／势力；撤回Archon独占3个合同不计18。39来源隔离与估算几何保持。
 3. 完成 W4-03 整版发布／Builder／大厅／媒体及 W4-04 的500／2000分 Web 双席。
 
 ## Navigation
 
+- 查看Detonation普通近战/HITS、双方嵌套及多目标后继：[Detonation嵌套接线](docs/development/wave4/detonation-nested-wiring.zh-CN.md)
 - 查看Detonation伤亡前远程后继及边界：[Detonation远程接线](docs/development/wave4/detonation-ranged-wiring.zh-CN.md)
 - 继续Detonation的原生伤亡前中断：[Detonation接线工作台（进行中）](docs/development/wave4/detonation-continuation-workbench.zh-CN.md)
 - 查看感染步兵15条与独立激活计数：[感染步兵本批接线](docs/development/wave4/infested-infantry-wiring.zh-CN.md)

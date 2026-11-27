@@ -1,0 +1,23 @@
+{
+  "schema": "starcraft_tmg_wave4_detonation_nested_harness_v1",
+  "harnessLoopUsed": true,
+  "targetGames": ["starcraft-tmg"],
+  "promptPackRoutes": [{"route":"fact_probe_prompt","mode":"offline_contract_verification","invoked":false,"modelCalls":0}],
+  "harnessToolsCalled": ["actual_roster_factory","native_melee_pools","defender_casualty_order","automatic_hits_multi_target","per_source_reaction_witness","nested_before_casualty_stack","allocation_only_reservation","legalSpace","preview","explicit_human_confirmation","idempotency_reapply","cold_replay","seat_recovery_exchange"],
+  "uiTraceEvidence": ["docs/development/wave4/evidence/detonation-nested-web.public.json","docs/development/wave4/evidence/detonation-nested-mobile.png"],
+  "agentDecisionEvidence": {"status":"not_applicable","modelCalls":0},
+  "memoryTraceEvidence": [],
+  "trainingTraceCandidates": [],
+  "rollbackOrDemotionRules": ["source_and_cost_must_match","v1_and_legacy_native_hashes_unchanged","original_resolution_and_casualty_order_retained","no_duplicate_allocation_or_supply_loss","no_pending_slot_after_settlement","component_or_nested_successors_do_not_admit_full_atom_or_Wave4"],
+  "userVisibleChecks": ["both_sides_detonate_before_removal","original_attacker_death_does_not_cancel_attack","two_target_casualty_choices","explicit_human_confirmation","two_seat_recovery_and_replay"],
+  "nativeCases": 6,
+  "nativeSignedActions": 71,
+  "webRooms": 2,
+  "webSignedActions": 8,
+  "newGameAtomsImplemented": 0,
+  "implementedCumulativeAtoms": 6,
+  "sourceHeldDefinitions": 39,
+  "fullMatchAdmission": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

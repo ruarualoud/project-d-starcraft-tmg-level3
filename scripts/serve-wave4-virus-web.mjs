@@ -12,13 +12,14 @@ import { loadWave4StukovUnitInputs } from './compile-wave4-stukov-units.mjs';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const read=async file=>JSON.parse(await fs.readFile(file,'utf8'));
 const sourceResult=await read(path.resolve(process.argv[2]));
-assert.ok(sourceResult.status==='passed_scoped'||sourceResult.schema==='starcraft_tmg_wave4_detonation_ranged_host_v1'&&sourceResult.status==='passed_scoped_ranged_host_only');
+assert.ok(sourceResult.status==='passed_scoped'||sourceResult.schema==='starcraft_tmg_wave4_detonation_ranged_host_v1'&&sourceResult.status==='passed_scoped_ranged_host_only'
+ ||sourceResult.schema==='starcraft_tmg_wave4_detonation_nested_host_v1'&&sourceResult.status==='passed_scoped_melee_hits_nested');
 const directory=path.resolve(process.argv[3]);
 assert.ok(directory.startsWith(path.join(root,'build/wave4-web')+path.sep));
 const webRoot=process.argv[4]?path.resolve(process.argv[4]):path.join(root,'apps/starcraft-tmg-expo/dist-product');
 if(process.argv[4])assert.ok(webRoot.startsWith(path.join(root,'build/wave4-web')+path.sep));
 const inputs=['starcraft_tmg_wave4_stukov_infestation_native_v1','starcraft_tmg_wave4_plagued_munitions_v1',
-  'starcraft_tmg_wave4_infested_infantry_base_wiring_v1','starcraft_tmg_wave4_detonation_ranged_host_v1'].includes(sourceResult.schema)?await loadWave4StukovUnitInputs(root)
+   'starcraft_tmg_wave4_infested_infantry_base_wiring_v1','starcraft_tmg_wave4_detonation_ranged_host_v1','starcraft_tmg_wave4_detonation_nested_host_v1'].includes(sourceResult.schema)?await loadWave4StukovUnitInputs(root)
   :sourceResult.schema==='starcraft_tmg_wave4_virus_creep_native_v1'?await loadWave4VirusEffectsInputs(root):await loadWave4TurretInputs(root);
 const rooms=new Map();
 const service={liveEnabled:false,scope:'Wave4 source-bound Native successors; scoped local Web acceptance',rooms:[]};
@@ -43,11 +44,13 @@ for(const spec of specs) {  const proof=sourceResult.results.find(row=>row.id===
     await nativeSource.restoreDependencies(proof.roomId,sourceAuthority);
     const bundle=await nativeSource.store.loadReplayBundle(proof.roomId);
     const journal=bundle.privateJournal.filter(row=>row.payload.type==='accepted_transition').map(row=>row.payload.payload.receipt);
-    for(let count=0;count<=journal.length;count++) {
+    const hintedPrefix=spec.minimumContinuationDepth?proof.trace?.find(row=>row.stackDepth>=spec.minimumContinuationDepth)?.revision-1:0;
+    for(let count=Number.isSafeInteger(hintedPrefix)?hintedPrefix:0;count<=journal.length;count++) {
       const replay=nativeSource.engine.replay({initialEnvelope:bundle.initialEnvelope,journal:journal.slice(0,count)});
       assert.equal(replay.ok,true);
-      if(spec.initial || (spec.requiredPendingKey?Boolean(replay.envelope.state[spec.requiredPendingKey]):
-        source.runtime.enumerate(replay.envelope.state).parameterDomains.some(row=>row.definitionId===spec.definitionId))) {
+      if((!spec.minimumContinuationDepth||(replay.envelope.state.officialBeforeCasualtyContinuations?.length||0)>=spec.minimumContinuationDepth)
+       &&(spec.initial || (spec.requiredPendingKey?Boolean(replay.envelope.state[spec.requiredPendingKey]):
+        source.runtime.enumerate(replay.envelope.state).parameterDomains.some(row=>row.definitionId===spec.definitionId)))) {
         prefix=replay.envelope;prefixReceipts=count;break;
       }
     }

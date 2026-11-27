@@ -6,8 +6,9 @@ export function inspectOfficialDetonationFactsV1(state,source,route,context){
  if(!source||source.officialUnitRecordKey!==route.recordKey||route.effectKind!=='before_casualty_detonation'
   ||source.isOnField!==true||source.isDestroyed||!source.currentModels)return invalid();
  projectOfficialAllocatedCasualtyModelIdsV1(state,source);
- const reservation=(source.officialBeforeCasualtyReservations||[]).find(r=>r.reservationHash===context?.beforeCasualtyReservationHash);
- if(!reservation||reservation.sourceActionHash!==context.beforeCasualtySourceActionHash)return invalid();
+ const witness=context?.beforeCasualtyReservations?.find(row=>row.targetPieceId===source.id);
+ const reservation=(source.officialBeforeCasualtyReservations||[]).find(r=>r.reservationHash===(witness?.reservationHash??context?.beforeCasualtyReservationHash));
+ if(!reservation||!reservation.modelIds.length||reservation.sourceActionHash!==(witness?.sourceActionHash??context.beforeCasualtySourceActionHash))return invalid();
  const measurements=state.pieces.filter(p=>p.sideKey!==source.sideKey&&p.isOnField===true&&!p.isDestroyed&&p.currentModels>0)
   .map(target=>{const checks=source.models.filter(m=>m.isOnField!==false&&!m.isDestroyed).map(model=>evaluateOfficialWithinWhollyWithinV1({
    state,dataBundle:state.officialModelBaseGeometryDataBundle,source:{kind:'model',unitId:source.id,modelId:model.id},

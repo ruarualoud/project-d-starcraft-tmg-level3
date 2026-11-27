@@ -1,0 +1,75 @@
+{
+  "schema": "starcraft_tmg_wave4_detonation_settlement_audit_v1",
+  "status": "passed_scoped",
+  "audits": [
+    {
+      "id": "marine-both-use",
+      "roomId": "wave4-detonation-marine-both-use-0",
+      "stateHash": "46bb5070ec68b3d4685ad72d45631b1e8615ca674cfe569da238bf34103a2f79",
+      "signedActions": 13,
+      "originalResolutionAndCasualtyOrderPreserved": true,
+      "originalActivationContextPreserved": true,
+      "supplyLossesExactlyOnce": true,
+      "stalePendingSlotsAbsent": true,
+      "nonPrimarySourceWitnessVerified": false
+    },
+    {
+      "id": "marine-decline",
+      "roomId": "wave4-detonation-marine-decline-0",
+      "stateHash": "2392ca39f8aa08fc9e04801aa6d1b6a65edf2fdf0530c548b19f93f80e7abfe2",
+      "signedActions": 7,
+      "originalResolutionAndCasualtyOrderPreserved": true,
+      "originalActivationContextPreserved": true,
+      "supplyLossesExactlyOnce": true,
+      "stalePendingSlotsAbsent": true,
+      "nonPrimarySourceWitnessVerified": false
+    },
+    {
+      "id": "trooper-both-use",
+      "roomId": "wave4-detonation-trooper-both-use-1",
+      "stateHash": "3a6aeff8ba3164a01f8998bebe9083f1d9dbb8e691ceac83b027c17d5a615c16",
+      "signedActions": 14,
+      "originalResolutionAndCasualtyOrderPreserved": true,
+      "originalActivationContextPreserved": true,
+      "supplyLossesExactlyOnce": true,
+      "stalePendingSlotsAbsent": true,
+      "nonPrimarySourceWitnessVerified": false
+    },
+    {
+      "id": "trooper-both-use",
+      "roomId": "wave4-detonation-trooper-both-use-0",
+      "stateHash": "8f640d876561fcef875147c80f89cb48bcbf8b632baebb980ef99992365a6cc0",
+      "signedActions": 4,
+      "originalResolutionAndCasualtyOrderPreserved": true,
+      "originalActivationContextPreserved": true,
+      "supplyLossesExactlyOnce": true,
+      "stalePendingSlotsAbsent": true,
+      "nonPrimarySourceWitnessVerified": false
+    },
+    {
+      "id": "marine-two-casualty-targets",
+      "roomId": "wave4-detonation-marine-two-casualty-targets-0",
+      "stateHash": "07e24628975043fa87f13aa1c991f806bdc62777f503fe8fb7e49544a357ef87",
+      "signedActions": 17,
+      "originalResolutionAndCasualtyOrderPreserved": true,
+      "originalActivationContextPreserved": true,
+      "supplyLossesExactlyOnce": true,
+      "stalePendingSlotsAbsent": true,
+      "nonPrimarySourceWitnessVerified": true
+    },
+    {
+      "id": "marine-allocation-only-target",
+      "roomId": "wave4-detonation-marine-allocation-only-target-0",
+      "stateHash": "7b0e5a97bc5984fdcfda292b1a3a1ebd72c64993c7fbf9df65d179702399e8f2",
+      "signedActions": 16,
+      "originalResolutionAndCasualtyOrderPreserved": true,
+      "originalActivationContextPreserved": true,
+      "supplyLossesExactlyOnce": true,
+      "stalePendingSlotsAbsent": true,
+      "nonPrimarySourceWitnessVerified": false
+    }
+  ],
+  "nativeActionsAdded": 0,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

@@ -1,0 +1,4 @@
+[
+ {"id":"marine-both-use","definitionId":"unit:infested_marine/detonation-any-phase@1","requiredPendingKey":"officialBeforeCasualtyContinuations","minimumContinuationDepth":2,"flow":"detonation-nested"},
+ {"id":"trooper-both-use","definitionId":"unit:infested_trooper/detonation-any-phase@1","requiredPendingKey":"officialBeforeCasualtyContinuations","minimumContinuationDepth":2,"flow":"detonation-nested"}
+]

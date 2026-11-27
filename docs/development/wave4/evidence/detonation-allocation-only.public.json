@@ -1,0 +1,15 @@
+{
+  "schema": "starcraft_tmg_wave4_detonation_allocation_only_v1",
+  "status": "passed_component_only",
+  "nativeActions": 0,
+  "allocationOnlyReservation": true,
+  "initialAllocatedMarker": 2,
+  "nestedAllocatedMarker": 5,
+  "resumedMarker": 5,
+  "originalZeroCasualtiesPreserved": true,
+  "duplicateResumeRejected": true,
+  "newGameAtomsImplemented": 0,
+  "implementedCumulativeAtoms": 6,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

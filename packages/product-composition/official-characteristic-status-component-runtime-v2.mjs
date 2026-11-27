@@ -1,8 +1,9 @@
 import {hasOfficialRepeatedActivationIdentityPolicyV1} from '../rule-atoms/official-repeated-activation-identity-v1.mjs';
 import {createOfficialPlaguedMunitionsRuntimeV1} from './official-plagued-munitions-runtime-v1.mjs';
 import {createOfficialBeforeCasualtyRuntimeV1} from './official-before-casualty-runtime-v1.mjs';
-import {hasOfficialBeforeCasualtyBatchPolicyV1} from '../rule-atoms/official-before-casualty-batch-v1.mjs';
+import {hasOfficialBeforeCasualtyBatchPolicyV1,hasOfficialExtendedBeforeCasualtyPolicyV1} from '../rule-atoms/official-before-casualty-batch-v1.mjs';
 import {resumeOfficialSelectedRosterRangedBeforeCasualtyV1} from './official-selected-roster-ranged-action-runtime-v1.mjs';
+import {resumeOfficialSelectedRosterMeleeBeforeCasualtyV1} from './official-selected-roster-melee-action-runtime-v1.mjs';
 import {createOfficialStukovContextualSupplyRoutesV1} from '../source-data/official-stukov-infestation-source-v1.mjs';
 import {openOfficialInfestationSpreadRestorationWindowV1} from './official-reaction-family-adapter-v1.mjs';
 import { createOfficialUniversalCarrierRuntimeV1 } from './official-universal-carrier-runtime-v1.mjs';
@@ -714,7 +715,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
       || spatialState?.officialBattlefieldAssetFamilySourceBundle?.schema === 'starcraft_tmg_official_battlefield_asset_family_source_bundle_v2' });
   const characteristicRoutes = bundle?.routes || [];
   const beforeCasualty=hasOfficialBeforeCasualtyBatchPolicyV1(spatialState)
-    ?createOfficialBeforeCasualtyRuntimeV1({reactionBundle}):null;
+    ?createOfficialBeforeCasualtyRuntimeV1({reactionBundle,policy:spatialState.officialBeforeCasualtyBatchPolicy}):null;
   if(beforeCasualty&&(!includeRanged||!includeHits||!bundle))throw Error('BEFORE_CASUALTY_NATIVE_ATTACK_AND_HITS_REQUIRED');
   if(reactionBundle?.routes.some(r=>r.effectKind==='before_casualty_detonation')&&!beforeCasualty)
     throw Error('DETONATION_NATIVE_CONTINUATION_POLICY_REQUIRED');
@@ -1544,7 +1545,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
     eligibility: khassarEligibility, state: spatialState, includeRun: includeKhassarRun || includeKhassarCharge || includeKhassarCombatExecution,
     enumerateNative, instantiateNative: instantiate, applyNative: apply,
   }) : null;
-  const version = beforeCasualty ? '3.227.0' : plaguedMunitions ? '3.226.0' : repeatedActivationIdentity ? '3.225.0' : infantryPrecision ? '3.224.0' : stukovInfestation ? '3.223.0' : universalCarrier ? '3.222.0' : includeReleaseMoundAssaultOrder ? '3.221.0' : includeBilePhysicalPlacement && bile ? '3.220.0' : psionicRoundEnd?.scheduledEffects ? '3.219.0' : includeReleaseBileAssaultOrder ? '3.218.0' : releaseZergTargets ? '3.217.0' : includePsionicStormAssaultSameName ? '3.216.0'
+  const version = hasOfficialExtendedBeforeCasualtyPolicyV1(spatialState) ? '3.228.0' : beforeCasualty ? '3.227.0' : plaguedMunitions ? '3.226.0' : repeatedActivationIdentity ? '3.225.0' : infantryPrecision ? '3.224.0' : stukovInfestation ? '3.223.0' : universalCarrier ? '3.222.0' : includeReleaseMoundAssaultOrder ? '3.221.0' : includeBilePhysicalPlacement && bile ? '3.220.0' : psionicRoundEnd?.scheduledEffects ? '3.219.0' : includeReleaseBileAssaultOrder ? '3.218.0' : releaseZergTargets ? '3.217.0' : includePsionicStormAssaultSameName ? '3.216.0'
     : includePsionicStormTokenCleanup ? '3.215.0'
     : includePsionicStormNamedOverlapChoices ? '3.214.0'
     : stormCast ? '3.213.0'
@@ -2971,13 +2972,18 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
     if(!frame||!['hits','resume'].includes(frame.stage)||result.state.pendingOfficialAutomaticHits||result.state.pendingOfficialHitsPoolChoice
       ||result.state.pendingOfficialReactionWindow||universalCarrier?.pending(result.state)||infestationTransfer?.pending(result.state)
       ||friendlySupplyLossReaction?.pending(result.state))return result;
-    const resumed=beforeCasualty.takeResume(result.state);
-    if(resumed.frame.hostKind!=='ranged')throw Error('BEFORE_CASUALTY_NATIVE_HOST_NOT_ADMITTED');
-    const raw=resumeOfficialSelectedRosterRangedBeforeCasualtyV1({...resumed,options});
+    const next=beforeCasualty.startNextEffect(result);
+    if(next.state.pendingOfficialAutomaticHits)return next;
+    const resumed=beforeCasualty.takeResume(next.state);
+    const raw=resumed.frame.hostKind==='ranged'?resumeOfficialSelectedRosterRangedBeforeCasualtyV1({...resumed,options})
+      :resumed.frame.hostKind==='melee'?resumeOfficialSelectedRosterMeleeBeforeCasualtyV1({...resumed,options})
+      :resumed.frame.hostKind==='automatic_hits'?hits.resumeBeforeCasualty({...resumed,options})
+      :(()=>{throw Error('BEFORE_CASUALTY_NATIVE_HOST_NOT_ADMITTED');})();
     const native=completeNativeOutcome(resumed.before,raw,resumed.frame.rootAction,options,
       {attack:khassarAttackContinuation(resumed.before),chargeParent:khassarCharge?.pending(resumed.before)});
     const completed=completeCompositionTail(resumed.before,native,resumed.frame.rootAction);
-    return{...result,state:completed.state,events:[...(result.events||[]),...completed.events]};
+    const merged={...result,state:completed.state,events:[...(result.events||[]),...completed.events]};
+    return hasOfficialExtendedBeforeCasualtyPolicyV1(merged.state)?resumeBeforeCasualtyIfReady(merged,options):merged;
   }
   function applyBase(state,action,options){
     if(universalCarrier?.pending(state)||plaguedMunitions?.pending(state))return applySource(state,action,options);

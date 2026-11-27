@@ -1,0 +1,939 @@
+{
+  "schema": "starcraft_tmg_wave4_detonation_nested_host_v1",
+  "status": "passed_scoped_melee_hits_nested",
+  "runRef": "build/wave4-web/stukov-units/detonation-nested-nM2Lbs",
+  "results": [
+    {
+      "id": "marine-two-casualty-targets",
+      "allyKind": "casualty",
+      "use": true,
+      "attempt": 0,
+      "coverageSatisfied": true,
+      "roomId": "wave4-detonation-marine-two-casualty-targets-0",
+      "directoryRef": "build/wave4-web/stukov-units/detonation-nested-nM2Lbs/marine-two-casualty-targets-0",
+      "signedActions": 17,
+      "stateHash": "07e24628975043fa87f13aa1c991f806bdc62777f503fe8fb7e49544a357ef87",
+      "maximumDepth": 2,
+      "originalDiceAndCasualtyOrdersPreserved": true,
+      "supplyLossesExactlyOnce": true,
+      "frames": [
+        {
+          "continuationId": "4a740d0bbc916a1b0f184c9cf7e81d009a190343a19fad558eea0d49989a73b5",
+          "hostKind": "melee",
+          "rows": [
+            {
+              "targetPieceId": "defender",
+              "targetProfile": {
+                "recordKey": "army_units:infested_marine",
+                "sourceRecordHash": "12e5f075acc27dd49959dbb084697a60fc50da8ae27f7f1574f518d09e803d20",
+                "payloadHash": "0a5124e81cdcdc61bcc4a52bd31bef1645b3b9b9d62cd4fbb64747a2aba1db87",
+                "unitId": "infested_marine",
+                "unitName": "Infested Marine",
+                "faction": "Zerg",
+                "combatTags": [
+                  "biological",
+                  "ground",
+                  "infested",
+                  "light"
+                ],
+                "armourThreshold": 4,
+                "evadeThreshold": 6,
+                "hitPoints": 2,
+                "shield": 0,
+                "squadProfile": [
+                  {
+                    "tier": 1,
+                    "minimumModels": 1,
+                    "maximumModels": 3,
+                    "supply": 1
+                  },
+                  {
+                    "tier": 2,
+                    "minimumModels": 4,
+                    "maximumModels": 6,
+                    "supply": 2
+                  },
+                  {
+                    "tier": 3,
+                    "minimumModels": null,
+                    "maximumModels": null,
+                    "supply": 0
+                  }
+                ],
+                "combatWeapons": [
+                  {
+                    "weaponName": "Strike",
+                    "linkedTo": "-",
+                    "costSmall": 0,
+                    "costLarge": 0,
+                    "range": "engagement",
+                    "targetTags": [
+                      "ground"
+                    ],
+                    "rateOfAttack": 1,
+                    "hitThreshold": 4,
+                    "damage": 1,
+                    "surge": null,
+                    "behaviorText": "",
+                    "sourceTextHash": "70daa49c72839e258072250089247bf5b0c1b5af201432420c3f02f5844443e2"
+                  },
+                  {
+                    "weaponName": "Wild Mutation",
+                    "linkedTo": "Infested C-14 Rifle",
+                    "costSmall": 1,
+                    "costLarge": 1,
+                    "range": "engagement",
+                    "targetTags": [
+                      "ground"
+                    ],
+                    "rateOfAttack": 2,
+                    "hitThreshold": 3,
+                    "damage": 1,
+                    "surge": "Armoured (D3+1)",
+                    "behaviorText": "",
+                    "sourceTextHash": "5835866f890df4296e8971d909a65062bb9e55a5e03656a8d1a773331ee50fb7"
+                  }
+                ],
+                "weaponlessCombatProfileAllowed": false
+              },
+              "attackResolutionHash": "c268783a0f4e6b04548f34450b25f716400ba86e33e8c98b01e9578d0180a775",
+              "casualty": {
+                "schema": "starcraft_tmg_official_current_product_casualty_resolution_v1",
+                "domainHash": "57b69e6976a6881b4b8310d6fc8b0c838490bfd839baef99f4e439952f1aac22",
+                "selectionHash": "",
+                "targetPieceId": "defender",
+                "casualtyModelIds": [
+                  "defender-model-2",
+                  "defender-model-3",
+                  "defender-model-5",
+                  "defender-model-6",
+                  "defender-model-1",
+                  "defender-model-4"
+                ],
+                "remainingModelIds": [],
+                "remainingEngagedEnemyUnitIds": [],
+                "postDamageMarker": 0,
+                "targetDestroyed": true,
+                "discardedOverflowDamage": 0,
+                "shieldedBefore": false,
+                "shieldedAfter": false,
+                "trainingTruth": false,
+                "resolutionHash": "1fe76d18ebd4df5ccad6b13d731ea01f7ef8d75083df9809ad2f19f494574f9d"
+              },
+              "reservationHash": "e654ac20b219ab413950427637bdd52aa222eb8cee182775de924f00fcdeb253"
+            }
+          ],
+          "activationContext": {
+            "activeSideKey": "player1",
+            "activationId": "1:combat:player1:attacker"
+          }
+        },
+        {
+          "continuationId": "2bfdbf90c42b8183023f7288288a101c8c8332d0df1551f1ade37586400ad3f8",
+          "hostKind": "automatic_hits",
+          "rows": [
+            {
+              "targetPieceId": "ally",
+              "targetProfile": {
+                "recordKey": "army_units:infested_marine",
+                "sourceRecordHash": "12e5f075acc27dd49959dbb084697a60fc50da8ae27f7f1574f518d09e803d20",
+                "payloadHash": "0a5124e81cdcdc61bcc4a52bd31bef1645b3b9b9d62cd4fbb64747a2aba1db87",
+                "unitId": "infested_marine",
+                "unitName": "Infested Marine",
+                "faction": "Zerg",
+                "combatTags": [
+                  "biological",
+                  "ground",
+                  "infested",
+                  "light"
+                ],
+                "armourThreshold": 4,
+                "evadeThreshold": 6,
+                "hitPoints": 2,
+                "shield": 0,
+                "squadProfile": [
+                  {
+                    "tier": 1,
+                    "minimumModels": 1,
+                    "maximumModels": 3,
+                    "supply": 1
+                  },
+                  {
+                    "tier": 2,
+                    "minimumModels": 4,
+                    "maximumModels": 6,
+                    "supply": 2
+                  },
+                  {
+                    "tier": 3,
+                    "minimumModels": null,
+                    "maximumModels": null,
+                    "supply": 0
+                  }
+                ],
+                "combatWeapons": [
+                  {
+                    "weaponName": "Strike",
+                    "linkedTo": "-",
+                    "costSmall": 0,
+                    "costLarge": 0,
+                    "range": "engagement",
+                    "targetTags": [
+                      "ground"
+                    ],
+                    "rateOfAttack": 1,
+                    "hitThreshold": 4,
+                    "damage": 1,
+                    "surge": null,
+                    "behaviorText": "",
+                    "sourceTextHash": "70daa49c72839e258072250089247bf5b0c1b5af201432420c3f02f5844443e2"
+                  },
+                  {
+                    "weaponName": "Wild Mutation",
+                    "linkedTo": "Infested C-14 Rifle",
+                    "costSmall": 1,
+                    "costLarge": 1,
+                    "range": "engagement",
+                    "targetTags": [
+                      "ground"
+                    ],
+                    "rateOfAttack": 2,
+                    "hitThreshold": 3,
+                    "damage": 1,
+                    "surge": "Armoured (D3+1)",
+                    "behaviorText": "",
+                    "sourceTextHash": "5835866f890df4296e8971d909a65062bb9e55a5e03656a8d1a773331ee50fb7"
+                  }
+                ],
+                "weaponlessCombatProfileAllowed": false
+              },
+              "attackResolutionHash": "76b71787bc4ab83161371f9fbff565e737552410072386a23157a31194f96a70",
+              "casualty": {
+                "schema": "starcraft_tmg_official_current_product_casualty_resolution_v1",
+                "domainHash": "f656e688fd58aec6d1a60d46c73ee843511a515eff4d741fa52aaa4b91fd9bc2",
+                "selectionHash": "",
+                "targetPieceId": "ally",
+                "casualtyModelIds": [
+                  "ally-model-1",
+                  "ally-model-2",
+                  "ally-model-3",
+                  "ally-model-4",
+                  "ally-model-5",
+                  "ally-model-6"
+                ],
+                "remainingModelIds": [],
+                "remainingEngagedEnemyUnitIds": [],
+                "postDamageMarker": 0,
+                "targetDestroyed": true,
+                "discardedOverflowDamage": 2,
+                "shieldedBefore": false,
+                "shieldedAfter": false,
+                "trainingTruth": false,
+                "resolutionHash": "07bf38073930522f85380f79ac7744cbde696617ba8d6f06cb2ac46aa6b09e04"
+              },
+              "reservationHash": "eb8581aee52dcca4e3dc7e5b54be007e795d84f96a9d8c42c54dfee7cd9c6ecc"
+            },
+            {
+              "targetPieceId": "attacker",
+              "targetProfile": {
+                "recordKey": "army_units:infested_marine",
+                "sourceRecordHash": "12e5f075acc27dd49959dbb084697a60fc50da8ae27f7f1574f518d09e803d20",
+                "payloadHash": "0a5124e81cdcdc61bcc4a52bd31bef1645b3b9b9d62cd4fbb64747a2aba1db87",
+                "unitId": "infested_marine",
+                "unitName": "Infested Marine",
+                "faction": "Zerg",
+                "combatTags": [
+                  "biological",
+                  "ground",
+                  "infested",
+                  "light"
+                ],
+                "armourThreshold": 4,
+                "evadeThreshold": 6,
+                "hitPoints": 2,
+                "shield": 0,
+                "squadProfile": [
+                  {
+                    "tier": 1,
+                    "minimumModels": 1,
+                    "maximumModels": 3,
+                    "supply": 1
+                  },
+                  {
+                    "tier": 2,
+                    "minimumModels": 4,
+                    "maximumModels": 6,
+                    "supply": 2
+                  },
+                  {
+                    "tier": 3,
+                    "minimumModels": null,
+                    "maximumModels": null,
+                    "supply": 0
+                  }
+                ],
+                "combatWeapons": [
+                  {
+                    "weaponName": "Strike",
+                    "linkedTo": "-",
+                    "costSmall": 0,
+                    "costLarge": 0,
+                    "range": "engagement",
+                    "targetTags": [
+                      "ground"
+                    ],
+                    "rateOfAttack": 1,
+                    "hitThreshold": 4,
+                    "damage": 1,
+                    "surge": null,
+                    "behaviorText": "",
+                    "sourceTextHash": "70daa49c72839e258072250089247bf5b0c1b5af201432420c3f02f5844443e2"
+                  },
+                  {
+                    "weaponName": "Wild Mutation",
+                    "linkedTo": "Infested C-14 Rifle",
+                    "costSmall": 1,
+                    "costLarge": 1,
+                    "range": "engagement",
+                    "targetTags": [
+                      "ground"
+                    ],
+                    "rateOfAttack": 2,
+                    "hitThreshold": 3,
+                    "damage": 1,
+                    "surge": "Armoured (D3+1)",
+                    "behaviorText": "",
+                    "sourceTextHash": "5835866f890df4296e8971d909a65062bb9e55a5e03656a8d1a773331ee50fb7"
+                  }
+                ],
+                "weaponlessCombatProfileAllowed": false
+              },
+              "attackResolutionHash": "3bb471717c452208e38c862c43652dbe1a9cdae435f9a702f1d368dae3ebf2f1",
+              "casualty": {
+                "schema": "starcraft_tmg_official_current_product_casualty_resolution_v1",
+                "domainHash": "dfe9a14994c4abb4058940e0c0d7360d47a804fb1b402cbdc9b1465315ff2d95",
+                "selectionHash": "",
+                "targetPieceId": "attacker",
+                "casualtyModelIds": [
+                  "attacker-model-2",
+                  "attacker-model-3",
+                  "attacker-model-5",
+                  "attacker-model-6",
+                  "attacker-model-1",
+                  "attacker-model-4"
+                ],
+                "remainingModelIds": [],
+                "remainingEngagedEnemyUnitIds": [],
+                "postDamageMarker": 0,
+                "targetDestroyed": true,
+                "discardedOverflowDamage": 3,
+                "shieldedBefore": false,
+                "shieldedAfter": false,
+                "trainingTruth": false,
+                "resolutionHash": "2d150771d852510de5177fdc4fcdb54ca23fc9c3c898e63517edc98b024bef4c"
+              },
+              "reservationHash": "ca04192aa8cb73a794c5922fb4d11b77dd4a23f4f6cab534c26fcf001a71f467"
+            }
+          ],
+          "activationContext": {
+            "activeSideKey": "player1",
+            "activationId": "1:combat:player1:attacker"
+          }
+        }
+      ],
+      "trace": [
+        {
+          "revision": 2,
+          "actionType": "choose_melee_precision_hits",
+          "definitionId": null,
+          "sourceInstanceId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 3,
+          "actionType": "roll_melee_attack_armour_pool",
+          "definitionId": null,
+          "sourceInstanceId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 4,
+          "actionType": "resolve_melee_attack_evade_pool",
+          "definitionId": null,
+          "sourceInstanceId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 5,
+          "actionType": "fight",
+          "definitionId": null,
+          "sourceInstanceId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 6,
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null,
+          "sourceInstanceId": null,
+          "stackDepth": 1
+        },
+        {
+          "revision": 7,
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:infested_marine/detonation-any-phase@1",
+          "sourceInstanceId": "defender",
+          "stackDepth": 1
+        },
+        {
+          "revision": 8,
+          "actionType": "roll_automatic_hits_armour_pool",
+          "definitionId": null,
+          "sourceInstanceId": null,
+          "stackDepth": 1
+        },
+        {
+          "revision": 9,
+          "actionType": "resolve_automatic_hits_evade_pool",
+          "definitionId": null,
+          "sourceInstanceId": null,
+          "stackDepth": 1
+        },
+        {
+          "revision": 10,
+          "actionType": "roll_automatic_hits_armour_pool",
+          "definitionId": null,
+          "sourceInstanceId": null,
+          "stackDepth": 1
+        },
+        {
+          "revision": 11,
+          "actionType": "resolve_automatic_hits_evade_pool",
+          "definitionId": null,
+          "sourceInstanceId": null,
+          "stackDepth": 1
+        },
+        {
+          "revision": 12,
+          "actionType": "choose_automatic_hits_casualties",
+          "definitionId": null,
+          "sourceInstanceId": null,
+          "stackDepth": 1
+        },
+        {
+          "revision": 13,
+          "actionType": "choose_automatic_hits_casualties",
+          "definitionId": null,
+          "sourceInstanceId": null,
+          "stackDepth": 1
+        },
+        {
+          "revision": 14,
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:infested_marine/detonation-any-phase@1",
+          "sourceInstanceId": "attacker",
+          "stackDepth": 2
+        },
+        {
+          "revision": 15,
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null,
+          "sourceInstanceId": null,
+          "stackDepth": 2
+        },
+        {
+          "revision": 16,
+          "actionType": "roll_automatic_hits_armour_pool",
+          "definitionId": null,
+          "sourceInstanceId": null,
+          "stackDepth": 2
+        },
+        {
+          "revision": 17,
+          "actionType": "resolve_automatic_hits_evade_pool",
+          "definitionId": null,
+          "sourceInstanceId": null,
+          "stackDepth": 2
+        }
+      ],
+      "finalPieces": [
+        {
+          "id": "ally",
+          "isDestroyed": true,
+          "currentModels": 0,
+          "currentSupply": 0
+        },
+        {
+          "id": "attacker",
+          "isDestroyed": true,
+          "currentModels": 0,
+          "currentSupply": 0
+        },
+        {
+          "id": "defender",
+          "isDestroyed": true,
+          "currentModels": 0,
+          "currentSupply": 0
+        }
+      ],
+      "coldReplay": true,
+      "idempotencyVerified": true
+    },
+    {
+      "id": "marine-allocation-only-target",
+      "allyKind": "allocation-only",
+      "use": true,
+      "attempt": 0,
+      "coverageSatisfied": true,
+      "roomId": "wave4-detonation-marine-allocation-only-target-0",
+      "directoryRef": "build/wave4-web/stukov-units/detonation-nested-nM2Lbs/marine-allocation-only-target-0",
+      "signedActions": 16,
+      "stateHash": "7b0e5a97bc5984fdcfda292b1a3a1ebd72c64993c7fbf9df65d179702399e8f2",
+      "maximumDepth": 2,
+      "originalDiceAndCasualtyOrdersPreserved": true,
+      "supplyLossesExactlyOnce": true,
+      "frames": [
+        {
+          "continuationId": "f9053e17a8e5310f373aa63e9b37e0be2a86b958a6d9758daed1516d57477beb",
+          "hostKind": "melee",
+          "rows": [
+            {
+              "targetPieceId": "defender",
+              "targetProfile": {
+                "recordKey": "army_units:infested_marine",
+                "sourceRecordHash": "12e5f075acc27dd49959dbb084697a60fc50da8ae27f7f1574f518d09e803d20",
+                "payloadHash": "0a5124e81cdcdc61bcc4a52bd31bef1645b3b9b9d62cd4fbb64747a2aba1db87",
+                "unitId": "infested_marine",
+                "unitName": "Infested Marine",
+                "faction": "Zerg",
+                "combatTags": [
+                  "biological",
+                  "ground",
+                  "infested",
+                  "light"
+                ],
+                "armourThreshold": 4,
+                "evadeThreshold": 6,
+                "hitPoints": 2,
+                "shield": 0,
+                "squadProfile": [
+                  {
+                    "tier": 1,
+                    "minimumModels": 1,
+                    "maximumModels": 3,
+                    "supply": 1
+                  },
+                  {
+                    "tier": 2,
+                    "minimumModels": 4,
+                    "maximumModels": 6,
+                    "supply": 2
+                  },
+                  {
+                    "tier": 3,
+                    "minimumModels": null,
+                    "maximumModels": null,
+                    "supply": 0
+                  }
+                ],
+                "combatWeapons": [
+                  {
+                    "weaponName": "Strike",
+                    "linkedTo": "-",
+                    "costSmall": 0,
+                    "costLarge": 0,
+                    "range": "engagement",
+                    "targetTags": [
+                      "ground"
+                    ],
+                    "rateOfAttack": 1,
+                    "hitThreshold": 4,
+                    "damage": 1,
+                    "surge": null,
+                    "behaviorText": "",
+                    "sourceTextHash": "70daa49c72839e258072250089247bf5b0c1b5af201432420c3f02f5844443e2"
+                  },
+                  {
+                    "weaponName": "Wild Mutation",
+                    "linkedTo": "Infested C-14 Rifle",
+                    "costSmall": 1,
+                    "costLarge": 1,
+                    "range": "engagement",
+                    "targetTags": [
+                      "ground"
+                    ],
+                    "rateOfAttack": 2,
+                    "hitThreshold": 3,
+                    "damage": 1,
+                    "surge": "Armoured (D3+1)",
+                    "behaviorText": "",
+                    "sourceTextHash": "5835866f890df4296e8971d909a65062bb9e55a5e03656a8d1a773331ee50fb7"
+                  }
+                ],
+                "weaponlessCombatProfileAllowed": false
+              },
+              "attackResolutionHash": "c5c594947d37e7214a4be148045e2fd44dca06ce4f7964bd005adb18f0ddc677",
+              "casualty": {
+                "schema": "starcraft_tmg_official_current_product_casualty_resolution_v1",
+                "domainHash": "2d8f6f6d064ebc899653363ecf82a5262e8a21e028278328aa9728aa7201e90a",
+                "selectionHash": "",
+                "targetPieceId": "defender",
+                "casualtyModelIds": [
+                  "defender-model-2",
+                  "defender-model-3",
+                  "defender-model-5",
+                  "defender-model-6",
+                  "defender-model-1",
+                  "defender-model-4"
+                ],
+                "remainingModelIds": [],
+                "remainingEngagedEnemyUnitIds": [],
+                "postDamageMarker": 0,
+                "targetDestroyed": true,
+                "discardedOverflowDamage": 1,
+                "shieldedBefore": false,
+                "shieldedAfter": false,
+                "trainingTruth": false,
+                "resolutionHash": "1d80a48b9e099d4def45fa1e07d9eb25991be9335b82566c2cd50f1dc1cb4a25"
+              },
+              "reservationHash": "3205b693478691443ca87ce7cb19550c40fff8e8994b18a48e73e0546cb13bbb"
+            }
+          ],
+          "activationContext": {
+            "activeSideKey": "player1",
+            "activationId": "1:combat:player1:attacker"
+          }
+        },
+        {
+          "continuationId": "2c2f6447fa3e298833e6322b7a080e6b4f1439fbd0545fc0a145e652aada65b8",
+          "hostKind": "automatic_hits",
+          "rows": [
+            {
+              "targetPieceId": "ally",
+              "targetProfile": {
+                "recordKey": "army_units:queen",
+                "sourceRecordHash": "67d4658587990405d2ad969e1fad6d77e67f4c1f6552a3ffa216f859b3e19b18",
+                "payloadHash": "918c6954cee7eee015e03b61b1b360ad2c5ced73a58186a5d027b70eff65a31f",
+                "unitId": "queen",
+                "unitName": "Queen",
+                "faction": "Zerg",
+                "combatTags": [
+                  "armoured",
+                  "biological",
+                  "ground",
+                  "psionic"
+                ],
+                "armourThreshold": 4,
+                "evadeThreshold": null,
+                "hitPoints": 9,
+                "shield": 0,
+                "squadProfile": [
+                  {
+                    "tier": 1,
+                    "minimumModels": null,
+                    "maximumModels": null,
+                    "supply": 0
+                  },
+                  {
+                    "tier": 2,
+                    "minimumModels": 1,
+                    "maximumModels": 1,
+                    "supply": 1
+                  },
+                  {
+                    "tier": 3,
+                    "minimumModels": null,
+                    "maximumModels": null,
+                    "supply": 0
+                  }
+                ],
+                "combatWeapons": [
+                  {
+                    "weaponName": "Talons",
+                    "linkedTo": "-",
+                    "costSmall": 0,
+                    "costLarge": 0,
+                    "range": "engagement",
+                    "targetTags": [
+                      "ground"
+                    ],
+                    "rateOfAttack": 3,
+                    "hitThreshold": 4,
+                    "damage": 1,
+                    "surge": null,
+                    "behaviorText": "",
+                    "sourceTextHash": "e496b55022b0f1fc019da79f0303ad1ab5ec5d6d77877efd831c0e262cc49cef"
+                  }
+                ],
+                "weaponlessCombatProfileAllowed": false
+              },
+              "attackResolutionHash": "fd4d7dc85d82893ac638edd0bd808332d4c7cad69a0d2f8a0c01d9e4233a7ebc",
+              "casualty": {
+                "schema": "starcraft_tmg_official_current_product_casualty_resolution_v1",
+                "domainHash": "0bc1872c39993b5261a7b452f6fa1c7135be76798f34a047e63384656decfe34",
+                "selectionHash": "35180cc7e6d958b76bbcae039efaf0adb99d208f0068c423e000edc8137f2d05",
+                "targetPieceId": "ally",
+                "casualtyModelIds": [],
+                "remainingModelIds": [
+                  "ally-model-1"
+                ],
+                "remainingEngagedEnemyUnitIds": [
+                  "defender"
+                ],
+                "postDamageMarker": 2,
+                "targetDestroyed": false,
+                "discardedOverflowDamage": 0,
+                "shieldedBefore": false,
+                "shieldedAfter": false,
+                "trainingTruth": false,
+                "resolutionHash": "78c23448affff1391228628d0bc462781904d0c1c24784ae2ac317be3d3f3728"
+              },
+              "reservationHash": "9c0ae66807eb290b3cf6a825bacc5080ae8c8079d5feddcfd9ee3113119f5d95"
+            },
+            {
+              "targetPieceId": "attacker",
+              "targetProfile": {
+                "recordKey": "army_units:infested_marine",
+                "sourceRecordHash": "12e5f075acc27dd49959dbb084697a60fc50da8ae27f7f1574f518d09e803d20",
+                "payloadHash": "0a5124e81cdcdc61bcc4a52bd31bef1645b3b9b9d62cd4fbb64747a2aba1db87",
+                "unitId": "infested_marine",
+                "unitName": "Infested Marine",
+                "faction": "Zerg",
+                "combatTags": [
+                  "biological",
+                  "ground",
+                  "infested",
+                  "light"
+                ],
+                "armourThreshold": 4,
+                "evadeThreshold": 6,
+                "hitPoints": 2,
+                "shield": 0,
+                "squadProfile": [
+                  {
+                    "tier": 1,
+                    "minimumModels": 1,
+                    "maximumModels": 3,
+                    "supply": 1
+                  },
+                  {
+                    "tier": 2,
+                    "minimumModels": 4,
+                    "maximumModels": 6,
+                    "supply": 2
+                  },
+                  {
+                    "tier": 3,
+                    "minimumModels": null,
+                    "maximumModels": null,
+                    "supply": 0
+                  }
+                ],
+                "combatWeapons": [
+                  {
+                    "weaponName": "Strike",
+                    "linkedTo": "-",
+                    "costSmall": 0,
+                    "costLarge": 0,
+                    "range": "engagement",
+                    "targetTags": [
+                      "ground"
+                    ],
+                    "rateOfAttack": 1,
+                    "hitThreshold": 4,
+                    "damage": 1,
+                    "surge": null,
+                    "behaviorText": "",
+                    "sourceTextHash": "70daa49c72839e258072250089247bf5b0c1b5af201432420c3f02f5844443e2"
+                  },
+                  {
+                    "weaponName": "Wild Mutation",
+                    "linkedTo": "Infested C-14 Rifle",
+                    "costSmall": 1,
+                    "costLarge": 1,
+                    "range": "engagement",
+                    "targetTags": [
+                      "ground"
+                    ],
+                    "rateOfAttack": 2,
+                    "hitThreshold": 3,
+                    "damage": 1,
+                    "surge": "Armoured (D3+1)",
+                    "behaviorText": "",
+                    "sourceTextHash": "5835866f890df4296e8971d909a65062bb9e55a5e03656a8d1a773331ee50fb7"
+                  }
+                ],
+                "weaponlessCombatProfileAllowed": false
+              },
+              "attackResolutionHash": "6e89e2a9f07abf7090022c558a6c6f8272844caae86e8bf53b48f888d51be61c",
+              "casualty": {
+                "schema": "starcraft_tmg_official_current_product_casualty_resolution_v1",
+                "domainHash": "933cb901ef5b4e9d6c22cbcb0f06d8a958ce7ee3d8ad89aec6b88c2ac969aa65",
+                "selectionHash": "",
+                "targetPieceId": "attacker",
+                "casualtyModelIds": [
+                  "attacker-model-2",
+                  "attacker-model-3",
+                  "attacker-model-5",
+                  "attacker-model-6",
+                  "attacker-model-1",
+                  "attacker-model-4"
+                ],
+                "remainingModelIds": [],
+                "remainingEngagedEnemyUnitIds": [],
+                "postDamageMarker": 0,
+                "targetDestroyed": true,
+                "discardedOverflowDamage": 0,
+                "shieldedBefore": false,
+                "shieldedAfter": false,
+                "trainingTruth": false,
+                "resolutionHash": "7dd6e5b1acdcb7653be10e7f66729e6a81dc9c16e4b5a7beae8c2bac61abc924"
+              },
+              "reservationHash": "e8483465efc904f826e9e682d13485bcb745830d1b9e86be119d639d445db81b"
+            }
+          ],
+          "activationContext": {
+            "activeSideKey": "player1",
+            "activationId": "1:combat:player1:attacker"
+          }
+        }
+      ],
+      "trace": [
+        {
+          "revision": 2,
+          "actionType": "choose_melee_precision_hits",
+          "definitionId": null,
+          "sourceInstanceId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 3,
+          "actionType": "roll_melee_attack_armour_pool",
+          "definitionId": null,
+          "sourceInstanceId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 4,
+          "actionType": "resolve_melee_attack_evade_pool",
+          "definitionId": null,
+          "sourceInstanceId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 5,
+          "actionType": "fight",
+          "definitionId": null,
+          "sourceInstanceId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 6,
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null,
+          "sourceInstanceId": null,
+          "stackDepth": 1
+        },
+        {
+          "revision": 7,
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:infested_marine/detonation-any-phase@1",
+          "sourceInstanceId": "defender",
+          "stackDepth": 1
+        },
+        {
+          "revision": 8,
+          "actionType": "roll_automatic_hits_armour_pool",
+          "definitionId": null,
+          "sourceInstanceId": null,
+          "stackDepth": 1
+        },
+        {
+          "revision": 9,
+          "actionType": "resolve_automatic_hits_evade_pool",
+          "definitionId": null,
+          "sourceInstanceId": null,
+          "stackDepth": 1
+        },
+        {
+          "revision": 10,
+          "actionType": "roll_automatic_hits_armour_pool",
+          "definitionId": null,
+          "sourceInstanceId": null,
+          "stackDepth": 1
+        },
+        {
+          "revision": 11,
+          "actionType": "resolve_automatic_hits_evade_pool",
+          "definitionId": null,
+          "sourceInstanceId": null,
+          "stackDepth": 1
+        },
+        {
+          "revision": 12,
+          "actionType": "choose_automatic_hits_casualties",
+          "definitionId": null,
+          "sourceInstanceId": null,
+          "stackDepth": 1
+        },
+        {
+          "revision": 13,
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:infested_marine/detonation-any-phase@1",
+          "sourceInstanceId": "attacker",
+          "stackDepth": 2
+        },
+        {
+          "revision": 14,
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null,
+          "sourceInstanceId": null,
+          "stackDepth": 2
+        },
+        {
+          "revision": 15,
+          "actionType": "roll_automatic_hits_armour_pool",
+          "definitionId": null,
+          "sourceInstanceId": null,
+          "stackDepth": 2
+        },
+        {
+          "revision": 16,
+          "actionType": "resolve_automatic_hits_evade_pool",
+          "definitionId": null,
+          "sourceInstanceId": null,
+          "stackDepth": 2
+        }
+      ],
+      "finalPieces": [
+        {
+          "id": "ally",
+          "isDestroyed": false,
+          "currentModels": 1,
+          "currentSupply": 1
+        },
+        {
+          "id": "attacker",
+          "isDestroyed": true,
+          "currentModels": 0,
+          "currentSupply": 0
+        },
+        {
+          "id": "defender",
+          "isDestroyed": true,
+          "currentModels": 0,
+          "currentSupply": 0
+        }
+      ],
+      "coldReplay": true,
+      "idempotencyVerified": true
+    }
+  ],
+  "noDamageControls": [],
+  "newGameAtomsImplemented": 0,
+  "implementedCumulativeAtoms": 6,
+  "otherRemovalHostsPending": true,
+  "fullMatchAdmission": false,
+  "sourceHeldDefinitions": 39,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

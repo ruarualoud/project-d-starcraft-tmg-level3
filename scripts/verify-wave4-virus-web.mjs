@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import { openWave3EngineeringStoreV1 } from './support/wave3-room-boundary-fixture-v1.mjs';
 import { atomicWrite } from './lib/development-context.mjs';
+import {inspectOfficialMultiModelCasualtySelectionV1} from '../packages/rule-atoms/official-multi-model-casualty-resolution-kernel-v1.mjs';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const directory=path.resolve(process.argv[2]);
@@ -39,6 +40,19 @@ async function operate(page,item,choice,parameterized) {
   } else if(parameterized) {
     await card.getByRole('button',{name:'设置行动',exact:true}).click();
     const form=page.getByTestId('native-action-form');
+    const parameterSchema=choice.sourceDomain?.parameterSchema||choice.parameterSchema;
+    if(parameterSchema?.required.includes('casualtyModelIds')){
+      const pending=before.envelope.state.pendingAction?.casualtyDomain?before.envelope.state.pendingAction:before.envelope.state.pendingOfficialAutomaticHits;
+      const contract=pending.casualtyDomain.selectionContract,ids=[];
+      while(ids.length<contract.casualtyCount){
+        const guidance=inspectOfficialMultiModelCasualtySelectionV1({targetPieceId:pending.targetPieceId,selectionContract:contract,casualtyModelIds:ids,complete:false});
+        assert.equal(guidance.valid,true);assert.ok(guidance.legalNextModelIds.length);ids.push(guidance.legalNextModelIds[0]);
+      }
+      for(const [index,id]of ids.entries()){
+        await form.getByRole('button',{name:'添加移除模型（按顺序）',exact:true}).click();
+        await form.getByText('第 '+(index+1)+' 项',{exact:true}).locator('..').getByRole('button',{name:id,exact:true}).click();
+      }
+    }
     if(choice.definitionId==='unit:stalker/blink-movement-phase@1') {
       await form.getByText('领队模型',{exact:true}).locator('..').getByRole('button').first().click();
       await form.getByRole('button',{name:'添加模型最终站位',exact:true}).click();
@@ -120,7 +134,7 @@ try {
         await page.getByTestId('battlefield-map-contract-v1').waitFor({timeout:60000});
       }
       let primaryUsed=false,shotUsed=false,restorationUsed=false;
-      for(let step=0;step<12;step++) {
+       for(let step=0;step<32;step++) {
         const aggregate=await current(item);const state=aggregate.envelope.state;
         if(primaryUsed&&!state.pendingOfficialPlaguedMunitions&&!state.pendingOfficialUniversalCarrier&&!state.pendingOfficialReactionWindow&&!state.pendingOfficialAutoTurretOverwatch
           &&!state.pendingOfficialInfestationTransfer&&!state.pendingCurrentProductRangedCasualtyChoice&&!state.pendingOfficialAutomaticHits
@@ -137,6 +151,7 @@ try {
         }
         let choice;
         if(!primaryUsed)choice=menu.parameterDomains.find(row=>item.id==='infected-ordinary-move'?row.actionType==='move'&&row.pieceId==='enemy':item.id==='clean-blink'?row.definitionId==='unit:stalker/blink-movement-phase@1':item.id==='clean-recall'?row.definitionId==='card:nexus/strategic-recall-any@1':row.definitionId===item.definitionId);
+        else if(item.flow==='detonation-nested')choice=menu.parameterDomains.find(row=>row.effectKind==='before_casualty_detonation');
         else if(item.kind==='ocular-use'&&!shotUsed)choice=menu.parameterDomains.find(row=>row.weaponName==='Firefly Missiles');
         else if((item.kind==='growing-restoration-exception'||item.flow==='carrier-restoration'||item.flow==='trooper-restoration')&&!restorationUsed)choice=menu.parameterDomains.find(row=>row.definitionId==='unit:medic/restoration-any-phase@1'||item.flow==='carrier-restoration'&&row.effectKind==='infestation_transfer');
         choice ||= menu.parameterDomains.find(row=>row.actionType==='pass_reaction_family_window')||menu.parameterDomains[0];
@@ -155,6 +170,11 @@ try {
         const recipient=final.envelope.state.pieces.find(piece=>piece.id==='recipient');
         assert.equal(recipient.statuses.some(status=>String(status.statusName||status).toLowerCase()==='infestation'),false);
         assert.equal(restorationUsed,true);
+      } else if(item.flow==='detonation-nested'){
+        const state=final.envelope.state;assert.equal(Boolean(state.officialBeforeCasualtyContinuations?.length),false);
+        assert.equal(state.fightActionHistory.length,1);assert.ok(state.pieces.every(p=>p.isDestroyed));
+        assert.ok(!state.pieces.some(p=>p.officialBeforeCasualtyReservations?.length));
+        assert.equal(state.log.flatMap(l=>l.events||[]).filter(e=>e.type==='close_combat_attack').length,1);
       } else if(item.flow==='detonation-ranged'){
         const state=final.envelope.state;assert.equal(Boolean(state.officialBeforeCasualtyContinuations?.length),false);
         assert.equal(state.rangedActionHistory.length,1);assert.equal(state.rangedActionHistory[0].resolutionHash,item.expectedOriginalResolutionHash);
@@ -211,7 +231,7 @@ try {
 const result={schema:'starcraft_tmg_wave4_virus_web_verification_v1',status:'passed_scoped',
   runRef:path.relative(root,directory),results,signedActions:results.reduce((sum,row)=>sum+row.signedActions,0),
   conditionalTurretGeometryInRestorationCaseOnly:service.rooms.some(item=>item.id==='growing-restoration-exception'||item.flow==='carrier-restoration'),sourceHeldDefinitions:39,
-   engineeringEstimatedUnitGeometry:service.rooms.some(item=>['admiral-exchange','trooper-restoration','stukov-spread','munitions-support','infantry-burrow','detonation-ranged'].includes(item.flow)),
+   engineeringEstimatedUnitGeometry:service.rooms.some(item=>['admiral-exchange','trooper-restoration','stukov-spread','munitions-support','infantry-burrow','detonation-ranged','detonation-nested'].includes(item.flow)),
   fullWave4LobbyBuilderAdmission:false,fullMatchAdmission:false,wave3PlayerRoomsTouched:false,modelCalls:0,trainingTruth:false};
 await atomicWrite(path.join(directory,'web-result.public.json'),JSON.stringify(result,null,2)+'\n');
 await atomicWrite(path.join(root,'docs/development/wave4/evidence/'+(process.argv[3]||'virus-web.public.json')),JSON.stringify(result,null,2)+'\n');

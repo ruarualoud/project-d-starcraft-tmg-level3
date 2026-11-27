@@ -1,3 +1,5 @@
+import {stageOfficialBeforeCasualtyContinuationV1} from './official-before-casualty-runtime-v1.mjs';
+import {hasOfficialExtendedBeforeCasualtyPolicyV1} from '../rule-atoms/official-before-casualty-batch-v1.mjs';
 import { officialSecondChargeGrantV1, isOfficialSecondChargeResolutionV1 } from './official-artanis-second-charge-v1.mjs';
 import { alternateOfficialPhaseActivationV1 } from '../rule-atoms/official-phase-activation-availability-v1.mjs';
 import { readOfficialBeforeEvadeReactionModifierV1 } from './official-reaction-family-adapter-v1.mjs';
@@ -1801,7 +1803,7 @@ function resolvePools(state, action, plan, options, kind, preparedGraph = null, 
       continue;
     }
     const casualtyDomain = createOfficialCurrentProductCasualtyDomainV1({
-      targetPiece: target, targetProfile, incomingDamage: totalDamage,
+      state,targetPiece: target, targetProfile, incomingDamage: totalDamage,
       nonLethalStandardDamagePolicy: state.officialNonLethalStandardDamagePolicy,
       visibleModelIds: activeModels(target).map((model) => model.id),
       engagementGraph: graph, attackResolutionHash: resolution.resolutionHash,
@@ -2240,7 +2242,7 @@ function resumeMeleeDamageReaction(stateInput, options) {
     reactionDamagePool: damagePool, damageReactionResolutionHash: consumed.projection.resolutionHash,
   }, "resolutionHash");
   row.casualtyDomain = createOfficialCurrentProductCasualtyDomainV1({
-    targetPiece: target, targetProfile: row.targetProfile,
+    state,targetPiece: target, targetProfile: row.targetProfile,
     incomingDamage: row.resolution.totalDamage, damagePoolReduction: damagePool,
     nonLethalStandardDamagePolicy: state.officialNonLethalStandardDamagePolicy,
     visibleModelIds: activeModels(target).map(model => model.id),
@@ -2276,12 +2278,18 @@ function applyDamageAction(stateInput, action, options, kind, includeDamageRecei
   }
   return { ...result, events: [...closeRanksEvents, ...result.events] };
 }
-function settleDamageAction(stateInput, baseState, action, options, kind, resolved) {
+function settleDamageAction(stateInput, baseState, action, options, kind, resolved, resumedCasualties=null) {
   const plan = kind === "impact" ? action.impactPlan : action.meleePlan.fightChancePlan;
+  if(!resumedCasualties&&hasOfficialExtendedBeforeCasualtyPolicyV1(baseState)){
+    const interrupted=stageOfficialBeforeCasualtyContinuationV1({state:baseState,action,hostKind:'melee',
+      rows:resolved.rows.map(row=>({targetPieceId:row.target.id,targetProfile:row.targetProfile,
+        attackResolutionHash:row.resolution.resolutionHash,casualty:selectionFor(row,options)})),hostData:{kind,resolved}});
+    if(interrupted)return interrupted;
+  }
   const state = clone(baseState);
   const events = [];
-  for (const row of resolved.rows) {
-    const casualty = selectionFor(row, options);
+  for (const [index,row] of resolved.rows.entries()) {
+    const casualty = resumedCasualties?.[index]||selectionFor(row, options);
     const target = state.pieces.find((entry) => entry.id === row.target.id);
     const beforeSupply = Number(target.currentSupply);
     applyOfficialSelectedRosterResolvedDamageV1(state, target, row.targetProfile, casualty);
@@ -2351,8 +2359,9 @@ function settleDamageAction(stateInput, baseState, action, options, kind, resolv
     }
   }
   if (!continuingSidearm) {
-    if (!openOfficialSelectedRosterAfterActionWindowV1(
+    if (!activePiece(piece)||!openOfficialSelectedRosterAfterActionWindowV1(
       state, action.sideKey, piece.id, activationPhase)) {
+      if(!activePiece(piece)&&state.selectedRosterActivationWindow?.pieceId===piece.id)delete state.selectedRosterActivationWindow;
       alternate(state, action.sideKey, activationPhase);
     }
   }
@@ -2366,6 +2375,11 @@ function settleDamageAction(stateInput, baseState, action, options, kind, resolv
     trainingTruth: false });
   appendLog(state, action, events);
   return { state, events };
+}
+
+export function resumeOfficialSelectedRosterMeleeBeforeCasualtyV1({before,state,frame,casualties,options={}}){
+  if(frame.hostKind!=='melee'||casualties.length!==frame.hostData.resolved.rows.length)fail('MELEE_BEFORE_CASUALTY_HOST_INVALID');
+  return settleDamageAction(before,state,frame.originalAction,options,frame.hostData.kind,frame.hostData.resolved,casualties);
 }
 
 function verifyMeleeAction(stateInput, actionInput) {

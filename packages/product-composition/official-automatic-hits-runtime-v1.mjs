@@ -1,3 +1,5 @@
+import {stageOfficialBeforeCasualtyContinuationV1} from './official-before-casualty-runtime-v1.mjs';
+import {hasOfficialExtendedBeforeCasualtyPolicyV1} from '../rule-atoms/official-before-casualty-batch-v1.mjs';
 import { planOfficialArmourThresholdV1, hasOfficialArmourThresholdPolicyV1 } from "../rule-atoms/official-armour-threshold-policy-v1.mjs";
 import { projectOfficialBattlefieldAssetFamilyModifiersV1 } from "./official-battlefield-asset-family-adapter-v1.mjs";
 import { recordOfficialArmourRollV1 } from "../rule-atoms/official-armour-roll-ordinal-v1.mjs";
@@ -63,7 +65,8 @@ export function createOfficialAutomaticHitsRuntimeV1({ sourceBundle, state, incl
         pendingReactions:unsupportedReactions.map(({definitionId,triggerKind})=>({definitionId,triggerKind}))},
     });
   }
-  const runtimeVersion = includeBeforeEvadeReaction ? '3.8.0' : resolvedDirectDamage ? '3.7.0' : externalEvadeGrant ? '3.6.0' : directSources.length ? '3.5.0' : includeEvadeEligibility ? '3.4.0' : includeDamageReceivedReaction ? '3.3.0' : otherTriggers.length ? (sourceAuthority ? '3.2.0' : '2.1.0')
+  const beforeCasualty=hasOfficialExtendedBeforeCasualtyPolicyV1(state);
+  const runtimeVersion = beforeCasualty ? '3.9.0' : includeBeforeEvadeReaction ? '3.8.0' : resolvedDirectDamage ? '3.7.0' : externalEvadeGrant ? '3.6.0' : directSources.length ? '3.5.0' : includeEvadeEligibility ? '3.4.0' : includeDamageReceivedReaction ? '3.3.0' : otherTriggers.length ? (sourceAuthority ? '3.2.0' : '2.1.0')
     : sourceAuthority?.reactionTiming === 'outside_activation' ? '3.1.0'
     : sourceAuthority ? '3.0.0' : includeArmourReactions ? '2.0.0' : '1.0.0';
   const descriptor = seal({ runtimeId, runtimeVersion, ruleAtomIds,
@@ -82,6 +85,7 @@ export function createOfficialAutomaticHitsRuntimeV1({ sourceBundle, state, incl
       ...(sourceAuthority?.reactionTiming === 'outside_activation' ? { outsideActivationSource: true } : {}) } : {}),
     ...(externalEvadeGrant ? { sourceEvadeGrantHash: externalEvadeGrant.authorityHash,
       ...(sourceAuthority.reactionTiming === 'outside_activation' ? { outsideActivationSource: true } : {}) } : {}),
+    ...(beforeCasualty?{beforeCasualtyPolicyHash:hash(state.officialBeforeCasualtyBatchPolicy)}:{}),
     productionRoomEligible: false, trainingTruth: false }, 'runtimeHash');
   function pending(current) {
     const parent = current[parentKey];
@@ -244,7 +248,7 @@ export function createOfficialAutomaticHitsRuntimeV1({ sourceBundle, state, incl
       ...createOfficialSelectedRosterCasualtyChoiceContextV1(current, target),
       factsHash: officialAttackChoiceFactsHashV1(current, parentKey, parent.sideKey) }, 'parentHash');
   }
-  function finishOrChoose(current, parent, action, options) {
+  function finishOrChoose(current, parent, action, options,resumedCasualties=null) {
     const missing = parent.rows.find(row => !parent.selections[row.targetUnitId]);
     if (missing) {
       nextCasualty(current, parent, missing);
@@ -252,13 +256,21 @@ export function createOfficialAutomaticHitsRuntimeV1({ sourceBundle, state, incl
         : 'automatic_hits_pending_defender_casualty',
         targetId: missing.targetUnitId, casualtyDomainHash: missing.casualtyDomain.domainHash }], options);
     }
+    const casualties=parent.rows.map(row=>{const selected=parent.selections[row.targetUnitId];
+      return resolveOfficialCurrentProductCasualtyDomainV1(row.casualtyDomain,selected.selectionHash||'',selected.casualtyModelIds||null);});
+    if(beforeCasualty&&!resumedCasualties){
+      const interrupted=stageOfficialBeforeCasualtyContinuationV1({state:current,action,hostKind:'automatic_hits',
+        causePieceId:parent.pieceId,causeSideKey:parent.sourceSideKey??parent.sideKey,
+        activationContext:sourceAuthority?.owns(parent)?sourceAuthority.reactionContextFor?.(current,parent):undefined,
+        rows:parent.rows.map((row,index)=>({targetPieceId:row.targetUnitId,targetProfile:row.targetProfile,
+          attackResolutionHash:row.resolution.resolutionHash,casualty:casualties[index]})),hostData:{parent}});
+      if(interrupted)return interrupted;
+    }
     const before = clone(current);
     const events = [];
-    for (const row of parent.rows) {
+    for (const [index,row] of parent.rows.entries()) {
       const target = current.pieces.find(piece => piece.id === row.targetUnitId);
-      const selected = parent.selections[target.id];
-      const casualty = resolveOfficialCurrentProductCasualtyDomainV1(row.casualtyDomain,
-        selected.selectionHash || '', selected.casualtyModelIds || null);
+      const casualty = resumedCasualties?.[index]||casualties[index];
       applyOfficialSelectedRosterResolvedDamageV1(current, target, row.targetProfile, casualty);
       const sourceSideKey = parent.sourceSideKey ?? parent.sideKey;
       events.push({ type: parent.directDamage ? 'ability_direct_damage' : 'automatic_hits_damage',
@@ -470,6 +482,10 @@ export function createOfficialAutomaticHitsRuntimeV1({ sourceBundle, state, incl
     return { ...result, events: [...result.events, ...consumedEvents] };
   }
   return Object.freeze({ descriptor, enumerate, instantiate, inspectContext, inspectArmour,
+    ...(beforeCasualty?{resumeBeforeCasualty:({state,frame,casualties,options={}})=>{
+      if(frame.hostKind!=='automatic_hits'||casualties.length!==frame.hostData.parent.rows.length)fail('AUTOMATIC_HITS_BEFORE_CASUALTY_HOST_INVALID');
+      return finishOrChoose(clone(state),frame.hostData.parent,frame.originalAction,options,casualties);
+    }}:{}),
     ...(includeBeforeEvadeReaction ? { inspectEvadeDemand } : {}),
     ...(includeArmourReactions || includeBeforeEvadeReaction ? { inspectArmourDemand } : {}), apply,
     ...(includeDamageReceivedReaction ? { resumeDamageReaction,

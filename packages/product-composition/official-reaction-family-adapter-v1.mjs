@@ -899,7 +899,9 @@ function routeEligible(state, window, route, instance) {
   if (!allowsOfficialInfestationReactionV1(state, { sideKey: instance.sideKey, sourcePieceId: source?.id,
     recipientPieceId: virusRecipientRole === 'payment_reference' ? null : virusRecipient?.id, abilityName: route.abilityName })) return false;
   if(route.effectKind==='before_casualty_detonation'){
-    if(source?.id!==target?.id)return false;
+    if(window.context.beforeCasualtyReservations
+      ?!window.context.beforeCasualtyReservations.some(row=>row.targetPieceId===source?.id&&row.modelIds.length)
+      :source?.id!==target?.id)return false;
     inspectOfficialDetonationFactsV1(state,source,route,window.context);return true;
   }
   if (route.effectKind === 'infestation_transfer') {
@@ -1580,6 +1582,7 @@ function reactionEffect(route, state, window, action) {
     effect.damagePerHit = route.damagePerHit;
   } else if (route.effectKind === 'before_casualty_detonation') {
     const facts=inspectOfficialDetonationFactsV1(state,source,route,window.context);
+    if(window.context.beforeCasualtyReservations)effect.targetPieceId=source.id;
     Object.assign(effect,{automaticHits:facts.hits,damagePerHit:facts.damagePerHit,detonationFacts:facts});
   } else if (route.effectKind === "evade_roll_modifier") {
     effect.evadeModifier = route.evadeModifier;

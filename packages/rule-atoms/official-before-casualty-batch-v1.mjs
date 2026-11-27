@@ -7,13 +7,18 @@ export const OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V1=Object.freeze({
  sourceDefinitionIds:Object.freeze(['unit:infested_marine/detonation-any-phase@1','unit:infested_trooper/detonation-any-phase@1']),
  allocationBeforeDestruction:true,pendingModelsRemainOnBattlefield:true,alreadyAllocatedModelsCannotBeAllocatedAgain:true,
  trainingTruth:false});
+export const OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V2=Object.freeze({...OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V1,
+ version:'1.1.0',damageHosts:Object.freeze(['ranged','melee','automatic_hits']),allocationOnlyReservations:true});
 const without=(x,k)=>Object.fromEntries(Object.entries(x).filter(([name])=>name!==k));
 const seal=(x,k)=>({...x,[k]:hash(x)});
 const digest=x=>/^[a-f0-9]{64}$/u.test(x||'');
 export function hasOfficialBeforeCasualtyBatchPolicyV1(state){
  const policy=state?.officialBeforeCasualtyBatchPolicy;if(policy===undefined)return false;
- if(!isDeepStrictEqual(policy,OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V1))throw Error('BEFORE_CASUALTY_BATCH_POLICY_INVALID');return true;
+ if(!isDeepStrictEqual(policy,OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V1)&&!isDeepStrictEqual(policy,OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V2))
+  throw Error('BEFORE_CASUALTY_BATCH_POLICY_INVALID');return true;
 }
+export function hasOfficialExtendedBeforeCasualtyPolicyV1(state){return hasOfficialBeforeCasualtyBatchPolicyV1(state)
+ &&state.officialBeforeCasualtyBatchPolicy.version==='1.1.0';}
 function reservations(state,piece){
  const rows=piece.officialBeforeCasualtyReservations||[];
  if(!rows.length)return[];
@@ -22,7 +27,8 @@ function reservations(state,piece){
  for(const row of rows){
   if(row.schema!=='starcraft_tmg_before_casualty_reservation_v1'||row.reservationHash!==hash(without(row,'reservationHash'))||row.targetPieceId!==piece.id
    ||row.round!==Number(state.round)||row.phase!==state.phase||!digest(row.sourceActionHash)
-   ||!digest(row.attackResolutionHash)||!digest(row.casualtyResolutionHash)||!row.modelIds?.length
+   ||!digest(row.attackResolutionHash)||!digest(row.casualtyResolutionHash)||!Array.isArray(row.modelIds)
+   ||!row.modelIds.length&&!(row.allocationOnly===true&&hasOfficialExtendedBeforeCasualtyPolicyV1(state))
    ||row.policyHash!==hash(state.officialBeforeCasualtyBatchPolicy))throw Error('BEFORE_CASUALTY_RESERVATION_INVALID');
   for(const id of row.modelIds){const model=piece.models.find(m=>m.id===id);
    if(ids.has(id)||!model||model.isDestroyed||model.isOnField===false)throw Error('BEFORE_CASUALTY_RESERVED_MODEL_INVALID');ids.add(id);}
@@ -38,7 +44,8 @@ export function projectOfficialAllocatedCasualtyModelIdsV1(state,piece){
 export function reserveOfficialBeforeCasualtyBatchV1({state,piece,casualty,sourceActionHash,attackResolutionHash}){
  if(!hasOfficialBeforeCasualtyBatchPolicyV1(state)||!digest(sourceActionHash)||!digest(attackResolutionHash)
   ||!digest(casualty?.resolutionHash)||!Number.isSafeInteger(casualty.postDamageMarker)||casualty.postDamageMarker<0
-  ||!casualty.casualtyModelIds?.length||new Set(casualty.casualtyModelIds).size!==casualty.casualtyModelIds.length)
+  ||!Array.isArray(casualty.casualtyModelIds)||!casualty.casualtyModelIds.length&&!hasOfficialExtendedBeforeCasualtyPolicyV1(state)
+  ||new Set(casualty.casualtyModelIds).size!==casualty.casualtyModelIds.length)
   throw Error('BEFORE_CASUALTY_BATCH_INPUT_INVALID');
  const previous=reservations(state,piece),reserved=new Set(previous.flatMap(r=>r.modelIds));
  if(casualty.casualtyModelIds.some(id=>reserved.has(id)||!piece.models.some(m=>m.id===id&&!m.isDestroyed&&m.isOnField!==false)))
@@ -46,6 +53,7 @@ export function reserveOfficialBeforeCasualtyBatchV1({state,piece,casualty,sourc
  const row=seal({schema:'starcraft_tmg_before_casualty_reservation_v1',round:Number(state.round),phase:state.phase,
   targetPieceId:piece.id,sourceActionHash,attackResolutionHash,casualtyResolutionHash:casualty.resolutionHash,
   modelIds:[...casualty.casualtyModelIds],priorDamageMarker:Number(piece.damageMarker||0),allocatedRemainder:casualty.postDamageMarker,
+  ...(!casualty.casualtyModelIds.length?{allocationOnly:true}:{}),
   policyHash:hash(state.officialBeforeCasualtyBatchPolicy),trainingTruth:false},'reservationHash');
  piece.officialBeforeCasualtyReservations=[...previous,row];piece.damageMarker=casualty.postDamageMarker;
  return row;
