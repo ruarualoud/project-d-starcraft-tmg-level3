@@ -8,6 +8,7 @@
 - [x] 本场房主坦克表正式提交，混合资产和反应组件接线修复；原失败房间按同一房间 ID 恢复。完整双席建房／无凭据准备房恢复回归通过，浏览器显示双方就绪与「以我的席位进入对战」。
 - [x] 玩家确认已进入战桌；房主也已连接同一房间，未出棋。
 - [x] 本场副官 OpenAI 接入准备：用户选择复用现有组织 key，GPT-5.4 mini，先三次。独立端点、按席位临时钥匙、重启／换钥匙不重置的请求上限、输出校验和费用估算已通过离线接线检查。
-- [ ] 等用户在自己席位的 OpenAI 密码框填入实际项目 key，再验证最多三次真实副官请求。聊天中给出的 tracking ID 不作为密钥，也不写入代码或报告。
+- [x] 用户在当前席位的 OpenAI 密码框完成安全输入；三次真实副官请求均成功，实际返回模型 `gpt-5.4-mini-2026-03-17`，无自动重试。验证了公开局面答复、对话口令连续性与私有信息／棋子操作边界；棋盘仍为 r0。三次额度已用完，不发第四次。
+- [ ] 后续副官试用前优化公开战局上下文：本轮每次约 24.3 万输入 token，三次合计 730069 输入／189 输出；按未计缓存优惠的公开价估算 $0.5484，非实际账单。记录待优化，尚未修复或进行额外模型调用。
 
-证据：[真人写表修复](docs/development/wave3/player-roster-fixes-2026-11-27.zh-CN.md)、[比赛军表出处](docs/development/wave3/longshanks-polish-terran-tank-roster.zh-CN.md)。
+证据：[真人写表修复](docs/development/wave3/player-roster-fixes-2026-11-27.zh-CN.md)、[比赛军表出处](docs/development/wave3/longshanks-polish-terran-tank-roster.zh-CN.md)、[OpenAI 三次真实副官试用](docs/development/wave3/openai-companion-trial-2026-11-27.zh-CN.md)。
