@@ -483,6 +483,36 @@ export function verifyOfficialModelBaseGeometryDataBundleV2(bundle) {
   return true;
 }
 
+// Reuse reviewed ordinary footprints only when the complete unit payload is
+// unchanged. Newly added units and settings-dependent outlines remain missing.
+export function rebindOfficialUnchangedModelGeometryV2({ context, previousBundle }) {
+  const manifest = assertOfficialReleaseSourceV2(context, context || {});
+  verifyOfficialModelBaseGeometryDataBundleV2(previousBundle);
+  const unitRecordKeys = context.dataset.recordIndex.filter(row => row.recordType === 'unit'
+    && row.authorityDisposition === 'official_current_product_candidate').map(row => row.recordKey).sort();
+  const profiles = [];
+  const missingProfiles = [];
+  for (const recordKey of unitRecordKeys) {
+    const record = context.dataset.recordsByKey[recordKey];
+    const prior = previousBundle.profiles.find(row => row.recordKey === recordKey);
+    if (prior && prior.payloadHash !== record.payloadHash) fail('MODEL_GEOMETRY_REBIND_UNIT_CHANGED', recordKey);
+    if (prior && ['round', 'rectangle'].includes(prior.baseShape)) {
+      profiles.push({ ...structuredClone(prior), sourceRecordHash: record.sourceRecordHash, payloadHash: record.payloadHash });
+    } else {
+      missingProfiles.push({ recordKey, unitName: record.payload.name,
+        reason: 'NO_UNCHANGED_ORDINARY_REVIEWED_FOOTPRINT', required: 'Reviewed geometry bound to this release; no inferred dimensions.',
+        sourceRefs: [{ previousGeometryBundleHash: previousBundle.bundleHash }] });
+    }
+  }
+  const body = { ...without(previousBundle, ['bundleHash']), version: '2.0.0',
+    sourceLockHash: manifest.source.sourceRevisionHash, sourceSnapshotHash: context.snapshot.snapshotHash,
+    normalizedDatasetHash: context.dataset.datasetHash, priorGeometryBundleHash: previousBundle.bundleHash,
+    unitRecordKeys, profiles, missingProfiles, profileDenominatorComplete: missingProfiles.length === 0 };
+  const result = freezeDeep({ ...body, bundleHash: hashStarcraftTmgContract(body) });
+  verifyOfficialModelBaseGeometryDataBundleV2(result);
+  return result;
+}
+
 export function getOfficialReleaseModelBaseGeometryBundleV2(context) {
   const manifest = assertOfficialReleaseSourceV2(context, context || {});
   const bundle = context.resources?.geometry;

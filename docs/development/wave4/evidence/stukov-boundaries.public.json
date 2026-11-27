@@ -1,0 +1,105 @@
+{
+  "schema": "starcraft_tmg_wave4_stukov_boundaries_v1",
+  "status": "passed",
+  "policyHash": "c7fb090d678bc3f328678ca8bcdc980aa1cea6aa38032e30142666687307cc74",
+  "heldDefinitions": 39,
+  "heldRejections": [
+    {
+      "recordKey": "army_units:alarak",
+      "status": "invalid_candidate",
+      "rulesErrorCode": null,
+      "portErrorCode": "ARMY_BUILDER_CANDIDATE_UNIT_UNKNOWN"
+    },
+    {
+      "recordKey": "army_units:archon",
+      "status": "invalid_candidate",
+      "rulesErrorCode": null,
+      "portErrorCode": "ARMY_BUILDER_CANDIDATE_UNIT_UNKNOWN"
+    },
+    {
+      "recordKey": "army_units:infested_goliath",
+      "status": "invalid_candidate",
+      "rulesErrorCode": null,
+      "portErrorCode": "ARMY_BUILDER_CANDIDATE_UNIT_UNKNOWN"
+    },
+    {
+      "recordKey": "army_units:infested_siege_tank",
+      "status": "invalid_candidate",
+      "rulesErrorCode": null,
+      "portErrorCode": "ARMY_BUILDER_CANDIDATE_UNIT_UNKNOWN"
+    }
+  ],
+  "nativeZergCpNotConverted": true,
+  "rehashedInvalidPoliciesRejected": 4,
+  "consumerRefs": [
+    {
+      "file": "packages/source-data/official-stukov-army-policy-v1.mjs",
+      "exportName": "createOfficialStukovArmyPolicyV1"
+    },
+    {
+      "file": "packages/source-data/official-faction-army-eligibility-data-bundle-v1.mjs",
+      "exportName": "compileOfficialFactionArmyProfilesV2"
+    },
+    {
+      "file": "packages/rule-atoms/official-faction-army-eligibility-rules-kernel-v1.mjs",
+      "exportName": "resolveOfficialFactionTagEligibilityV1"
+    },
+    {
+      "file": "packages/roster-strategist/army-builder-query-port-v1.mjs",
+      "exportName": "createOfficialArmyBuilderQueryPortV1"
+    },
+    {
+      "file": "packages/product-composition/official-standard-room-factory-v1.mjs",
+      "exportName": "buildOfficialRoomArmyAuditV1"
+    },
+    {
+      "file": "packages/product-composition/official-standard-room-factory-v1.mjs",
+      "exportName": "createOfficialRoomPieceFromRosterUnitV1"
+    },
+    {
+      "file": "packages/rule-atoms/official-faction-unit-conversion-v1.mjs",
+      "exportName": "bindOfficialFactionUnitConversionV1"
+    },
+    {
+      "file": "packages/product-composition/official-unit-ability-payment-modifiers-v1.mjs",
+      "exportName": "quoteOfficialUnitAbilityModifiersV1"
+    },
+    {
+      "file": "packages/product-composition/official-unit-ability-payment-modifiers-v1.mjs",
+      "exportName": "consumeOfficialUnitAbilityModifiersV1"
+    },
+    {
+      "file": "packages/product-composition/official-characteristic-status-family-adapter-v1.mjs",
+      "exportName": "createOfficialCharacteristicStatusFamilyAdapterV1"
+    },
+    {
+      "file": "packages/product-composition/official-reaction-family-adapter-v1.mjs",
+      "exportName": "createOfficialReactionFamilyAdapterV1"
+    },
+    {
+      "file": "packages/product-composition/official-selected-roster-ability-runtime-v1.mjs",
+      "exportName": "createOfficialSelectedRosterAbilityRuntimeV1"
+    },
+    {
+      "file": "packages/rule-atoms/official-unit-restrictions-v1.mjs",
+      "exportName": "projectOfficialUnitRestrictionsV1"
+    },
+    {
+      "file": "packages/product-composition/official-characteristic-status-component-runtime-v2.mjs",
+      "exportName": "createOfficialCharacteristicStatusComponentRuntimeV2"
+    },
+    {
+      "file": "packages/source-data/official-army-builder-catalogue-v2.mjs",
+      "exportName": "createOfficialArmyBuilderCatalogueV2"
+    },
+    {
+      "file": "packages/rule-atoms/official-faction-army-eligibility-rules-kernel-v1.mjs",
+      "exportName": "resolveOfficialArmySlotAuditV1"
+    }
+  ],
+  "nativeEvidenceRef": "docs/development/wave4/evidence/stukov-army.public.json",
+  "nativePolicyBindingMatches": true,
+  "fullMatchAdmission": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

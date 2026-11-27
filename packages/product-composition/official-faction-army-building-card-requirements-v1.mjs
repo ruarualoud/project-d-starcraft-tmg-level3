@@ -17,7 +17,7 @@ function currentTacticalRecords(dataset) {
     .filter((entry) => object(entry) && object(entry.payload));
 }
 
-function compiledGroups(dataset, factionRecordKey) {
+function compiledGroups(dataset, factionRecordKey, foreignArmyPolicy) {
   const faction = dataset.recordsByKey?.[factionRecordKey];
   if (!object(faction?.payload) || faction.payload.isFactionCard !== true) {
     fail("FACTION_REQUIRED_TACTICAL_GROUP_FACTION_INVALID", factionRecordKey);
@@ -31,10 +31,15 @@ function compiledGroups(dataset, factionRecordKey) {
     const groupName = match[1].trim();
     const namePattern = new RegExp(`\\b${groupName.replace(
       /[.*+?^${}()|[\]\\]/gu, "\\$&")}\\b`, "iu");
-    const candidateRecordKeys = currentTacticalRecords(dataset)
+    let candidateRecordKeys = currentTacticalRecords(dataset)
       .filter((record) => record.payload.isFactionCard !== true
         && namePattern.test(String(record.payload.name || "")))
       .map((record) => record.recordKey).sort();
+    if (groupName === 'Virus' && foreignArmyPolicy?.factionRecordKey === factionRecordKey) {
+      verifyOfficialStukovArmyPolicyV1(foreignArmyPolicy);
+      if (ability.description !== foreignArmyPolicy.virusGroup.sourceText) fail('FACTION_VIRUS_GROUP_SOURCE_MISMATCH');
+      candidateRecordKeys = [...foreignArmyPolicy.virusGroup.recordKeys];
+    }
     if (candidateRecordKeys.length === 0) {
       fail("FACTION_REQUIRED_TACTICAL_GROUP_CANDIDATES_MISSING", groupName);
     }
@@ -59,7 +64,7 @@ export function validateOfficialFactionRequiredTacticalCardGroupsV1(input = {}) 
     || !Array.isArray(input.selectedTacticalCardRecordKeys)) {
     fail("FACTION_REQUIRED_TACTICAL_GROUP_INPUT_INVALID");
   }
-  const groups = compiledGroups(dataset, factionRecordKey).map((group) => {
+  const groups = compiledGroups(dataset, factionRecordKey, input.foreignArmyPolicy).map((group) => {
     const selectedRecordKeys = selected.filter((recordKey) =>
       group.candidateRecordKeys.includes(recordKey));
     if (selectedRecordKeys.length !== group.requiredCount) {
@@ -81,3 +86,4 @@ export function validateOfficialFactionRequiredTacticalCardGroupsV1(input = {}) 
     trainingTruth: false,
   });
 }
+import { verifyOfficialStukovArmyPolicyV1 } from '../source-data/official-stukov-army-policy-v1.mjs';

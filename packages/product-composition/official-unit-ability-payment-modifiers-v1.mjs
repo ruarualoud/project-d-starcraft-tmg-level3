@@ -1,4 +1,6 @@
 import { quoteOfficialAncestralWisdomV1 } from './official-ancestral-wisdom-payment-v1.mjs';
+import { quoteOfficialFactionUnitResourceConversionV1, readOfficialFactionUnitConversionV1 }
+  from '../rule-atoms/official-faction-unit-conversion-v1.mjs';
 import { consumeOfficialKhalasGiftV1, quoteOfficialKhalasGiftV1 } from './official-khalas-gift-v1.mjs';
 import { consumeOfficialOurMindsAsOneV1, quoteOfficialOurMindsAsOneV1 } from './official-our-minds-as-one-v1.mjs';
 import { OFFICIAL_PYLON_INGENUITY_DEFINITION_ID, resolveOfficialBattlefieldAssetAbilityResourceCostV1 }
@@ -22,13 +24,21 @@ function quotePylonIngenuity(state, pieceId, cost) {
 }
 
 export function quoteOfficialUnitAbilityModifiersV1(state, pieceId, sourceKind, cost) {
-  const pylonCost = quotePylonIngenuity(state, pieceId, cost);
+  const convertedCost = quoteOfficialFactionUnitResourceConversionV1(state, pieceId, sourceKind, cost);
+  const pylonCost = quotePylonIngenuity(state, pieceId, convertedCost);
   const personalCost = quoteOfficialOurMindsAsOneV1(state, pieceId, sourceKind, pylonCost);
   const giftedCost = quoteOfficialKhalasGiftV1(state, pieceId, sourceKind, personalCost);
   return quoteOfficialAncestralWisdomV1(state, pieceId, sourceKind, giftedCost);
 }
 
 export function consumeOfficialUnitAbilityModifiersV1(state, quote, resolution, events) {
+  if (quote.factionUnitConversion) {
+    const binding = readOfficialFactionUnitConversionV1(state.pieces.find(piece => piece.id === quote.factionUnitConversion.pieceId));
+    if (!binding || binding.conversionHash !== quote.factionUnitConversion.conversionHash) throw Error('FACTION_UNIT_PAYMENT_CONVERSION_CHANGED');
+    events.push({ type: 'faction_unit_resource_conversion_applied', ...quote.factionUnitConversion,
+      paidAbilityDefinitionId: resolution.definitionId, printedResourceType: 'CP', resourceType: quote.resourceType,
+      resourceCost: quote.effectiveResourceCost, trainingTruth: false });
+  }
   if (quote.pylonIngenuity) {
     const { request, sourcePieceId } = quote.pylonIngenuity;
     const discount = resolveOfficialBattlefieldAssetAbilityResourceCostV1(

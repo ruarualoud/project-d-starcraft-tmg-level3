@@ -104,6 +104,7 @@ import { OFFICIAL_FEEDBACK_REACTION_TIMING_POLICY_V1 } from './official-feedback
 // produces reserves and source-bound instances. Deployment and match setup are
 // separate Native operations, owned by their respective product runtimes.
 export function createOfficialReleaseRosterStateV2({ context, candidatesBySide, legacyDisclosurePolicy, blastTemplateGeometryAsset,
+  sourceDefinitionIds,
   includeMelee = false, includeArmourOrdinals = false, meleeModifierDefinitionIds, battlefieldModifierDefinitionIds,
   reactionDefinitionIds, characteristicDefinitionIds, canonicalResourceTypes = false, meleeWeaponDefinitionIds,
   rangedWeaponDefinitionIds,
@@ -137,13 +138,15 @@ export function createOfficialReleaseRosterStateV2({ context, candidatesBySide, 
   const pinpointPolicy = includePinpointEngagementOverride ? createOfficialPinpointEngagementPolicyV1({ context }) : null;
   const bundle = context.resources?.armyBuilder;
   const port = createOfficialArmyBuilderQueryPortV1({ unitCompositionUpgradeDataBundle: bundle, releaseContext: context });
-  const includeInlineCardPhases = reactionDefinitionIds?.includes('card:zagara_s_swarm/instinctive-reaction-any@1') === true;
+  const includeInlineCardPhases = sourceDefinitionIds !== undefined
+    || reactionDefinitionIds?.includes('card:zagara_s_swarm/instinctive-reaction-any@1') === true;
   const sourcePhasePolicy = includeAbilitySourcePhases || includeInlineCardPhases
     ? createOfficialAbilitySourcePhasePolicyV1({ dataset: context.dataset, includeInlineCardPhases }) : null;
   let compiledAbilityCatalogue;
   function abilityCatalogue() {
     compiledAbilityCatalogue ??= createOfficialAbilityEffectIrCatalogueV1({ dataset: context.dataset,
-      identityCatalogue: context.resources.abilityIdentities, ...(sourcePhasePolicy ? { sourcePhasePolicy } : {}) });
+      identityCatalogue: context.resources.abilityIdentities, ...(sourcePhasePolicy ? { sourcePhasePolicy } : {}),
+      ...(sourceDefinitionIds === undefined ? {} : { sourceDefinitionIds }) });
     return compiledAbilityCatalogue;
   }
   const geometry = getOfficialReleaseModelBaseGeometryBundleV2(context);

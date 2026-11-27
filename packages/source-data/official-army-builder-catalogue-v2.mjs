@@ -1,5 +1,6 @@
 import { hashStarcraftTmgContract as hash } from '../authoritative-engine/referee-crypto-v1.mjs';
 import { assertOfficialReleaseSourceV2 } from './official-release-context-v2.mjs';
+import { createOfficialStukovArmyPolicyV1 } from './official-stukov-army-policy-v1.mjs';
 import { getOfficialCurrentProductRecord } from './official-command-center-adapter-v1.mjs';
 import { compileOfficialCardBuildPaymentProfilesV2, verifyOfficialCardBuildPaymentDataBundleV1 } from './official-card-build-payment-data-bundle-v1.mjs';
 import { parseOfficialUnitSupplyProfileV1, compileOfficialUnitCompositionV1 } from './official-unit-card-supply-data-bundle-v1.mjs';
@@ -44,7 +45,7 @@ function compileUnits(dataset, selectedRecordKeys) {
 }
 
 // These are finite source-backed purchase constraints. They do not rank a roster.
-function compileConstraints(dataset, units, cards, selectedRecordKeys) {
+function compileConstraints(dataset, units, cards, selectedRecordKeys, foreignArmyPolicy) {
   const constraints = [];
   const seen = new Set();
   for (const record of Object.values(dataset.recordsByKey)) {
@@ -69,6 +70,15 @@ function compileConstraints(dataset, units, cards, selectedRecordKeys) {
         requireValue(recordKeys.length > 0, 'creep_cards');
         constraints.push({ kind: 'exactly_one_tactical_group', factionRecordKey: record.recordKey,
           recordKeys, sourceRecordKey: record.recordKey, sourceDefinitionHash: hash(feature) });
+      } else if (foreignArmyPolicy?.factionRecordKey === record.recordKey
+        && hash(feature) === foreignArmyPolicy.sourceDefinitionHash) {
+        // The separate source-bound policy owns eligibility and runtime conversion.
+      } else if (foreignArmyPolicy?.factionRecordKey === record.recordKey
+        && hash(feature) === foreignArmyPolicy.virusGroup.sourceDefinitionHash) {
+        requireValue(foreignArmyPolicy.virusGroup.recordKeys.every(key => cards.some(card => card.recordKey === key)), 'virus_cards');
+        constraints.push({ kind: 'exactly_one_tactical_group', factionRecordKey: record.recordKey,
+          recordKeys: foreignArmyPolicy.virusGroup.recordKeys, sourceRecordKey: record.recordKey,
+          sourceDefinitionHash: hash(feature) });
       } else {
         requireValue(!/During Army Building/iu.test(text), `uncompiled_purchase_rule:${record.recordKey}:${feature.name}`);
       }
@@ -218,8 +228,10 @@ export function createOfficialArmyBuilderCatalogueV2({ dataset, snapshot, releas
   const unitDataBundle = bundle('units', legacyFactions.unitDataBundle, {
     unitProfiles: units, unitProfileIndexHash: hash(units),
     unitSourceIndex: sourceIndex(units), unitSourceIndexHash: hash(sourceIndex(units)) });
-  const factionRows = compileOfficialFactionArmyProfilesV2(dataset, cardDataBundle, unitDataBundle, null);
-  const armyBuildingConstraints = compileConstraints(dataset, units, cards.profiles, selectedRecordKeys);
+  const foreignArmyPolicy = cards.profiles.some(row => row.recordKey === 'tactical_cards:stukov_s_forces')
+    ? createOfficialStukovArmyPolicyV1({ dataset, releaseContext }) : null;
+  const factionRows = compileOfficialFactionArmyProfilesV2(dataset, cardDataBundle, unitDataBundle, null, { foreignArmyPolicy });
+  const armyBuildingConstraints = compileConstraints(dataset, units, cards.profiles, selectedRecordKeys, foreignArmyPolicy);
   const factionArmyEligibilityDataBundle = bundle('factions', legacyFactions, {
     raceTags: legacyFactions.raceTags, armySlotTypes: slotTypes,
     subFactionTags: factionRows.subFactionTags, engagementScales: legacyFactions.engagementScales,
@@ -230,6 +242,7 @@ export function createOfficialArmyBuilderCatalogueV2({ dataset, snapshot, releas
     nonArmyBuildingUnitProfiles: factionRows.nonArmyBuildingUnitProfiles,
     eligibilityMatrix: factionRows.eligibilityMatrix, eligibilityMatrixHash: hash(factionRows.eligibilityMatrix),
     armyBuildingConstraints, cardDataBundle, unitDataBundle,
+    ...(foreignArmyPolicy ? { foreignArmyPolicy } : {}),
     audit: { factionCardCount: factionRows.factionProfiles.length,
       fieldableUnitCount: units.filter(unit => unit.fieldableDuringArmyBuilding).length } });
   const budgets = compileOfficialArmyBudgetProfilesV2(dataset, factionArmyEligibilityDataBundle);

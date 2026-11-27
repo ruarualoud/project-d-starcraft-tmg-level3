@@ -1,0 +1,50 @@
+{
+  "harnessLoopUsed": true,
+  "targetGames": [
+    "starcraft-tmg"
+  ],
+  "promptPackRoutes": [],
+  "harnessToolsCalled": [
+    "compile_exact_source",
+    "source_bound_builder",
+    "native_army_audit",
+    "roster_factory",
+    "native_legalSpace",
+    "native_preview",
+    "explicit_confirmation",
+    "native_apply",
+    "idempotency",
+    "cold_open",
+    "signed_replay",
+    "source_hold_rejection"
+  ],
+  "uiTraceEvidence": [],
+  "agentDecisionEvidence": null,
+  "memoryTraceEvidence": [],
+  "trainingTraceCandidates": [],
+  "rollbackOrDemotionRules": [
+    "All 39 source-held definitions remain outside the scoped catalogue",
+    "Only imported Terran Ground Mechanical units receive the source-bound conversion",
+    "Source identity, printed CP and costs remain intact; native Zerg CP is not converted",
+    "Missing geometry and gameplay dependencies withhold full match and Web admission"
+  ],
+  "userVisibleChecks": [
+    "Two new game atoms implemented: foreign-faction army eligibility and faction-unit runtime conversion",
+    "Four Native actions: imported Goliath BM, imported Siege Tank BM, normal Terran CP and ordinary Zerg BURROWED",
+    "Six army audits import exactly; eight invalid rosters and four held records reject",
+    "Invalid rehashed policies reject; both native Zerg mechanical variants retain CP",
+    "Three new units have source-bound army-building facts; full gameplay and geometry remain pending"
+  ],
+  "evidence": [
+    "docs/development/wave4/evidence/stukov-army.public.json",
+    "docs/development/wave4/evidence/stukov-boundaries.public.json",
+    "docs/development/wave4/evidence/creep-builder.public.json",
+    "docs/development/wave4/evidence/ability-diff.public.json"
+  ],
+  "implementedNewGameAtoms": 2,
+  "requiredNewGameAtoms": 18,
+  "modelCalls": 0,
+  "fullWave4WebAcceptance": false,
+  "fullWave4NewDataProductWiring": false,
+  "productionPromoted": false
+}

@@ -1163,7 +1163,7 @@ function enumerate(bundle, state, options = {}) {
         if (!routeEligible(state, window, route, instance)) continue;
         const resourceCost = resourceCostContract(state, route,
           instance.sideKey, instance.sourceInstanceId);
-        for (const payment of paymentSelections(state, route, instance.sideKey,
+        for (const payment of paymentSelections(state, { ...route, resourceType: resourceCost.resourceType }, instance.sideKey,
           resourceCost.effectiveResourceCost)) {
           parameterDomains.push(domainFor(
             state, window, route, instance, payment, resourceCost));
@@ -1296,14 +1296,14 @@ function pay(state, route, action, events) {
     if (cards.some((entry) => !entry)) fail("REACTION_PAYMENT_CARD_UNKNOWN");
     const payment = resolveOfficialAbilityResourcePaymentV1({
       cardDataBundle: state.officialCardBuildPaymentDataBundle,
-      resourceType: route.resourceType, resourceCost: cost.effectiveResourceCost,
+      resourceType: cost.resourceType, resourceCost: cost.effectiveResourceCost,
       selectedCardInstanceSetComplete: true,
       selectedCardInstances: cards.map((card) => paymentRef(state, card)),
     });
     for (const id of payment.selectedCardsExhaustOnCommit) {
       cardById(state, action.sideKey, id).readiness = "exhausted";
     }
-    events.push({ type: "reaction_resource_paid", resourceType: route.resourceType,
+    events.push({ type: "reaction_resource_paid", resourceType: cost.resourceType,
       resourceCost: cost.effectiveResourceCost,
       printedResourceCost: route.resourceCost,
       resourceCostReduction: cost.resourceCostReduction,

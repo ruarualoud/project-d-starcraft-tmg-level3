@@ -1,0 +1,1629 @@
+{
+  "schema": "starcraft_tmg_wave4_stukov_army_verification_v1",
+  "status": "passed",
+  "runRef": "build/wave4-web/stukov-army/run-w7Lv2b",
+  "sourceManifestHash": "63342e7ac823d0a234f00095b2c3491793e6c3860cfc85e16a8b2f480a346acf",
+  "datasetHash": "66a15120a2f995707e3b5271753c754b581050ec14665a2eb4245f2651e1ae25",
+  "candidateManifestHash": "aedc53f8c1a04d133c41d8b9cfe91ec4427168d8d34cdf65b74cf79ced534880",
+  "definitionIds": [
+    "card:stukov_s_forces/ashes-of-the-ued-any@1",
+    "card:stukov_s_forces/infestation-any@1"
+  ],
+  "newAtomIds": [
+    "rule-atom:wave4/foreign-faction-army-eligibility@1",
+    "rule-atom:wave4/faction-unit-runtime-conversion@1"
+  ],
+  "implementedNewGameAtoms": 2,
+  "legal": [
+    {
+      "candidate": {
+        "sideKey": "player1",
+        "scaleId": "Standard",
+        "mineralBudget": 2000,
+        "factionRecordKey": "tactical_cards:stukov_s_forces",
+        "tacticalCardRecordKeys": [
+          "tactical_cards:healing_pathogen"
+        ],
+        "units": [
+          {
+            "unitInstanceId": "import",
+            "recordKey": "army_units:goliath",
+            "compositionKind": "small",
+            "upgrades": []
+          }
+        ]
+      },
+      "audit": {
+        "schema": "starcraft_tmg_official_complete_army_composition_upgrade_audit_v1",
+        "procedureKind": "complete_army_composition_upgrade_audit",
+        "sideKey": "player1",
+        "units": [
+          {
+            "schema": "starcraft_tmg_official_unit_upgrade_selection_v1",
+            "procedureKind": "unit_upgrade_selection",
+            "unitInstanceId": "import",
+            "recordKey": "army_units:goliath",
+            "unitId": "goliath",
+            "unitName": "Goliath",
+            "unitCompositionResult": {
+              "schema": "starcraft_tmg_official_unit_composition_selection_v1",
+              "procedureKind": "unit_composition_selection",
+              "unitInstanceId": "import",
+              "recordKey": "army_units:goliath",
+              "unitId": "goliath",
+              "unitName": "Goliath",
+              "factionTag": "Terran",
+              "armySlotType": "Elite",
+              "compositionProfileId": "army_units:goliath:small",
+              "compositionKind": "small",
+              "startingModelIds": [
+                "import-model-1"
+              ],
+              "startingModelCount": 1,
+              "startingSupply": 2,
+              "occupiedArmySlots": 2,
+              "mineralCost": 180,
+              "armyReferenceMineralCost": 190,
+              "mineralCostReconciliation": "official_builder_wins_reference_retained",
+              "sourceRecordHash": "3284a8c430a3e5925df9dced1af47817b5500cf85e0ae1b293de437a8a27dad9",
+              "payloadHash": "5984c7f157dc34477032cd03da9f1a2afea261343c19eec3a3b789b072bda518",
+              "sourceUnitProfileHash": "fcceea8e634e422d52ce6420adbf4371faaa96f4d1add02a0bd33215445eb5b6",
+              "unitCompositionReferenceProfileHash": "cbc0f0bab0d57565b6bda9a0935361fd736b11ef04bac0f6eb78ddd4d871e373",
+              "compositionProfileHash": "c314e2cc571b797dfdf6915db0fc7e075cc9fa19e8a2294aab58b5a48793f861",
+              "sourceBudgetProfileHash": "0612b652fec3d131b8752eddd6b77bdcce84734b5974dc96b88de7fd360e4c13",
+              "exactlyOneCompositionSelected": true,
+              "unlistedModelCountAccepted": false,
+              "startingSupplyEqualsOccupiedArmySlots": true,
+              "rulesOwnedModelCountSupplySlotsAndCost": true,
+              "clientSuppliedModelCountSupplySlotsOrCostAccepted": false,
+              "trainingTruth": false,
+              "resultHash": "60174334c5876c712d12e8991b873c193bf8b0c3d140130b86f5099533fec5c3"
+            },
+            "selectedUpgrades": [],
+            "selectedUpgradeCount": 0,
+            "specialistUpgradeCount": 0,
+            "unitWideUpgradeCount": 0,
+            "mineralCost": 0,
+            "upgradeSelectionSetComplete": true,
+            "onlyPart12ListedUpgradeEntriesPurchased": false,
+            "purchaseCatalogueAuthority": "official_army_builder",
+            "sameUpgradeEntryPurchasedMoreThanOnce": false,
+            "unitWideDefaultAppliedToEveryStartingModel": true,
+            "specialistAssignedToExactlyOneStartingModel": true,
+            "differentSpecialistsAssignedToDifferentModels": true,
+            "rulesOwnedUpgradeCostsAndApplication": true,
+            "clientSuppliedUpgradeCostOrApplicationAccepted": false,
+            "trainingTruth": false,
+            "resultHash": "9655e341036b0384697a64bf9ca3d80ec5adb9446438bb4c0476c90327ef7ae5"
+          }
+        ],
+        "unitCount": 1,
+        "startingModelCount": 1,
+        "startingSupply": 2,
+        "selectedUpgradeCount": 0,
+        "armyResourceBudgetResult": {
+          "schema": "starcraft_tmg_official_army_resource_budget_resolution_v1",
+          "procedureKind": "army_resource_budget",
+          "sideKey": "player1",
+          "scale": {
+            "scaleId": "Standard",
+            "mineralLimit": {
+              "kind": "maximum",
+              "maximumInclusive": 2000
+            },
+            "vespeneRatio": {
+              "numerator": 1,
+              "denominator": 10
+            },
+            "battlefield": {
+              "widthMilliInches": 36000,
+              "lengthMilliInches": 54000
+            }
+          },
+          "mineralBudget": 2000,
+          "teamAllocationMode": false,
+          "unitRows": [
+            {
+              "unitInstanceId": "import",
+              "budgetProfileId": "army_units:goliath:small",
+              "recordKey": "army_units:goliath",
+              "unitId": "goliath",
+              "unitName": "Goliath",
+              "compositionKind": "small",
+              "startingModels": 1,
+              "startingSupply": 2,
+              "mineralCost": 180,
+              "sourceRecordHash": "3284a8c430a3e5925df9dced1af47817b5500cf85e0ae1b293de437a8a27dad9",
+              "payloadHash": "5984c7f157dc34477032cd03da9f1a2afea261343c19eec3a3b789b072bda518",
+              "sourceUnitProfileHash": "fcceea8e634e422d52ce6420adbf4371faaa96f4d1add02a0bd33215445eb5b6",
+              "budgetProfileHash": "0612b652fec3d131b8752eddd6b77bdcce84734b5974dc96b88de7fd360e4c13",
+              "candidateProfileHash": "491779e20f6520a6a566c78a01589ae369d232d1bb49d55c54f96c7688507cde"
+            }
+          ],
+          "upgradeRows": [],
+          "tacticalCardRows": [
+            {
+              "cardInstanceId": "player1-tactical-1",
+              "recordKey": "tactical_cards:healing_pathogen",
+              "cardId": "healing_pathogen",
+              "cardName": "Healing Pathogen",
+              "sourceRecordHash": "f6fbc69c96a6dfee8b6de3c89919c671098aff58978462dec428a7ea7edca14f",
+              "payloadHash": "56de83ed9e83cea4afe6f53aaf4b2f15db2923ddad2c90b5479c0009ebee3b94",
+              "budgetProfileHash": "a96514bd38db68cc739a6405323157382758e96f7d7ea0dadd810cffab936860",
+              "sourceCardProfileHash": "e920e2b8573072e1d7e0097ce8cf9a51b0ab76683d05f02c8a8c951176ee9680",
+              "vespeneGasCost": 0,
+              "armySlotsAdded": {
+                "Air": 0,
+                "Core": 0,
+                "Elite": 0,
+                "Hero": 0,
+                "Support": 0
+              },
+              "tacticalPurchaseResultHash": "4ac02445dc97e1b930aaa6e5b7b2efa993a6f62662f269eda10291cc9eec13b8"
+            }
+          ],
+          "mineralSpent": 180,
+          "mineralUnspent": 1820,
+          "mineralUnspentDisposition": "lost",
+          "mineralRetained": 0,
+          "vespeneLimit": {
+            "numerator": 2000,
+            "denominator": 10
+          },
+          "vespeneSpent": 0,
+          "vespeneUnspent": {
+            "numerator": 2000,
+            "denominator": 10
+          },
+          "vespeneUnspentDisposition": "lost",
+          "vespeneRetained": 0,
+          "resourceConversionAllowed": false,
+          "resourceConversionApplied": false,
+          "exactRationalVespeneComparison": true,
+          "armySlotAuditResultHash": "2377c52483c6abf8b605d889f24dd5b5f660bb994ed41801d34e421473ff08fe",
+          "factionCard": {
+            "recordKey": "tactical_cards:stukov_s_forces",
+            "cardId": "stukov_s_forces",
+            "factionName": "Stukov's Forces",
+            "sourceRecordHash": "97daedf810e1d7a3d425639519e2ae06e5250e82158ddca4886a2e2004135cb2",
+            "payloadHash": "cb9622bd40af08399e7fc5871edf464f350b5dd6c486ff0a74ba4028427c1e05",
+            "profileHash": "b8b0776a8cf65bfe0d81aed35ff91240f8c365de910b4398659b3926305d46d4",
+            "raceTag": "Zerg",
+            "subFactionTags": [
+              "Stukov's Forces"
+            ],
+            "factionTags": [
+              "Zerg",
+              "Stukov's Forces"
+            ],
+            "startingArmySlots": {
+              "Air": 0,
+              "Core": 4,
+              "Elite": 2,
+              "Hero": 1,
+              "Support": 0
+            },
+            "specialAbilities": {
+              "count": 3,
+              "definitionsHash": "cc61fe3600bed39951082fae01117b21e5d6044189437658474055b218f78027"
+            }
+          },
+          "fullFactionTagSlotAndUniqueLegalityValidated": true,
+          "fullResourceArithmeticValidated": true,
+          "fullCompositionUpgradeAndFieldingLegalityValidated": false,
+          "fullCompositionUpgradeAndFieldingLegalityDeferredToSlice": 104,
+          "rulesOwnedCostsAndTotals": true,
+          "clientSuppliedCostsOrTotalsAccepted": false,
+          "trainingTruth": false,
+          "resultHash": "726672e504870655738aaa105dc303576592438a34dc1da1970cdd7e713cfa7a"
+        },
+        "armyResourceBudgetResultHash": "726672e504870655738aaa105dc303576592438a34dc1da1970cdd7e713cfa7a",
+        "compositionUpgradeUnitSetComplete": true,
+        "fullFactionTagSlotAndUniqueLegalityValidated": true,
+        "fullResourceArithmeticValidated": true,
+        "fullCompositionUpgradeAndFieldingLegalityValidated": true,
+        "exactlyOneListedCompositionPerUnitValidated": true,
+        "unlistedModelCountsRejected": true,
+        "startingSupplySlotOccupancyValidated": true,
+        "onlyPart12ListedUpgradesPurchased": false,
+        "purchaseCatalogueAuthority": "official_army_builder",
+        "distinctUpgradeEntryAndSpecialistAssignmentValidated": true,
+        "rulesOwnedCountsSupplySlotsCostsAndUpgradeApplication": true,
+        "clientSuppliedCompositionUpgradeTotalsAccepted": false,
+        "unitEquipmentAndRosterDisclosureIncluded": false,
+        "unitEquipmentAndRosterDisclosureDeferredToSlice": 105,
+        "trainingTruth": false,
+        "resultHash": "9406d8ef1ea6eebb4a932cbdca5860d58198da061c9f00ec4bdb9068a650fc93"
+      },
+      "vespeneSpent": 0
+    },
+    {
+      "candidate": {
+        "sideKey": "player1",
+        "scaleId": "Standard",
+        "mineralBudget": 2000,
+        "factionRecordKey": "tactical_cards:stukov_s_forces",
+        "tacticalCardRecordKeys": [
+          "tactical_cards:hungering_infestation"
+        ],
+        "units": [
+          {
+            "unitInstanceId": "import",
+            "recordKey": "army_units:goliath",
+            "compositionKind": "small",
+            "upgrades": []
+          }
+        ]
+      },
+      "audit": {
+        "schema": "starcraft_tmg_official_complete_army_composition_upgrade_audit_v1",
+        "procedureKind": "complete_army_composition_upgrade_audit",
+        "sideKey": "player1",
+        "units": [
+          {
+            "schema": "starcraft_tmg_official_unit_upgrade_selection_v1",
+            "procedureKind": "unit_upgrade_selection",
+            "unitInstanceId": "import",
+            "recordKey": "army_units:goliath",
+            "unitId": "goliath",
+            "unitName": "Goliath",
+            "unitCompositionResult": {
+              "schema": "starcraft_tmg_official_unit_composition_selection_v1",
+              "procedureKind": "unit_composition_selection",
+              "unitInstanceId": "import",
+              "recordKey": "army_units:goliath",
+              "unitId": "goliath",
+              "unitName": "Goliath",
+              "factionTag": "Terran",
+              "armySlotType": "Elite",
+              "compositionProfileId": "army_units:goliath:small",
+              "compositionKind": "small",
+              "startingModelIds": [
+                "import-model-1"
+              ],
+              "startingModelCount": 1,
+              "startingSupply": 2,
+              "occupiedArmySlots": 2,
+              "mineralCost": 180,
+              "armyReferenceMineralCost": 190,
+              "mineralCostReconciliation": "official_builder_wins_reference_retained",
+              "sourceRecordHash": "3284a8c430a3e5925df9dced1af47817b5500cf85e0ae1b293de437a8a27dad9",
+              "payloadHash": "5984c7f157dc34477032cd03da9f1a2afea261343c19eec3a3b789b072bda518",
+              "sourceUnitProfileHash": "fcceea8e634e422d52ce6420adbf4371faaa96f4d1add02a0bd33215445eb5b6",
+              "unitCompositionReferenceProfileHash": "cbc0f0bab0d57565b6bda9a0935361fd736b11ef04bac0f6eb78ddd4d871e373",
+              "compositionProfileHash": "c314e2cc571b797dfdf6915db0fc7e075cc9fa19e8a2294aab58b5a48793f861",
+              "sourceBudgetProfileHash": "0612b652fec3d131b8752eddd6b77bdcce84734b5974dc96b88de7fd360e4c13",
+              "exactlyOneCompositionSelected": true,
+              "unlistedModelCountAccepted": false,
+              "startingSupplyEqualsOccupiedArmySlots": true,
+              "rulesOwnedModelCountSupplySlotsAndCost": true,
+              "clientSuppliedModelCountSupplySlotsOrCostAccepted": false,
+              "trainingTruth": false,
+              "resultHash": "60174334c5876c712d12e8991b873c193bf8b0c3d140130b86f5099533fec5c3"
+            },
+            "selectedUpgrades": [],
+            "selectedUpgradeCount": 0,
+            "specialistUpgradeCount": 0,
+            "unitWideUpgradeCount": 0,
+            "mineralCost": 0,
+            "upgradeSelectionSetComplete": true,
+            "onlyPart12ListedUpgradeEntriesPurchased": false,
+            "purchaseCatalogueAuthority": "official_army_builder",
+            "sameUpgradeEntryPurchasedMoreThanOnce": false,
+            "unitWideDefaultAppliedToEveryStartingModel": true,
+            "specialistAssignedToExactlyOneStartingModel": true,
+            "differentSpecialistsAssignedToDifferentModels": true,
+            "rulesOwnedUpgradeCostsAndApplication": true,
+            "clientSuppliedUpgradeCostOrApplicationAccepted": false,
+            "trainingTruth": false,
+            "resultHash": "9655e341036b0384697a64bf9ca3d80ec5adb9446438bb4c0476c90327ef7ae5"
+          }
+        ],
+        "unitCount": 1,
+        "startingModelCount": 1,
+        "startingSupply": 2,
+        "selectedUpgradeCount": 0,
+        "armyResourceBudgetResult": {
+          "schema": "starcraft_tmg_official_army_resource_budget_resolution_v1",
+          "procedureKind": "army_resource_budget",
+          "sideKey": "player1",
+          "scale": {
+            "scaleId": "Standard",
+            "mineralLimit": {
+              "kind": "maximum",
+              "maximumInclusive": 2000
+            },
+            "vespeneRatio": {
+              "numerator": 1,
+              "denominator": 10
+            },
+            "battlefield": {
+              "widthMilliInches": 36000,
+              "lengthMilliInches": 54000
+            }
+          },
+          "mineralBudget": 2000,
+          "teamAllocationMode": false,
+          "unitRows": [
+            {
+              "unitInstanceId": "import",
+              "budgetProfileId": "army_units:goliath:small",
+              "recordKey": "army_units:goliath",
+              "unitId": "goliath",
+              "unitName": "Goliath",
+              "compositionKind": "small",
+              "startingModels": 1,
+              "startingSupply": 2,
+              "mineralCost": 180,
+              "sourceRecordHash": "3284a8c430a3e5925df9dced1af47817b5500cf85e0ae1b293de437a8a27dad9",
+              "payloadHash": "5984c7f157dc34477032cd03da9f1a2afea261343c19eec3a3b789b072bda518",
+              "sourceUnitProfileHash": "fcceea8e634e422d52ce6420adbf4371faaa96f4d1add02a0bd33215445eb5b6",
+              "budgetProfileHash": "0612b652fec3d131b8752eddd6b77bdcce84734b5974dc96b88de7fd360e4c13",
+              "candidateProfileHash": "491779e20f6520a6a566c78a01589ae369d232d1bb49d55c54f96c7688507cde"
+            }
+          ],
+          "upgradeRows": [],
+          "tacticalCardRows": [
+            {
+              "cardInstanceId": "player1-tactical-1",
+              "recordKey": "tactical_cards:hungering_infestation",
+              "cardId": "hungering_infestation",
+              "cardName": "Hungering Infestation",
+              "sourceRecordHash": "ae4eb29ee7521c54e16e0c05c5dd208e7e4ac920669aa2636bd666d5bf99dce5",
+              "payloadHash": "0e6f1ae90d69a1b8d6ab427096f91eb58ec5605825ba9a1aa7a00bedc665555b",
+              "budgetProfileHash": "7d7a96b7cfa7eb95eba245e363ecb9064ad526117fb82c71e2f458ed4947fe9f",
+              "sourceCardProfileHash": "76ecedfdd981fbacc4bd61c75bcfc349043f309ea1538b4079e1f7ede7820643",
+              "vespeneGasCost": 10,
+              "armySlotsAdded": {
+                "Air": 0,
+                "Core": 0,
+                "Elite": 0,
+                "Hero": 0,
+                "Support": 0
+              },
+              "tacticalPurchaseResultHash": "9cf0b272032a624988e6c69ea355176798466353814f6d5868d3aedfe959e4ac"
+            }
+          ],
+          "mineralSpent": 180,
+          "mineralUnspent": 1820,
+          "mineralUnspentDisposition": "lost",
+          "mineralRetained": 0,
+          "vespeneLimit": {
+            "numerator": 2000,
+            "denominator": 10
+          },
+          "vespeneSpent": 10,
+          "vespeneUnspent": {
+            "numerator": 1900,
+            "denominator": 10
+          },
+          "vespeneUnspentDisposition": "lost",
+          "vespeneRetained": 0,
+          "resourceConversionAllowed": false,
+          "resourceConversionApplied": false,
+          "exactRationalVespeneComparison": true,
+          "armySlotAuditResultHash": "5e3714ceb9de091e5ccd7531a1ac27b685e19a13e3f6accf64958b73820974ba",
+          "factionCard": {
+            "recordKey": "tactical_cards:stukov_s_forces",
+            "cardId": "stukov_s_forces",
+            "factionName": "Stukov's Forces",
+            "sourceRecordHash": "97daedf810e1d7a3d425639519e2ae06e5250e82158ddca4886a2e2004135cb2",
+            "payloadHash": "cb9622bd40af08399e7fc5871edf464f350b5dd6c486ff0a74ba4028427c1e05",
+            "profileHash": "b8b0776a8cf65bfe0d81aed35ff91240f8c365de910b4398659b3926305d46d4",
+            "raceTag": "Zerg",
+            "subFactionTags": [
+              "Stukov's Forces"
+            ],
+            "factionTags": [
+              "Zerg",
+              "Stukov's Forces"
+            ],
+            "startingArmySlots": {
+              "Air": 0,
+              "Core": 4,
+              "Elite": 2,
+              "Hero": 1,
+              "Support": 0
+            },
+            "specialAbilities": {
+              "count": 3,
+              "definitionsHash": "cc61fe3600bed39951082fae01117b21e5d6044189437658474055b218f78027"
+            }
+          },
+          "fullFactionTagSlotAndUniqueLegalityValidated": true,
+          "fullResourceArithmeticValidated": true,
+          "fullCompositionUpgradeAndFieldingLegalityValidated": false,
+          "fullCompositionUpgradeAndFieldingLegalityDeferredToSlice": 104,
+          "rulesOwnedCostsAndTotals": true,
+          "clientSuppliedCostsOrTotalsAccepted": false,
+          "trainingTruth": false,
+          "resultHash": "ac1e0149cd31ddb1fa02875b52f6a176cab1708840b0b68ec7c3a2b2b4d8bb52"
+        },
+        "armyResourceBudgetResultHash": "ac1e0149cd31ddb1fa02875b52f6a176cab1708840b0b68ec7c3a2b2b4d8bb52",
+        "compositionUpgradeUnitSetComplete": true,
+        "fullFactionTagSlotAndUniqueLegalityValidated": true,
+        "fullResourceArithmeticValidated": true,
+        "fullCompositionUpgradeAndFieldingLegalityValidated": true,
+        "exactlyOneListedCompositionPerUnitValidated": true,
+        "unlistedModelCountsRejected": true,
+        "startingSupplySlotOccupancyValidated": true,
+        "onlyPart12ListedUpgradesPurchased": false,
+        "purchaseCatalogueAuthority": "official_army_builder",
+        "distinctUpgradeEntryAndSpecialistAssignmentValidated": true,
+        "rulesOwnedCountsSupplySlotsCostsAndUpgradeApplication": true,
+        "clientSuppliedCompositionUpgradeTotalsAccepted": false,
+        "unitEquipmentAndRosterDisclosureIncluded": false,
+        "unitEquipmentAndRosterDisclosureDeferredToSlice": 105,
+        "trainingTruth": false,
+        "resultHash": "796fa0e2e51e4eac29eebc9de3667223597ce3447a7a8291554206d30812246b"
+      },
+      "vespeneSpent": 10
+    },
+    {
+      "candidate": {
+        "sideKey": "player1",
+        "scaleId": "Standard",
+        "mineralBudget": 2000,
+        "factionRecordKey": "tactical_cards:stukov_s_forces",
+        "tacticalCardRecordKeys": [
+          "tactical_cards:weighted_pustule"
+        ],
+        "units": [
+          {
+            "unitInstanceId": "import",
+            "recordKey": "army_units:goliath",
+            "compositionKind": "small",
+            "upgrades": []
+          }
+        ]
+      },
+      "audit": {
+        "schema": "starcraft_tmg_official_complete_army_composition_upgrade_audit_v1",
+        "procedureKind": "complete_army_composition_upgrade_audit",
+        "sideKey": "player1",
+        "units": [
+          {
+            "schema": "starcraft_tmg_official_unit_upgrade_selection_v1",
+            "procedureKind": "unit_upgrade_selection",
+            "unitInstanceId": "import",
+            "recordKey": "army_units:goliath",
+            "unitId": "goliath",
+            "unitName": "Goliath",
+            "unitCompositionResult": {
+              "schema": "starcraft_tmg_official_unit_composition_selection_v1",
+              "procedureKind": "unit_composition_selection",
+              "unitInstanceId": "import",
+              "recordKey": "army_units:goliath",
+              "unitId": "goliath",
+              "unitName": "Goliath",
+              "factionTag": "Terran",
+              "armySlotType": "Elite",
+              "compositionProfileId": "army_units:goliath:small",
+              "compositionKind": "small",
+              "startingModelIds": [
+                "import-model-1"
+              ],
+              "startingModelCount": 1,
+              "startingSupply": 2,
+              "occupiedArmySlots": 2,
+              "mineralCost": 180,
+              "armyReferenceMineralCost": 190,
+              "mineralCostReconciliation": "official_builder_wins_reference_retained",
+              "sourceRecordHash": "3284a8c430a3e5925df9dced1af47817b5500cf85e0ae1b293de437a8a27dad9",
+              "payloadHash": "5984c7f157dc34477032cd03da9f1a2afea261343c19eec3a3b789b072bda518",
+              "sourceUnitProfileHash": "fcceea8e634e422d52ce6420adbf4371faaa96f4d1add02a0bd33215445eb5b6",
+              "unitCompositionReferenceProfileHash": "cbc0f0bab0d57565b6bda9a0935361fd736b11ef04bac0f6eb78ddd4d871e373",
+              "compositionProfileHash": "c314e2cc571b797dfdf6915db0fc7e075cc9fa19e8a2294aab58b5a48793f861",
+              "sourceBudgetProfileHash": "0612b652fec3d131b8752eddd6b77bdcce84734b5974dc96b88de7fd360e4c13",
+              "exactlyOneCompositionSelected": true,
+              "unlistedModelCountAccepted": false,
+              "startingSupplyEqualsOccupiedArmySlots": true,
+              "rulesOwnedModelCountSupplySlotsAndCost": true,
+              "clientSuppliedModelCountSupplySlotsOrCostAccepted": false,
+              "trainingTruth": false,
+              "resultHash": "60174334c5876c712d12e8991b873c193bf8b0c3d140130b86f5099533fec5c3"
+            },
+            "selectedUpgrades": [],
+            "selectedUpgradeCount": 0,
+            "specialistUpgradeCount": 0,
+            "unitWideUpgradeCount": 0,
+            "mineralCost": 0,
+            "upgradeSelectionSetComplete": true,
+            "onlyPart12ListedUpgradeEntriesPurchased": false,
+            "purchaseCatalogueAuthority": "official_army_builder",
+            "sameUpgradeEntryPurchasedMoreThanOnce": false,
+            "unitWideDefaultAppliedToEveryStartingModel": true,
+            "specialistAssignedToExactlyOneStartingModel": true,
+            "differentSpecialistsAssignedToDifferentModels": true,
+            "rulesOwnedUpgradeCostsAndApplication": true,
+            "clientSuppliedUpgradeCostOrApplicationAccepted": false,
+            "trainingTruth": false,
+            "resultHash": "9655e341036b0384697a64bf9ca3d80ec5adb9446438bb4c0476c90327ef7ae5"
+          }
+        ],
+        "unitCount": 1,
+        "startingModelCount": 1,
+        "startingSupply": 2,
+        "selectedUpgradeCount": 0,
+        "armyResourceBudgetResult": {
+          "schema": "starcraft_tmg_official_army_resource_budget_resolution_v1",
+          "procedureKind": "army_resource_budget",
+          "sideKey": "player1",
+          "scale": {
+            "scaleId": "Standard",
+            "mineralLimit": {
+              "kind": "maximum",
+              "maximumInclusive": 2000
+            },
+            "vespeneRatio": {
+              "numerator": 1,
+              "denominator": 10
+            },
+            "battlefield": {
+              "widthMilliInches": 36000,
+              "lengthMilliInches": 54000
+            }
+          },
+          "mineralBudget": 2000,
+          "teamAllocationMode": false,
+          "unitRows": [
+            {
+              "unitInstanceId": "import",
+              "budgetProfileId": "army_units:goliath:small",
+              "recordKey": "army_units:goliath",
+              "unitId": "goliath",
+              "unitName": "Goliath",
+              "compositionKind": "small",
+              "startingModels": 1,
+              "startingSupply": 2,
+              "mineralCost": 180,
+              "sourceRecordHash": "3284a8c430a3e5925df9dced1af47817b5500cf85e0ae1b293de437a8a27dad9",
+              "payloadHash": "5984c7f157dc34477032cd03da9f1a2afea261343c19eec3a3b789b072bda518",
+              "sourceUnitProfileHash": "fcceea8e634e422d52ce6420adbf4371faaa96f4d1add02a0bd33215445eb5b6",
+              "budgetProfileHash": "0612b652fec3d131b8752eddd6b77bdcce84734b5974dc96b88de7fd360e4c13",
+              "candidateProfileHash": "491779e20f6520a6a566c78a01589ae369d232d1bb49d55c54f96c7688507cde"
+            }
+          ],
+          "upgradeRows": [],
+          "tacticalCardRows": [
+            {
+              "cardInstanceId": "player1-tactical-1",
+              "recordKey": "tactical_cards:weighted_pustule",
+              "cardId": "weighted_pustule",
+              "cardName": "Weighted Pustule",
+              "sourceRecordHash": "5bc3c4222cf03571deff7c079f5054c7c6b7b6a44391826025095bc78be4b535",
+              "payloadHash": "4decdd655aa28fc01b44b7f84dcb214b66211befc7d4955837accb850b98d3ef",
+              "budgetProfileHash": "ba46c2d089adb3487bda6d78e19e01d6d0bf69ab3db839b68bc780787646a1bd",
+              "sourceCardProfileHash": "8b376eb8fccc3c005b77ca38cfe73ab0705fac763071d4ae0d0859cc814b1455",
+              "vespeneGasCost": 5,
+              "armySlotsAdded": {
+                "Air": 0,
+                "Core": 0,
+                "Elite": 0,
+                "Hero": 0,
+                "Support": 0
+              },
+              "tacticalPurchaseResultHash": "0a1af342eddba8677a78e2c41723142fb55cd48053239ca1327db387001c7205"
+            }
+          ],
+          "mineralSpent": 180,
+          "mineralUnspent": 1820,
+          "mineralUnspentDisposition": "lost",
+          "mineralRetained": 0,
+          "vespeneLimit": {
+            "numerator": 2000,
+            "denominator": 10
+          },
+          "vespeneSpent": 5,
+          "vespeneUnspent": {
+            "numerator": 1950,
+            "denominator": 10
+          },
+          "vespeneUnspentDisposition": "lost",
+          "vespeneRetained": 0,
+          "resourceConversionAllowed": false,
+          "resourceConversionApplied": false,
+          "exactRationalVespeneComparison": true,
+          "armySlotAuditResultHash": "122e72e7f5c6ece54e62f819565c06064a46829e4b2a95cf5c50656e14001695",
+          "factionCard": {
+            "recordKey": "tactical_cards:stukov_s_forces",
+            "cardId": "stukov_s_forces",
+            "factionName": "Stukov's Forces",
+            "sourceRecordHash": "97daedf810e1d7a3d425639519e2ae06e5250e82158ddca4886a2e2004135cb2",
+            "payloadHash": "cb9622bd40af08399e7fc5871edf464f350b5dd6c486ff0a74ba4028427c1e05",
+            "profileHash": "b8b0776a8cf65bfe0d81aed35ff91240f8c365de910b4398659b3926305d46d4",
+            "raceTag": "Zerg",
+            "subFactionTags": [
+              "Stukov's Forces"
+            ],
+            "factionTags": [
+              "Zerg",
+              "Stukov's Forces"
+            ],
+            "startingArmySlots": {
+              "Air": 0,
+              "Core": 4,
+              "Elite": 2,
+              "Hero": 1,
+              "Support": 0
+            },
+            "specialAbilities": {
+              "count": 3,
+              "definitionsHash": "cc61fe3600bed39951082fae01117b21e5d6044189437658474055b218f78027"
+            }
+          },
+          "fullFactionTagSlotAndUniqueLegalityValidated": true,
+          "fullResourceArithmeticValidated": true,
+          "fullCompositionUpgradeAndFieldingLegalityValidated": false,
+          "fullCompositionUpgradeAndFieldingLegalityDeferredToSlice": 104,
+          "rulesOwnedCostsAndTotals": true,
+          "clientSuppliedCostsOrTotalsAccepted": false,
+          "trainingTruth": false,
+          "resultHash": "1547ba75a8f02074e4b97f7668bf52c6a7cb4c287aba735c5ed8f31345ac0cbf"
+        },
+        "armyResourceBudgetResultHash": "1547ba75a8f02074e4b97f7668bf52c6a7cb4c287aba735c5ed8f31345ac0cbf",
+        "compositionUpgradeUnitSetComplete": true,
+        "fullFactionTagSlotAndUniqueLegalityValidated": true,
+        "fullResourceArithmeticValidated": true,
+        "fullCompositionUpgradeAndFieldingLegalityValidated": true,
+        "exactlyOneListedCompositionPerUnitValidated": true,
+        "unlistedModelCountsRejected": true,
+        "startingSupplySlotOccupancyValidated": true,
+        "onlyPart12ListedUpgradesPurchased": false,
+        "purchaseCatalogueAuthority": "official_army_builder",
+        "distinctUpgradeEntryAndSpecialistAssignmentValidated": true,
+        "rulesOwnedCountsSupplySlotsCostsAndUpgradeApplication": true,
+        "clientSuppliedCompositionUpgradeTotalsAccepted": false,
+        "unitEquipmentAndRosterDisclosureIncluded": false,
+        "unitEquipmentAndRosterDisclosureDeferredToSlice": 105,
+        "trainingTruth": false,
+        "resultHash": "fc745ae1e1d96c29868e64a8a61e2de2d67f2e86f3c55aafc6f0127a7f97638e"
+      },
+      "vespeneSpent": 5
+    },
+    {
+      "candidate": {
+        "sideKey": "player1",
+        "scaleId": "Standard",
+        "mineralBudget": 2000,
+        "factionRecordKey": "tactical_cards:stukov_s_forces",
+        "tacticalCardRecordKeys": [
+          "tactical_cards:healing_pathogen"
+        ],
+        "units": [
+          {
+            "unitInstanceId": "new-stukov",
+            "recordKey": "army_units:stukov",
+            "compositionKind": "small",
+            "upgrades": []
+          }
+        ]
+      },
+      "audit": {
+        "schema": "starcraft_tmg_official_complete_army_composition_upgrade_audit_v1",
+        "procedureKind": "complete_army_composition_upgrade_audit",
+        "sideKey": "player1",
+        "units": [
+          {
+            "schema": "starcraft_tmg_official_unit_upgrade_selection_v1",
+            "procedureKind": "unit_upgrade_selection",
+            "unitInstanceId": "new-stukov",
+            "recordKey": "army_units:stukov",
+            "unitId": "stukov",
+            "unitName": "Stukov",
+            "unitCompositionResult": {
+              "schema": "starcraft_tmg_official_unit_composition_selection_v1",
+              "procedureKind": "unit_composition_selection",
+              "unitInstanceId": "new-stukov",
+              "recordKey": "army_units:stukov",
+              "unitId": "stukov",
+              "unitName": "Stukov",
+              "factionTag": "Zerg",
+              "armySlotType": "Hero",
+              "compositionProfileId": "army_units:stukov:small",
+              "compositionKind": "small",
+              "startingModelIds": [
+                "new-stukov-model-1"
+              ],
+              "startingModelCount": 1,
+              "startingSupply": 1,
+              "occupiedArmySlots": 1,
+              "mineralCost": 240,
+              "armyReferenceMineralCost": null,
+              "mineralCostReconciliation": "official_builder_no_part12_entry",
+              "sourceRecordHash": "ef2404cf82fbeb0d5bab3ce3e790134850d5f1bdef2f1170d54a538922ddf819",
+              "payloadHash": "bbbb1124dc1873b22a213f8f1d97ae5e107640a96ad78883bba5b750911d85b4",
+              "sourceUnitProfileHash": "863ec0cfcd1de68a3fd68256702a93deaf8da68faec0eb2369cccdf1b238af34",
+              "unitCompositionReferenceProfileHash": "39698ce35a8abc923a9286ab58239f551f13150e97db5725991c534cbae66b0e",
+              "compositionProfileHash": "74bff26570c9cddf0670c53a64abdfeb330595a3fe67fe8b7c31da8748076ee4",
+              "sourceBudgetProfileHash": "a294f998c631c369cb98efae185f590ca738207b3ed032b694fb0e1519f47968",
+              "exactlyOneCompositionSelected": true,
+              "unlistedModelCountAccepted": false,
+              "startingSupplyEqualsOccupiedArmySlots": true,
+              "rulesOwnedModelCountSupplySlotsAndCost": true,
+              "clientSuppliedModelCountSupplySlotsOrCostAccepted": false,
+              "trainingTruth": false,
+              "resultHash": "ec89928e528f47395fb5ac73e8ca737f4d8cca6fe4ad54ec13ef937f12046338"
+            },
+            "selectedUpgrades": [],
+            "selectedUpgradeCount": 0,
+            "specialistUpgradeCount": 0,
+            "unitWideUpgradeCount": 0,
+            "mineralCost": 0,
+            "upgradeSelectionSetComplete": true,
+            "onlyPart12ListedUpgradeEntriesPurchased": false,
+            "purchaseCatalogueAuthority": "official_army_builder",
+            "sameUpgradeEntryPurchasedMoreThanOnce": false,
+            "unitWideDefaultAppliedToEveryStartingModel": true,
+            "specialistAssignedToExactlyOneStartingModel": true,
+            "differentSpecialistsAssignedToDifferentModels": true,
+            "rulesOwnedUpgradeCostsAndApplication": true,
+            "clientSuppliedUpgradeCostOrApplicationAccepted": false,
+            "trainingTruth": false,
+            "resultHash": "d508686d93139d7d63d7819e1f86181b3273acf3bf5aaa4015563cae5d8dc6ac"
+          }
+        ],
+        "unitCount": 1,
+        "startingModelCount": 1,
+        "startingSupply": 1,
+        "selectedUpgradeCount": 0,
+        "armyResourceBudgetResult": {
+          "schema": "starcraft_tmg_official_army_resource_budget_resolution_v1",
+          "procedureKind": "army_resource_budget",
+          "sideKey": "player1",
+          "scale": {
+            "scaleId": "Standard",
+            "mineralLimit": {
+              "kind": "maximum",
+              "maximumInclusive": 2000
+            },
+            "vespeneRatio": {
+              "numerator": 1,
+              "denominator": 10
+            },
+            "battlefield": {
+              "widthMilliInches": 36000,
+              "lengthMilliInches": 54000
+            }
+          },
+          "mineralBudget": 2000,
+          "teamAllocationMode": false,
+          "unitRows": [
+            {
+              "unitInstanceId": "new-stukov",
+              "budgetProfileId": "army_units:stukov:small",
+              "recordKey": "army_units:stukov",
+              "unitId": "stukov",
+              "unitName": "Stukov",
+              "compositionKind": "small",
+              "startingModels": 1,
+              "startingSupply": 1,
+              "mineralCost": 240,
+              "sourceRecordHash": "ef2404cf82fbeb0d5bab3ce3e790134850d5f1bdef2f1170d54a538922ddf819",
+              "payloadHash": "bbbb1124dc1873b22a213f8f1d97ae5e107640a96ad78883bba5b750911d85b4",
+              "sourceUnitProfileHash": "863ec0cfcd1de68a3fd68256702a93deaf8da68faec0eb2369cccdf1b238af34",
+              "budgetProfileHash": "a294f998c631c369cb98efae185f590ca738207b3ed032b694fb0e1519f47968",
+              "candidateProfileHash": "08f449f96c5e2cf52c02ca40c85723064c0f0f0c9885496ca1cfdf436cf2d22f"
+            }
+          ],
+          "upgradeRows": [],
+          "tacticalCardRows": [
+            {
+              "cardInstanceId": "player1-tactical-1",
+              "recordKey": "tactical_cards:healing_pathogen",
+              "cardId": "healing_pathogen",
+              "cardName": "Healing Pathogen",
+              "sourceRecordHash": "f6fbc69c96a6dfee8b6de3c89919c671098aff58978462dec428a7ea7edca14f",
+              "payloadHash": "56de83ed9e83cea4afe6f53aaf4b2f15db2923ddad2c90b5479c0009ebee3b94",
+              "budgetProfileHash": "a96514bd38db68cc739a6405323157382758e96f7d7ea0dadd810cffab936860",
+              "sourceCardProfileHash": "e920e2b8573072e1d7e0097ce8cf9a51b0ab76683d05f02c8a8c951176ee9680",
+              "vespeneGasCost": 0,
+              "armySlotsAdded": {
+                "Air": 0,
+                "Core": 0,
+                "Elite": 0,
+                "Hero": 0,
+                "Support": 0
+              },
+              "tacticalPurchaseResultHash": "4ac02445dc97e1b930aaa6e5b7b2efa993a6f62662f269eda10291cc9eec13b8"
+            }
+          ],
+          "mineralSpent": 240,
+          "mineralUnspent": 1760,
+          "mineralUnspentDisposition": "lost",
+          "mineralRetained": 0,
+          "vespeneLimit": {
+            "numerator": 2000,
+            "denominator": 10
+          },
+          "vespeneSpent": 0,
+          "vespeneUnspent": {
+            "numerator": 2000,
+            "denominator": 10
+          },
+          "vespeneUnspentDisposition": "lost",
+          "vespeneRetained": 0,
+          "resourceConversionAllowed": false,
+          "resourceConversionApplied": false,
+          "exactRationalVespeneComparison": true,
+          "armySlotAuditResultHash": "00abde0c6c5de5120d083590dd036a481343340edc6d8c9e4b9c8fe242586ade",
+          "factionCard": {
+            "recordKey": "tactical_cards:stukov_s_forces",
+            "cardId": "stukov_s_forces",
+            "factionName": "Stukov's Forces",
+            "sourceRecordHash": "97daedf810e1d7a3d425639519e2ae06e5250e82158ddca4886a2e2004135cb2",
+            "payloadHash": "cb9622bd40af08399e7fc5871edf464f350b5dd6c486ff0a74ba4028427c1e05",
+            "profileHash": "b8b0776a8cf65bfe0d81aed35ff91240f8c365de910b4398659b3926305d46d4",
+            "raceTag": "Zerg",
+            "subFactionTags": [
+              "Stukov's Forces"
+            ],
+            "factionTags": [
+              "Zerg",
+              "Stukov's Forces"
+            ],
+            "startingArmySlots": {
+              "Air": 0,
+              "Core": 4,
+              "Elite": 2,
+              "Hero": 1,
+              "Support": 0
+            },
+            "specialAbilities": {
+              "count": 3,
+              "definitionsHash": "cc61fe3600bed39951082fae01117b21e5d6044189437658474055b218f78027"
+            }
+          },
+          "fullFactionTagSlotAndUniqueLegalityValidated": true,
+          "fullResourceArithmeticValidated": true,
+          "fullCompositionUpgradeAndFieldingLegalityValidated": false,
+          "fullCompositionUpgradeAndFieldingLegalityDeferredToSlice": 104,
+          "rulesOwnedCostsAndTotals": true,
+          "clientSuppliedCostsOrTotalsAccepted": false,
+          "trainingTruth": false,
+          "resultHash": "88360d583dbe1fa176b44ff05afcbe733649200bc0a17c0f3409ad40eb316445"
+        },
+        "armyResourceBudgetResultHash": "88360d583dbe1fa176b44ff05afcbe733649200bc0a17c0f3409ad40eb316445",
+        "compositionUpgradeUnitSetComplete": true,
+        "fullFactionTagSlotAndUniqueLegalityValidated": true,
+        "fullResourceArithmeticValidated": true,
+        "fullCompositionUpgradeAndFieldingLegalityValidated": true,
+        "exactlyOneListedCompositionPerUnitValidated": true,
+        "unlistedModelCountsRejected": true,
+        "startingSupplySlotOccupancyValidated": true,
+        "onlyPart12ListedUpgradesPurchased": false,
+        "purchaseCatalogueAuthority": "official_army_builder",
+        "distinctUpgradeEntryAndSpecialistAssignmentValidated": true,
+        "rulesOwnedCountsSupplySlotsCostsAndUpgradeApplication": true,
+        "clientSuppliedCompositionUpgradeTotalsAccepted": false,
+        "unitEquipmentAndRosterDisclosureIncluded": false,
+        "unitEquipmentAndRosterDisclosureDeferredToSlice": 105,
+        "trainingTruth": false,
+        "resultHash": "a5b09bf5b0bbbfb481b895f607ce64c474070581772a818679f81ca33fa23f66"
+      },
+      "newUnitScope": "army_building_only_geometry_and_gameplay_not_admitted"
+    },
+    {
+      "candidate": {
+        "sideKey": "player1",
+        "scaleId": "Standard",
+        "mineralBudget": 2000,
+        "factionRecordKey": "tactical_cards:stukov_s_forces",
+        "tacticalCardRecordKeys": [
+          "tactical_cards:healing_pathogen"
+        ],
+        "units": [
+          {
+            "unitInstanceId": "new-infested_marine",
+            "recordKey": "army_units:infested_marine",
+            "compositionKind": "small",
+            "upgrades": []
+          }
+        ]
+      },
+      "audit": {
+        "schema": "starcraft_tmg_official_complete_army_composition_upgrade_audit_v1",
+        "procedureKind": "complete_army_composition_upgrade_audit",
+        "sideKey": "player1",
+        "units": [
+          {
+            "schema": "starcraft_tmg_official_unit_upgrade_selection_v1",
+            "procedureKind": "unit_upgrade_selection",
+            "unitInstanceId": "new-infested_marine",
+            "recordKey": "army_units:infested_marine",
+            "unitId": "infested_marine",
+            "unitName": "Infested Marine",
+            "unitCompositionResult": {
+              "schema": "starcraft_tmg_official_unit_composition_selection_v1",
+              "procedureKind": "unit_composition_selection",
+              "unitInstanceId": "new-infested_marine",
+              "recordKey": "army_units:infested_marine",
+              "unitId": "infested_marine",
+              "unitName": "Infested Marine",
+              "factionTag": "Zerg",
+              "armySlotType": "Core",
+              "compositionProfileId": "army_units:infested_marine:small",
+              "compositionKind": "small",
+              "startingModelIds": [
+                "new-infested_marine-model-1",
+                "new-infested_marine-model-2",
+                "new-infested_marine-model-3",
+                "new-infested_marine-model-4",
+                "new-infested_marine-model-5",
+                "new-infested_marine-model-6"
+              ],
+              "startingModelCount": 6,
+              "startingSupply": 2,
+              "occupiedArmySlots": 2,
+              "mineralCost": 160,
+              "armyReferenceMineralCost": null,
+              "mineralCostReconciliation": "official_builder_no_part12_entry",
+              "sourceRecordHash": "12e5f075acc27dd49959dbb084697a60fc50da8ae27f7f1574f518d09e803d20",
+              "payloadHash": "0a5124e81cdcdc61bcc4a52bd31bef1645b3b9b9d62cd4fbb64747a2aba1db87",
+              "sourceUnitProfileHash": "ebeeefee0f42e2729fe8ef7f1318facf02ea59d5397712e7ab4de4605d1e8b9f",
+              "unitCompositionReferenceProfileHash": "2cc3159bee816a60adc61773270c263cdd62ed013630c2e4731f3355fece1aa7",
+              "compositionProfileHash": "4a4d81a596a4303b0e8a60794bfb3c72cad02b41b2803d177ede6f9dfb3631da",
+              "sourceBudgetProfileHash": "8c8c83f80365ce791c3ac030e721f73bb2b05615f561b9522a5166214073cf1f",
+              "exactlyOneCompositionSelected": true,
+              "unlistedModelCountAccepted": false,
+              "startingSupplyEqualsOccupiedArmySlots": true,
+              "rulesOwnedModelCountSupplySlotsAndCost": true,
+              "clientSuppliedModelCountSupplySlotsOrCostAccepted": false,
+              "trainingTruth": false,
+              "resultHash": "b10fd66798bda062b592248f30589777551d34f4c9e70232818f92c7844b7852"
+            },
+            "selectedUpgrades": [],
+            "selectedUpgradeCount": 0,
+            "specialistUpgradeCount": 0,
+            "unitWideUpgradeCount": 0,
+            "mineralCost": 0,
+            "upgradeSelectionSetComplete": true,
+            "onlyPart12ListedUpgradeEntriesPurchased": false,
+            "purchaseCatalogueAuthority": "official_army_builder",
+            "sameUpgradeEntryPurchasedMoreThanOnce": false,
+            "unitWideDefaultAppliedToEveryStartingModel": true,
+            "specialistAssignedToExactlyOneStartingModel": true,
+            "differentSpecialistsAssignedToDifferentModels": true,
+            "rulesOwnedUpgradeCostsAndApplication": true,
+            "clientSuppliedUpgradeCostOrApplicationAccepted": false,
+            "trainingTruth": false,
+            "resultHash": "156a65401da4b2f67fed4fcd57adf1a537c72f40b033e166f4f6025096356a7e"
+          }
+        ],
+        "unitCount": 1,
+        "startingModelCount": 6,
+        "startingSupply": 2,
+        "selectedUpgradeCount": 0,
+        "armyResourceBudgetResult": {
+          "schema": "starcraft_tmg_official_army_resource_budget_resolution_v1",
+          "procedureKind": "army_resource_budget",
+          "sideKey": "player1",
+          "scale": {
+            "scaleId": "Standard",
+            "mineralLimit": {
+              "kind": "maximum",
+              "maximumInclusive": 2000
+            },
+            "vespeneRatio": {
+              "numerator": 1,
+              "denominator": 10
+            },
+            "battlefield": {
+              "widthMilliInches": 36000,
+              "lengthMilliInches": 54000
+            }
+          },
+          "mineralBudget": 2000,
+          "teamAllocationMode": false,
+          "unitRows": [
+            {
+              "unitInstanceId": "new-infested_marine",
+              "budgetProfileId": "army_units:infested_marine:small",
+              "recordKey": "army_units:infested_marine",
+              "unitId": "infested_marine",
+              "unitName": "Infested Marine",
+              "compositionKind": "small",
+              "startingModels": 6,
+              "startingSupply": 2,
+              "mineralCost": 160,
+              "sourceRecordHash": "12e5f075acc27dd49959dbb084697a60fc50da8ae27f7f1574f518d09e803d20",
+              "payloadHash": "0a5124e81cdcdc61bcc4a52bd31bef1645b3b9b9d62cd4fbb64747a2aba1db87",
+              "sourceUnitProfileHash": "ebeeefee0f42e2729fe8ef7f1318facf02ea59d5397712e7ab4de4605d1e8b9f",
+              "budgetProfileHash": "8c8c83f80365ce791c3ac030e721f73bb2b05615f561b9522a5166214073cf1f",
+              "candidateProfileHash": "be64131cfa8cc255b2ceb0beb67f31478d74038d1d338eb2920574b592ee3ed1"
+            }
+          ],
+          "upgradeRows": [],
+          "tacticalCardRows": [
+            {
+              "cardInstanceId": "player1-tactical-1",
+              "recordKey": "tactical_cards:healing_pathogen",
+              "cardId": "healing_pathogen",
+              "cardName": "Healing Pathogen",
+              "sourceRecordHash": "f6fbc69c96a6dfee8b6de3c89919c671098aff58978462dec428a7ea7edca14f",
+              "payloadHash": "56de83ed9e83cea4afe6f53aaf4b2f15db2923ddad2c90b5479c0009ebee3b94",
+              "budgetProfileHash": "a96514bd38db68cc739a6405323157382758e96f7d7ea0dadd810cffab936860",
+              "sourceCardProfileHash": "e920e2b8573072e1d7e0097ce8cf9a51b0ab76683d05f02c8a8c951176ee9680",
+              "vespeneGasCost": 0,
+              "armySlotsAdded": {
+                "Air": 0,
+                "Core": 0,
+                "Elite": 0,
+                "Hero": 0,
+                "Support": 0
+              },
+              "tacticalPurchaseResultHash": "4ac02445dc97e1b930aaa6e5b7b2efa993a6f62662f269eda10291cc9eec13b8"
+            }
+          ],
+          "mineralSpent": 160,
+          "mineralUnspent": 1840,
+          "mineralUnspentDisposition": "lost",
+          "mineralRetained": 0,
+          "vespeneLimit": {
+            "numerator": 2000,
+            "denominator": 10
+          },
+          "vespeneSpent": 0,
+          "vespeneUnspent": {
+            "numerator": 2000,
+            "denominator": 10
+          },
+          "vespeneUnspentDisposition": "lost",
+          "vespeneRetained": 0,
+          "resourceConversionAllowed": false,
+          "resourceConversionApplied": false,
+          "exactRationalVespeneComparison": true,
+          "armySlotAuditResultHash": "9b0ab34f4699662e84793574097861615ba61448a17baf72eb7988daf7c57a83",
+          "factionCard": {
+            "recordKey": "tactical_cards:stukov_s_forces",
+            "cardId": "stukov_s_forces",
+            "factionName": "Stukov's Forces",
+            "sourceRecordHash": "97daedf810e1d7a3d425639519e2ae06e5250e82158ddca4886a2e2004135cb2",
+            "payloadHash": "cb9622bd40af08399e7fc5871edf464f350b5dd6c486ff0a74ba4028427c1e05",
+            "profileHash": "b8b0776a8cf65bfe0d81aed35ff91240f8c365de910b4398659b3926305d46d4",
+            "raceTag": "Zerg",
+            "subFactionTags": [
+              "Stukov's Forces"
+            ],
+            "factionTags": [
+              "Zerg",
+              "Stukov's Forces"
+            ],
+            "startingArmySlots": {
+              "Air": 0,
+              "Core": 4,
+              "Elite": 2,
+              "Hero": 1,
+              "Support": 0
+            },
+            "specialAbilities": {
+              "count": 3,
+              "definitionsHash": "cc61fe3600bed39951082fae01117b21e5d6044189437658474055b218f78027"
+            }
+          },
+          "fullFactionTagSlotAndUniqueLegalityValidated": true,
+          "fullResourceArithmeticValidated": true,
+          "fullCompositionUpgradeAndFieldingLegalityValidated": false,
+          "fullCompositionUpgradeAndFieldingLegalityDeferredToSlice": 104,
+          "rulesOwnedCostsAndTotals": true,
+          "clientSuppliedCostsOrTotalsAccepted": false,
+          "trainingTruth": false,
+          "resultHash": "11c00c63f93cefef150350caf2c52bde57cff7c69dcd9d7f6b4d88171daf7d6f"
+        },
+        "armyResourceBudgetResultHash": "11c00c63f93cefef150350caf2c52bde57cff7c69dcd9d7f6b4d88171daf7d6f",
+        "compositionUpgradeUnitSetComplete": true,
+        "fullFactionTagSlotAndUniqueLegalityValidated": true,
+        "fullResourceArithmeticValidated": true,
+        "fullCompositionUpgradeAndFieldingLegalityValidated": true,
+        "exactlyOneListedCompositionPerUnitValidated": true,
+        "unlistedModelCountsRejected": true,
+        "startingSupplySlotOccupancyValidated": true,
+        "onlyPart12ListedUpgradesPurchased": false,
+        "purchaseCatalogueAuthority": "official_army_builder",
+        "distinctUpgradeEntryAndSpecialistAssignmentValidated": true,
+        "rulesOwnedCountsSupplySlotsCostsAndUpgradeApplication": true,
+        "clientSuppliedCompositionUpgradeTotalsAccepted": false,
+        "unitEquipmentAndRosterDisclosureIncluded": false,
+        "unitEquipmentAndRosterDisclosureDeferredToSlice": 105,
+        "trainingTruth": false,
+        "resultHash": "65d88be4aaf8667732c0882b0c13c435a9aa8a6e751f4ebb797f9508a2d9156a"
+      },
+      "newUnitScope": "army_building_only_geometry_and_gameplay_not_admitted"
+    },
+    {
+      "candidate": {
+        "sideKey": "player1",
+        "scaleId": "Standard",
+        "mineralBudget": 2000,
+        "factionRecordKey": "tactical_cards:stukov_s_forces",
+        "tacticalCardRecordKeys": [
+          "tactical_cards:healing_pathogen"
+        ],
+        "units": [
+          {
+            "unitInstanceId": "new-infested_trooper",
+            "recordKey": "army_units:infested_trooper",
+            "compositionKind": "small",
+            "upgrades": []
+          }
+        ]
+      },
+      "audit": {
+        "schema": "starcraft_tmg_official_complete_army_composition_upgrade_audit_v1",
+        "procedureKind": "complete_army_composition_upgrade_audit",
+        "sideKey": "player1",
+        "units": [
+          {
+            "schema": "starcraft_tmg_official_unit_upgrade_selection_v1",
+            "procedureKind": "unit_upgrade_selection",
+            "unitInstanceId": "new-infested_trooper",
+            "recordKey": "army_units:infested_trooper",
+            "unitId": "infested_trooper",
+            "unitName": "Infested Trooper",
+            "unitCompositionResult": {
+              "schema": "starcraft_tmg_official_unit_composition_selection_v1",
+              "procedureKind": "unit_composition_selection",
+              "unitInstanceId": "new-infested_trooper",
+              "recordKey": "army_units:infested_trooper",
+              "unitId": "infested_trooper",
+              "unitName": "Infested Trooper",
+              "factionTag": "Zerg",
+              "armySlotType": "Elite",
+              "compositionProfileId": "army_units:infested_trooper:small",
+              "compositionKind": "small",
+              "startingModelIds": [
+                "new-infested_trooper-model-1",
+                "new-infested_trooper-model-2",
+                "new-infested_trooper-model-3"
+              ],
+              "startingModelCount": 3,
+              "startingSupply": 1,
+              "occupiedArmySlots": 1,
+              "mineralCost": 210,
+              "armyReferenceMineralCost": null,
+              "mineralCostReconciliation": "official_builder_no_part12_entry",
+              "sourceRecordHash": "ace8c6852b08d71076a2933b5a5835d6805fc0830f60854f904d8a5ffe21631e",
+              "payloadHash": "454bde3489f4a9c9eff6521cf881d1a526ae33318dfdda7b252c1ca5be28821d",
+              "sourceUnitProfileHash": "e90c4f207485215ef072c9e03c9601af8d4ce779cc672be57ac1656655a020b5",
+              "unitCompositionReferenceProfileHash": "964ba9b2586c1dbf32f0e08f9b9ca340c5c1712c5fecf21f9ffc8124d646a551",
+              "compositionProfileHash": "4fc167f2bd34d2068a31acefe56db2abd9f1859e8247668b1ce8138fd2524781",
+              "sourceBudgetProfileHash": "a1d83ec75cc6a9e2d8443c41214e5c0814425f1e97dc83bf80d3bb953cbe5bfa",
+              "exactlyOneCompositionSelected": true,
+              "unlistedModelCountAccepted": false,
+              "startingSupplyEqualsOccupiedArmySlots": true,
+              "rulesOwnedModelCountSupplySlotsAndCost": true,
+              "clientSuppliedModelCountSupplySlotsOrCostAccepted": false,
+              "trainingTruth": false,
+              "resultHash": "3a5965970f398fd6ffe54a55afa9107a3ae04b0387f31f15f06c8c0ed7fce56e"
+            },
+            "selectedUpgrades": [],
+            "selectedUpgradeCount": 0,
+            "specialistUpgradeCount": 0,
+            "unitWideUpgradeCount": 0,
+            "mineralCost": 0,
+            "upgradeSelectionSetComplete": true,
+            "onlyPart12ListedUpgradeEntriesPurchased": false,
+            "purchaseCatalogueAuthority": "official_army_builder",
+            "sameUpgradeEntryPurchasedMoreThanOnce": false,
+            "unitWideDefaultAppliedToEveryStartingModel": true,
+            "specialistAssignedToExactlyOneStartingModel": true,
+            "differentSpecialistsAssignedToDifferentModels": true,
+            "rulesOwnedUpgradeCostsAndApplication": true,
+            "clientSuppliedUpgradeCostOrApplicationAccepted": false,
+            "trainingTruth": false,
+            "resultHash": "ef5d6d2d793d387d8cec7bf1271765e4c0f571298d9e7fb9ddb333a800035b76"
+          }
+        ],
+        "unitCount": 1,
+        "startingModelCount": 3,
+        "startingSupply": 1,
+        "selectedUpgradeCount": 0,
+        "armyResourceBudgetResult": {
+          "schema": "starcraft_tmg_official_army_resource_budget_resolution_v1",
+          "procedureKind": "army_resource_budget",
+          "sideKey": "player1",
+          "scale": {
+            "scaleId": "Standard",
+            "mineralLimit": {
+              "kind": "maximum",
+              "maximumInclusive": 2000
+            },
+            "vespeneRatio": {
+              "numerator": 1,
+              "denominator": 10
+            },
+            "battlefield": {
+              "widthMilliInches": 36000,
+              "lengthMilliInches": 54000
+            }
+          },
+          "mineralBudget": 2000,
+          "teamAllocationMode": false,
+          "unitRows": [
+            {
+              "unitInstanceId": "new-infested_trooper",
+              "budgetProfileId": "army_units:infested_trooper:small",
+              "recordKey": "army_units:infested_trooper",
+              "unitId": "infested_trooper",
+              "unitName": "Infested Trooper",
+              "compositionKind": "small",
+              "startingModels": 3,
+              "startingSupply": 1,
+              "mineralCost": 210,
+              "sourceRecordHash": "ace8c6852b08d71076a2933b5a5835d6805fc0830f60854f904d8a5ffe21631e",
+              "payloadHash": "454bde3489f4a9c9eff6521cf881d1a526ae33318dfdda7b252c1ca5be28821d",
+              "sourceUnitProfileHash": "e90c4f207485215ef072c9e03c9601af8d4ce779cc672be57ac1656655a020b5",
+              "budgetProfileHash": "a1d83ec75cc6a9e2d8443c41214e5c0814425f1e97dc83bf80d3bb953cbe5bfa",
+              "candidateProfileHash": "eb509fb467e85eb95ce3211601c675ea844a1cf93ebf4db737127f81c0d8969e"
+            }
+          ],
+          "upgradeRows": [],
+          "tacticalCardRows": [
+            {
+              "cardInstanceId": "player1-tactical-1",
+              "recordKey": "tactical_cards:healing_pathogen",
+              "cardId": "healing_pathogen",
+              "cardName": "Healing Pathogen",
+              "sourceRecordHash": "f6fbc69c96a6dfee8b6de3c89919c671098aff58978462dec428a7ea7edca14f",
+              "payloadHash": "56de83ed9e83cea4afe6f53aaf4b2f15db2923ddad2c90b5479c0009ebee3b94",
+              "budgetProfileHash": "a96514bd38db68cc739a6405323157382758e96f7d7ea0dadd810cffab936860",
+              "sourceCardProfileHash": "e920e2b8573072e1d7e0097ce8cf9a51b0ab76683d05f02c8a8c951176ee9680",
+              "vespeneGasCost": 0,
+              "armySlotsAdded": {
+                "Air": 0,
+                "Core": 0,
+                "Elite": 0,
+                "Hero": 0,
+                "Support": 0
+              },
+              "tacticalPurchaseResultHash": "4ac02445dc97e1b930aaa6e5b7b2efa993a6f62662f269eda10291cc9eec13b8"
+            }
+          ],
+          "mineralSpent": 210,
+          "mineralUnspent": 1790,
+          "mineralUnspentDisposition": "lost",
+          "mineralRetained": 0,
+          "vespeneLimit": {
+            "numerator": 2000,
+            "denominator": 10
+          },
+          "vespeneSpent": 0,
+          "vespeneUnspent": {
+            "numerator": 2000,
+            "denominator": 10
+          },
+          "vespeneUnspentDisposition": "lost",
+          "vespeneRetained": 0,
+          "resourceConversionAllowed": false,
+          "resourceConversionApplied": false,
+          "exactRationalVespeneComparison": true,
+          "armySlotAuditResultHash": "dc50f58c18723e9eb8ee0224d0ee979b16b825a1182ed758b7fc967eda804535",
+          "factionCard": {
+            "recordKey": "tactical_cards:stukov_s_forces",
+            "cardId": "stukov_s_forces",
+            "factionName": "Stukov's Forces",
+            "sourceRecordHash": "97daedf810e1d7a3d425639519e2ae06e5250e82158ddca4886a2e2004135cb2",
+            "payloadHash": "cb9622bd40af08399e7fc5871edf464f350b5dd6c486ff0a74ba4028427c1e05",
+            "profileHash": "b8b0776a8cf65bfe0d81aed35ff91240f8c365de910b4398659b3926305d46d4",
+            "raceTag": "Zerg",
+            "subFactionTags": [
+              "Stukov's Forces"
+            ],
+            "factionTags": [
+              "Zerg",
+              "Stukov's Forces"
+            ],
+            "startingArmySlots": {
+              "Air": 0,
+              "Core": 4,
+              "Elite": 2,
+              "Hero": 1,
+              "Support": 0
+            },
+            "specialAbilities": {
+              "count": 3,
+              "definitionsHash": "cc61fe3600bed39951082fae01117b21e5d6044189437658474055b218f78027"
+            }
+          },
+          "fullFactionTagSlotAndUniqueLegalityValidated": true,
+          "fullResourceArithmeticValidated": true,
+          "fullCompositionUpgradeAndFieldingLegalityValidated": false,
+          "fullCompositionUpgradeAndFieldingLegalityDeferredToSlice": 104,
+          "rulesOwnedCostsAndTotals": true,
+          "clientSuppliedCostsOrTotalsAccepted": false,
+          "trainingTruth": false,
+          "resultHash": "09a9138bc07a701bd16f135a7bfb23f89b3cc0ad657799dd2bc2c41b559a4b5c"
+        },
+        "armyResourceBudgetResultHash": "09a9138bc07a701bd16f135a7bfb23f89b3cc0ad657799dd2bc2c41b559a4b5c",
+        "compositionUpgradeUnitSetComplete": true,
+        "fullFactionTagSlotAndUniqueLegalityValidated": true,
+        "fullResourceArithmeticValidated": true,
+        "fullCompositionUpgradeAndFieldingLegalityValidated": true,
+        "exactlyOneListedCompositionPerUnitValidated": true,
+        "unlistedModelCountsRejected": true,
+        "startingSupplySlotOccupancyValidated": true,
+        "onlyPart12ListedUpgradesPurchased": false,
+        "purchaseCatalogueAuthority": "official_army_builder",
+        "distinctUpgradeEntryAndSpecialistAssignmentValidated": true,
+        "rulesOwnedCountsSupplySlotsCostsAndUpgradeApplication": true,
+        "clientSuppliedCompositionUpgradeTotalsAccepted": false,
+        "unitEquipmentAndRosterDisclosureIncluded": false,
+        "unitEquipmentAndRosterDisclosureDeferredToSlice": 105,
+        "trainingTruth": false,
+        "resultHash": "df9acd9aa95dca0a0960a8a9c7f7a3fd63d267c47bdaf4538f8a6ed68ae20522"
+      },
+      "newUnitScope": "army_building_only_geometry_and_gameplay_not_admitted"
+    }
+  ],
+  "negatives": [
+    {
+      "candidate": {
+        "sideKey": "player1",
+        "scaleId": "Standard",
+        "mineralBudget": 2000,
+        "factionRecordKey": "tactical_cards:stukov_s_forces",
+        "tacticalCardRecordKeys": [
+          "tactical_cards:healing_pathogen"
+        ],
+        "units": [
+          {
+            "unitInstanceId": "wrong",
+            "recordKey": "army_units:marine",
+            "compositionKind": "small",
+            "upgrades": []
+          }
+        ]
+      },
+      "status": "illegal",
+      "rulesErrorCode": "FACTION_TAG_MISMATCH"
+    },
+    {
+      "candidate": {
+        "sideKey": "player1",
+        "scaleId": "Standard",
+        "mineralBudget": 2000,
+        "factionRecordKey": "tactical_cards:stukov_s_forces",
+        "tacticalCardRecordKeys": [
+          "tactical_cards:healing_pathogen"
+        ],
+        "units": [
+          {
+            "unitInstanceId": "wrong",
+            "recordKey": "army_units:raven",
+            "compositionKind": "small",
+            "upgrades": []
+          }
+        ]
+      },
+      "status": "illegal",
+      "rulesErrorCode": "FACTION_TAG_MISMATCH"
+    },
+    {
+      "candidate": {
+        "sideKey": "player1",
+        "scaleId": "Standard",
+        "mineralBudget": 2000,
+        "factionRecordKey": "tactical_cards:stukov_s_forces",
+        "tacticalCardRecordKeys": [
+          "tactical_cards:healing_pathogen"
+        ],
+        "units": [
+          {
+            "unitInstanceId": "wrong",
+            "recordKey": "army_units:sentry",
+            "compositionKind": "small",
+            "upgrades": []
+          }
+        ]
+      },
+      "status": "illegal",
+      "rulesErrorCode": "FACTION_TAG_MISMATCH"
+    },
+    {
+      "candidate": {
+        "sideKey": "player1",
+        "scaleId": "Standard",
+        "mineralBudget": 2000,
+        "factionRecordKey": "tactical_cards:zerg_swarm",
+        "tacticalCardRecordKeys": [
+          "tactical_cards:accelerating_creep"
+        ],
+        "units": [
+          {
+            "unitInstanceId": "wrong",
+            "recordKey": "army_units:goliath",
+            "compositionKind": "small",
+            "upgrades": []
+          }
+        ]
+      },
+      "status": "illegal",
+      "rulesErrorCode": "FACTION_TAG_MISMATCH"
+    },
+    {
+      "candidate": {
+        "sideKey": "player1",
+        "scaleId": "Standard",
+        "mineralBudget": 2000,
+        "factionRecordKey": "tactical_cards:stukov_s_forces",
+        "tacticalCardRecordKeys": [],
+        "units": [
+          {
+            "unitInstanceId": "missing-virus",
+            "recordKey": "army_units:goliath",
+            "compositionKind": "small",
+            "upgrades": []
+          }
+        ]
+      },
+      "status": "illegal",
+      "rulesErrorCode": "ARMY_EXACTLY_ONE_TACTICAL_GROUP_REQUIRED"
+    },
+    {
+      "candidate": {
+        "sideKey": "player1",
+        "scaleId": "Standard",
+        "mineralBudget": 2000,
+        "factionRecordKey": "tactical_cards:stukov_s_forces",
+        "tacticalCardRecordKeys": [
+          "tactical_cards:healing_pathogen",
+          "tactical_cards:hungering_infestation"
+        ],
+        "units": [
+          {
+            "unitInstanceId": "two-virus",
+            "recordKey": "army_units:goliath",
+            "compositionKind": "small",
+            "upgrades": []
+          }
+        ]
+      },
+      "status": "illegal",
+      "rulesErrorCode": "ARMY_EXACTLY_ONE_TACTICAL_GROUP_REQUIRED"
+    },
+    {
+      "candidate": {
+        "sideKey": "player1",
+        "scaleId": "Standard",
+        "mineralBudget": 2000,
+        "factionRecordKey": "tactical_cards:stukov_s_forces",
+        "tacticalCardRecordKeys": [
+          "tactical_cards:healing_pathogen"
+        ],
+        "units": [
+          {
+            "unitInstanceId": "a",
+            "recordKey": "army_units:goliath",
+            "compositionKind": "small",
+            "upgrades": []
+          },
+          {
+            "unitInstanceId": "b",
+            "recordKey": "army_units:goliath",
+            "compositionKind": "small",
+            "upgrades": []
+          }
+        ]
+      },
+      "status": "illegal",
+      "rulesErrorCode": "ARMY_SLOT_CAPACITY_EXCEEDED"
+    },
+    {
+      "candidate": {
+        "sideKey": "player1",
+        "scaleId": "Standard",
+        "mineralBudget": 2000,
+        "factionRecordKey": "tactical_cards:stukov_s_forces",
+        "tacticalCardRecordKeys": [
+          "tactical_cards:healing_pathogen"
+        ],
+        "units": [
+          {
+            "unitInstanceId": "a",
+            "recordKey": "army_units:stukov",
+            "compositionKind": "small",
+            "upgrades": []
+          },
+          {
+            "unitInstanceId": "b",
+            "recordKey": "army_units:stukov",
+            "compositionKind": "small",
+            "upgrades": []
+          }
+        ]
+      },
+      "status": "illegal",
+      "rulesErrorCode": "UNIQUE_UNIT_COPY_LIMIT_EXCEEDED"
+    }
+  ],
+  "nativeResults": [
+    {
+      "kind": "imported-goliath",
+      "paymentProofs": [
+        {
+          "definitionId": "unit:goliath/target-lock-movement-phase@1",
+          "resourceType": "BM",
+          "effectiveResourceCost": 1,
+          "stateRevision": 1,
+          "stateHash": "c2a308c1ea88eca943d0d3b99efc0a5d452e0f3968f5b111fa00798fc67ad9bf"
+        }
+      ],
+      "signedActions": 1,
+      "declaredNewAtoms": [
+        "rule-atom:wave4/foreign-faction-army-eligibility@1",
+        "rule-atom:wave4/faction-unit-runtime-conversion@1"
+      ],
+      "runtimeHash": "7ba8644248c473214a1d0042484c7825cea99200ea864a23553c441e712fa692",
+      "stateHash": "c2a308c1ea88eca943d0d3b99efc0a5d452e0f3968f5b111fa00798fc67ad9bf",
+      "idempotencyVerified": true,
+      "coldReplay": true
+    },
+    {
+      "kind": "imported-tank",
+      "paymentProofs": [
+        {
+          "definitionId": "unit:siege_tank/mode-transformation-movement-phase@1",
+          "resourceType": "BM",
+          "effectiveResourceCost": 1,
+          "stateRevision": 1,
+          "stateHash": "8355a90d522304d45f8f6f8cf93dfaecb86d42660c05b81dbc5b653bc74756f7"
+        }
+      ],
+      "signedActions": 1,
+      "declaredNewAtoms": [
+        "rule-atom:wave4/foreign-faction-army-eligibility@1",
+        "rule-atom:wave4/faction-unit-runtime-conversion@1"
+      ],
+      "runtimeHash": "d23fa6d55112d256c4bc945bfcef294587d2dff1281038c5b657f9ca311cb7e2",
+      "stateHash": "8355a90d522304d45f8f6f8cf93dfaecb86d42660c05b81dbc5b653bc74756f7",
+      "idempotencyVerified": true,
+      "coldReplay": true
+    },
+    {
+      "kind": "terran-control",
+      "paymentProofs": [
+        {
+          "definitionId": "unit:goliath/target-lock-movement-phase@1",
+          "resourceType": "CP",
+          "effectiveResourceCost": 1,
+          "stateRevision": 1,
+          "stateHash": "2dd6401d9facf1dd0b5b5071a44cc956078b8bcbcf5f21d5eeb13e3fca405902"
+        }
+      ],
+      "signedActions": 1,
+      "declaredNewAtoms": [],
+      "runtimeHash": "f7f9470a8dec095eba72635d18a437b2a41b06784de675aa3f48d7969f16ad3a",
+      "stateHash": "2dd6401d9facf1dd0b5b5071a44cc956078b8bcbcf5f21d5eeb13e3fca405902",
+      "idempotencyVerified": true,
+      "coldReplay": true
+    },
+    {
+      "kind": "zerg-burrow-control",
+      "paymentProofs": [
+        {
+          "definitionId": "card:hatchery/lie-in-wait-any@1",
+          "resourceType": null,
+          "effectiveResourceCost": 0,
+          "stateRevision": 1,
+          "stateHash": "12110428198eb97dbfdfaa7121653359975e6b9d6a2fe39965d694ee7c69fba2"
+        }
+      ],
+      "signedActions": 1,
+      "declaredNewAtoms": [],
+      "runtimeHash": "130935e00e1d98742b84f2de9b7dc963c90a78b1ab94ebe34be30fe266ca8a51",
+      "stateHash": "12110428198eb97dbfdfaa7121653359975e6b9d6a2fe39965d694ee7c69fba2",
+      "idempotencyVerified": true,
+      "coldReplay": true
+    }
+  ],
+  "coldImportedRosters": 6,
+  "sourceRecordCount": 119,
+  "selectedRecords": 101,
+  "heldDefinitions": 39,
+  "sourceUnitsNotRewritten": true,
+  "fullMatchAdmission": false,
+  "webAcceptance": false,
+  "wave3PlayerRoomsTouched": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

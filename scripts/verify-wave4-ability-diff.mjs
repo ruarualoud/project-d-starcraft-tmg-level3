@@ -116,6 +116,9 @@ for (const revision of WAVE4_REACTION_REVISIONS) {
     /REACTION_COMPONENT_SOURCE_UNRECOGNIZED/);
 }
 const report = { schema: 'starcraft_tmg_wave4_ability_diff_verification_v1', status: 'passed',
+  inventoryRole: 'frozen_initial_analysis; current implementation is recorded separately in executionProgress',
+  executionProgress: { ref: 'coordination/wave4/ability-wiring-progress.json',
+    implementedNewGameAtoms: (await read('coordination/wave4/ability-wiring-progress.json')).analysis.implementedNewGameAtoms },
   inventoryHash: inventory.inventoryHash, denominator: inventory.denominator,
   fullIdentityCount: identities.definitions.length, stableUnderSourceArrayReordering: true,
   allConsumerExportsExist: true, previousChangedIdentitiesNotAliased: true,

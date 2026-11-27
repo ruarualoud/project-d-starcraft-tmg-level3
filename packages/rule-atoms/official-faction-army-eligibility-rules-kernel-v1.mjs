@@ -1,4 +1,5 @@
 import { isDeepStrictEqual } from "node:util";
+import { allowsOfficialStukovArmyPurchaseV1 } from '../source-data/official-stukov-army-policy-v1.mjs';
 
 import { hashStarcraftTmgContract } from
   "../authoritative-engine/referee-crypto-v1.mjs";
@@ -165,12 +166,14 @@ export function resolveOfficialFactionTagEligibilityV1(input = {}) {
       "FACTION_TAG_CANDIDATE_PROFILE_INVALID");
     const missingTags = profile.factionTags.filter((tag) => (
       !faction.factionTags.includes(tag)));
+    const foreignEligible = allowsOfficialStukovArmyPurchaseV1(bundle.foreignArmyPolicy, faction.recordKey, profile);
     const rowBody = { candidateInstanceId, recordKey: profile.recordKey,
       candidateKind: profile.candidateKind, candidateName: profile.candidateName,
       candidateProfileHash: profile.profileHash,
       candidateFactionTags: [...profile.factionTags],
       factionCardTags: [...faction.factionTags], missingTags,
-      eligible: missingTags.length === 0 };
+      eligible: missingTags.length === 0 || foreignEligible,
+      ...(foreignEligible ? { eligibilityExceptionPolicyHash: bundle.foreignArmyPolicy.policyHash } : {}) };
     return { ...rowBody, rowHash: hashStarcraftTmgContract(rowBody) };
   }).sort((left, right) => left.candidateInstanceId.localeCompare(right.candidateInstanceId));
   const ineligible = rows.filter((entry) => !entry.eligible);
@@ -181,8 +184,8 @@ export function resolveOfficialFactionTagEligibilityV1(input = {}) {
   return result({ schema: "starcraft_tmg_official_faction_tag_eligibility_v1",
     procedureKind: "faction_tag_eligibility", factionCard: factionLayout(faction),
     candidateInstanceSetComplete: true, candidateCount: rows.length,
-    eligibilityRows: rows, everyCandidateTagAppearsOnFactionCard: true,
-    fewerCandidateTagsPermitted: true, anyMissingTagDisqualifies: true,
+    eligibilityRows: rows, everyCandidateTagAppearsOnFactionCard: rows.every(row => row.missingTags.length === 0),
+    fewerCandidateTagsPermitted: true, anyMissingTagDisqualifies: !rows.some(row => row.eligibilityExceptionPolicyHash),
     rulesOwnedTagComparison: true, clientSuppliedEligibilityAccepted: false,
     trainingTruth: false });
 }

@@ -1,4 +1,5 @@
 import { ARMY_BUILDER_RELEASE_SCHEMAS_V2, verifyOfficialArmyBuilderReleaseBundleV2 } from './official-army-builder-release-bundle-v2.mjs';
+import { allowsOfficialStukovArmyPurchaseV1 } from './official-stukov-army-policy-v1.mjs';
 import { hashStarcraftTmgContract } from
   "../authoritative-engine/referee-crypto-v1.mjs";
 import {
@@ -177,7 +178,8 @@ function exactRuleSectionRecords(dataset) {
       sourceVersion: dataset.dataVersions?.rulesVersion };
   });
 }
-export function compileOfficialFactionArmyProfilesV2(dataset, cardBundle, unitBundle, expectedSubFactionCount = 3) {
+export function compileOfficialFactionArmyProfilesV2(dataset, cardBundle, unitBundle, expectedSubFactionCount = 3,
+  { foreignArmyPolicy } = {}) {
   const factionCards = cardBundle.cardProfiles.filter((entry) => entry.isFactionCard);
   const subFactionRace = new Map();
   for (const profile of factionCards) {
@@ -247,11 +249,13 @@ export function compileOfficialFactionArmyProfilesV2(dataset, cardBundle, unitBu
     armyCandidateProfiles.map((candidate) => {
       const missingTags = candidate.factionTags.filter((tag) => (
         !faction.factionTags.includes(tag)));
+      const foreignEligible = allowsOfficialStukovArmyPurchaseV1(foreignArmyPolicy, faction.recordKey, candidate);
       const body = { factionRecordKey: faction.recordKey,
         candidateRecordKey: candidate.recordKey, candidateKind: candidate.candidateKind,
         candidateFactionTags: [...candidate.factionTags],
         factionCardTags: [...faction.factionTags], missingTags,
-        eligible: missingTags.length === 0 };
+        eligible: missingTags.length === 0 || foreignEligible,
+        ...(foreignEligible ? { eligibilityExceptionPolicyHash: foreignArmyPolicy.policyHash } : {}) };
       return { ...body, rowHash: hashStarcraftTmgContract(body) };
     })
   )).sort((left, right) => (`${left.factionRecordKey}:${left.candidateRecordKey}`)

@@ -1,4 +1,5 @@
 import { hashStarcraftTmgContract as hash } from '../authoritative-engine/referee-crypto-v1.mjs';
+import { readOfficialFactionUnitConversionV1 } from './official-faction-unit-conversion-v1.mjs';
 
 export const OFFICIAL_ROACHLING_BURROW_RESTRICTION_DEFINITION_ID = 'unit:roachling/underdeveloped-claws-any-phase@1';
 
@@ -29,12 +30,13 @@ export function projectOfficialUnitRestrictionsV1(state, pieceId) {
   const available = piece.isOnField === true && piece.isDestroyed !== true && Number(piece.currentModels) > 0
     && Number(piece.structureRules?.specialAbilitiesDisabledThroughRound ?? Number.NEGATIVE_INFINITY) < Number(state.round);
   const applied = available ? routes : [];
+  const conversion = readOfficialFactionUnitConversionV1(piece);
   return Object.freeze({
-    pieceId, cannotGainBurrowed: applied.some(route => route.cannotGainBurrowed || route.effectKind === 'cannot_gain_burrowed'),
+    pieceId, cannotGainBurrowed: Boolean(conversion) || applied.some(route => route.cannotGainBurrowed || route.effectKind === 'cannot_gain_burrowed'),
     cannotReturnToReserves: applied.some(route => route.cannotReturnToReserves),
     impactImmune: applied.some(route => route.impactImmune),
-    sourceDefinitionIds: Object.freeze(applied.map(route => route.definitionId).sort()),
-    sourceFeatureHashes: Object.freeze(applied.map(route => route.sourceFeatureHash).sort()),
+    sourceDefinitionIds: Object.freeze([...applied.map(route => route.definitionId), ...(conversion ? [conversion.policy.definitionId] : [])].sort()),
+    sourceFeatureHashes: Object.freeze([...applied.map(route => route.sourceFeatureHash), ...(conversion ? [conversion.policy.sourceFeatureHash] : [])].sort()),
     trainingTruth: false,
   });
 }

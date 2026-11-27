@@ -1411,7 +1411,7 @@ function routeAvailable(state, route, instance, actor, authorizeSeekerCast) {
   }
   const refreshChoices = dutyRefreshChoices(state, route, instance, actor);
   const available = costChoices.map(({ cost, targets: eligibleTargets }) => ({ targets: eligibleTargets, refreshChoices, rangeMilliInches,
-    payments: paymentSelections(state, route, instance.sideKey, cost.effectiveResourceCost),
+    payments: paymentSelections(state, { ...route, resourceType: cost.resourceType }, instance.sideKey, cost.effectiveResourceCost),
     resourceCostsByChoice: { default: cost },
     ...(modelComparison ? { modelComparison } : {}),
     ...(lightningCoverage ? { lightningCoverage } : {}),
@@ -1501,7 +1501,7 @@ function domainFor(state, route, instance, actor, available) {
       oncePerRoundPerUnitAndName: true,
       alreadyActivatedAllowed: route.alreadyActivatedAllowed === true,
       sourceCardInstanceId: instance.card?.cardInstanceId || null,
-      resourceType: route.resourceType, resourceCost: route.resourceCost,
+      resourceType: available.resourceCostsByChoice.default.resourceType, resourceCost: route.resourceCost,
       resourceCostsByChoice: clone(available.resourceCostsByChoice),
       ...(available.modelComparison ? { modelComparison: clone(available.modelComparison) } : {}),
       ...(broodmotherChoices ? { broodmotherEffects: clone(route.choices),
@@ -2194,14 +2194,14 @@ function pay(state, route, action, events) {
     if (cards.some((entry) => !entry)) fail("CHARACTERISTIC_STATUS_PAYMENT_CARD_UNKNOWN");
     const payment = resolveOfficialAbilityResourcePaymentV1({
       cardDataBundle: state.officialCardBuildPaymentDataBundle,
-      resourceType: route.resourceType, resourceCost: cost.effectiveResourceCost,
+      resourceType: cost.resourceType, resourceCost: cost.effectiveResourceCost,
       selectedCardInstanceSetComplete: true,
       selectedCardInstances: cards.map((card) => paymentRef(state, card)),
     });
     for (const id of payment.selectedCardsExhaustOnCommit) {
       cardById(state, action.sideKey, id).readiness = "exhausted";
     }
-    events.push({ type: "ability_resource_paid", resourceType: route.resourceType,
+    events.push({ type: "ability_resource_paid", resourceType: cost.resourceType,
       resourceCost: cost.effectiveResourceCost,
       printedResourceCost: route.resourceCost,
       resourceCostReduction: cost.resourceCostReduction,

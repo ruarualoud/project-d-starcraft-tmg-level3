@@ -9,7 +9,7 @@
     "records": 38,
     "requiredNewAtoms": 18,
     "withdrawnOnlyCandidateAtoms": 3,
-    "implementedNewGameAtoms": 0
+    "implementedNewGameAtoms": 2
   },
   "sourceCompilation": {
     "exactReactionRevisions": 11,
@@ -275,13 +275,13 @@
     }
   ],
   "next": [
-    "Implement Stukov foreign-faction army eligibility and runtime conversion contracts, preserving all source-held definitions",
-    "Wire new units/factions in dependency order; eighteen new game atom contracts remain unimplemented",
-    "Connect full Wave4 release selection, Builder, room factories, queries and media, then perform new-roster Web acceptance"
+    "Implement Hostile Incubation and spawn-round ability suppression before admitting Infested Missile Turret",
+    "Wire Stukov/Infested Marine/Infested Trooper gameplay and reviewed geometry; their army-building facts are connected",
+    "Implement the remaining sixteen game atom contracts, then full release selection, new-roster factories and Web acceptance; keep all 39 source-held definitions isolated"
   ],
   "modelCalls": 0,
   "trainingTruth": false,
-  "inventoryRole": "frozen initial analysis; current execution status is recorded in the gates below",
+  "inventoryRole": "Initial frozen difference snapshot. Current per-ID execution and implemented atoms are recorded here; counts are not inferred from catalogue availability.",
   "nativeTimingGate": {
     "passedDefinitions": 11,
     "signedPrimaryReceipts": 68,
@@ -309,12 +309,17 @@
     "perIdAnalysisComplete": true,
     "oldCardTimingNativeDefinitions": 11,
     "newUnitAndFactionEndToEnd": false,
-    "builderAndLobbyReleaseSelection": "scoped_creep_builder_verified_full_release_and_lobby_pending",
+    "builderAndLobbyReleaseSelection": "scoped_stukov_army_and_native_conversion_verified_full_release_and_lobby_pending",
     "requiredNewGameAtoms": 18,
-    "implementedNewGameAtoms": 0,
+    "implementedNewGameAtoms": 2,
     "sourceHeldDefinitions": 39,
     "fullWave4MatchAdmission": false,
-    "creepBuilderDefinitions": 3
+    "creepBuilderDefinitions": 3,
+    "newUnitBuilderOnlyRecords": [
+      "army_units:stukov",
+      "army_units:infested_marine",
+      "army_units:infested_trooper"
+    ]
   },
   "runtimeVerificationByDefinition": [
     {
@@ -819,9 +824,120 @@
       ],
       "verificationScope": "Same-source army-building component; no full room opening or Web UI acceptance",
       "fullMatchAdmission": false
+    },
+    {
+      "definitionId": "card:stukov_s_forces/ashes-of-the-ued-any@1",
+      "builderVerified": true,
+      "nativeRuntimeConversionVerified": true,
+      "newAtomIds": [
+        "rule-atom:wave4/foreign-faction-army-eligibility@1",
+        "rule-atom:wave4/faction-unit-runtime-conversion@1"
+      ],
+      "consumerRefs": [
+        {
+          "file": "packages/source-data/official-stukov-army-policy-v1.mjs",
+          "exportName": "createOfficialStukovArmyPolicyV1"
+        },
+        {
+          "file": "packages/source-data/official-faction-army-eligibility-data-bundle-v1.mjs",
+          "exportName": "compileOfficialFactionArmyProfilesV2"
+        },
+        {
+          "file": "packages/rule-atoms/official-faction-army-eligibility-rules-kernel-v1.mjs",
+          "exportName": "resolveOfficialFactionTagEligibilityV1"
+        },
+        {
+          "file": "packages/roster-strategist/army-builder-query-port-v1.mjs",
+          "exportName": "createOfficialArmyBuilderQueryPortV1"
+        },
+        {
+          "file": "packages/product-composition/official-standard-room-factory-v1.mjs",
+          "exportName": "buildOfficialRoomArmyAuditV1"
+        },
+        {
+          "file": "packages/product-composition/official-standard-room-factory-v1.mjs",
+          "exportName": "createOfficialRoomPieceFromRosterUnitV1"
+        },
+        {
+          "file": "packages/rule-atoms/official-faction-unit-conversion-v1.mjs",
+          "exportName": "bindOfficialFactionUnitConversionV1"
+        },
+        {
+          "file": "packages/product-composition/official-unit-ability-payment-modifiers-v1.mjs",
+          "exportName": "quoteOfficialUnitAbilityModifiersV1"
+        },
+        {
+          "file": "packages/product-composition/official-unit-ability-payment-modifiers-v1.mjs",
+          "exportName": "consumeOfficialUnitAbilityModifiersV1"
+        },
+        {
+          "file": "packages/product-composition/official-characteristic-status-family-adapter-v1.mjs",
+          "exportName": "createOfficialCharacteristicStatusFamilyAdapterV1"
+        },
+        {
+          "file": "packages/product-composition/official-reaction-family-adapter-v1.mjs",
+          "exportName": "createOfficialReactionFamilyAdapterV1"
+        },
+        {
+          "file": "packages/product-composition/official-selected-roster-ability-runtime-v1.mjs",
+          "exportName": "createOfficialSelectedRosterAbilityRuntimeV1"
+        },
+        {
+          "file": "packages/rule-atoms/official-unit-restrictions-v1.mjs",
+          "exportName": "projectOfficialUnitRestrictionsV1"
+        },
+        {
+          "file": "packages/product-composition/official-characteristic-status-component-runtime-v2.mjs",
+          "exportName": "createOfficialCharacteristicStatusComponentRuntimeV2"
+        },
+        {
+          "file": "packages/source-data/official-army-builder-catalogue-v2.mjs",
+          "exportName": "createOfficialArmyBuilderCatalogueV2"
+        }
+      ],
+      "evidenceRefs": [
+        "docs/development/wave4/evidence/stukov-army.public.json",
+        "docs/development/wave4/evidence/stukov-boundaries.public.json"
+      ],
+      "verificationScope": "Stukov imported-unit army audit, source identity, Infested tag, paid BM and BURROWED prohibition; four native component/control actions and cold replay",
+      "fullMatchAdmission": false
+    },
+    {
+      "definitionId": "card:stukov_s_forces/infestation-any@1",
+      "builderVerified": true,
+      "nativeRuntimeConversionVerified": false,
+      "newAtomIds": [],
+      "consumerRefs": [
+        {
+          "file": "packages/source-data/official-stukov-army-policy-v1.mjs",
+          "exportName": "createOfficialStukovArmyPolicyV1"
+        },
+        {
+          "file": "packages/roster-strategist/army-builder-query-port-v1.mjs",
+          "exportName": "createOfficialArmyBuilderQueryPortV1"
+        },
+        {
+          "file": "packages/product-composition/official-standard-room-factory-v1.mjs",
+          "exportName": "buildOfficialRoomArmyAuditV1"
+        },
+        {
+          "file": "packages/source-data/official-army-builder-catalogue-v2.mjs",
+          "exportName": "createOfficialArmyBuilderCatalogueV2"
+        },
+        {
+          "file": "packages/rule-atoms/official-faction-army-eligibility-rules-kernel-v1.mjs",
+          "exportName": "resolveOfficialArmySlotAuditV1"
+        }
+      ],
+      "evidenceRefs": [
+        "docs/development/wave4/evidence/stukov-army.public.json",
+        "docs/development/wave4/evidence/stukov-boundaries.public.json"
+      ],
+      "verificationScope": "Exactly one reviewed Virus group with printed costs; six source-bound army audits and cold import",
+      "fullMatchAdmission": false
     }
   ],
-  "executionStatus": "old_card_timing_and_creep_builder_batches_verified",
+  "executionStatus": "stukov_army_and_native_conversion_components_verified",
   "creepBuilderGate": {
     "verifiedDefinitions": 3,
     "legalCreepChoices": 5,
@@ -839,5 +955,124 @@
     "fullRoomOpening": false,
     "webUiAcceptance": false,
     "fullWave4Admission": false
+  },
+  "implementedAtoms": [
+    {
+      "atomId": "rule-atom:wave4/foreign-faction-army-eligibility@1",
+      "status": "implemented_scoped_component_verified",
+      "definitionIds": [
+        "card:stukov_s_forces/ashes-of-the-ued-any@1"
+      ],
+      "consumerRefs": [
+        {
+          "file": "packages/source-data/official-stukov-army-policy-v1.mjs",
+          "exportName": "createOfficialStukovArmyPolicyV1"
+        },
+        {
+          "file": "packages/source-data/official-faction-army-eligibility-data-bundle-v1.mjs",
+          "exportName": "compileOfficialFactionArmyProfilesV2"
+        },
+        {
+          "file": "packages/rule-atoms/official-faction-army-eligibility-rules-kernel-v1.mjs",
+          "exportName": "resolveOfficialFactionTagEligibilityV1"
+        },
+        {
+          "file": "packages/roster-strategist/army-builder-query-port-v1.mjs",
+          "exportName": "createOfficialArmyBuilderQueryPortV1"
+        },
+        {
+          "file": "packages/product-composition/official-standard-room-factory-v1.mjs",
+          "exportName": "buildOfficialRoomArmyAuditV1"
+        },
+        {
+          "file": "packages/source-data/official-army-builder-catalogue-v2.mjs",
+          "exportName": "createOfficialArmyBuilderCatalogueV2"
+        }
+      ],
+      "evidenceRefs": [
+        "docs/development/wave4/evidence/stukov-army.public.json",
+        "docs/development/wave4/evidence/stukov-boundaries.public.json"
+      ],
+      "fullMatchAdmission": false
+    },
+    {
+      "atomId": "rule-atom:wave4/faction-unit-runtime-conversion@1",
+      "status": "implemented_scoped_component_verified",
+      "definitionIds": [
+        "card:stukov_s_forces/ashes-of-the-ued-any@1"
+      ],
+      "consumerRefs": [
+        {
+          "file": "packages/product-composition/official-standard-room-factory-v1.mjs",
+          "exportName": "createOfficialRoomPieceFromRosterUnitV1"
+        },
+        {
+          "file": "packages/rule-atoms/official-faction-unit-conversion-v1.mjs",
+          "exportName": "bindOfficialFactionUnitConversionV1"
+        },
+        {
+          "file": "packages/product-composition/official-unit-ability-payment-modifiers-v1.mjs",
+          "exportName": "quoteOfficialUnitAbilityModifiersV1"
+        },
+        {
+          "file": "packages/product-composition/official-unit-ability-payment-modifiers-v1.mjs",
+          "exportName": "consumeOfficialUnitAbilityModifiersV1"
+        },
+        {
+          "file": "packages/product-composition/official-characteristic-status-family-adapter-v1.mjs",
+          "exportName": "createOfficialCharacteristicStatusFamilyAdapterV1"
+        },
+        {
+          "file": "packages/product-composition/official-reaction-family-adapter-v1.mjs",
+          "exportName": "createOfficialReactionFamilyAdapterV1"
+        },
+        {
+          "file": "packages/product-composition/official-selected-roster-ability-runtime-v1.mjs",
+          "exportName": "createOfficialSelectedRosterAbilityRuntimeV1"
+        },
+        {
+          "file": "packages/rule-atoms/official-unit-restrictions-v1.mjs",
+          "exportName": "projectOfficialUnitRestrictionsV1"
+        },
+        {
+          "file": "packages/product-composition/official-characteristic-status-component-runtime-v2.mjs",
+          "exportName": "createOfficialCharacteristicStatusComponentRuntimeV2"
+        }
+      ],
+      "evidenceRefs": [
+        "docs/development/wave4/evidence/stukov-army.public.json",
+        "docs/development/wave4/evidence/stukov-boundaries.public.json"
+      ],
+      "fullMatchAdmission": false
+    }
+  ],
+  "stukovArmyGate": {
+    "definitions": [
+      "card:stukov_s_forces/ashes-of-the-ued-any@1",
+      "card:stukov_s_forces/infestation-any@1"
+    ],
+    "newAtoms": 2,
+    "newUnitArmyBuildingRecords": [
+      "army_units:stukov",
+      "army_units:infested_marine",
+      "army_units:infested_trooper"
+    ],
+    "sourceRecords": 119,
+    "selectedRecords": 101,
+    "excludedRecords": 18,
+    "legalRosters": 6,
+    "negativeRosters": 8,
+    "sourceHeldRecordRejections": 4,
+    "coldImportedRosters": 6,
+    "nativeSignedActions": 4,
+    "nativeColdReplayCases": 4,
+    "policyHash": "c7fb090d678bc3f328678ca8bcdc980aa1cea6aa38032e30142666687307cc74",
+    "candidateManifestHash": "aedc53f8c1a04d133c41d8b9cfe91ec4427168d8d34cdf65b74cf79ced534880",
+    "evidenceRefs": [
+      "docs/development/wave4/evidence/stukov-army.public.json",
+      "docs/development/wave4/evidence/stukov-boundaries.public.json"
+    ],
+    "fullMatchAdmission": false,
+    "webAcceptance": false
   }
 }

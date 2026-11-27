@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-11-27T14:30:17.742Z",
+  "updatedAt": "2026-11-27T15:21:14.228Z",
   "ticket": 23,
   "slice": 249,
   "completion": "33/36",
@@ -9,32 +9,36 @@
     249,
     250
   ],
-  "summary": "整版Wave4新数据尚未接完。156条差分完成；11条旧卡时点原生68主链回执、Web局部11/11；另3条Creep建军修订通过同源Builder/工厂审核/军表卡资源与5组冷导入。18个新游戏原子实现0，新单位/势力与完整Builder/大厅待接；39条来源阻断隔离，Wave3仍9/16。",
+  "summary": "整版Wave4仍未准入。156条差分完成；旧卡14条修订已有局部接线证据。本批Stukov跨种族建军与运行时转换新增2原子（累计2/18），4条Native签名动作及冷重放通过；3个新单位的建军资料已接，完整行为/几何待。39条来源阻断隔离；Wave3仍9/16。",
   "runPolicy": "仅 codex/wave4-web-pvp；服务端口 5484、数据 build/wave4-web/host。本轮已授权离线工程验收及按成果提交推送。5483 Wave3 玩家房与主线保留；付费模型、K3、AI 对局、复盘与生产发布继续暂停。",
   "items": [
     {
       "id": "wave4-ability-diff",
-      "title": "Wave4 W4-02：旧卡14条修订局部接线；整版数据未完",
+      "title": "Wave4 W4-02：Stukov两原子组件已验；整版数据未完",
       "implementation": {
         "status": "partial",
-        "note": "逐ID差分156/156；11条时点原生68主链回执，3条Creep同源建军消费者通过；新增游戏原子0/18。",
+        "note": "逐ID差分156/156；旧卡14条修订局部已验。Stukov跨种族建军及运行时转换新增2原子，累计2/18；101条同源候选，39条来源阻断隔离。",
         "evidence": [
           "content/source-releases/wave4-20261127/abilities/ability-diff.json",
           "docs/development/wave4/evidence/ability-diff.public.json",
           "docs/development/wave4/evidence/native-armour-timing.public.json",
           "docs/development/wave4/evidence/native-other-timing.public.json",
-          "docs/development/wave4/evidence/creep-builder.public.json"
+          "docs/development/wave4/evidence/creep-builder.public.json",
+          "docs/development/wave4/evidence/stukov-army.public.json",
+          "docs/development/wave4/evidence/stukov-boundaries.public.json"
         ]
       },
       "productHandoff": {
         "status": "partial",
-        "note": "旧卡时点Web局部11/11；Creep同版Builder/工厂建军审核/军表卡资源5组冷导入、16反例通过。新单位/势力、完整开局和大厅待接；39条来源隔离。",
+        "note": "Stukov 6份军表冷导入、8建军反例、4源阻断候选、4 Native签名动作和冷重放通过；3新单位仅建军资料，完整行为/几何/房间/Web待。",
         "evidence": [
           "docs/development/wave4/evidence/native-armour-timing.public.json",
           "docs/development/wave4/evidence/native-other-timing.public.json",
           "docs/development/wave4/evidence/timing-web.public.json",
           "docs/development/wave4/evidence/ability-wave3-cold-read.public.json",
-          "docs/development/wave4/evidence/creep-builder.public.json"
+          "docs/development/wave4/evidence/creep-builder.public.json",
+          "docs/development/wave4/evidence/stukov-army.public.json",
+          "docs/development/wave4/evidence/stukov-boundaries.public.json"
         ]
       },
       "liveOutput": {
@@ -648,11 +652,16 @@
     }
   ],
   "next": [
-    "W4-02：三条Creep建军消费者已验；下一批实现Stukov跨种族建军及运行时转换合同，按18个新合同依赖接新单位/势力。",
+    "W4-02：接Hostile Incubation回合禁用合同与Infested Missile Turret；续接Stukov/Infested Marine/Infested Trooper的完整行为和几何，再依赖实现其余16个新合同。",
     "39条来源继续阻断：Archon撤下、原生感染机械CP语义及Alarak阶段拼写，不以旧单位定点验收代替准入。",
     "能力准入后推进W4-03完整发布选择、Builder/工厂/查询与媒体，再做W4-04双浏览器500/2000分新军表验收；付费模型、K3、AI、复盘、生产发布保持暂停。"
   ],
   "navigation": [
+    {
+      "when": "查看新增2原子、进口单位BM支付与源阻断边界",
+      "title": "Stukov建军与运行时接线",
+      "path": "docs/development/wave4/stukov-army-wiring.zh-CN.md"
+    },
     {
       "when": "查看11条旧卡局部接线；区分整版新数据未完成项",
       "title": "原生时点与Web局部验收",

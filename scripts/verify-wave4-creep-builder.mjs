@@ -44,8 +44,10 @@ assert.equal(hash(dataset), sourceHashBefore, 'SOURCE_DATASET_MUST_NOT_BE_FILTER
 for (const sourceRecordKeys of [[], 4, ['missing'], [args.sourceRecordKeys[0], args.sourceRecordKeys[0]]]) {
   assert.throws(() => createOfficialArmyBuilderCatalogueV2({ ...args, sourceRecordKeys }), /source_record_selection/);
 }
-assert.throws(() => createOfficialArmyBuilderCatalogueV2({ ...args, sourceRecordKeys: undefined }),
-  /uncompiled_purchase_rule:tactical_cards:stukov_s_forces:Ashes of the UED/);
+const fullSourceFacts = createOfficialArmyBuilderCatalogueV2({ ...args, sourceRecordKeys: undefined });
+assert.equal(fullSourceFacts.productionRoomEligible, false);
+assert.equal(fullSourceFacts.armyResourceBudgetDataBundle.factionArmyEligibilityDataBundle.foreignArmyPolicy.definitionId,
+  'card:stukov_s_forces/ashes-of-the-ued-any@1');
 const oldDataset = await read('content/source-releases/wave4-20261127/compatibility/wave3-dataset.json');
 const oldSnapshot = await read('content/source-releases/wave4-20261127/compatibility/wave3-snapshot.json');
 const oldManifest = await read('content/source-releases/wave3-20261112-army-builder-release-v2.json');

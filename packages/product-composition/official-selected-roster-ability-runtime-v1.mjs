@@ -702,7 +702,7 @@ function routeAvailable(state, route, actor) {
     fail("SELECTED_ABILITY_NO_TARGET_IN_RANGE", route.routeId);
   }
   const cost = resourceCostContract(state, route, actor.id);
-  return { targets, payments: paymentSelections(state, route, cost.effectiveResourceCost),
+  return { targets, payments: paymentSelections(state, { ...route, resourceType: cost.resourceType }, cost.effectiveResourceCost),
     resourceCostsByChoice: { default: cost } };
 }
 function effectContractForRoute(route) {
@@ -760,7 +760,7 @@ function domainFor(state, route, actor, available) {
     constraints: { useTiming: ["before_action", "after_action"],
       oncePerRoundPerUnitAndName: true, oncePerGame: route.oncePerGame === true,
       sourceCardInstanceId: route.sourceCardInstanceId || null,
-      resourceType: route.resourceType, resourceCost: route.resourceCost,
+      resourceType: available.resourceCostsByChoice.default.resourceType, resourceCost: route.resourceCost,
       resourceCostsByChoice: clone(available.resourceCostsByChoice),
       rangeInches: route.rangeInches || null,
       ...(route.definitionId && route.targetKind === 'enemy_within' ? { lineOfSightRequired: true } : {}) },
@@ -1245,7 +1245,7 @@ export function applyOfficialSelectedRosterAbilityActionV1(
         .map((id) => cardById(state, route.sideKey, id));
       const payment = resolveOfficialAbilityResourcePaymentV1({
         cardDataBundle: state.officialCardBuildPaymentDataBundle,
-        resourceType: route.resourceType, resourceCost: cost.effectiveResourceCost,
+        resourceType: cost.resourceType, resourceCost: cost.effectiveResourceCost,
         selectedCardInstanceSetComplete: true,
         selectedCardInstances: cards.map((card) => paymentRef(state, card)),
       });
@@ -1253,7 +1253,7 @@ export function applyOfficialSelectedRosterAbilityActionV1(
         const card = cardById(state, route.sideKey, id);
         card.readiness = "exhausted";
       }
-      events.push({ type: "ability_resource_paid", resourceType: route.resourceType,
+      events.push({ type: "ability_resource_paid", resourceType: cost.resourceType,
         resourceCost: cost.effectiveResourceCost, paymentResultHash: payment.resultHash,
         exhaustedCardInstanceIds: payment.selectedCardsExhaustOnCommit,
         trainingTruth: false });

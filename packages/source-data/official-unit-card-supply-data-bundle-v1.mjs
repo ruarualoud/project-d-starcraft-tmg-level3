@@ -197,6 +197,7 @@ function compileProfiles(dataset, baseBundle, options = {}) {
   const indexes = dataset.recordIndex.filter((entry) => (
     entry.recordType === "unit"
       && entry.authorityDisposition === "official_current_product_candidate"
+      && (!options.recordKeys || options.recordKeys.includes(entry.recordKey))
   ));
   if (options.releaseBound !== true && indexes.length !== 26) {
     fail("UNIT_CARD_SUPPLY_UNIT_DENOMINATOR_DRIFT");
@@ -353,9 +354,11 @@ export function createOfficialUnitCardSupplyDataBundleV2(input = {}) {
   if (geometry.sourceLockHash !== manifest.source.sourceRevisionHash) {
     fail("UNIT_CARD_SUPPLY_GEOMETRY_REVISION_MISMATCH");
   }
-  const compiled = compileProfiles(dataset, geometry, { releaseBound: true });
+  const recordKeys = units.catalogueSelection ? units.unitProfiles.map(row => row.recordKey) : null;
+  const compiled = compileProfiles(dataset, geometry, { releaseBound: true, recordKeys });
   if (compiled.profiles.length !== units.unitProfiles.length
-    || compiled.profiles.length !== geometry.unitRecordKeys.length) {
+    || (!recordKeys && compiled.profiles.length !== geometry.unitRecordKeys.length)
+    || (recordKeys && recordKeys.some(key => !geometry.unitRecordKeys.includes(key)))) {
     fail("UNIT_CARD_SUPPLY_RELEASE_DENOMINATOR_MISMATCH");
   }
   for (const profile of compiled.profiles) {
@@ -371,6 +374,7 @@ export function createOfficialUnitCardSupplyDataBundleV2(input = {}) {
   }
   const body = {
     schema: OFFICIAL_UNIT_CARD_SUPPLY_DATA_BUNDLE_SCHEMA_V2,
+    ...(units.catalogueSelection ? { catalogueSelection: units.catalogueSelection } : {}),
     version: "2.0.0",
     sourceBinding: { releaseId: manifest.releaseId,
       sourceSnapshotHash: dataset.sourceSnapshotHash, normalizedDatasetHash: dataset.datasetHash },
@@ -390,8 +394,9 @@ export function createOfficialUnitCardSupplyDataBundleV2(input = {}) {
     baseGeometryBundleHash: geometry.bundleHash,
     baseGeometryProfileIndexHash: hashStarcraftTmgContract(geometry.profiles),
     audit: { unitCount: compiled.profiles.length,
-      geometryBoundCount: geometry.profiles.length,
-      geometryMissingCount: geometry.missingProfiles.length },
+      geometryBoundCount: geometry.profiles.filter(row => !recordKeys || recordKeys.includes(row.recordKey)).length,
+      geometryMissingCount: geometry.missingProfiles.filter(row => !recordKeys || recordKeys.includes(row.recordKey)).length,
+      ...(recordKeys ? { geometrySourceUnitCount: geometry.unitRecordKeys.length } : {}) },
     armySlotTypes: ARMY_SLOT_TYPES, phaseBoxPhases: PHASES,
     supplyUses: ["deployment", "mission_marker_control", "scoring", "tactical_mass"],
     sourcePolicy: { refreshDuringDevelopment: false, repositoryFallbackAllowed: false,

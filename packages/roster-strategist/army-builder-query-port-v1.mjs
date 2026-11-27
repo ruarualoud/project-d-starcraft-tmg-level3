@@ -418,6 +418,11 @@ export function createOfficialArmyBuilderQueryPortV1(input = {}) {
             profileHash: entry.profileHash }));
         return { recordKey: unit.recordKey, unitId: unit.unitId,
           unitName: unit.unitName, factionTag: unit.factionTag,
+          ...(row.eligibilityExceptionPolicyHash ? { factionUnitConversion: {
+            policyHash: row.eligibilityExceptionPolicyHash,
+            sourceDefinitionId: factionBundle.foreignArmyPolicy.definitionId,
+            addedCombatTag: factionBundle.foreignArmyPolicy.addedCombatTag,
+            specialAbilityResourceType: { from: 'CP', to: 'BM' }, cannotGainBurrowed: true } } : {}),
           ...(bundle.sourceBinding ? { isUnique: factionBundle.armyCandidateProfiles
             .find(entry => entry.recordKey === unit.recordKey)?.isUnique === true } : {}),
           armySlotType: unit.armySlotType,

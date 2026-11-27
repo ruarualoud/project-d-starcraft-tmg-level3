@@ -13,7 +13,7 @@
 | 已有原子新组合 | 34 | 已有合同的触发、目标、作用域或顺序新组合 |
 | 新增语义 | 41 | 至少依赖一个当前缺失的执行合同 |
 
-**新增原子需求为 18 个，当前新增游戏原子实现为 0。** 同一缺失执行合同跨多个来源 ID 只计一次；新武器名字、数值档案和既有合同的新组合不分别增加原子数。另有 3 个只属于 Archon 撤下记录的候选合同，单独保留，未计入这 18 个。该数值是本次冻结范围的工程分解，不是已实现能力数。
+**新增原子需求为 18 个，当前已实现并通过组件验收 2 个。** 同一缺失执行合同跨多个来源 ID 只计一次；新武器名字、数值档案和既有合同的新组合不分别增加原子数。另有 3 个只属于 Archon 撤下记录的候选合同，单独保留，未计入这 18 个。该数值是本次冻结范围的工程分解，不是已实现能力数。
 
 逐定义原件、源字段哈希、触发、选择权、结算、清除、消费者函数和未覆盖项见 [完整机器清单](../../../content/source-releases/wave4-20261127/abilities/ability-diff.json)；[身份登记表](../../../content/source-releases/wave4-20261127/abilities/feature-registry.json) 与 [来源别名目录](../../../content/source-releases/wave4-20261127/abilities/identity-catalogue.json) 可离线重建。
 
@@ -81,8 +81,8 @@
 | `rule-atom:wave4/infestation-activation-exchange@1` | Consume the enemy INFESTATION after marking that enemy activated; optionally select a nearby non-Unique friendly Infested unit and remove its activation marker, preserving phase ownership. | 需求已拆分，尚未实现 |
 | `rule-atom:wave4/infestation-reaction-lock@1` | For an infected enemy, block its own enemy reactions and enemy reactions targeting it, while retaining the explicit Restoration exception and controller-relative allegiance. | 需求已拆分，尚未实现 |
 | `rule-atom:wave4/infestation-placement-reserve-lock@1` | For an infected enemy, reject PLACE, set effects and return-to-reserves across all movement/lifecycle entry points; ordinary legal movement remains available. | 需求已拆分，尚未实现 |
-| `rule-atom:wave4/foreign-faction-army-eligibility@1` | Permit Terran Ground Mechanical purchases only under the Stukov faction while applying costs, slots, uniqueness and upgrade rules to the original source identity. | 需求已拆分，尚未实现 |
-| `rule-atom:wave4/faction-unit-runtime-conversion@1` | Bind the imported units to Infested tag addition, CP-to-BM payment conversion and BURROWED prohibition without changing unrelated units or rewriting the source records. | 需求已拆分，尚未实现 |
+| `rule-atom:wave4/foreign-faction-army-eligibility@1` | Permit Terran Ground Mechanical purchases only under the Stukov faction while applying costs, slots, uniqueness and upgrade rules to the original source identity. | 组件接线通过，正式对局未准入 |
+| `rule-atom:wave4/faction-unit-runtime-conversion@1` | Bind the imported units to Infested tag addition, CP-to-BM payment conversion and BURROWED prohibition without changing unrelated units or rewriting the source records. | 组件接线通过，正式对局未准入 |
 | `rule-atom:wave4/spawn-round-ability-lock@1` | When the faction sets its structure, suppress its abilities except Structure for that round, then restore the correct abilities after cleanup; do not silently grant SUMMON semantics. | 需求已拆分，尚未实现 |
 | `rule-atom:wave4/shield-scaled-effect-value@1` | Use remaining shield points to derive attack/IMPACT dice or detonation damage with each printed rounding rule. Withdrawn Archon source only. | Archon 撤下来源专属，暂不实施 |
 | `rule-atom:wave4/shield-reservoir-damage-payment@1` | Reduce a friendly pending damage batch by spending this source shield reservoir with the exact optional/fixed amount and shielded requirements. Conflicting withdrawn Archon drafts. | Archon 撤下来源专属，暂不实施 |
@@ -236,8 +236,8 @@
 | `card:power_field/guardian-shell-any@2` | 已有原子 | reaction / reactionRuntime | 0 | 无源级阻断；接线待验 |
 | `card:robotics_facility/plasma-shields-any@2` | 已有原子 | reaction / reactionRuntime | 0 | 无源级阻断；接线待验 |
 | `card:robotics_support_bay/master-of-robotics-any@1` | 已有原子新组合 | characteristic | 0 | 无源级阻断；接线待验 |
-| `card:stukov_s_forces/ashes-of-the-ued-any@1` | 新增语义 | builder / payment / characteristic | 2 | 无源级阻断；接线待验 |
-| `card:stukov_s_forces/infestation-any@1` | 已有原子新组合 | builder | 0 | 无源级阻断；接线待验 |
+| `card:stukov_s_forces/ashes-of-the-ued-any@1` | 新增语义 | builder / payment / characteristic | 2 | 建军／运行时组件已验；完整房间待 |
+| `card:stukov_s_forces/infestation-any@1` | 已有原子新组合 | builder | 0 | 必选Virus建军已验；完整房间待 |
 | `card:stukov_s_forces/hostile-incubation-any@1` | 新增语义 | lifecycle / characteristic | 1 | 无源级阻断；接线待验 |
 | `card:tal_darim/proxy-pylon-any@1` | 新增语义 | lifecycle / characteristic | 1 | 无源级阻断；接线待验 |
 | `card:tal_darim/chain-of-ascension-any@1` | 新增语义 | supply / characteristic | 1 | 无源级阻断；接线待验 |
@@ -264,4 +264,4 @@ node scripts/verify-wave4-wave3-cold-read.mjs build/wave4-web/host/run-qI3May
 
 组件验收和旧房冷读复用本树已备的 Wave3 冻结缓存与 W4-01 隔离房；这些命令不读 5483 玩家服务。旧房的状态、绑定、完整回放和元数据字节均匹配 W4-01 原证据，没有新增动作。
 
-11 条时点与三条 Creep 修订已完成各自限定范围的消费者验收。下一步先实现 Stukov 跨种族建军及运行时转换合同，按依赖接新增单位／势力，并推进完整房间与 Web 准入。18 个新合同当前实现 0，按语义组复用证据，分别报告组件、正式房间与 Web 准出。付费模型、K3、AI 对局、复盘与生产发布继续暂停。
+11 条时点、三条 Creep 及 Stukov 跨种族建军／运行时转换已完成各自范围的消费者验收，见 [Stukov 记录](stukov-army-wiring.zh-CN.md)。18 个新合同当前实现 2；下一步接 Hostile Incubation 的回合禁用、Infested Missile Turret，再接新单位完整行为和几何。组件、正式房间与 Web 分别验收。付费模型、K3、AI 对局、复盘与生产发布继续暂停。

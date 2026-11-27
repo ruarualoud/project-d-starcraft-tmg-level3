@@ -1,4 +1,5 @@
 import { assertOfficialReleaseSourceV2 } from '../source-data/official-release-context-v2.mjs';
+import { bindOfficialFactionUnitConversionV1 } from '../rule-atoms/official-faction-unit-conversion-v1.mjs';
 import { requireOfficialReleaseRoomAbilityRuntimeV2 } from './official-release-room-ability-admission-v2.mjs';
 import { inspectOfficialReleaseRoomRosterCoverageV2, prepareOfficialReleaseRoomNativeActionsV2,
   officialReleaseRosterIncrementOptionsV2 } from './official-release-room-native-actions-v2.mjs';
@@ -404,6 +405,7 @@ export function buildOfficialRoomArmyAuditV1(bundle, sideKey, recipe,
   if (!faction) fail("STANDARD_ROOM_FACTION_UNKNOWN", recipe.factionRecordKey);
   validateOfficialFactionRequiredTacticalCardGroupsV1({
     dataset: configuration.dataset,
+    foreignArmyPolicy: factionBundle.foreignArmyPolicy,
     factionRecordKey: recipe.factionRecordKey,
     selectedTacticalCardRecordKeys: recipe.tacticalCardRecordKeys,
   });
@@ -547,7 +549,7 @@ export function createOfficialRoomPieceFromRosterUnitV1(dataset,
     rows.push(entry);
     equipmentByModel.set(entry.modelId, rows);
   }
-  return {
+  const piece = {
     id: unit.unitInstanceId, unitInstanceId: unit.unitInstanceId,
     name: unit.unitName, unitName: unit.unitName, unitId: unit.unitId,
     sideKey, officialUnitRecordKey: unit.recordKey,
@@ -601,6 +603,10 @@ export function createOfficialRoomPieceFromRosterUnitV1(dataset,
     })),
     trainingTruth: false,
   };
+  const factionBundle = registryContext.bundle.unitCompositionUpgradeDataBundle
+    .armyResourceBudgetDataBundle.factionArmyEligibilityDataBundle;
+  return bindOfficialFactionUnitConversionV1(piece, factionBundle.foreignArmyPolicy,
+    registryContext.result.rostersByPlayer[sideKey].factionCard.recordKey);
 }
 
 function applyReserveMutation(state, resolution) {

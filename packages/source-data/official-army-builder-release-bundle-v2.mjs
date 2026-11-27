@@ -99,6 +99,10 @@ export function verifyOfficialArmyBuilderReleaseBundleV2(bundle, kind) {
       .map(row => row.recordKey).sort();
     requireValue(hash(compiledKeys) === hash([...selection.selectedRecordKeys].sort()), 'catalogue_selection_coverage');
   }
+  if (kind === 'factions' && bundle.foreignArmyPolicy) {
+    verifyOfficialStukovArmyPolicyV1(bundle.foreignArmyPolicy);
+    requireValue(hash(bundle.foreignArmyPolicy.sourceBinding) === hash(bundle.sourceBinding), 'foreign_army_policy_binding');
+  }
   if (kind === 'units') {
     for (const unit of bundle.unitProfiles) {
       requireValue(Array.isArray(unit.compositions) && unit.compositions.length > 0, 'unit_compositions');
@@ -123,3 +127,4 @@ export function verifyOfficialArmyBuilderReleaseBundleV2(bundle, kind) {
   if (checkProfileTree(bundle)) verified.add(bundle);
   return true;
 }
+import { verifyOfficialStukovArmyPolicyV1 } from './official-stukov-army-policy-v1.mjs';

@@ -396,7 +396,9 @@ export function getOfficialAttackProfileV1(catalogue, query = {}) {
 export function createOfficialAttackProfileCatalogueV3({ context, recordKeys } = {}) {
   const manifest = assertOfficialReleaseSourceV2(context, context || {});
   const abilityCatalogue = context.resources?.abilityIdentities ? createOfficialAbilityEffectIrCatalogueV1({
-    dataset: context.dataset, identityCatalogue: context.resources.abilityIdentities }) : null;
+    dataset: context.dataset, identityCatalogue: context.resources.abilityIdentities,
+    ...(recordKeys === undefined ? {} : { sourceDefinitionIds: context.resources.abilityIdentities.definitions
+      .filter(row => recordKeys.includes(row.recordKey)).map(row => row.definitionId) }) }) : null;
   const featureKinds = abilityCatalogue ? new Map(abilityCatalogue.definitions
     .filter(definition => definition.sourceKind === 'unit_feature')
     .map(definition => [definition.recordKey + ':' + definition.sourceIndex, definition.activationKind])) : null;

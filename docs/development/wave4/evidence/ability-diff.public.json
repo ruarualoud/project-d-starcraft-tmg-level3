@@ -1,6 +1,11 @@
 {
   "schema": "starcraft_tmg_wave4_ability_diff_verification_v1",
   "status": "passed",
+  "inventoryRole": "frozen_initial_analysis; current implementation is recorded separately in executionProgress",
+  "executionProgress": {
+    "ref": "coordination/wave4/ability-wiring-progress.json",
+    "implementedNewGameAtoms": 2
+  },
   "inventoryHash": "c922fc85ecafdbe88597dae454b3263727f9732d12f639d297fbabdec87a7543",
   "denominator": {
     "records": 38,

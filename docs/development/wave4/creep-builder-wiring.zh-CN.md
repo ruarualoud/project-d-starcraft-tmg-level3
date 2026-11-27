@@ -20,7 +20,7 @@
 
 5 种合法 Creep 选择全部通过；16 个反例覆盖缺选、多选、重复、错势力及另一方缺选。重复同一卡在现有 Builder 中返回 `unknown / UNIQUE_CARD_SINGLE_COPY_LIMIT`，仍拒绝进入合法军表；工厂独立以必选组数量拒绝。未改变既有拒绝分类。
 
-完整 Builder 当前仍拒绝 Stukov 的 `Ashes of the UED` 未实现建军规则。本批使用显式 [范围清单](../../../content/source-releases/wave4-20261127/creep-builder-scope-v1.json)：完整分母 119 条单位／卡记录中接入 94 条已有记录，另 25 条新增记录排除；94 条事实全部重新来自 Wave4 原始数据。数据集及原候选保持原样。范围、排除清单与完整分母进入每层目录及 Builder 回执，`fullReleaseAdmission=false`；目录内保留的其他能力也不因此获得对局准入。39 条来源阻断涉及的记录全部未进入本批候选。
+该批验收时，完整 Builder 仍拒绝 Stukov 的 `Ashes of the UED`；后续 [Stukov 批次](stukov-army-wiring.zh-CN.md) 已解除这项建军缺口，整版对局仍未准入。本批使用显式 [范围清单](../../../content/source-releases/wave4-20261127/creep-builder-scope-v1.json)：完整分母 119 条单位／卡记录中接入 94 条已有记录，另 25 条新增记录排除；94 条事实全部重新来自 Wave4 原始数据。数据集及原候选保持原样。范围、排除清单与完整分母进入每层目录及 Builder 回执，`fullReleaseAdmission=false`；目录内保留的其他能力也不因此获得对局准入。39 条来源阻断涉及的记录全部未进入本批候选。
 
 可重复执行：
 
@@ -32,4 +32,4 @@ node scripts/verify-wave4-ability-diff.mjs
 
 编译产物位于 `build/wave4-web/creep-builder/candidate`，可以注册到正式 ReleaseResolver，以 `purpose: army_building` 读取；对局用途因必要组件未齐而被正式解析器拒绝。候选 manifest 哈希固定为 `cc3c4d21a803555783667889b0ee6b90355fb1202ba157c14caaced091dc6494`。验收同时与提交 `97bc694` 的旧编译器对比相同输入，Wave3 Builder 输出字节等价；旧版来源被新目录拒绝。156 条差分门继续通过，39 条来源阻断不变。
 
-当前 14 条旧定义修订已有对应范围内的执行证据：11 条战斗时点原生／局部 Web，以及本批三条建军主体。18 个必需新游戏原子仍实现 0，整版 Wave4 尚未准入。后续先处理 Stukov 跨种族建军和运行时转换的明确合同，再接新单位／势力及完整房间与 Web。Wave3 玩家房未读写，5483 未操作；付费模型、K3、AI 对局、复盘和生产发布继续暂停。
+当前 14 条旧定义修订已有对应范围内的执行证据：11 条战斗时点原生／局部 Web，以及本批三条建军主体。该批结束时新增原子为 0；后续 Stukov 批次累计实现 2/18，整版 Wave4 尚未准入。新单位完整行为、几何及完整房间与 Web 继续按依赖接线。Wave3 玩家房未读写，5483 未操作；付费模型、K3、AI 对局、复盘和生产发布继续暂停。
