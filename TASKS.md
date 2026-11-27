@@ -13,4 +13,6 @@
 - [x] 恢复本房手动试聊配置：累计上限显式增至 6，保留首轮已用 3 次，给用户再试 3 次；不更改 profile hash 或删除日志。界面显示剩余次数，产品房隐藏未使用的另一套接通控制台，聊天默认展开。
 - [x] 服务更新后用户已在原密码框重新启用 Key；真实界面确认「已连接 · 剩余 3 次请求」，原故事消息仍保存且继续按钮可用。助手没有发送或继续消息；聊天交给用户自行体验。余额仍由用户在对应组织的 Billing／Credit grants 查看，不能用本地费用估算反推余额。
 
-证据：[真人写表修复](docs/development/wave3/player-roster-fixes-2026-11-27.zh-CN.md)、[比赛军表出处](docs/development/wave3/longshanks-polish-terran-tank-roster.zh-CN.md)、[OpenAI 三次真实副官试用](docs/development/wave3/openai-companion-trial-2026-11-27.zh-CN.md)、[按需上下文与玩家试聊](docs/development/wave3/companion-context-on-demand-2026-11-27.zh-CN.md)。
+- [x] 六位副官资料与实际消费审计完成：34 条简介 facts／28 关系标签／31 时代，但世界书仅 18 条、正文合计 3155 英文字符。真实组包核对发现 facts／关系／来源字典未提升，且条目时代过滤与故事回复方式有共同缺口；先接线修体验估计 2–3 人日，六位基础故事可用共 10–16 人日。仅形成审计和工作量报告，未补写角色包、调用模型或改动房间。
+
+证据：[真人写表修复](docs/development/wave3/player-roster-fixes-2026-11-27.zh-CN.md)、[比赛军表出处](docs/development/wave3/longshanks-polish-terran-tank-roster.zh-CN.md)、[OpenAI 三次真实副官试用](docs/development/wave3/openai-companion-trial-2026-11-27.zh-CN.md)、[按需上下文与玩家试聊](docs/development/wave3/companion-context-on-demand-2026-11-27.zh-CN.md)、[六位副官资料缺口与工作量](docs/development/wave3/companion-data-gap-audit-2026-11-27.zh-CN.md)。
