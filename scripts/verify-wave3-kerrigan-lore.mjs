@@ -43,13 +43,19 @@ assert.equal(restored.knowledgeLibraries[0].eligibleRecords,24);
 const reply=await product.service.sendMessage({...args,conversationId:opened.conversationId,content:'讲讲你和雷诺初遇的故事'});
 assert.equal(reply.ok,true,JSON.stringify(reply));
 assert(JSON.stringify(requests[0]).includes('安提加主星'),'Source-backed first-meeting fact must reach the actual assembled request');
+const storyPacket=JSON.parse(requests[0].messages.find(row=>row.role==='system'&&row.content.includes('"roomContext"')).content);
+const storyKnowledge=JSON.stringify(storyPacket.contextAssembly.sections.filter(row=>row.layer==='worldbook'));
+assert(!/现有主源|主源没有提供|现有资料|编剧解释/u.test(storyKnowledge),'Role memories must not contain editorial/source-audit prose');
+assert(storyKnowledge.includes('character_memory'));assert(!storyKnowledge.includes('canon_summary'));
+assert(storyKnowledge.includes('我在安提加主星'));
 const evidence=reply.messages.at(-1).knowledge;
 assert(evidence.selectedEntryIds.includes('kerrigan_event_antiga_meeting'));
 assert(evidence.sources.some(source=>source.url.endsWith('/kerrigan-hero-week')));
 assert.equal(evidence.libraryRef.hash,library.integrity.hash);
 assert.equal(evidence.responseMode,'lore_story');
 const wire=liveProviderRequestFromCompanion(requests[0],96*1024);
-assert(wire.userMessage.includes('两到三段'));assert(!wire.userMessage.includes('一到两句'));
+assert(wire.userMessage.includes('第一人称'));assert(!wire.userMessage.includes('一到两句'));
+assert(wire.userMessage.includes('不主动罗列'));
 assert(wire.maxOutputUnits>1000);assert(wire.maxOutputUnits<1536);
 assert(!JSON.stringify(requests[0]).includes('Companion author note (sealed package'));
 const latest=await compose([library]).service.readConversation({...args,conversationId:opened.conversationId});
@@ -65,8 +71,21 @@ assert.equal(requests.length,1,'Restoring pending history must not generate or c
 const wb=await product.service.readWorldbook({...args,conversationId:opened.conversationId});
 assert.equal(wb.ok,true,JSON.stringify(wb));assert.equal(wb.entryCount,24);
 assert(!JSON.stringify(wb.entries).includes('kerrigan_event_xelnaga_ascension'));
+const referenceQuestion='你和雷诺初遇的官方出处是什么？';
+const referenceReply=await product.service.sendMessage({...args,conversationId:opened.conversationId,content:referenceQuestion});
+assert.equal(referenceReply.ok,true,JSON.stringify(referenceReply));
+assert.equal(referenceReply.messages.at(-1).knowledge.responseMode,'lore_reference');
+const referencePacket=JSON.parse(requests.at(-1).messages.find(row=>row.role==='system'&&row.content.includes('"roomContext"')).content);
+const referenceKnowledge=JSON.stringify(referencePacket.contextAssembly.sections.filter(row=>row.layer==='worldbook'));
+assert(referenceKnowledge.includes('reference_notes'));assert(referenceKnowledge.includes('主源'));
+assert(!referenceKnowledge.includes('character_memory'));
+assert(liveProviderRequestFromCompanion(requests.at(-1)).userMessage.includes('查证'));
+requests.pop(); // Reference route is counted in fixtureProviderCalls, separate from the story request assertions below.
 
 const era=library.eras.find(row=>row.rank===60).eraId;
+for(const question of ['别像资料摘要，讲讲你和雷诺初遇','不要讲官方设定，以凯瑞甘的口吻讲雷诺的故事','按照官方故事讲讲你和雷诺初遇'])
+  assert.notEqual(selectCompanionLoreV1(library,era,question).responseMode,'lore_reference',question);
+assert.equal(selectCompanionLoreV1(library,era,'不要胡编，告诉我你和雷诺初遇的出处').responseMode,'lore_reference');
 const cases=[
   ['讲讲你和雷诺初遇的故事','kerrigan_event_antiga_meeting'],
   ['从你和吉姆雷诺的相遇开始吧','kerrigan_event_antiga_meeting'],
@@ -91,7 +110,7 @@ for(const [question,expected] of cases){
 for(const greeting of ['你好，凯瑞甘','今天心情怎么样','谢谢你'])
   assert.equal(selectCompanionLoreV1(library,era,greeting).records.length,0);
 const unknown=selectCompanionLoreV1(library,era,'你最喜欢哪一种冰淇淋？');
-assert.equal(unknown.records.length,0);assert(companionLoreInstructionsV1(unknown).includes('unverified'));
+assert.equal(unknown.records.length,0);assert(companionLoreInstructionsV1(unknown).includes('不能确定'));
 for(const eraRow of library.eras){
   const eligible=eligibleCompanionLoreV1(library,eraRow.eraId);
   assert(eligible.every(row=>row.knownFromRank<=eraRow.rank&&row.spoilerRank<=eraRow.rank));
@@ -110,6 +129,8 @@ const badSource=structuredClone(library);delete badSource.integrity;badSource.so
 assert.throws(()=>sealCompanionLoreLibraryV1(badSource),/SOURCE_INVALID/);
 const badKeyword=structuredClone(library);delete badKeyword.integrity;badKeyword.records[0].keywords=[''];
 assert.throws(()=>sealCompanionLoreLibraryV1(badKeyword),/RECORD_INVALID/);
+const badMemory=structuredClone(library);delete badMemory.integrity;badMemory.records[0].roleMemoryZh='公开资料只说明她是幽灵特工';
+assert.throws(()=>sealCompanionLoreLibraryV1(badMemory),/RECORD_INVALID/);
 assert.throws(()=>selectCompanionLoreV1(library,'unknown-era','你好'),/ERA_UNSUPPORTED/);
 const invalid=await product.service.openConversation({...args,packageIds:[pkg.packageId],eraIds:{[pkg.packageId]:'unknown-era'}});
 assert.equal(invalid.ok,false);assert.equal(invalid.reason,'COMPANION_LORE_ERA_UNSUPPORTED');
@@ -158,6 +179,7 @@ for(const entry of COMPANION_CATALOGUE_V1.entries.filter(row=>!row.characterId.i
 const report={passed:true,harnessLoopUsed:true,realProviderCalls:0,networkAttempts:0,fixtureProviderCalls,
   gameMutationCalls:0,records:library.records.length,events:18,relationships:8,defaultEraRecords:24,
   preservedOldConversation:true,persistedSourceEvidence:true,allEightEraGates:true,otherFivePersonasUnchanged:true,
+  narrationPolicy:library.narrationPolicy,roleMemorySeparatedFromAudit:true,explicitReferenceRoute:true,
   sourceHash:library.integrity.hash,firstStoryWireBytes:Buffer.byteLength(JSON.stringify(wire)),selections,
   limitation:'Controlled read-only room fixture and offline Provider; no live model quality or gameplay-effect claim.'};
 await mkdir('build/playtest-web/kerrigan-lore',{recursive:true});

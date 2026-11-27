@@ -11,6 +11,8 @@ export const LIVE_ADAPTER_NETWORK = "isolated_worker_https_egress";
 
 export function liveProviderRequestFromCompanion(request, maxPromptBytes=1024*1024) {
   const story = isLoreStory(request);
+  const reference = request.metadata?.responseMode === 'lore_reference'
+    && request.metadata?.loreLibraryRef?.id === 'starcraft-tmg.kerrigan-lore';
   const promptNodes = request.messages.map((message, index) => ({
     nodeType: `companion_${message.role}`,
     authority: message.role === "system" ? "platform" : "participant",
@@ -18,7 +20,8 @@ export function liveProviderRequestFromCompanion(request, maxPromptBytes=1024*10
     content: message.content,
   }));
   const userMessage = "以上是按序排列的同伴角色设定与会话上下文（promptNodes）。"
-    + (story ? "请以该同伴的身份，用两到三段简短中文回答最后的问题，先讲清选入资料能支持的具体经历或关系；不要用战术口号搪塞。"
+    + (reference ? "用户本次明确询问出处或官方设定，请用简短中文查证，区分故事事实与作者评论，不把作者视角说成角色亲历。"
+      : story ? "请保持该角色的第一人称身份，用自然中文讲述所给记忆中的经历或关系，按内容写一到三小段。不要变成资料摘要，不主动罗列未被问到的细节空白，也不转成战术口号。"
       : "请以该同伴的身份，只用一到两句简短中文回复指挥官的最后一句话，")
     + "仅依据其中的公开信息，不要编造规则事实。"
     + "输出严格 JSON：{\"channels\":{\"companion_reply\":{\"text\":\"<回复文本>\"}}}";

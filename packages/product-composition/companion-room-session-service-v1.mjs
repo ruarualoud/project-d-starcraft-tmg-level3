@@ -340,11 +340,13 @@ export function createStarcraftTmgCompanionRoomSessionServiceV1(options = {}) {
     });
     return basePublicConversation(binding, state, {...extra, knowledgeLibraries: libraries}, userLabel);
   }
-  function loreWorldbookEntries(library, records) {
+  function loreWorldbookEntries(library, records, {reference = false} = {}) {
     return records.map(row => createWorldbookEntry({
       entryId: row.id, label: row.titleZh, scope: 'character', triggers: [{kind: 'always'}],
       priority: 20, tokenBudget: 1024,
-      content: JSON.stringify({title: row.titleZh, summary: row.summaryZh, claimClass: row.claimClass,
+      content: JSON.stringify({title: row.titleZh, ...(reference
+        ? {kind:'reference_notes',summary:row.summaryZh,claimClass:row.claimClass}
+        : {kind:'character_memory',memory:row.roleMemoryZh}),
         historicalStateThroughRank: row.validThroughRank ?? null}),
       provenance: {sourceKind: 'official_summary', author: 'Project D', license: 'proprietary-development-internal',
         sourceRefs: [`lore-library://${library.libraryId}/${library.version}#${library.integrity.hash}`,
@@ -780,16 +782,16 @@ export function createStarcraftTmgCompanionRoomSessionServiceV1(options = {}) {
         loaded.state.memoryScope,
       ],
       extraEntries: [
-        ...(library ? loreWorldbookEntries(library, loreSelection.records) : characterWorldbookEntries(pkg)),
+        ...(library ? loreWorldbookEntries(library, loreSelection.records, {reference:loreSelection.responseMode==='lore_reference'}) : characterWorldbookEntries(pkg)),
         ...(personaEntry ? [personaEntry] : []),
         ...globalWorldbookEntries,
       ],
     });
     const requestId = `companion-${loaded.conversationId}-${loaded.state.turnCounter + 1}`;
     const systemContent = loreSelection
-      ? ["You are Sarah Kerrigan (莎拉·凯瑞甘), the player's read-only StarCraft companion. Speak calmly and firmly; be willing to discuss the supplied history. This voice is Project D role configuration, not an official quotation.",
+      ? ["You are Sarah Kerrigan (莎拉·凯瑞甘), speaking directly to the commander. Stay in first-person character dialogue unless this question explicitly asks for canon/source verification. Speak calmly and firmly; be willing to recount your supplied memories.",
         companionLoreInstructionsV1(loreSelection),
-        'Use only supplied player-visible material and source-backed lore. Rules/LegalSpace/Preview/Apply/Replay are external authority. No room mutations, no opponent private knowledge. Distinguish facts, interpretation and original roleplay; never reveal hidden chain-of-thought.',
+        'Use only supplied memories and player-visible material for factual claims. Rules/LegalSpace/Preview/Apply/Replay are external authority. No room mutations, no opponent private knowledge. Never reveal hidden chain-of-thought. Application audit/citation metadata is not spoken dialogue.',
         `Bound seat: ${loaded.binding.seatKey}; mode: ${loaded.binding.mode}. Answer only as Sarah Kerrigan.`].join('\n')
       : systemPrompt(pkg, loaded.binding, companion.eraId, loaded.state.participants);
     const messages = [

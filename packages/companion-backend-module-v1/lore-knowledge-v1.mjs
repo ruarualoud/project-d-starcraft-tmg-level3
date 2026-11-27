@@ -17,7 +17,7 @@ function containsTerm(text,term) {
 // grants game authority. Pin verification happens before product construction.
 export function sealCompanionLoreLibraryV1(input) {
   const {integrity,...body}=copy(input);
-  if(!body.libraryId||!body.version||!body.companionPackageId||!body.coverageNote
+  if(!body.libraryId||!body.version||!body.companionPackageId||!body.coverageNote||body.narrationPolicy!=='character_memory_v1'
     ||!Array.isArray(body.eras)||!body.eras.length||!Array.isArray(body.records)||!Array.isArray(body.sources)) fail('COMPANION_LORE_LIBRARY_INVALID');
   const ranks=new Set(body.eras.map(era=>era.rank));
   if(body.eras.some(era=>!era.eraId||!Number.isSafeInteger(era.rank))
@@ -32,6 +32,7 @@ export function sealCompanionLoreLibraryV1(input) {
   const ids=new Set();
   for(const row of body.records){
     if(!row.id||ids.has(row.id)||!['event','relationship'].includes(row.kind)||!row.titleZh||!row.summaryZh
+      ||typeof row.roleMemoryZh!=='string'||!row.roleMemoryZh.trim()||/公开资料|现有资料|主源|编剧|参考文献/u.test(row.roleMemoryZh)
       ||!ranks.has(row.knownFromRank)||!ranks.has(row.spoilerRank)||!Array.isArray(row.keywords)||!row.keywords.length
       ||row.keywords.some(word=>typeof word!=='string'||!word.trim())
       ||!Array.isArray(row.sourceIds)||!row.sourceIds.length||row.sourceIds.some(id=>!sources.has(id))
@@ -68,6 +69,12 @@ export function selectCompanionLoreV1(library,eraId,question) {
   const battle=/作战|战局|军表|射程|棋盘|怎么打|战术|battle|roster|tactic/iu.test(q);
   const generic=/介绍.*自己|^(请)?(讲讲|说说|讲个|讲一个)?(你|凯瑞甘|莎拉)?的?(生平|经历|故事|背景)(吧|吗|。|？)?$|your (life|story)|biograph/iu.test(q);
   const firstMeeting=/初遇|初识|相遇|相识|初次相见|第一次见|怎么认识|怎么相识|如何认识|first met|first meet/iu.test(q);
+  // Saying "别像资料摘要" requests roleplay, not a switch to source commentary.
+  const reference=q.split(/[，,。；;！!？?\n]/u).some(clause=>{
+    const explicit=/出处|来源|参考文献|查证|考据|原作原文|官方设定|官方说法|跳出角色|\bcanon\b|\bsource\b|\breference\b|\booc\b/iu;
+    const declined=/(?:不要|不用|不必|别|避免).{0,10}(?:出处|来源|文献|查证|考据|原文|官方设定|官方说法|跳出角色)/u;
+    return explicit.test(clause)&&!declined.test(clause);
+  });
   const topicAliases=[['雷诺','吉姆','raynor'],['蒙斯克','mengsk'],['主宰','overmind'],['泽鲁斯','zerus'],
     ['扎加拉','zagara'],['阿巴瑟','abathur'],['塔桑尼斯','tarsonis'],['安提加','antiga'],['神器','artifact'],
     ['母巢之战','brood war'],['查尔','char']];
@@ -98,7 +105,7 @@ export function selectCompanionLoreV1(library,eraId,question) {
     ||row.spoilerRank>companionLoreEraV1(library,eraId).rank)
     .some(row=>row.keywords.some(word=>!eligibleAliases.has(normalized(word))&&containsTerm(q,normalized(word))));
   if(eraLimited)records=[];
-  const responseMode=story?'lore_story':relationship?'lore_relationship':records.length&&!battle?'lore_answer':'conversation';
+  const responseMode=reference?'lore_reference':story?'lore_story':relationship?'lore_relationship':records.length&&!battle?'lore_answer':'conversation';
   const sourceIds=new Set(records.flatMap(row=>row.sourceIds));
   const sources=library.sources.filter(row=>sourceIds.has(row.id)).map(({id,title,url,publisher})=>({id,title,url,publisher}));
   return freeze({responseMode,eraLimited,records:copy(records),sources,availability:companionLoreAvailabilityV1(library,eraId)});
@@ -106,13 +113,20 @@ export function selectCompanionLoreV1(library,eraId,question) {
 
 export function companionLoreInstructionsV1(selection) {
   const extended=['lore_story','lore_relationship'].includes(selection.responseMode);
+  const reference=selection.responseMode==='lore_reference';
   return [
-    `Verified lore library ${selection.availability.libraryRef.id} v${selection.availability.libraryRef.version}. Era: ${selection.availability.eraLabel}.`,
-    'This era is a coarse historical knowledge upper bound, not the current room campaign mission. Never import later-era knowledge from prior dialogue, the player question or general model knowledge.',
-    'Answer the actual question first. These source-backed summaries are factual constraints; character voice and connective phrasing are original roleplay, not official dialogue. Do not invent scenes, quotes, feelings or private motives. Creator commentary must be attributed in third person, never presented as personal memories or mind reading.',
-    'A relationship record with validThroughRank describes that historical phase; it does not erase the ability to recall it later. Clearly distinguish then from now. Omitted/unsupported details are unknown: say so briefly instead of replacing an answer with a tactical slogan.',
-    selection.eraLimited?'This question names material outside the selected era. Briefly explain the era limit; do not reveal its events, outcomes or hints.':selection.records.length?'Use the selected facts below; do not fill their gaps from general model knowledge.':'No verified lore facts were selected for this question. For a lore/detail question, acknowledge that this detail is unverified instead of inventing an answer. Ordinary greetings may be answered naturally.',
-    extended?'For a story or relationship question, use two or three short Chinese paragraphs with concrete supplied events, then a brief personal perspective only if supported. Do not force tactical advice into a personal-history answer. Be engaged and willing to recount the supplied history; avoid hostility or evasive aphorisms.':'Use a natural concise Chinese response. Do not introduce biography into ordinary small talk.',
-    'Citations below the response are supplied by the application. Do not invent source titles, links or official quotations. Lore never overrides Rules or grants room actions.',
+    `当前角色时代：${selection.availability.eraLabel}。这是时代知识上界，不代表当前战局的具体任务进度；不得叙述之后时代的事件。`,
+    reference
+      ? '用户本次明确请求设定或出处查证。可以暂用事实说明口吻，区分故事事实与作者评论；作者评论使用第三人称，不伪装成亲历或读心。'
+      : '你正在扮演凯瑞甘，直接以第一人称与指挥官交谈。角色记忆是你可讲述的经历；不要站到角色外面替读者整理传记。语气冷静、坚定，愿意交流，不贬低指挥官。',
+    '记忆条目限定可叙述的事件与关系。可以自然组织措辞，不能添加未给出的场景、对白、日期、感觉或他人的私密动机。历史关系写清当时与后来，不等于删除旧记忆。',
+    reference ? '查证时可以说明证据边界；来源链接由界面附在回复下方，不编造链接或官方引文。'
+      : '考据说明和来源属于界面层，不是凯瑞甘的自我认知。角色正文不要说“公开资料”“现有资料”“官方只说明”“编剧认为”，也不要朗读字段、版本、引用或校验过程。',
+    '旧助手消息可能有出戏的资料摘要口吻；历史用于理解对话，不作为人物口吻或新增事实的依据。不要沿袭这些错误。',
+    selection.eraLimited ? (reference?'本次话题超出所选时代，简短说明时代边界，不透露未来事件。':'本次话题超出当前角色所知时代，以角色视角简短表明不知，不透露未来事件或解释资料系统。')
+      : selection.records.length?'从所给记忆中直接回应问题，先讲具体发生过的事。'
+      : (reference?'本次没有选中可核实的事实，不补造。':'本次没有可用的相关记忆。普通闲聊自然回应；若被问到具体未知细节，用简短的角色口吻承认不能确定，不借模型常识补造。'),
+    extended?'故事与关系回答按内容多少写一到三小段，不凑长度。未被问到的空白不主动罗列，不在结尾机械追加“其他未知”。不要转成战术口号或用空泛的代价、伤口替代事情经过。':'用自然、简短的中文回答；普通闲聊不主动加载传记。',
+    '不确定的精确细节只在被问到时说明。例如被问原话而没有依据，可以说“那段原话，我不能准确复述”，不要虚构对白或把缺失改写成失忆。角色措辞是原创演绎，不能冒充官方台词；规则与房间动作始终服从外部权威。',
   ].join('\n');
 }

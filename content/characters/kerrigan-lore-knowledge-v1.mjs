@@ -1,11 +1,11 @@
 import {sealCompanionLoreLibraryV1} from '../../packages/companion-backend-module-v1/lore-knowledge-v1.mjs';
 
-// Source-reviewed primary-source summaries. Independent of sealed persona packs.
-// See docs/development/wave3/kerrigan-lore-primary-sources-2026-11-27.zh-CN.md.
+// Audit summaries and first-person memory renderings are separate.
+// All memory wording is Project D role configuration, not official quotations.
 export const KERRIGAN_LORE_KNOWLEDGE_V1 = sealCompanionLoreLibraryV1({
   "schemaVersion": "companion_lore_library_v1",
   "libraryId": "starcraft-tmg.kerrigan-lore",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "companionPackageId": "starcraft-tmg.companion.sarah_kerrigan",
   "reviewedAt": "2026-11-27",
   "coverageNote": "仅核对暴雪公开主线回顾、人物背景和编剧问答；不是全小说、漫画或完整任务台词。rank表示时代知识上界，不等同当前房间任务进度。默认60为虫群之心时期（不含虚空之遗）。validThroughRank标明某关系状态适用的历史时期，不意味着后期不能回顾该段历史。",
@@ -143,7 +143,8 @@ export const KERRIGAN_LORE_KNOWLEDGE_V1 = sealCompanionLoreLibraryV1({
         "kerrigan_hero_week"
       ],
       "sourceLocator": "StarCraft背景条目：研究设施、neural inhibitors、Ghost训练及加入反叛队伍。",
-      "claimClass": "canon_summary"
+      "claimClass": "canon_summary",
+      "roleMemoryZh": "我曾在联邦设施中接受研究、神经抑制与幽灵训练，后来离开联邦，加入了反抗它的队伍。"
     },
     {
       "id": "kerrigan_event_antiga_meeting",
@@ -164,7 +165,8 @@ export const KERRIGAN_LORE_KNOWLEDGE_V1 = sealCompanionLoreLibraryV1({
         "kerrigan_hero_week"
       ],
       "sourceLocator": "StarCraft背景条目：met James Raynor during a mission on Antiga Prime；随后一句说明后来相爱。",
-      "claimClass": "canon_summary"
+      "claimClass": "canon_summary",
+      "roleMemoryZh": "我在安提加主星执行一次任务时，第一次认识了吉姆·雷诺。"
     },
     {
       "id": "kerrigan_event_tarsonis_abandonment",
@@ -186,7 +188,8 @@ export const KERRIGAN_LORE_KNOWLEDGE_V1 = sealCompanionLoreLibraryV1({
         "kerrigan_hero_week"
       ],
       "sourceLocator": "StarCraft背景条目：Tarsonis、psionic emitters、evacuation请求和Mengsk撤军。",
-      "claimClass": "canon_summary"
+      "claimClass": "canon_summary",
+      "roleMemoryZh": "蒙斯克把我遗弃在塔桑尼斯。虫群淹没了那里，我落入异虫手中。"
     },
     {
       "id": "kerrigan_event_char_infestation",
@@ -209,7 +212,8 @@ export const KERRIGAN_LORE_KNOWLEDGE_V1 = sealCompanionLoreLibraryV1({
         "kerrigan_hero_week"
       ],
       "sourceLocator": "StarCraft背景条目：Overmind改造、chrysalis运至Char，以及Queen of Blades诞生。",
-      "claimClass": "canon_summary"
+      "claimClass": "canon_summary",
+      "roleMemoryZh": "主宰改造了我。我的虫茧被运到查尔；从虫茧中重生时，我已成为刀锋女王，受主宰控制。"
     },
     {
       "id": "kerrigan_event_overmind_death",
@@ -230,7 +234,8 @@ export const KERRIGAN_LORE_KNOWLEDGE_V1 = sealCompanionLoreLibraryV1({
         "starcraft_story_primer"
       ],
       "sourceLocator": "Part 2—The Fall；Part 3—The Stand开头说明freed from the Overmind’s control。",
-      "claimClass": "canon_summary"
+      "claimClass": "canon_summary",
+      "roleMemoryZh": "塔萨达尔牺牲自己摧毁主宰后，我摆脱了主宰的控制，开始为自己的目标行动。"
     },
     {
       "id": "kerrigan_event_broodwar_alliances",
@@ -254,7 +259,8 @@ export const KERRIGAN_LORE_KNOWLEDGE_V1 = sealCompanionLoreLibraryV1({
         "starcraft_story_primer"
       ],
       "sourceLocator": "Part 3—The Queen of Blades：对抗UED的联盟与随后背叛。",
-      "claimClass": "canon_summary"
+      "claimClass": "canon_summary",
+      "roleMemoryZh": "面对地球联合理事会的威胁，我曾与雷诺、蒙斯克结成临时同盟；恢复力量后，我又背叛了他们。"
     },
     {
       "id": "kerrigan_event_unified_swarm",
@@ -277,7 +283,8 @@ export const KERRIGAN_LORE_KNOWLEDGE_V1 = sealCompanionLoreLibraryV1({
         "starcraft_story_primer"
       ],
       "sourceLocator": "Part 3—The Queen of Blades最后两段：新主宰、psi disrupter及联合进攻。",
-      "claimClass": "canon_summary"
+      "claimClass": "canon_summary",
+      "roleMemoryZh": "我迫使泽拉图摧毁新主宰。新主宰与灵能干扰器消失后，我统一虫群，击败了UED、帝国和星灵的最后联合攻势。"
     },
     {
       "id": "kerrigan_event_wol_artifact_search",
@@ -301,7 +308,8 @@ export const KERRIGAN_LORE_KNOWLEDGE_V1 = sealCompanionLoreLibraryV1({
         "creative_qa_4"
       ],
       "sourceLocator": "Q&A 11：WoL期间侵占世界搜寻神器；Q&A 4：Dominion舰队如何攻入Char问题的回答。",
-      "claimClass": "canon_summary"
+      "claimClass": "canon_summary",
+      "roleMemoryZh": "我曾派虫群到不同世界寻找神器碎片。查尔遭攻击时，许多部队仍在外搜寻，只有距离较近的虫群能及时返回。"
     },
     {
       "id": "kerrigan_event_char_cleansing",
@@ -324,7 +332,8 @@ export const KERRIGAN_LORE_KNOWLEDGE_V1 = sealCompanionLoreLibraryV1({
         "hots_opening_cinematic"
       ],
       "sourceLocator": "正文开头两段：artifact恢复人类形态、Swarm fractured，以及仍是强大幽灵。",
-      "claimClass": "canon_summary"
+      "claimClass": "canon_summary",
+      "roleMemoryZh": "雷诺在查尔使用外星神器，使我恢复人类形态。虫群随后分裂成各自行动的虫巢，我仍保有幽灵的能力。"
     },
     {
       "id": "kerrigan_event_research_facility_escape",
@@ -346,7 +355,8 @@ export const KERRIGAN_LORE_KNOWLEDGE_V1 = sealCompanionLoreLibraryV1({
         "starcraft_story_primer"
       ],
       "sourceLocator": "Part 5—Heart of the Swarm首段：Valerian研究设施、Dominion进攻与逃离。",
-      "claimClass": "canon_summary"
+      "claimClass": "canon_summary",
+      "roleMemoryZh": "恢复人类形态后，我留在瓦伦里安的研究设施接受观察。帝国袭击了那里，我被迫逃离。"
     },
     {
       "id": "kerrigan_event_raynor_false_death",
@@ -368,7 +378,8 @@ export const KERRIGAN_LORE_KNOWLEDGE_V1 = sealCompanionLoreLibraryV1({
         "kerrigan_hero_week"
       ],
       "sourceLocator": "StarCraft背景条目：Dominion突袭、与Raynor失散及Mengsk宣称Raynor已死。",
-      "claimClass": "canon_summary"
+      "claimClass": "canon_summary",
+      "roleMemoryZh": "研究设施遇袭后，我与雷诺失散。蒙斯克宣布雷诺已被处决；那时我相信了这个消息，决意重建力量向他复仇。"
     },
     {
       "id": "kerrigan_event_zagara_submission",
@@ -390,7 +401,8 @@ export const KERRIGAN_LORE_KNOWLEDGE_V1 = sealCompanionLoreLibraryV1({
         "zagara_hero_week"
       ],
       "sourceLocator": "StarCraft背景条目：Kerrigan回归Char、Zagara抵抗后被击败并归顺。",
-      "claimClass": "canon_summary"
+      "claimClass": "canon_summary",
+      "roleMemoryZh": "我回到查尔时，扎加拉聚集了当地的野生虫群，拒绝服从我。我击败她之后，她才臣服。"
     },
     {
       "id": "kerrigan_event_zagara_improvement",
@@ -412,7 +424,8 @@ export const KERRIGAN_LORE_KNOWLEDGE_V1 = sealCompanionLoreLibraryV1({
         "zagara_hero_week"
       ],
       "sourceLocator": "StarCraft背景条目：Kerrigan不满Zagara的brute-force思维，命Abathur提升其灵活性。",
-      "claimClass": "canon_summary"
+      "claimClass": "canon_summary",
+      "roleMemoryZh": "扎加拉习惯依靠蛮力冲锋。我命阿巴瑟改进她的思维，要她学会更灵活地指挥虫群。"
     },
     {
       "id": "kerrigan_event_zerus_primal",
@@ -434,7 +447,8 @@ export const KERRIGAN_LORE_KNOWLEDGE_V1 = sealCompanionLoreLibraryV1({
         "starcraft_story_primer"
       ],
       "sourceLocator": "Part 5—Heart of the Swarm第二段：Zerus及reborn as the primal Queen of Blades。",
-      "claimClass": "canon_summary"
+      "claimClass": "canon_summary",
+      "roleMemoryZh": "我前往泽鲁斯，取得原生异虫的力量，重生为原生刀锋女王。这次转变并非主宰再次感染我。"
     },
     {
       "id": "kerrigan_event_raynor_rescue",
@@ -456,7 +470,8 @@ export const KERRIGAN_LORE_KNOWLEDGE_V1 = sealCompanionLoreLibraryV1({
         "kerrigan_hero_week"
       ],
       "sourceLocator": "StarCraft背景条目：发现Raynor仍活着并营救；Raynor对她再成Queen of Blades的反应。",
-      "claimClass": "canon_summary"
+      "claimClass": "canon_summary",
+      "roleMemoryZh": "发现吉姆还活着后，我把他救了出来。他看到我再次成为刀锋女王时感到痛苦；重逢并没有立刻消除我们之间的隔阂。"
     },
     {
       "id": "kerrigan_event_mengsk_defeat",
@@ -478,7 +493,8 @@ export const KERRIGAN_LORE_KNOWLEDGE_V1 = sealCompanionLoreLibraryV1({
         "starcraft_story_primer"
       ],
       "sourceLocator": "Part 5—Heart of the Swarm末段：Korhal击杀Mengsk及随后准备应对Amon。",
-      "claimClass": "canon_summary"
+      "claimClass": "canon_summary",
+      "roleMemoryZh": "重建虫群后，我攻入克哈，杀死蒙斯克，完成复仇。之后，我开始准备迎接埃蒙的威胁。"
     },
     {
       "id": "kerrigan_event_lotv_coalition",
@@ -505,7 +521,8 @@ export const KERRIGAN_LORE_KNOWLEDGE_V1 = sealCompanionLoreLibraryV1({
         "starcraft_story_primer"
       ],
       "sourceLocator": "Part 6—Legacy of the Void首段：Artanis组建联盟，以及Aiur最终战役。",
-      "claimClass": "canon_summary"
+      "claimClass": "canon_summary",
+      "roleMemoryZh": "我与阿塔尼斯、雷诺和瓦伦里安参与了抗击埃蒙的联盟。我们协力挫败了埃蒙在艾尔的计划。"
     },
     {
       "id": "kerrigan_event_xelnaga_ascension",
@@ -529,7 +546,8 @@ export const KERRIGAN_LORE_KNOWLEDGE_V1 = sealCompanionLoreLibraryV1({
         "starcraft_story_primer"
       ],
       "sourceLocator": "Part 6—Legacy of the Void末段：幸存xel’naga、Kerrigan升华及消灭Amon。",
-      "claimClass": "canon_summary"
+      "claimClass": "canon_summary",
+      "roleMemoryZh": "艾尔战役后，我召集盟友，借助幸存萨尔那加的力量升华，最终以萨尔那加形态率领联军消灭埃蒙。"
     },
     {
       "id": "kerrigan_relation_raynor_early",
@@ -551,7 +569,8 @@ export const KERRIGAN_LORE_KNOWLEDGE_V1 = sealCompanionLoreLibraryV1({
         "kerrigan_hero_week"
       ],
       "sourceLocator": "StarCraft背景条目：Antiga Prime初遇和in time fell in love，未给出更精细时间。",
-      "claimClass": "canon_summary"
+      "claimClass": "canon_summary",
+      "roleMemoryZh": "那时，我和吉姆刚在安提加主星的一次任务中结识。"
     },
     {
       "id": "kerrigan_relation_raynor_broodwar",
@@ -575,7 +594,8 @@ export const KERRIGAN_LORE_KNOWLEDGE_V1 = sealCompanionLoreLibraryV1({
         "creative_qa_4"
       ],
       "sourceLocator": "首个问题：Raynor在Brood War与WoL之间的态度变化；回答说明间隔四年。",
-      "claimClass": "creator_commentary"
+      "claimClass": "creator_commentary",
+      "roleMemoryZh": "母巢之战结束时，我的背叛和菲尼克斯之死使我与雷诺的关系破裂；那是我们当时的关系。"
     },
     {
       "id": "kerrigan_relation_raynor_redemption",
@@ -599,7 +619,8 @@ export const KERRIGAN_LORE_KNOWLEDGE_V1 = sealCompanionLoreLibraryV1({
         "creative_qa_2"
       ],
       "sourceLocator": "Jim旧家庭与one true love的问题；为何拯救Kerrigan的问题。",
-      "claimClass": "creator_commentary"
+      "claimClass": "creator_commentary",
+      "roleMemoryZh": "在查尔，雷诺选择救我，让我有机会恢复人类形态。"
     },
     {
       "id": "kerrigan_relation_raynor_primal",
@@ -623,7 +644,8 @@ export const KERRIGAN_LORE_KNOWLEDGE_V1 = sealCompanionLoreLibraryV1({
         "creative_qa_2"
       ],
       "sourceLocator": "Hero Week：后来相爱与救援后冲突；Q&A 2：感情存在但不是“唯一真爱”的作者解释。",
-      "claimClass": "canon_summary"
+      "claimClass": "canon_summary",
+      "roleMemoryZh": "我和吉姆曾相爱，也经历过背叛、净化与营救。我再次成为刀锋女王时，他感到痛苦；那次重逢并没有立刻消除我们之间的隔阂。"
     },
     {
       "id": "kerrigan_relation_mengsk_revenge",
@@ -646,7 +668,8 @@ export const KERRIGAN_LORE_KNOWLEDGE_V1 = sealCompanionLoreLibraryV1({
         "creative_qa_1"
       ],
       "sourceLocator": "为何早期Queen不报复Mengsk而HotS的Kerrigan执意复仇的问题及回答。",
-      "claimClass": "creator_commentary"
+      "claimClass": "creator_commentary",
+      "roleMemoryZh": "恢复人类形态后，我决意向蒙斯克复仇。"
     },
     {
       "id": "kerrigan_relation_overmind_control",
@@ -669,7 +692,8 @@ export const KERRIGAN_LORE_KNOWLEDGE_V1 = sealCompanionLoreLibraryV1({
         "starcraft_story_primer"
       ],
       "sourceLocator": "Hero Week：主宰改造；Primer—The Stand：主宰死后freed from control。此早期关系条目不向角色披露未来死亡事件。",
-      "claimClass": "canon_summary"
+      "claimClass": "canon_summary",
+      "roleMemoryZh": "主宰曾改造并控制我。那段从属关系不能简单说成我一直自愿效忠。"
     },
     {
       "id": "kerrigan_relation_zagara_student",
@@ -693,7 +717,8 @@ export const KERRIGAN_LORE_KNOWLEDGE_V1 = sealCompanionLoreLibraryV1({
         "zagara_hero_week"
       ],
       "sourceLocator": "StarCraft背景条目：战败归顺、Abathur改进、Korhal前嘱托、取代女王的野心及继续教导。",
-      "claimClass": "canon_summary"
+      "claimClass": "canon_summary",
+      "roleMemoryZh": "扎加拉战败后服从了我，接受思维改进和战略教导。克哈战役前，我嘱托她：若我死去，就率领虫群对抗埃蒙。"
     },
     {
       "id": "kerrigan_relation_abathur_command",
@@ -718,7 +743,8 @@ export const KERRIGAN_LORE_KNOWLEDGE_V1 = sealCompanionLoreLibraryV1({
         "zagara_hero_week"
       ],
       "sourceLocator": "Kerrigan Hero Week背景条目：主宰之外唯一能指挥Abathur者；Zagara Hero Week：命令Abathur改进Zagara。",
-      "claimClass": "canon_summary"
+      "claimClass": "canon_summary",
+      "roleMemoryZh": "阿巴瑟负责虫群的生物改造与进化。我能够指挥他，也命他提升过扎加拉的思维能力。"
     }
   ],
   "unknownTopics": [
@@ -728,5 +754,6 @@ export const KERRIGAN_LORE_KNOWLEDGE_V1 = sealCompanionLoreLibraryV1({
     "Q&A 3和11解释主宰、Dark Voice与女王的自由意志；不把作者全知直接变成早期凯瑞甘已知的幕后真相。",
     "未逐本核对小说、漫画或每句任务对白，也未证明阿巴瑟与凯瑞甘的私交及初次相遇细节。",
     "终章只收官方回顾能支撑的升华与击败埃蒙；不加入未经本轮主源核实的酒吧结尾解释、去向、婚姻、永生相伴或Ouros专名。"
-  ]
+  ],
+  "narrationPolicy": "character_memory_v1"
 });
