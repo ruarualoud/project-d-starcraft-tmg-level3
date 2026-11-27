@@ -1,0 +1,191 @@
+{
+  "schemaVersion": "project_d.standard_character_card_manifest.v1",
+  "cards": [
+    {
+      "companionPackageId": "starcraft-tmg.companion.sarah_kerrigan",
+      "eraId": "sc1.terran_ghost.pre_tarsonis",
+      "file": "sarah_kerrigan--sc1_terran_ghost_pre_tarsonis.json",
+      "cardHash": "cf8e8fd9b49c7d3a22653b8a648a1ca3b13a04f934f55d0267908cece0e47bbd"
+    },
+    {
+      "companionPackageId": "starcraft-tmg.companion.sarah_kerrigan",
+      "eraId": "sc1.infested.overmind_char",
+      "file": "sarah_kerrigan--sc1_infested_overmind_char.json",
+      "cardHash": "3772b0cd91846c5f5c0e56d2279246dac015cc69173e1097aac02afd995a9e88"
+    },
+    {
+      "companionPackageId": "starcraft-tmg.companion.sarah_kerrigan",
+      "eraId": "brood_war.independent_queen",
+      "file": "sarah_kerrigan--brood_war_independent_queen.json",
+      "cardHash": "c0e3376c4eefcfb569b34dd8e95e59a008636ff5b78ba4d6cc4879d6998dbac5"
+    },
+    {
+      "companionPackageId": "starcraft-tmg.companion.sarah_kerrigan",
+      "eraId": "wol.queen.artifact_search",
+      "file": "sarah_kerrigan--wol_queen_artifact_search.json",
+      "cardHash": "7ba0ed870a99745fee4e769e939705b2266df715b80ed293633bfd5be11e2782"
+    },
+    {
+      "companionPackageId": "starcraft-tmg.companion.sarah_kerrigan",
+      "eraId": "hots.deinfested_human.pre_zerus",
+      "file": "sarah_kerrigan--hots_deinfested_human_pre_zerus.json",
+      "cardHash": "a49ab74e7eb38cbf820c1fd4066ab37acbc489b54d76f9e6f996b17b48bc08be"
+    },
+    {
+      "companionPackageId": "starcraft-tmg.companion.sarah_kerrigan",
+      "eraId": "hots.primal.post_zerus.pre_lotv",
+      "file": "sarah_kerrigan--hots_primal_post_zerus_pre_lotv.json",
+      "cardHash": "ac847a3ce15368aea60dda39081b8f970d4e5dfbb728915fca5fea9836cb6cd5"
+    },
+    {
+      "companionPackageId": "starcraft-tmg.companion.sarah_kerrigan",
+      "eraId": "lotv.coalition.pre_ascension",
+      "file": "sarah_kerrigan--lotv_coalition_pre_ascension.json",
+      "cardHash": "6b25f2c6f64e15fbdc6e402e238ad80cc32610d51faa2656aae24eaeab0f6cc0"
+    },
+    {
+      "companionPackageId": "starcraft-tmg.companion.sarah_kerrigan",
+      "eraId": "lotv.xelnaga.epilogue",
+      "file": "sarah_kerrigan--lotv_xelnaga_epilogue.json",
+      "cardHash": "9f1611f0ca02457c0f164c4330a0ed57d51896bba2f9f0e8a41cb792274379cf"
+    },
+    {
+      "companionPackageId": "starcraft-tmg.companion.zagara",
+      "eraId": "pre_hots.char_brood",
+      "file": "zagara--pre_hots_char_brood.json",
+      "cardHash": "11124323614bd1effbace1fefe0b26b3cd6dc8671ae06329e00316fb524ebec9"
+    },
+    {
+      "companionPackageId": "starcraft-tmg.companion.zagara",
+      "eraId": "hots.kerrigan_swarm_campaign",
+      "file": "zagara--hots_kerrigan_swarm_campaign.json",
+      "cardHash": "62a16d17f821e25d8e6f0181b8c31076856d2099294de6cdaa009273a454cbe4"
+    },
+    {
+      "companionPackageId": "starcraft-tmg.companion.zagara",
+      "eraId": "lotv.amon_war_swarm",
+      "file": "zagara--lotv_amon_war_swarm.json",
+      "cardHash": "ff4c501dc019c9d89aaad16fd466c119447d9cdc036b45431733dbb30d006b37"
+    },
+    {
+      "companionPackageId": "starcraft-tmg.companion.zagara",
+      "eraId": "post_lotv.swarm_regent_char",
+      "file": "zagara--post_lotv_swarm_regent_char.json",
+      "cardHash": "c74ecd3f408b1c5934ab0d2f53806f2ff399030405fbe7a3c299dfd56b233ff3"
+    },
+    {
+      "companionPackageId": "starcraft-tmg.companion.jim_raynor",
+      "eraId": "sc1.mar_sara_marshal",
+      "file": "jim_raynor--sc1_mar_sara_marshal.json",
+      "cardHash": "00258837bbb90c225b1c78b96888eab05ba2e86fd1f8161660eaffd6865f9cfe"
+    },
+    {
+      "companionPackageId": "starcraft-tmg.companion.jim_raynor",
+      "eraId": "sc1.sons_of_korhal_commander",
+      "file": "jim_raynor--sc1_sons_of_korhal_commander.json",
+      "cardHash": "0e38e19e1188e200ae4243193e75ce601fbcbd1937ebd9011b36a91578dac316"
+    },
+    {
+      "companionPackageId": "starcraft-tmg.companion.jim_raynor",
+      "eraId": "sc1.raiders_char_aiur",
+      "file": "jim_raynor--sc1_raiders_char_aiur.json",
+      "cardHash": "a43f89b2d8e893fcc995ac623a52a840a622cd8804e1cd6942b691088033ba57"
+    },
+    {
+      "companionPackageId": "starcraft-tmg.companion.jim_raynor",
+      "eraId": "brood_war.raiders_shakuras",
+      "file": "jim_raynor--brood_war_raiders_shakuras.json",
+      "cardHash": "e85e8dc5b8f1e01d7361c7b5f599993647542e339bab621e147b10c47bf7d27d"
+    },
+    {
+      "companionPackageId": "starcraft-tmg.companion.jim_raynor",
+      "eraId": "wol.raiders_moebius_artifact",
+      "file": "jim_raynor--wol_raiders_moebius_artifact.json",
+      "cardHash": "6b55b98293fea8de31506dd1104ce5164591c76312d5c976cdc4ec2ce9ec0067"
+    },
+    {
+      "companionPackageId": "starcraft-tmg.companion.jim_raynor",
+      "eraId": "hots.mengsk_pursuit",
+      "file": "jim_raynor--hots_mengsk_pursuit.json",
+      "cardHash": "9e5b17992b34b274ffa612befb7d5079a6c9faeefcae888468df22319d11d68b"
+    },
+    {
+      "companionPackageId": "starcraft-tmg.companion.jim_raynor",
+      "eraId": "lotv.amon_coalition",
+      "file": "jim_raynor--lotv_amon_coalition.json",
+      "cardHash": "301c0e221c570161639968f827b03e822fb71e15ff5de40d9995a91f3bce1556"
+    },
+    {
+      "companionPackageId": "starcraft-tmg.companion.nova_terra",
+      "eraId": "pre_sc2.ghost_operative",
+      "file": "nova_terra--pre_sc2_ghost_operative.json",
+      "cardHash": "845dd431310d0f6edc98648cbe117295f66531f21f1da8ba5c9fb881386db5d3"
+    },
+    {
+      "companionPackageId": "starcraft-tmg.companion.nova_terra",
+      "eraId": "wol.new_folsom_contact",
+      "file": "nova_terra--wol_new_folsom_contact.json",
+      "cardHash": "5a418469ca728d4642739b521aa6c912e001a7c7472e0a37ed6c3955664dd8ad"
+    },
+    {
+      "companionPackageId": "starcraft-tmg.companion.nova_terra",
+      "eraId": "post_lotv.covert_ops",
+      "file": "nova_terra--post_lotv_covert_ops.json",
+      "cardHash": "d5eee0ec124c327125be8a3d1acd80011b65d08c88ddda5e29eb445d91e63b22"
+    },
+    {
+      "companionPackageId": "starcraft-tmg.companion.artanis",
+      "eraId": "brood_war.executor_shakuras",
+      "file": "artanis--brood_war_executor_shakuras.json",
+      "cardHash": "07134475783728ddeda409c1659ff3e83a7c3781ead1f5db999faeff62782c1f"
+    },
+    {
+      "companionPackageId": "starcraft-tmg.companion.artanis",
+      "eraId": "pre_lotv.hierarch_daelaam",
+      "file": "artanis--pre_lotv_hierarch_daelaam.json",
+      "cardHash": "de14042968be55a221531250ba4dbb5658849a33c35df7f1b6f654a5848ba85e"
+    },
+    {
+      "companionPackageId": "starcraft-tmg.companion.artanis",
+      "eraId": "lotv.aiur_invasion_spear_of_adun",
+      "file": "artanis--lotv_aiur_invasion_spear_of_adun.json",
+      "cardHash": "08343ecdbb6cb65f64392e68aad983c96b96f31879f1c390fcd2ba00f80628ca"
+    },
+    {
+      "companionPackageId": "starcraft-tmg.companion.artanis",
+      "eraId": "lotv.amon_war",
+      "file": "artanis--lotv_amon_war.json",
+      "cardHash": "667dd982a469fdd649f5426688afeb3b0145a0bc10780c9fef81bcbcde29f712"
+    },
+    {
+      "companionPackageId": "starcraft-tmg.companion.artanis",
+      "eraId": "lotv.post_war_hierarch",
+      "file": "artanis--lotv_post_war_hierarch.json",
+      "cardHash": "d4725e9db3fabd1d7068c8c41e7ec11695e8e26eddff87a70bcbef461a04323f"
+    },
+    {
+      "companionPackageId": "starcraft-tmg.companion.zeratul",
+      "eraId": "sc1.dark_prelate_exile",
+      "file": "zeratul--sc1_dark_prelate_exile.json",
+      "cardHash": "cfc70a7eac8245b52a036f0635b5df99b5cd6f901febc206b949e86bab32098f"
+    },
+    {
+      "companionPackageId": "starcraft-tmg.companion.zeratul",
+      "eraId": "brood_war.raszagal_shadow",
+      "file": "zeratul--brood_war_raszagal_shadow.json",
+      "cardHash": "e3dea2e551c77b85725194a8075316b643a875510a1609401f55cafc8618823e"
+    },
+    {
+      "companionPackageId": "starcraft-tmg.companion.zeratul",
+      "eraId": "sc2.prophecy_seeker",
+      "file": "zeratul--sc2_prophecy_seeker.json",
+      "cardHash": "a403836754e910833f3f66adfeec1dfac3a321896c23428a5586698db8e2ad84"
+    },
+    {
+      "companionPackageId": "starcraft-tmg.companion.zeratul",
+      "eraId": "lotv.final_warning",
+      "file": "zeratul--lotv_final_warning.json",
+      "cardHash": "849d11f9298931f63c2042ccbdb842ed60b7b0c86c4472c4ea44e277bce83ea6"
+    }
+  ]
+}

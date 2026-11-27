@@ -325,6 +325,7 @@ export function createStarcraftTmgCompanionProductModuleV1(options = {}) {
     roomRuntime,
     companionBackend: backend,
     knowledgeLibraries: options.knowledgeLibraries || [],
+    standardRoleplayCards: options.standardRoleplayCards || [],
     now,
     ...(typeof options.createId === "function" ? { createId: options.createId } : {}),
     ...(options.contextTokenBudget !== undefined
@@ -628,6 +629,8 @@ export function createStarcraftTmgCompanionProductModuleV1(options = {}) {
             packageIds: body.packageIds,
             ...(object(body.versions) ? { versions: body.versions } : {}),
             ...(object(body.eraIds) ? { eraIds: body.eraIds } : {}),
+            ...(object(body.greetingIndices) ? {greetingIndices:body.greetingIndices}:{}),
+            ...(body.forceNew===true?{forceNew:true,copyStandardCardsFromConversationId:body.copyStandardCardsFromConversationId}:{}),
           })));
         }
         if (method === "GET" && segments[1] === "active") {
@@ -651,6 +654,14 @@ export function createStarcraftTmgCompanionProductModuleV1(options = {}) {
           return envelope(rejection("COMPANION_PRODUCT_ROUTE_UNKNOWN"), 404);
         }
         const scoped = { roomId: auth.roomId, seatToken, conversationId };
+        if(segments[2]==='standard-card'){
+          const cardScope={...scoped,packageId:body.packageId||query.packageId,format:body.format||query.format};
+          if(method==='GET'&&segments.length===3)return envelope(await service.exportStandardRoleplayCard(cardScope));
+          if(method==='PUT'&&segments.length===3)return envelope(await withSummary(await service.importStandardRoleplayCard({...cardScope,card:body.card,pngBase64:body.pngBase64})));
+          if(method==='GET'&&segments[3]==='worldbook')return envelope(await service.exportStandardRoleplayBook(cardScope));
+          if(method==='PUT'&&segments[3]==='worldbook')return envelope(await withSummary(await service.importStandardRoleplayBook({...cardScope,book:body.book})));
+          return envelope(rejection('COMPANION_PRODUCT_ROUTE_UNKNOWN'),404);
+        }
         if (method === "GET" && segments.length === 2) {
           return envelope(await withSummary(await service.readConversation(scoped)));
         }
@@ -849,6 +860,8 @@ export function createStarcraftTmgCompanionProductModuleV1(options = {}) {
         "POST conversations/{id}/resume",
         "POST conversations/{id}/close",
         "GET conversations/{id}/worldbook",
+        "GET/PUT conversations/{id}/standard-card (complete CCv2/CCv3 JSON or PNG)",
+        "GET/PUT conversations/{id}/standard-card/worldbook (complete CharacterBook)",
         "POST conversations/{id}/worldbook",
         "GET conversations/{id}/worldbook/export",
         "POST conversations/{id}/worldbook/import",

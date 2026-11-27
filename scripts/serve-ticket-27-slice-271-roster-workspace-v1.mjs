@@ -126,12 +126,12 @@ function sendJson(response, status, body, extraHeaders = {}) {
   response.end(bytes);
 }
 
-async function readRequestBody(request) {
+async function readRequestBody(request,maximumBytes=MAX_BODY_BYTES) {
   const chunks = [];
   let bytes = 0;
   for await (const chunk of request) {
     bytes += chunk.byteLength;
-    if (bytes > MAX_BODY_BYTES) throw new Error("PAYLOAD_TOO_LARGE");
+    if (bytes > maximumBytes) throw new Error("PAYLOAD_TOO_LARGE");
     chunks.push(chunk);
   }
   const rawBody = Buffer.concat(chunks);
@@ -235,8 +235,10 @@ export async function createRosterWorkspaceServerV1(input = {}) {
       })) return;
       const hasBody = ["POST", "PUT", "PATCH"].includes(
         request.method || "GET");
+      const standardCardUpload=request.method==='PUT'
+        && /^\/starcraft-tmg-level3\/companion\/api\/v1\/conversations\/[A-Za-z0-9._:-]{1,160}\/standard-card(?:\/worldbook)?$/u.test(url.pathname);
       const requestBody = hasBody
-        ? await readRequestBody(request)
+        ? await readRequestBody(request,standardCardUpload?36*1024*1024:MAX_BODY_BYTES)
         : { rawBody: Buffer.alloc(0), body: {}, bodyBytes: 0 };
       // Optional composition seam: the same product origin owns room and
       // companion routes. The workspace remains the sole Plan implementation.

@@ -94,8 +94,11 @@ interface StarcraftTmgCompanionProductClient {
   catalogue(): Promise<CompanionProductResult>;
   openOrResume(input?: {
     packageIds?: ReadonlyArray<string>;
-    versions?: ReadonlyArray<string | null>;
-    eraIds?: ReadonlyArray<string | null>;
+    versions?: ReadonlyArray<string | null> | Readonly<Record<string,string>>;
+    eraIds?: ReadonlyArray<string | null> | Readonly<Record<string,string>>;
+    forceNew?: boolean;
+    copyStandardCardsFromConversationId?: string;
+    greetingIndices?: Readonly<Record<string,number>>;
   }): Promise<CompanionProductResult>;
   readActive(): Promise<CompanionProductResult>;
   read(input?: { conversationId?: string }): Promise<CompanionProductResult>;
@@ -190,6 +193,10 @@ interface StarcraftTmgCompanionProductClient {
   exportConversation(input?: { conversationId?: string }): Promise<CompanionProductResult>;
   restoreConversation(input: { export?: unknown }): Promise<CompanionProductResult>;
   exportPackage(input?: { packageId?: string }): Promise<CompanionProductResult>;
+  exportStandardCard(input?: {conversationId?:string;packageId?:string;format?:'json'|'png'}):Promise<CompanionProductResult>;
+  importStandardCard(input:{conversationId?:string;packageId?:string;card?:unknown;pngBase64?:string}):Promise<CompanionProductResult>;
+  exportStandardBook(input?:{conversationId?:string;packageId?:string}):Promise<CompanionProductResult>;
+  importStandardBook(input:{conversationId?:string;packageId?:string;book?:unknown}):Promise<CompanionProductResult>;
   importPackage(input: { contract?: unknown }): Promise<CompanionProductResult>;
   promotePackage(input: { packageId?: string }): Promise<CompanionProductResult>;
   readPackagePromotions(): Promise<CompanionProductResult>;

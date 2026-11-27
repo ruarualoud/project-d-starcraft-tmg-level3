@@ -6,6 +6,8 @@ const LIVE_OUTPUT_BUDGET = resolveCompanionProviderOutputBudgetV1({allowedChanne
 const STORY_OUTPUT_BUDGET = resolveCompanionProviderOutputBudgetV1({allowedChannels:[...LIVE_ALLOWED_CHANNELS],textFloorUnits:1024,ceilingUnits:1536});
 const isLoreStory = request => ['lore_story','lore_relationship'].includes(request.metadata?.responseMode)
   && request.metadata?.loreLibraryRef?.id === 'starcraft-tmg.kerrigan-lore';
+const isStandardRoleplay=request=>request.metadata?.responseMode==='standard_roleplay'
+  && ['chara_card_v2','chara_card_v3'].includes(request.metadata?.standardCardRef?.spec);
 export const LIVE_ADAPTER_ID = "secure-worker-live-byok-v1";
 export const LIVE_ADAPTER_NETWORK = "isolated_worker_https_egress";
 
@@ -20,7 +22,8 @@ export function liveProviderRequestFromCompanion(request, maxPromptBytes=1024*10
     content: message.content,
   }));
   const userMessage = "以上是按序排列的同伴角色设定与会话上下文（promptNodes）。"
-    + (reference ? "用户本次明确询问出处或官方设定，请用简短中文查证，区分故事事实与作者评论，不把作者视角说成角色亲历。"
+    + (isStandardRoleplay(request) ? "请按已经排好的角色卡定义、世界信息、示例与聊天历史，继续该角色的对话，回应最后一条消息。保持卡片指定的身份、语气与场景。"
+      : reference ? "用户本次明确询问出处或官方设定，请用简短中文查证，区分故事事实与作者评论，不把作者视角说成角色亲历。"
       : story ? "请保持该角色的第一人称身份，用自然中文讲述所给记忆中的经历或关系，按内容写一到三小段。不要变成资料摘要，不主动罗列未被问到的细节空白，也不转成战术口号。"
       : "请以该同伴的身份，只用一到两句简短中文回复指挥官的最后一句话，")
     + "仅依据其中的公开信息，不要编造规则事实。"
@@ -36,7 +39,7 @@ export function liveProviderRequestFromCompanion(request, maxPromptBytes=1024*10
       allowedChannels: [...LIVE_ALLOWED_CHANNELS],
       decisionCandidateSource: "forbidden",
     },
-    maxOutputUnits: (story ? STORY_OUTPUT_BUDGET : LIVE_OUTPUT_BUDGET).maxOutputUnits,
+    maxOutputUnits: (story||isStandardRoleplay(request) ? STORY_OUTPUT_BUDGET : LIVE_OUTPUT_BUDGET).maxOutputUnits,
   };
   const byteLength = Buffer.byteLength(JSON.stringify(body), "utf8");
   ensure(byteLength <= maxPromptBytes,
@@ -161,7 +164,7 @@ export function createLiveCompanionProviderAdapter(options = {}) {
       observation.failure = {
         code: "LIVE_PROVIDER_OUTPUT_BUDGET_TRUNCATED",
         classification: clone(classification),
-        budget: clone(isLoreStory(request) ? STORY_OUTPUT_BUDGET : LIVE_OUTPUT_BUDGET),
+        budget: clone(isLoreStory(request)||isStandardRoleplay(request) ? STORY_OUTPUT_BUDGET : LIVE_OUTPUT_BUDGET),
         receipt: clone(receipt),
       };
       return rejection("LIVE_PROVIDER_OUTPUT_BUDGET_TRUNCATED",

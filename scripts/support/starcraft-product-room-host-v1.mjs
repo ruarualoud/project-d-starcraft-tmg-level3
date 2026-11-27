@@ -16,8 +16,8 @@ import { OFFICIAL_STANDARD_2000_ROOM_RECIPES_V1 } from '../../packages/product-c
 import { createStarcraftTmgCompanionProductModuleV1, companionProductPackageInputFromCatalogueEntryV1,
   companionPortraitAssetCatalogV1, companionPortraitPresentationAssetsV1, STARCRAFT_TMG_COMPANION_PRODUCT_API_PREFIX } from '../../packages/product-composition/index.mjs';
 import { createSqliteCompanionPersistenceAdapter } from '../../packages/companion-backend-module-v1/index.mjs';
+import {readStandardCharacterCardV1} from '../../packages/companion-backend-module-v1/standard-roleplay-v1.mjs';
 import { COMPANION_CATALOGUE_V1 } from '../../content/characters/companion-catalogue-v1.mjs';
-import { KERRIGAN_LORE_KNOWLEDGE_V1 } from '../../content/characters/kerrigan-lore-knowledge-v1.mjs';
 import { STARCRAFT_TMG_HOSTED_BOT_SEAT_API_PREFIX, STARCRAFT_TMG_HOSTED_BOT_SEAT_HTTP_VERSION } from '../../packages/client-domain/hosted-bot-seat-transport-v1.mjs';
 import { createOfficialCompetitiveMapConfiguratorV1 } from '../../packages/product-composition/official-competitive-map-configurator-v1.mjs';
 import { createProductRoomCredentialsV1 } from '../../packages/secure-provider-runtime/product-room-credentials-v1.mjs';
@@ -78,6 +78,17 @@ export async function createStarcraftProductRoomHostV1(input) {
   const providerFactory=input.providerFactory||createStarcraftTmgLiveOpponentProviderStackV1;
   const packages=COMPANION_CATALOGUE_V1.entries.map(entry=>companionProductPackageInputFromCatalogueEntryV1(entry,{
     presentationAssets:companionPortraitPresentationAssetsV1(entry.characterId)}));
+  const standardManifest=JSON.parse(await readFile(path.join(root,'content/characters/standard-cards/manifest.json'),'utf8'));
+  const portraitPngs=new Map(await Promise.all(COMPANION_CATALOGUE_V1.entries.map(async entry=>{
+    const portrait=companionPortraitPresentationAssetsV1(entry.characterId).idle;
+    return [entry.characterId,(await readFile(path.join(root,portrait.assetId))).toString('base64')];
+  })));
+  const standardRoleplayCards=await Promise.all(standardManifest.cards.map(async binding=>{
+    const card=JSON.parse(await readFile(path.join(root,'content/characters/standard-cards',binding.file),'utf8'));
+    if(readStandardCharacterCardV1(card).cardHash!==binding.cardHash)fail('STANDARD_CHARACTER_CARD_MANIFEST_HASH_MISMATCH');
+    return {companionPackageId:binding.companionPackageId,eraId:binding.eraId,card,
+      portraitPngBase64:portraitPngs.get(card.data.extensions.projectD.characterId)};
+  }));
   let origin='';
   function publicRecord(record) {
     return {roomId:record.roomId,title:record.title,matchMode:record.matchMode,
@@ -158,7 +169,7 @@ export async function createStarcraftProductRoomHostV1(input) {
         }};
       const companion=createStarcraftTmgCompanionProductModuleV1({roomRuntime:fixture.roomRuntime,
         persistence,provider:scopedCompanion,packages,assetCatalog:companionPortraitAssetCatalogV1(),
-        knowledgeLibraries:[KERRIGAN_LORE_KNOWLEDGE_V1],globalWorldbookEntries:[],worldbookRecursionDepth:2});
+        standardRoleplayCards,globalWorldbookEntries:[],worldbookRecursionDepth:2});
       const adapter=createStarcraftTmgLevel3HttpAdapter({roomRuntime:fixture.roomRuntime,assetRoot:root});
       const item={record,fixture,adapter,companion,persistence,roomStore,botStore,journal,
         withLearningService:(seat,factory,operation)=>userKeys.use(seat,'postgame-learning',factory,operation),

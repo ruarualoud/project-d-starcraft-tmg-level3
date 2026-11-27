@@ -92,6 +92,10 @@ const COMPANION_PRODUCT_OPERATIONS = new Set([
   "permission_surfaces",
   "package_export",
   "package_import",
+  "standard_card_export",
+  "standard_card_import",
+  "standard_book_export",
+  "standard_book_import",
   // Slice 266e: package-to-backend promotion (durable seal + hash pins).
   "package_promote",
   "package_promotions",
@@ -277,6 +281,10 @@ function companionProductEndpoint(request) {
       path: `packages/${encodeURIComponent(String(request.packageId || ""))}/export?${roomQuery}`,
     },
     package_import: { method: "POST", path: "packages/import", body },
+    standard_card_export:{method:'GET',path:`${conversation}/standard-card?${roomQuery}&packageId=${encodeURIComponent(request.payload?.packageId||'')}&format=${encodeURIComponent(request.payload?.format||'json')}`},
+    standard_card_import:{method:'PUT',path:`${conversation}/standard-card`,body},
+    standard_book_export:{method:'GET',path:`${conversation}/standard-card/worldbook?${roomQuery}&packageId=${encodeURIComponent(request.payload?.packageId||'')}`},
+    standard_book_import:{method:'PUT',path:`${conversation}/standard-card/worldbook`,body},
     // ── Slice 266e ──
     package_promote: { method: "POST", path: "packages/promote", body },
     package_promotions: { method: "GET", path: `packages/promotions?${roomQuery}` },
@@ -418,7 +426,8 @@ export function createHttpStarcraftTmgCompanionProductTransportV1(options = {}) 
     try {
       const response = await fetchImpl(`${baseUrl}${apiPrefix}/${endpoint.path}`, init);
       const text = await response.text();
-      if (text.length > maxResponseBytes) {
+      const responseLimit=request.operation.startsWith('standard_')?Math.max(maxResponseBytes,48*1024*1024):maxResponseBytes;
+      if (text.length > responseLimit) {
         throw new StarcraftTmgCompanionProductTransportError(
           "COMPANION_TRANSPORT_RESPONSE_TOO_LARGE",
           "companion product response exceeded the configured limit",
@@ -506,11 +515,13 @@ export function createStarcraftTmgCompanionProductClientV1(options = {}) {
     schemaVersion: STARCRAFT_TMG_COMPANION_PRODUCT_CLIENT_VERSION,
     status: () => invoke("status"),
     catalogue: () => invoke("catalogue"),
-    openOrResume: ({ packageIds, versions, eraIds } = {}) => invoke("open_or_resume", {
+    openOrResume: ({ packageIds, versions, eraIds,forceNew,copyStandardCardsFromConversationId,greetingIndices } = {}) => invoke("open_or_resume", {
       payload: {
         packageIds,
         ...(versions ? { versions } : {}),
         ...(eraIds ? { eraIds } : {}),
+        ...(forceNew===true?{forceNew:true,copyStandardCardsFromConversationId}:{}),
+        ...(greetingIndices?{greetingIndices}:{}),
       },
     }),
     readActive: () => invoke("read_active"),
@@ -607,6 +618,10 @@ export function createStarcraftTmgCompanionProductClientV1(options = {}) {
     restoreConversation: ({ export: exported } = {}) =>
       invoke("conversation_restore", { payload: { export: exported } }),
     exportPackage: ({ packageId } = {}) => invoke("package_export", { packageId }),
+    exportStandardCard:({conversationId,packageId,format='json'}={})=>invoke('standard_card_export',{conversationId,payload:{packageId,format}}),
+    importStandardCard:({conversationId,packageId,card,pngBase64}={})=>invoke('standard_card_import',{conversationId,payload:{packageId,card,pngBase64}}),
+    exportStandardBook:({conversationId,packageId}={})=>invoke('standard_book_export',{conversationId,payload:{packageId}}),
+    importStandardBook:({conversationId,packageId,book}={})=>invoke('standard_book_import',{conversationId,payload:{packageId,book}}),
     importPackage: ({ contract } = {}) => invoke("package_import", { payload: { contract } }),
     // ── Slice 266e: package-to-backend promotion ──
     promotePackage: ({ packageId } = {}) => invoke("package_promote", { payload: { packageId } }),

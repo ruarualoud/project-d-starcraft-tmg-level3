@@ -8,6 +8,7 @@ import {
   type ImageSourcePropType,
   Platform,
   Pressable,
+  Share,
   StyleSheet,
   Text,
   TextInput,
@@ -292,6 +293,11 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
   const [sectionOverrides, setSectionOverrides] = useState<
     Partial<Record<FloatingSectionKey, boolean>>
   >({});
+  const [standardEditorOpen,setStandardEditorOpen]=useState(false);
+  const [standardTransfer,setStandardTransfer]=useState<{
+    packageId:string;kind:'card'|'book';text:string;pngBase64:string|null;filename:string;
+    download:{content:string;mime:string;filename:string;base64:boolean}|null;
+  }>({packageId:'',kind:'card',text:'',pngBase64:null,filename:'',download:null});
   const playerRef = useRef(createStarcraftTmgVisiblePortraitPlayerV2());
   const assetRecoveryAttempt = useRef<{
     bindingHash: string;
@@ -665,6 +671,9 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
     patchChat({ busy: true, error: null, lastOperation: operation });
     try {
       return await fn();
+    } catch(error:any) {
+      patchChat({error:{code:String(error?.code||'COMPANION_OPERATION_FAILED')}});
+      return null;
     } finally {
       patchChat({ busy: false });
     }
@@ -1005,26 +1014,75 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
   }
 
   async function importChatWorldbook() {
-    const conversationId = chatConversationId();
-    if (!conversationId) return;
-    await runChatOp("worldbook_import", async () => {
-      const result: any = await companionProduct!.importWorldbook({
-        conversationId,
-        entries: [{
-          entryId: `ui-import-${Date.now().toString(36)}`,
-          label: "UI import",
-          content: "Imported from the companion window: the user favors defensive play.",
-          triggers: [{ kind: "keyword", keywords: ["defensive"] }],
-          priority: 5,
-          tokenBudget: 128,
-        }],
-      });
-      if (result?.ok) {
-        patchChat({ transferNote: `worldbook import ok · registered ${result.registered?.length ?? 0}` });
-        await refreshWorldbook();
-      } else {
-        patchChat({ transferNote: `worldbook import rejected · ${String(result?.reason || "COMPANION_WORLDBOOK_IMPORT_FAILED")}` });
-      }
+    setStandardEditorOpen(true);
+    setStandardTransfer(previous=>({...previous,kind:'book',pngBase64:null,download:null}));
+    patchChat({transferNote:zh?'请选择文件或粘贴完整世界书 JSON，再点「应用到本会话」。':'Choose a file or paste the full lorebook JSON, then apply it to this conversation.'});
+  }
+
+  async function exportStandardData(kind:'card'|'book',format:'json'|'png'='json'){
+    const conversationId=chatConversationId();if(!conversationId)return;
+    const packageId=standardTransfer.packageId||chat.conversation?.standardCards?.[0]?.packageId;
+    await runChatOp('standard_export',async()=>{
+      const result:any=kind==='book'?await companionProduct!.exportStandardBook({conversationId,packageId})
+        :await companionProduct!.exportStandardCard({conversationId,packageId,format});
+      if(!result?.ok){patchChat({transferNote:`${zh?'导出失败':'Export failed'} · ${result?.reason||'STANDARD_EXPORT_FAILED'}`});return;}
+      const png=format==='png',filename=`${String(packageId).split('.').at(-1)}-${kind}.${png?'png':'json'}`;
+      setStandardTransfer({packageId,kind,text:png?'':result.serialized,pngBase64:null,filename,
+        download:{content:png?result.pngBase64:result.serialized,mime:png?'image/png':'application/json',filename,base64:png}});
+      patchChat({transferNote:zh?'完整数据已读取。可检查 JSON 或点「保存文件」；尚未修改会话。':'Complete data loaded. Inspect the JSON or save the file; the conversation has not changed.'});
+    });
+  }
+
+  function chooseStandardFile(){
+    if(Platform.OS!=='web'||typeof document==='undefined')return;
+    const input=document.createElement('input');input.type='file';input.accept=standardTransfer.kind==='book'?'.json,application/json':'.json,.png,application/json,image/png';
+    input.onchange=()=>{void(async()=>{
+      const file=input.files?.[0];if(!file)return;
+      try{
+        const png=file.name.toLowerCase().endsWith('.png');
+        if(file.size>(png?24:4)*1024*1024){patchChat({transferNote:zh?'文件超过当前导入大小上限；没有截断或写入。':'File exceeds the import limit; nothing was truncated or saved.'});return;}
+        let pngBase64:string|null=null,text='';
+        if(png){const bytes=new Uint8Array(await file.arrayBuffer());let binary='';for(let i=0;i<bytes.length;i+=32768)binary+=String.fromCharCode(...bytes.subarray(i,i+32768));pngBase64=btoa(binary);}
+        else text=await file.text();
+        setStandardTransfer(previous=>({...previous,text,pngBase64,filename:file.name,download:null}));
+        patchChat({transferNote:zh?`已读取 ${file.name}，点击「应用到本会话」后才会更新资料。`:`Loaded ${file.name}; apply it to update this conversation.`});
+      }catch{patchChat({transferNote:zh?'读取文件失败，资料未修改。':'Could not read the file; no data changed.'});}
+    })();};
+    input.click();
+  }
+
+  async function applyStandardData(){
+    const conversationId=chatConversationId();if(!conversationId)return;
+    const packageId=standardTransfer.packageId||chat.conversation?.standardCards?.[0]?.packageId;
+    await runChatOp('standard_import',async()=>{
+      const result:any=standardTransfer.kind==='book'
+        ?await companionProduct!.importStandardBook({conversationId,packageId,book:standardTransfer.text})
+        :await companionProduct!.importStandardCard({conversationId,packageId,...(standardTransfer.pngBase64?{pngBase64:standardTransfer.pngBase64}:{card:standardTransfer.text})});
+      if(result?.ok)patchChat({conversation:result,worldbook:null,transferNote:zh?'标准资料已应用，原聊天记录保留。没有调用模型。':'Standard data applied; history preserved. No model request was made.'});
+      else patchChat({transferNote:`${zh?'导入失败，资料未修改':'Import rejected; data unchanged'} · ${result?.reason||'STANDARD_IMPORT_FAILED'}${result?.details?.path?' · '+result.details.path:''}${result?.details?.macros?' · '+result.details.macros.join(', '):''}${result?.details?.extensions?' · '+result.details.extensions.join(', '):''}`});
+    });
+  }
+
+  async function saveStandardFile(){
+    const file=standardTransfer.download;if(!file)return;
+    if(Platform.OS!=='web'){
+      if(file.base64){patchChat({transferNote:zh?'当前原生界面请使用完整 JSON 导出；PNG 数据保留，未转换成文本分享。':'Use the complete JSON export in this native view; PNG data was not shared as text.'});return;}
+      await Share.share({message:file.content,title:file.filename});return;
+    }
+    const part=file.base64?Uint8Array.from(atob(file.content),character=>character.charCodeAt(0)):file.content;
+    const url=URL.createObjectURL(new Blob([part],{type:file.mime}));
+    const anchor=document.createElement('a');anchor.href=url;anchor.download=file.filename;anchor.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+  }
+
+  async function newStandardConversation(){
+    const conversation=chat.conversation;if(!conversation)return;
+    await runChatOp('standard_new_conversation',async()=>{
+      const packageIds=conversation.companions.map((row:any)=>row.packageRef.id);
+      const eraIds=Object.fromEntries(conversation.companions.map((row:any)=>[row.packageRef.id,row.eraId]));
+      const result:any=await companionProduct!.openOrResume({packageIds,eraIds,forceNew:true,copyStandardCardsFromConversationId:conversation.conversationId});
+      if(result?.ok)patchChat({conversation:result,worldbook:null,interrupted:null,branchesResult:null,
+        transferNote:zh?'已新建会话，开场白来自角色卡；原会话记录保留，没有调用模型。':'New conversation created with the card greeting; prior history preserved. No model request was made.'});
+      else patchChat({transferNote:`${zh?'新建失败':'Could not start conversation'} · ${result?.reason||'STANDARD_NEW_CONVERSATION_FAILED'}`});
     });
   }
 
@@ -1948,6 +2006,10 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
         {zh ? `凯瑞甘资料 v${library.libraryRef.version} · 当前时代可用 ${library.eligibleRecords}/${library.totalRecords} 条 · ${library.eraLabel}。按问题取材，来源显示在新回复下方；这是主线资料样板，未覆盖全部小说与台词。`
           : `Kerrigan lore v${library.libraryRef.version} · ${library.eligibleRecords}/${library.totalRecords} records available in this era. Question-based retrieval; new replies show supplied sources. Main-story sample, not every novel or line.`}
       </Text>)}
+      {(chat.conversation?.standardCards||[]).map((card:any)=><Text key={card.participantId} style={styles.chatStatusMeta} testID="companion-chat-standard-card-status">
+        {zh?`${card.name} · Character Card V${card.specVersion} · 世界书可用 ${card.eligibleEntries}/${card.entryCount} 条。角色卡完整保留，按标准字段组装。`
+          :`${card.name} · Character Card V${card.specVersion} · ${card.eligibleEntries}/${card.entryCount} lore entries available. Complete card fields retained.`}
+      </Text>)}
     </View>;
     const provider = chat.statusResult?.provider;
     const persistence = chat.statusResult?.persistence;
@@ -2038,6 +2100,7 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
   function worldbookOriginClass(entry: any) {
     const tier = String(entry?.scopeTier || "");
     const refs: string[] = entry?.provenance?.sourceRefs || [];
+    if(refs.some(ref=>String(ref).startsWith('character-card://')))return 'standard_card';
     if (refs.some((ref) => String(ref).startsWith('lore-library://'))) return 'independent_library';
     if (tier === "character") return "sealed_package";
     if (tier === "persona") return "persona_derived";
@@ -2080,6 +2143,7 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
           {chat.worldbook
             ? `${zh ? "世界书来源" : "worldbook origins"}: `
               + `${zh ? "封存包(正式内容)" : "sealed package (formal)"} ${originCounts.sealed_package || 0}`
+              + (originCounts.standard_card?` · ${zh?'标准角色卡世界书':'standard character book'} ${originCounts.standard_card}`:'')
               + (originCounts.independent_library ? ` · ${zh ? "独立角色资料库(按问题检索)" : "independent lore library (question-selected)"} ${originCounts.independent_library}` : '')
               + ` · ${zh ? "人设派生" : "persona-derived"} ${originCounts.persona_derived || 0}`
               + ` · ${zh ? "会话注册" : "chat session"} ${originCounts.chat_session || 0}`
@@ -2473,6 +2537,44 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
     );
   }
 
+  function renderStandardCardEditor(){
+    const cards:any[]=chat.conversation?.standardCards||[];if(!cards.length)return null;
+    const selected=cards.find(card=>card.packageId===standardTransfer.packageId)||cards[0];
+    return <View style={styles.gapCard} testID="companion-standard-card-editor">
+      <ActionButton disabled={chat.busy} label={zh?`标准角色卡／世界书 ${standardEditorOpen?'−':'+'}`:`Standard character cards / lorebooks ${standardEditorOpen?'−':'+'}`}
+        onPress={()=>setStandardEditorOpen(!standardEditorOpen)} testID="companion-standard-editor-toggle" />
+      {standardEditorOpen&&<>
+        <View style={styles.choiceRow}>{cards.map(card=><ChoiceButton key={card.packageId} active={selected.packageId===card.packageId} disabled={chat.busy}
+          label={card.name} onPress={()=>setStandardTransfer(previous=>({...previous,packageId:card.packageId}))} testID={`companion-standard-select-${String(card.packageId).split('.').at(-1)}`} />)}</View>
+        <Text style={styles.gapCode}>{zh?'作者说明：':'Creator notes: '}{selected.creatorNotes||'—'}</Text>
+        <View style={styles.actionRow}>
+          <ActionButton disabled={chat.busy} label={zh?'读取完整角色卡 JSON':'Read complete card JSON'} onPress={()=>void exportStandardData('card')} testID="companion-standard-export-json" />
+          {Platform.OS==='web'&&<ActionButton disabled={chat.busy} label={zh?'导出角色卡 PNG':'Export card PNG'} onPress={()=>void exportStandardData('card','png')} testID="companion-standard-export-png" />}
+          <ActionButton disabled={chat.busy} label={zh?'读取完整世界书 JSON':'Read complete lorebook JSON'} onPress={()=>void exportStandardData('book')} testID="companion-standard-export-book" />
+        </View>
+        <View style={styles.choiceRow}>
+          <ChoiceButton active={standardTransfer.kind==='card'} disabled={chat.busy} label={zh?'角色卡':'Character card'}
+            onPress={()=>setStandardTransfer(previous=>({...previous,kind:'card',download:null}))} testID="companion-standard-kind-card" />
+          <ChoiceButton active={standardTransfer.kind==='book'} disabled={chat.busy} label={zh?'世界书':'Lorebook'}
+            onPress={()=>setStandardTransfer(previous=>({...previous,kind:'book',pngBase64:null,download:null}))} testID="companion-standard-kind-book" />
+          {Platform.OS==='web'&&<ActionButton disabled={chat.busy} label={zh?'选择文件':'Choose file'} onPress={chooseStandardFile} testID="companion-standard-choose-file" />}
+        </View>
+        {!!standardTransfer.filename&&<Text style={styles.gapCode}>{standardTransfer.filename}{standardTransfer.pngBase64?' · PNG':''}</Text>}
+        <TextInput multiline editable={!chat.busy} value={standardTransfer.text}
+          onChangeText={text=>setStandardTransfer(previous=>({...previous,text,pngBase64:null,download:null}))}
+          accessibilityLabel={zh?'标准角色卡或世界书完整 JSON':'Complete standard character card or lorebook JSON'}
+          placeholder={zh?'粘贴完整 JSON，或选择 JSON／角色卡 PNG 文件。':'Paste complete JSON, or choose a JSON / character-card PNG file.'}
+          placeholderTextColor={COMMS.textFaint} style={[styles.input,{maxHeight:220}]} testID="companion-standard-json-input" />
+        <View style={styles.actionRow}>
+          <ActionButton disabled={chat.busy||(!standardTransfer.text.trim()&&!standardTransfer.pngBase64)} label={zh?'应用到本会话':'Apply to this conversation'} onPress={()=>void applyStandardData()} testID="companion-standard-apply" />
+          <ActionButton disabled={chat.busy||!standardTransfer.download} label={zh?'保存文件':'Save file'} onPress={()=>void saveStandardFile()} testID="companion-standard-save-file" />
+          <ActionButton disabled={chat.busy} label={zh?'新建干净会话（保留原记录）':'Start clean conversation (keep history)'} onPress={()=>void newStandardConversation()} testID="companion-standard-new-conversation" />
+        </View>
+        <Text style={styles.gapCode}>{chat.transferNote||(zh?'完整字段与扩展原样保留；资料导入不会调用模型。':'Complete fields and extensions are preserved; importing data makes no model request.')}</Text>
+      </>}
+    </View>;
+  }
+
   function renderChatImportExportCard() {
     return (
       <View style={styles.gapCard} testID="companion-chat-import-export">
@@ -2494,12 +2596,12 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
           />
           <ActionButton
             disabled={chat.busy}
-            label={zh ? "导出世界书" : "Export worldbook"}
+            label={zh ? "导出会话层世界书" : "Export chat-scope worldbook"}
             onPress={() => void exportChatWorldbook()}
             testID="companion-chat-worldbook-export"
           />
           <ActionButton
-            disabled={chat.busy}
+            disabled={chat.busy || !chat.conversation?.standardCards?.length}
             label={zh ? "导入世界书" : "Import worldbook"}
             onPress={() => void importChatWorldbook()}
             testID="companion-chat-worldbook-import"
@@ -2659,7 +2761,7 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
       : null;
     return {
       isUser,
-      label: participant?.label || participantId,
+      label: conversation?.standardCards?.find((card:any)=>card.participantId===participantId)?.name || participant?.label || participantId,
       characterId,
       eraId: companion?.eraId || null,
       slug: isUser
@@ -2866,9 +2968,12 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
                   </Text>
                 </View>
                 <Text style={styles.messageText}>{message.content}</Text>
+                {message.source?.origin==='character_card'&&<Text style={styles.chatStatusMeta}>
+                  {zh?'开场白 · 来自角色卡，非模型生成':'Greeting · authored in the character card, not generated'}
+                </Text>}
                 {!!message.knowledge?.sources?.length && <View testID={`companion-chat-sources-${message.turnSequence}`}>
                   <Text style={styles.chatStatusMeta}>{zh ? '本次参考资料（回复措辞为角色演绎）' : 'Sources supplied for this reply (phrasing is roleplay)'}</Text>
-                  {message.knowledge.sources.filter((source: any) => /^https:\/\/news\.blizzard\.com\//u.test(source.url || '')).map((source: any) => <Pressable key={source.id}
+                  {message.knowledge.sources.filter((source: any) => /^https:\/\//u.test(source.url || '')).map((source: any) => <Pressable key={source.id}
                     accessibilityRole="link" onPress={() => { void Linking.openURL(source.url); }}>
                     <Text style={styles.chatStatusMeta}>{source.title} ↗</Text>
                   </Pressable>)}
@@ -3018,6 +3123,7 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
           </Text>
         )}
         {renderChatProviderStatus()}
+        {renderStandardCardEditor()}
         {renderChatPersonaCard()}
         {renderChatAuditCard()}
         {renderChatPermissionsCard()}

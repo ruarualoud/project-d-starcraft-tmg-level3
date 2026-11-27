@@ -124,7 +124,33 @@ try {
     const after=await item.fixture.roomRuntime.readRoom(args);
     assert.equal(after.projection.room.stateRevision,room.projection.room.stateRevision);
     assert.equal(after.projection.room.stateHash,room.projection.room.stateHash);
+    const cardManifest=JSON.parse(await readFile(path.join(root,'content/characters/standard-cards/manifest.json'),'utf8'));
+    const kerriganCards=await Promise.all(cardManifest.cards.filter(row=>row.companionPackageId==='starcraft-tmg.companion.sarah_kerrigan').map(async row=>({
+      companionPackageId:row.companionPackageId,eraId:row.eraId,
+      card:JSON.parse(await readFile(path.join(root,'content/characters/standard-cards',row.file),'utf8')),
+    })));
+    let standardWorkbenchReads=0;
+    const standardService=createStarcraftTmgCompanionRoomSessionServiceV1({companionBackend:item.companion.backend,
+      standardRoleplayCards:kerriganCards,roomRuntime:{...item.fixture.roomRuntime,async readBattleWorkbench(){standardWorkbenchReads++;return workbench;}}});
+    const standardOpened=await standardService.openConversation({...args,packageIds:['starcraft-tmg.companion.sarah_kerrigan']});
+    assert.equal(standardOpened.ok,true,JSON.stringify(standardOpened));
+    const standardStart=requests.length;
+    for(const question of ['你好，凯瑞甘','我的坦克射程是多少？','你今天心情怎么样？']){
+      const reply=await standardService.sendMessage({...args,conversationId:standardOpened.conversationId,content:question});
+      assert.equal(reply.ok,true,JSON.stringify(reply));
+    }
+    const standardRequests=requests.slice(standardStart);
+    const roomPacket=request=>request.messages.find(message=>message.role==='system'&&message.content.startsWith('{"roomContext"'));
+    assert.equal(roomPacket(standardRequests[0].request),undefined);
+    const standardUnits=JSON.parse(roomPacket(standardRequests[1].request).content).roomContext;
+    assert.equal(standardUnits.workbench.units.length,1);assert.equal(standardUnits.workbench.units[0].unitId,'siege_tank');
+    assert.equal(roomPacket(standardRequests[2].request),undefined);assert.equal(standardWorkbenchReads,1);
+    assert(standardRequests.every(row=>row.request.metadata.responseMode==='standard_roleplay'));
+    const finalRoom=await item.fixture.roomRuntime.readRoom(args);
+    assert.equal(finalRoom.projection.room.stateRevision,room.projection.room.stateRevision);
+    assert.equal(finalRoom.projection.room.stateHash,room.projection.room.stateHash);
     console.log(JSON.stringify({passed:true,wireBytesByRoute:requests.map(row=>bytes(row.wire)),savedMessages:casualAgain.messages.length,
-      workbenchReads,casualChatWorkbenchReads:0,realProviderCalls:0,gameplayUnchanged:true}));
+      workbenchReads,casualChatWorkbenchReads:0,standardWorkbenchReads,standardRoleplayRequests:standardRequests.length,
+      realProviderCalls:0,gameplayUnchanged:true}));
   } else console.log(JSON.stringify({passed:true,realProviderCalls:0,capturedProjectionChecks:true}));
 } finally {await host.close();}

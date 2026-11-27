@@ -450,6 +450,19 @@ export function createCompanionSessionRuntime(options = {}) {
       checkpoints: [],
       memoryScope,
     };
+    // Standard Character Card opening messages are authored card content,
+    // accepted once at construction. They do not consume the user's first
+    // turn or pretend to be Provider completions. Existing sessions unchanged.
+    const initialMessages=(input.initialMessages||[]).map(message=>{
+      const participant=findParticipant(state,message.participantId);
+      if(participant?.kind!=="companion"||!participant.canSpeak)fail(CB3.PARTICIPANT_INVALID,"card greeting requires a speaking companion");
+      return {ownerParticipantId:participant.participantId,content:normalizeContent(message.content,"initialMessage.content"),
+        mentions:[],receipts:clone(message.receipts||[]),source:{origin:"character_card",cardRef:clone(message.cardRef)}};
+    });
+    for(const message of initialMessages){
+      const record=buildTurnRecord(state,message);
+      state.acceptedTurns.push(record);state.turnCounter+=1;await mirrorTranscript(state,record);
+    }
     await saveState(state);
     return sessionSummary(state);
   }
