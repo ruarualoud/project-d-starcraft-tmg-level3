@@ -9,7 +9,10 @@ const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..'),input
 const read=async ref=>JSON.parse(await fs.readFile(path.join(root,ref),'utf8'));
 const directory=await fs.mkdtemp(path.join(root,'build/wave4-web/stukov-units/detonation-v3-compat-')),results=[];
 const currentV3Only=process.argv.includes('--v3-only');
-const specs=currentV3Only?[['detonation-template','main-first-use'],['detonation-template','spillover-first-use'],
+const overwatchOnly=process.argv.includes('--overwatch-only');
+const specs=overwatchOnly?[['detonation-ranged-host','marine-use'],['detonation-template','spillover-first-use'],['detonation-outside','use'],
+ ['detonation-overwatch','marine-use'],['detonation-overwatch','trooper-use']]
+ :currentV3Only?[['detonation-template','main-first-use'],['detonation-template','spillover-first-use'],
  ['detonation-outside','use'],['detonation-outside','decline'],['bio-kill-switch-before-casualty-v3','v3-counter-detonation']]
  :[['detonation-ranged-host','marine-use'],['detonation-nested-host','marine-both-use'],['bio-kill-switch','counter-detonation'],
  ['corrode-armour-restoration','medic-restores'],['corrode-armour-round',null],['detonation-template','main-first-use'],['detonation-template','spillover-first-use']];
@@ -26,5 +29,5 @@ for(const [name,id]of specs){
    descriptorUnchanged:true,coldReplay:true,stateHash:head.envelope.stateHash,newActions:0});console.log(JSON.stringify(results.at(-1)));
  }finally{native.close();}
 }
-await atomicWrite(path.join(root,'docs/development/wave4/evidence/'+(currentV3Only?'detonation-v3-current-cold':'detonation-v3-compat')+'.public.json'),JSON.stringify({
+await atomicWrite(path.join(root,'docs/development/wave4/evidence/'+(overwatchOnly?'detonation-overwatch-compat':currentV3Only?'detonation-v3-current-cold':'detonation-v3-compat')+'.public.json'),JSON.stringify({
  schema:'starcraft_tmg_wave4_detonation_v3_compat_v1',status:'passed_scoped',results,modelCalls:0,trainingTruth:false},null,2));

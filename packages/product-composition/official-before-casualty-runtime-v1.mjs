@@ -1,10 +1,11 @@
 import {isDeepStrictEqual} from 'node:util';
 import {hashStarcraftTmgContract as hash} from '../authoritative-engine/referee-crypto-v1.mjs';
 import {resolveOfficialArmourRollActivationIdV1} from '../rule-atoms/official-armour-roll-ordinal-v1.mjs';
-import {hasOfficialBeforeCasualtyBatchPolicyV1,hasOfficialExtendedBeforeCasualtyPolicyV1,hasOfficialTemplateBeforeCasualtyPolicyV1,reserveOfficialBeforeCasualtyBatchV1,
+import {hasOfficialBeforeCasualtyBatchPolicyV1,hasOfficialExtendedBeforeCasualtyPolicyV1,hasOfficialTemplateBeforeCasualtyPolicyV1,hasOfficialOverwatchBeforeCasualtyPolicyV1,reserveOfficialBeforeCasualtyBatchV1,
  consumeOfficialBeforeCasualtyReservationV1} from '../rule-atoms/official-before-casualty-batch-v1.mjs';
 import {createOfficialReactionFamilyAdapterV1,openOfficialReactionFamilyWindowV1,
  consumeOfficialReactionFamilyResolutionV1} from './official-reaction-family-adapter-v1.mjs';
+import {readOfficialOverwatchAttackGrantV1} from '../rule-atoms/official-overwatch-attack-policy-v1.mjs';
 const key='officialBeforeCasualtyContinuations';
 const without=(x,k)=>Object.fromEntries(Object.entries(x).filter(([name])=>name!==k));
 const seal=(x,k)=>({...x,[k]:hash(x)});
@@ -36,7 +37,10 @@ export function stageOfficialBeforeCasualtyContinuationV1({state:input,action,ho
  const sourceActionHash=hash(action),reservedRows=rows.map(r=>({...clone(r),reservationHash:reserveOfficialBeforeCasualtyBatchV1({state,
   piece:state.pieces.find(p=>p.id===r.targetPieceId),casualty:r.casualty,sourceActionHash,attackResolutionHash:r.attackResolutionHash}).reservationHash}));
  const reservation=piece.officialBeforeCasualtyReservations.find(r=>r.reservationHash===reservedRows[0].reservationHash);
- const activationContext=outer?.activationContext||sourceContext||{activeSideKey:causeSideKey,
+ const overwatch=hasOfficialOverwatchBeforeCasualtyPolicyV1(input)?readOfficialOverwatchAttackGrantV1(input):null;
+ const overwatchResolution=overwatch&&overwatch.sourcePieceId===causePieceId
+  ?input.officialReactionResolutionHistory.find(r=>r.triggerHash===overwatch.triggerHash):null;
+ const activationContext=outer?.activationContext||sourceContext||(overwatchResolution?{activeSideKey:overwatchResolution.activeSideKey,activationId:overwatchResolution.activationId}:null)||{activeSideKey:causeSideKey,
   activationId:resolveOfficialArmourRollActivationIdV1(input,causePieceId)};
  const context={attackerPieceId:causePieceId,targetPieceId:piece.id,
   ...(extended?{beforeCasualtyReservations:reservedRows.map(r=>({targetPieceId:r.targetPieceId,reservationHash:r.reservationHash,
@@ -56,7 +60,8 @@ export function stageOfficialBeforeCasualtyContinuationV1({state:input,action,ho
   // These slots belong to the sealed host. Child HITS must own fresh slots.
   frame.suspendedHostSlots={};
   for(const slot of ['pendingAction','pendingOfficialAutomaticHits',...(hasOfficialTemplateBeforeCasualtyPolicyV1(input)
-    ?['pendingOfficialBlastTemplateAttack','pendingOfficialRavenSeekerPhaseEnd']:[])])
+    ?['pendingOfficialBlastTemplateAttack','pendingOfficialRavenSeekerPhaseEnd']:[]),
+    ...(hasOfficialOverwatchBeforeCasualtyPolicyV1(input)?['pendingOfficialAutoTurretOverwatch','pendingCurrentProductRangedSequence']:[])])
     if(next[slot]){frame.suspendedHostSlots[slot]=clone(next[slot]);delete next[slot];}
  }
  next[key]=[...(next[key]||[]),seal(frame,'frameHash')];next.activeSideKey=first;
@@ -67,7 +72,7 @@ export function stageOfficialBeforeCasualtyContinuationV1({state:input,action,ho
  return{ok:true,state:next,action:clone(action),events:[event],trainingTruth:false};
 }
 export function createOfficialBeforeCasualtyRuntimeV1({reactionBundle,policy}){
- const template=policy?.version==='1.2.0',extended=template||policy?.version==='1.1.0';
+ const overwatch=policy?.version==='1.3.0',template=overwatch||policy?.version==='1.2.0',extended=template||policy?.version==='1.1.0';
  const routes=reactionBundle.routes.filter(r=>r.effectKind==='before_casualty_detonation');
  if(!routes.length)throw Error('BEFORE_CASUALTY_DETONATION_SOURCE_REQUIRED');
  const pending=readOfficialBeforeCasualtyContinuationV1;
@@ -135,6 +140,6 @@ export function createOfficialBeforeCasualtyRuntimeV1({reactionBundle,policy}){
     &&isDeepStrictEqual(p.automaticHits,{hits:effect.automaticHits,damagePerHit:effect.damagePerHit,targetUnitIds:effect.detonationFacts.targetUnitIds}));},
   timingFor:p=>template?p.reactionTiming:'inside_activation',
   reactionContextFor:(state,p)=>(state[key]||[]).find(f=>f.continuationId===p.detonationContinuationId)?.activationContext};
- return{pending,bindRootAction,afterReaction,takeResume,startNextEffect,sourceAuthority,descriptor:{runtimeId:'official-before-casualty-runtime-v1',runtimeVersion:template?'1.2.0':extended?'1.1.0':'1.0.0',
+ return{pending,bindRootAction,afterReaction,takeResume,startNextEffect,sourceAuthority,descriptor:{runtimeId:'official-before-casualty-runtime-v1',runtimeVersion:overwatch?'1.3.0':template?'1.2.0':extended?'1.1.0':'1.0.0',
   sourceBundleHash:reactionBundle.bundleHash,hostKinds:template?policy.damageHosts:extended?['ranged','melee','automatic_hits']:['ranged'],multiTargetHostAdmission:extended,trainingTruth:false}};
 }

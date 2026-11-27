@@ -1,0 +1,140 @@
+{
+  "schema": "starcraft_tmg_wave4_detonation_weapon_sequence_v1",
+  "status": "passed_scoped",
+  "runRef": "build/wave4-web/stukov-units/detonation-sequence-1qPY8y",
+  "results": [
+    {
+      "id": "dead-source",
+      "attempt": 0,
+      "woundedAttacker": true,
+      "roomId": "wave4-detonation-sequence-dead-source-0",
+      "directoryRef": "build/wave4-web/stukov-units/detonation-sequence-1qPY8y/dead-source-0",
+      "signedActions": 7,
+      "stateHash": "21c040770a88b227e39693384248dd2b53b2bdf1af1b7cc9718142ed59599436",
+      "coverageSatisfied": true,
+      "attackerDestroyed": true,
+      "sequenceSlotActuallySuspended": true,
+      "originalDiceAndCasualtyOrderPreserved": true,
+      "supplyExactlyOnce": true,
+      "trace": [
+        {
+          "revision": 1,
+          "actionType": "ranged_attack",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 2,
+          "actionType": "ranged_attack",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 3,
+          "actionType": "ranged_attack",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 4,
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null,
+          "stackDepth": 1
+        },
+        {
+          "revision": 5,
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:infested_marine/detonation-any-phase@1",
+          "stackDepth": 1
+        },
+        {
+          "revision": 6,
+          "actionType": "roll_automatic_hits_armour_pool",
+          "definitionId": null,
+          "stackDepth": 1
+        },
+        {
+          "revision": 7,
+          "actionType": "resolve_automatic_hits_evade_pool",
+          "definitionId": null,
+          "stackDepth": 1
+        }
+      ],
+      "coldReplay": true,
+      "idempotencyVerified": true
+    },
+    {
+      "id": "surviving-source",
+      "attempt": 0,
+      "woundedAttacker": false,
+      "roomId": "wave4-detonation-sequence-surviving-source-0",
+      "directoryRef": "build/wave4-web/stukov-units/detonation-sequence-1qPY8y/surviving-source-0",
+      "signedActions": 8,
+      "stateHash": "110f029d31b879ab25cde9e851bb0d7751fe56923c3599b67bd6a1b663e5851a",
+      "coverageSatisfied": true,
+      "attackerDestroyed": false,
+      "sequenceSlotActuallySuspended": true,
+      "originalDiceAndCasualtyOrderPreserved": true,
+      "supplyExactlyOnce": true,
+      "trace": [
+        {
+          "revision": 1,
+          "actionType": "ranged_attack",
+          "definitionId": null,
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 2,
+          "actionType": "ranged_attack",
+          "definitionId": null,
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 3,
+          "actionType": "ranged_attack",
+          "definitionId": null,
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 4,
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null,
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 5,
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:infested_marine/detonation-any-phase@1",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 6,
+          "actionType": "roll_automatic_hits_armour_pool",
+          "definitionId": null,
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 7,
+          "actionType": "resolve_automatic_hits_evade_pool",
+          "definitionId": null,
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 8,
+          "actionType": "finish_ranged_attack_sequence",
+          "definitionId": null,
+          "stackDepth": 0
+        }
+      ],
+      "coldReplay": true,
+      "idempotencyVerified": true
+    }
+  ],
+  "controls": [],
+  "newGameAtomsImplemented": 0,
+  "implementedCumulativeAtoms": 6,
+  "fullMatchAdmission": false,
+  "sourceHeldDefinitions": 39,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

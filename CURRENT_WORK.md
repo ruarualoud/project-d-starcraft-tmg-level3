@@ -4,9 +4,9 @@
 
 当前执行 T28-W4-02。
 Ticket 23 / Slice 249；整体 33/36；剩余 248、249、250。
-状态日期：2026-11-27T23:10:01.232Z。本页由 coordination/current-development.json 生成，不追加历史。
+状态日期：2026-11-27T23:42:38.318Z。本页由 coordination/current-development.json 生成，不追加历史。
 
-Wave4人人长任务进行中，完整原子6/18。Detonation模板、Seeker激活外及V3直接伤害本批6原生分支83动作、2完整回合和Web3房16确认通过；原骰/伤亡/Supply、空激活身份与标记持有方优先、双方全灭后回合均已验。Stukov9/9具名工程定义已验。Detonation委托/其他外部HITS/直接移除、其余新增单位与整版发布/Builder/大厅/媒体、500/2000分Web继续。39来源与估算几何保持。
+Wave4人人长任务进行中，完整原子6/18。本批Detonation Overwatch/多武器5原生分支46动作、Web2房6确认通过；旧/当前5房63动作冷读一致。18合同中16服务未隔离记录、2仅隔离Alarak，未改分母。继续双炮塔共存、其余父节点和13个已审核记录及整版产品验收。39来源与工程估算保持。
 
 运行限制：本分支仅推进Wave4人人对战，按Wave3模式补齐数据、规则、建军、房间、媒体和Web双席；使用5484及build/wave4-web，按可验证成果提交推送。其他同步开发线不在本分支展开；付费模型、K3、AI对局、复盘与生产发布继续暂停。
 
@@ -23,12 +23,13 @@ Wave4人人长任务进行中，完整原子6/18。Detonation模板、Seeker激�
 | T27/S272 军表与 Plan／Teach，P0–P6 验收 3/7 | 部分完成 | 部分完成 | 部分完成 | 未测效果 |
 
 下一步：
-1. W4-02：继续Detonation委托攻击、其他外部HITS、Disengage/Consume直接移除；保留未准入组合守卫。
-2. 接其他新增单位／势力；39来源隔离与工程估算保持。
-3. 完成W4-03整版发布/Builder/大厅/媒体及伤亡摘要，再验W4-04的500/2000分Web双席。
+1. 补齐Auto/Ocular两种Overwatch同房，再接Khassar/Target/声明父节点、其他外部HITS和直接移除。
+2. 接其余13个已审核记录及整版发布/Builder/大厅/媒体、500/2000分Web；补伤亡方案可读摘要。
+3. 完成W4-03后验W4-04两种规模Web。
 
 ## Navigation
 
+- 查看Detonation Overwatch、多武器与双席Web证据：[Detonation Overwatch接线](docs/development/wave4/detonation-overwatch-wiring.zh-CN.md)
 - 查看Detonation模板、Seeker激活外、双方全灭后回合与Web：[Detonation模板/激活外接线](docs/development/wave4/detonation-template-outside-wiring.zh-CN.md)
 - 查看Corrode攻击后、实际Armour、Medic/Lunge、清理及Web证据：[Corrode Armor接线](docs/development/wave4/corrode-armour-wiring.zh-CN.md)
 - 查看Stukov全场伤害、延迟清除和武器/冲锋实际后继：[Stukov本批战斗接线](docs/development/wave4/stukov-combat-wiring.zh-CN.md)

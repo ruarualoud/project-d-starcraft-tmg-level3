@@ -275,8 +275,8 @@
     }
   ],
   "next": [
-    "继续Detonation委托攻击父节点、其他激活外HITS及Disengage/Consume直接移除。",
-    "接其他新增单位/势力，完成整版发布/Builder/大厅/媒体及500/2000分Web；补伤亡方案可读摘要。"
+    "补齐Auto/Ocular两种Overwatch同房，再接Khassar/Target/声明父节点、其他外部HITS和直接移除。",
+    "接其余13个已审核记录及整版发布/Builder/大厅/媒体、500/2000分Web；补伤亡方案可读摘要。"
   ],
   "modelCalls": 0,
   "trainingTruth": false,
@@ -2662,12 +2662,12 @@
     "sourceHeldDefinitions": 39
   },
   "detonationWorkInProgress": {
-    "status": "standard_template_and_Seeker_outside_verified_delegated_and_other_removal_hosts_pending",
+    "status": "overwatch_and_weapon_sequence_verified_other_delegated_and_removal_hosts_pending",
     "sourceDefinitionsCompiled": 2,
-    "nativeCases": 15,
-    "nativeSignedActions": 170,
-    "webRooms": 7,
-    "webSignedActions": 32,
+    "nativeCases": 20,
+    "nativeSignedActions": 216,
+    "webRooms": 9,
+    "webSignedActions": 38,
     "legacyColdReplayCases": 3,
     "legacyOriginalActions": 30,
     "newGameAtomsImplemented": 0,
@@ -2695,7 +2695,14 @@
       "docs/development/wave4/evidence/detonation-template-web.public.json",
       "docs/development/wave4/evidence/detonation-outside-web.public.json",
       "docs/development/wave4/evidence/detonation-template-outside-consumers.public.json",
-      "docs/development/wave4/evidence/detonation-template-outside-harness.public.json"
+      "docs/development/wave4/evidence/detonation-template-outside-harness.public.json",
+      "docs/development/wave4/evidence/detonation-overwatch.public.json",
+      "docs/development/wave4/evidence/detonation-weapon-sequence.public.json",
+      "docs/development/wave4/evidence/detonation-overwatch-web.public.json",
+      "docs/development/wave4/evidence/detonation-overwatch-compat.public.json",
+      "docs/development/wave4/evidence/atom-admission-scope.public.json",
+      "docs/development/wave4/evidence/detonation-overwatch-consumers.public.json",
+      "docs/development/wave4/evidence/detonation-overwatch-harness.public.json"
     ],
     "workbenchRef": "docs/development/wave4/detonation-continuation-workbench.zh-CN.md",
     "multiTargetParentAndNestedPending": false,
@@ -2703,16 +2710,14 @@
     "fullMatchAdmission": false,
     "delegatedAndOutsideActivationHostsPending": true,
     "latestMilestone": {
-      "nativeCases": 6,
-      "nativeSignedActions": 83,
-      "nativeCompletedRounds": 2,
-      "webRooms": 3,
-      "webSignedActions": 16,
-      "readOnlyContextChecks": 5,
-      "legacyColdReplayCases": 5,
-      "legacyOriginalActions": 50,
-      "currentV3ColdReplayCases": 5,
-      "currentV3OriginalActions": 74,
+      "nativeCases": 5,
+      "nativeSignedActions": 46,
+      "webRooms": 2,
+      "webSignedActions": 6,
+      "coldReplayCases": 5,
+      "coldOriginalActions": 63,
+      "legacyOriginalActions": 41,
+      "currentOverwatchOriginalActions": 22,
       "allConsumersVerified": false
     },
     "directAbilityDamageHostVerified": true,
@@ -2720,7 +2725,9 @@
     "templateHostVerified": true,
     "seekerOutsideHostVerified": true,
     "otherOutsideActivationHostsPending": true,
-    "delegatedAttackHostsPending": true
+    "delegatedAttackHostsPending": true,
+    "overwatchHostVerified": true,
+    "multipleWeaponSequenceVerified": true
   },
   "partialRuntimeVerificationByDefinition": [
     {
@@ -2760,6 +2767,18 @@
         {
           "file": "packages/product-composition/official-current-product-match-runtime-v1.mjs",
           "exportName": "createOfficialEngineeringScopedRoundRuntimeV1"
+        },
+        {
+          "file": "packages/product-composition/official-before-casualty-runtime-v1.mjs",
+          "exportName": "stageOfficialBeforeCasualtyContinuationV1"
+        },
+        {
+          "file": "packages/rule-atoms/official-overwatch-attack-policy-v1.mjs",
+          "exportName": "readOfficialOverwatchAttackGrantV1"
+        },
+        {
+          "file": "packages/product-composition/official-auto-turret-overwatch-runtime-v1.mjs",
+          "exportName": "createOfficialAutoTurretOverwatchRuntimeV1"
         }
       ],
       "evidenceRefs": [
@@ -2783,7 +2802,14 @@
         "docs/development/wave4/evidence/detonation-v3-compat.public.json",
         "docs/development/wave4/evidence/detonation-v3-current-cold.public.json",
         "docs/development/wave4/evidence/detonation-template-web.public.json",
-        "docs/development/wave4/evidence/detonation-outside-web.public.json"
+        "docs/development/wave4/evidence/detonation-outside-web.public.json",
+        "docs/development/wave4/evidence/detonation-overwatch.public.json",
+        "docs/development/wave4/evidence/detonation-weapon-sequence.public.json",
+        "docs/development/wave4/evidence/detonation-overwatch-web.public.json",
+        "docs/development/wave4/evidence/detonation-overwatch-compat.public.json",
+        "docs/development/wave4/evidence/atom-admission-scope.public.json",
+        "docs/development/wave4/evidence/detonation-overwatch-consumers.public.json",
+        "docs/development/wave4/evidence/detonation-overwatch-harness.public.json"
       ],
       "meleeHostVerified": true,
       "automaticHitsHostVerified": true,
@@ -2795,7 +2821,11 @@
       "sharedOutsideTimingContractVerified": true,
       "v3DirectAbilityDamageNativeVerified": true,
       "webTemplateSuccessorVerified": true,
-      "webSeekerOutsideSuccessorVerified": true
+      "webSeekerOutsideSuccessorVerified": true,
+      "overwatchNativeVerified": true,
+      "outsideActivationNativeVerified": true,
+      "webOverwatchVerified": true,
+      "multipleWeaponSequenceNativeVerified": true
     },
     {
       "definitionId": "unit:infested_trooper/detonation-any-phase@1",
@@ -2830,6 +2860,18 @@
         {
           "file": "packages/product-composition/official-characteristic-status-component-runtime-v2.mjs",
           "exportName": "createOfficialCharacteristicStatusComponentRuntimeV2"
+        },
+        {
+          "file": "packages/product-composition/official-before-casualty-runtime-v1.mjs",
+          "exportName": "stageOfficialBeforeCasualtyContinuationV1"
+        },
+        {
+          "file": "packages/rule-atoms/official-overwatch-attack-policy-v1.mjs",
+          "exportName": "readOfficialOverwatchAttackGrantV1"
+        },
+        {
+          "file": "packages/product-composition/official-auto-turret-overwatch-runtime-v1.mjs",
+          "exportName": "createOfficialAutoTurretOverwatchRuntimeV1"
         }
       ],
       "evidenceRefs": [
@@ -2853,7 +2895,14 @@
         "docs/development/wave4/evidence/detonation-v3-compat.public.json",
         "docs/development/wave4/evidence/detonation-v3-current-cold.public.json",
         "docs/development/wave4/evidence/detonation-template-web.public.json",
-        "docs/development/wave4/evidence/detonation-outside-web.public.json"
+        "docs/development/wave4/evidence/detonation-outside-web.public.json",
+        "docs/development/wave4/evidence/detonation-overwatch.public.json",
+        "docs/development/wave4/evidence/detonation-weapon-sequence.public.json",
+        "docs/development/wave4/evidence/detonation-overwatch-web.public.json",
+        "docs/development/wave4/evidence/detonation-overwatch-compat.public.json",
+        "docs/development/wave4/evidence/atom-admission-scope.public.json",
+        "docs/development/wave4/evidence/detonation-overwatch-consumers.public.json",
+        "docs/development/wave4/evidence/detonation-overwatch-harness.public.json"
       ],
       "meleeHostVerified": true,
       "automaticHitsHostVerified": true,
@@ -2865,7 +2914,11 @@
       "sharedOutsideTimingContractVerified": true,
       "v3DirectAbilityDamageNativeVerified": false,
       "webTemplateSuccessorVerified": true,
-      "webSeekerOutsideSuccessorVerified": false
+      "webSeekerOutsideSuccessorVerified": false,
+      "overwatchNativeVerified": true,
+      "outsideActivationNativeVerified": true,
+      "webOverwatchVerified": true,
+      "multipleWeaponSequenceNativeVerified": false
     }
   ],
   "stukovCombatGate": {
@@ -2945,5 +2998,14 @@
       "docs/development/wave4/evidence/corrode-armour-consumers.public.json",
       "docs/development/wave4/evidence/corrode-armour-harness.public.json"
     ]
+  },
+  "atomAdmissionScope": {
+    "evidenceRef": "docs/development/wave4/evidence/atom-admission-scope.public.json",
+    "requiredAtoms": 18,
+    "requiredByNonHeldRecords": 16,
+    "heldRecordOnlyAtoms": 2,
+    "implementedCumulativeAtoms": 6,
+    "remainingNonHeldAtoms": 10,
+    "sourceHeldDefinitions": 39
   }
 }

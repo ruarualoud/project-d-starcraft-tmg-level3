@@ -1,0 +1,68 @@
+{
+  "schema": "starcraft_tmg_wave4_atom_admission_scope_v1",
+  "status": "passed_read_only_analysis",
+  "scope": "planned_reviewed_Wave4_human_admission_with_held_records_excluded",
+  "inventoryHash": "c922fc85ecafdbe88597dae454b3263727f9732d12f639d297fbabdec87a7543",
+  "sourceReviewHash": "95d69e9f69a7b162c9b62525c2601b3567feddbbe60d161f5fbe55fff5802c1c",
+  "builderRef": "build/wave4-web/stukov-units/candidate/armyBuilder.json",
+  "builderHash": "b40bae9344dbb0ed4458022e2dd35f531422fd76403d08f6310764fcc9bdc532",
+  "currentBuilderSelectedRecords": 102,
+  "fullSourceRecords": 119,
+  "sourceHeldDefinitions": 39,
+  "sourceHeldRecordKeys": [
+    "army_units:alarak",
+    "army_units:archon",
+    "army_units:infested_goliath",
+    "army_units:infested_siege_tank"
+  ],
+  "indirectlyUnavailableDefinitionIds": [
+    "unit:alarak/commander-any-phase@1",
+    "unit:alarak/highlord-of-the-tal-darim-any-phase@1",
+    "unit:alarak/sacrifice-any-phase@1",
+    "unit:alarak/wrath-of-the-highlord-assault-phase@1",
+    "unit:alarak/destruction-wave-assault-phase@1",
+    "unit:alarak/empower-me-assault-phase@1",
+    "unit:alarak/devastating-charge-assault-phase@1"
+  ],
+  "reviewedPendingRuntimeRecordKeys": [
+    "army_units:firebat",
+    "army_units:phasing_scarab",
+    "army_units:reaver",
+    "army_units:scarab",
+    "army_units:slayer__stalker_",
+    "army_units:solarite_scarab",
+    "army_units:tal_darim_pylon",
+    "tactical_cards:barracks__reactor_",
+    "tactical_cards:hive",
+    "tactical_cards:infested_barracks",
+    "tactical_cards:infested_command_center",
+    "tactical_cards:robotics_support_bay",
+    "tactical_cards:tal_darim"
+  ],
+  "allRequiredNewAtoms": 18,
+  "requiredByNonHeldRecords": 16,
+  "heldRecordOnlyAtoms": [
+    {
+      "atomId": "rule-atom:wave4/friendly-damage-payment@1",
+      "requiredByDefinitionIds": [
+        "unit:alarak/sacrifice-any-phase@1",
+        "unit:alarak/wrath-of-the-highlord-assault-phase@1",
+        "unit:alarak/destruction-wave-assault-phase@1",
+        "unit:alarak/empower-me-assault-phase@1"
+      ]
+    },
+    {
+      "atomId": "rule-atom:wave4/incoming-damage-sacrifice@1",
+      "requiredByDefinitionIds": [
+        "unit:alarak/sacrifice-any-phase@1"
+      ]
+    }
+  ],
+  "implementedNewGameAtoms": 6,
+  "remainingNonHeldAtoms": 10,
+  "frozenDenominatorUnchanged": true,
+  "nativeActionsAdded": 0,
+  "fullMatchAdmission": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

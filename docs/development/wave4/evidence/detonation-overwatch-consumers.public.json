@@ -1,0 +1,123 @@
+{
+  "schema": "starcraft_tmg_wave4_detonation_overwatch_consumers_v1",
+  "status": "passed_scoped",
+  "definitions": [
+    {
+      "definitionId": "unit:infested_marine/detonation-any-phase@1",
+      "classification": "new_semantics_partial",
+      "requiredAtomId": "rule-atom:wave4/before-casualty-batch-detonation@1",
+      "allConsumersVerified": false,
+      "fullAtomAdmission": false,
+      "overwatchNativeCases": [
+        "marine-use",
+        "marine-decline"
+      ],
+      "multipleWeaponNativeCases": [
+        "dead-source",
+        "surviving-source"
+      ],
+      "outsideActivationNativeVerified": true,
+      "webOverwatchVerified": true,
+      "consumerRefs": [
+        {
+          "file": "packages/product-composition/official-before-casualty-runtime-v1.mjs",
+          "exportName": "stageOfficialBeforeCasualtyContinuationV1"
+        },
+        {
+          "file": "packages/product-composition/official-before-casualty-runtime-v1.mjs",
+          "exportName": "createOfficialBeforeCasualtyRuntimeV1"
+        },
+        {
+          "file": "packages/rule-atoms/official-overwatch-attack-policy-v1.mjs",
+          "exportName": "readOfficialOverwatchAttackGrantV1"
+        },
+        {
+          "file": "packages/product-composition/official-auto-turret-overwatch-runtime-v1.mjs",
+          "exportName": "createOfficialAutoTurretOverwatchRuntimeV1"
+        },
+        {
+          "file": "packages/product-composition/official-selected-roster-ranged-action-runtime-v1.mjs",
+          "exportName": "resumeOfficialSelectedRosterRangedBeforeCasualtyV1"
+        }
+      ],
+      "evidenceRefs": [
+        "docs/development/wave4/evidence/detonation-overwatch.public.json",
+        "docs/development/wave4/evidence/detonation-weapon-sequence.public.json",
+        "docs/development/wave4/evidence/detonation-overwatch-web.public.json",
+        "docs/development/wave4/evidence/detonation-overwatch-compat.public.json",
+        "docs/development/wave4/evidence/atom-admission-scope.public.json"
+      ],
+      "fullMatchAdmission": false
+    },
+    {
+      "definitionId": "unit:infested_trooper/detonation-any-phase@1",
+      "classification": "new_semantics_partial",
+      "requiredAtomId": "rule-atom:wave4/before-casualty-batch-detonation@1",
+      "allConsumersVerified": false,
+      "fullAtomAdmission": false,
+      "overwatchNativeCases": [
+        "trooper-use"
+      ],
+      "multipleWeaponNativeCases": [],
+      "outsideActivationNativeVerified": true,
+      "webOverwatchVerified": true,
+      "consumerRefs": [
+        {
+          "file": "packages/product-composition/official-before-casualty-runtime-v1.mjs",
+          "exportName": "stageOfficialBeforeCasualtyContinuationV1"
+        },
+        {
+          "file": "packages/product-composition/official-before-casualty-runtime-v1.mjs",
+          "exportName": "createOfficialBeforeCasualtyRuntimeV1"
+        },
+        {
+          "file": "packages/rule-atoms/official-overwatch-attack-policy-v1.mjs",
+          "exportName": "readOfficialOverwatchAttackGrantV1"
+        },
+        {
+          "file": "packages/product-composition/official-auto-turret-overwatch-runtime-v1.mjs",
+          "exportName": "createOfficialAutoTurretOverwatchRuntimeV1"
+        },
+        {
+          "file": "packages/product-composition/official-selected-roster-ranged-action-runtime-v1.mjs",
+          "exportName": "resumeOfficialSelectedRosterRangedBeforeCasualtyV1"
+        }
+      ],
+      "evidenceRefs": [
+        "docs/development/wave4/evidence/detonation-overwatch.public.json",
+        "docs/development/wave4/evidence/detonation-weapon-sequence.public.json",
+        "docs/development/wave4/evidence/detonation-overwatch-web.public.json",
+        "docs/development/wave4/evidence/detonation-overwatch-compat.public.json",
+        "docs/development/wave4/evidence/atom-admission-scope.public.json"
+      ],
+      "fullMatchAdmission": false
+    }
+  ],
+  "policyVersion": "1.3.0",
+  "rootRuntimeVersion": "3.233.0",
+  "nativeCases": 5,
+  "nativeSignedActions": 46,
+  "webRooms": 2,
+  "webSignedActions": 6,
+  "coldReplayCases": 5,
+  "coldOriginalActions": 63,
+  "legacyColdOriginalActions": 41,
+  "currentOverwatchColdOriginalActions": 22,
+  "newGameAtomsImplemented": 0,
+  "implementedCumulativeAtoms": 6,
+  "requiredByNonHeldRecords": 16,
+  "heldRecordOnlyAtoms": 2,
+  "remainingNonHeldAtoms": 10,
+  "sourceHeldDefinitions": 39,
+  "fullMatchAdmission": false,
+  "pending": [
+    "multiple_overwatch_sources_in_one_room",
+    "khassar_parents",
+    "target_and_declaration_parents",
+    "other_external_HITS",
+    "direct_removal",
+    "other_new_records_and_full_product"
+  ],
+  "modelCalls": 0,
+  "trainingTruth": false
+}
