@@ -1,0 +1,19 @@
+{
+  "seats": [
+    {
+      "side": "player1",
+      "roomId": "product-35897b7c-0bd7-4a0c-aaa1-5e45e35ce18d"
+    },
+    {
+      "side": "player2",
+      "roomId": "product-35897b7c-0bd7-4a0c-aaa1-5e45e35ce18d"
+    }
+  ],
+  "setupId": "wave3-standard-v1",
+  "steps": [
+    "invited two isolated browser seats; invitation is single use",
+    "first player submitted own custom army; no room before guest; opponent contents private; wrong release and seat override rejected",
+    "both frozen rosters match each private submission; same board, distinct seats; reload and repeat submission checked"
+  ],
+  "providers": 0
+}

@@ -1,3 +1,4 @@
+import {useLocalSearchParams, useRouter} from 'expo-router';
 import { Image as ExpoImage } from 'expo-image';
 import { starcraftTmgBattlefieldUnitMediaAssetsV1 } from '@/lib/level3/battlefield-media-assets-v1';
 import React, { useState, useMemo, useCallback } from 'react';
@@ -160,6 +161,8 @@ export default function ArmyScreen() {
   }</MatchSetupCatalogue>;
 }
 function ArmyEditor({setupData}:{setupData?:SetupData}) {
+  const {lineupId}=useLocalSearchParams<{lineupId?:string}>();
+  const router=useRouter();
   const { t, factionName, lang } = useI18n();
   const {
     units:legacyUnits,
@@ -219,6 +222,9 @@ function ArmyEditor({setupData}:{setupData?:SetupData}) {
         <View style={s.header}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
             <Text style={s.headerTitle}>{t('armyManage')}</Text>
+            {lineupId&&<Pressable testID="army-return-to-lineup" style={s.planEntryBtn} onPress={()=>router.dismissTo({pathname:'/prepare',params:{lineup:lineupId}})}>
+              <Text style={s.planEntryText}>{uiText(lang,'Return to roster submission','返回提交军表')}</Text>
+            </Pressable>}
             {setupData && <Text style={s.headerSub}>{setupData.setup.mission} · {setupData.setup.deployment}</Text>}
             {/* S271 workspace entry (top): reachable on 390px where the
                 floating companion dock overlays the bottom action bar. */}

@@ -1,4 +1,5 @@
-import { loadWave3HumanMatchSetupsV1, openWave3HumanMatch, wave3HumanMapConfiguration } from '../../packages/product-composition/wave3-human-match-v1.mjs';
+import {createHumanRosterLobby} from './human-roster-lobby-v1.mjs';
+import { loadWave3MatchBoardFactoryV1, loadWave3HumanMatchSetupsV1, openWave3HumanMatch, wave3HumanMapConfiguration } from '../../packages/product-composition/wave3-human-match-v1.mjs';
 import { generateKeyPairSync, randomBytes, randomUUID } from 'node:crypto';
 import { mkdir, readFile, writeFile, rename, readdir } from 'node:fs/promises';
 import path from 'node:path';
@@ -108,7 +109,7 @@ export async function createStarcraftProductRoomHostV1(input) {
         roomProfile:'standard_2000_live',mapConfiguration:record.mapConfiguration,
         standard2000Recipes:record.recipes,armySpendPolicy:'rules_legal_unspent_lost',
         attachBot:false,autoDrive:false,enableSpatialPreexecution:true,autoDriveIntervalMs:1500,
-        opponentHumanJoin:record.matchMode==='human_vs_human',
+        opponentHumanJoin:record.matchMode==='human_vs_human',preassignedGuest:Boolean(record.lineupId),
         humanRoleMode:record.humanRoleMode||'supervisor',
         currentProductRuntimeVariant:'singleton_identity_v6',
         roomStore,botStore,matchDecisionJournal:journal,refereeCrypto,
@@ -222,6 +223,31 @@ export async function createStarcraftProductRoomHostV1(input) {
     if(!issued.ok) fail(issued.reason);
     return origin+'/room/'+item.record.roomId+'#recovery='+encodeURIComponent(issued.recovery.recoveryToken);
   }
+  const releaseCatalogues=new Map(), auditFactories=new Map();
+  async function recipeFor(setup,side,army,presetId) {
+    if(army && presetId) fail('PRODUCT_ROSTER_SELECTION_AMBIGUOUS');
+    if(army) {
+      let sourceCatalogue=catalogue;
+      if(setup){
+        if(!releaseCatalogues.has(setup.releaseRef)){
+          const source=JSON.parse(await readFile(path.join(root,setup.releaseRef),'utf8'));
+          const data=JSON.parse(await readFile(path.join(root,source.source.datasetRef),'utf8'));
+          if(data.datasetHash!==source.source.datasetHash) fail('PRODUCT_ROOM_RELEASE_SOURCE_CHANGED');
+          const records=Object.values(data.recordsByKey);
+          releaseCatalogues.set(setup.releaseRef,{units:records.filter(r=>r.recordType==='unit').map(r=>r.payload),
+            cards:records.filter(r=>r.recordType==='tactical_card').map(r=>r.payload)});
+        }
+        sourceCatalogue=releaseCatalogues.get(setup.releaseRef);
+      }
+      return manualArmyRecipeV1(army,sourceCatalogue,side,setup?.minerals??2000,{savedUpgradeNames:Boolean(setup)});
+    }
+    const recipe=setup?setup.presets.find(p=>p.id===presetId)?.recipe:
+      ['preset-player1','preset-player2'].includes(presetId)?OFFICIAL_STANDARD_2000_ROOM_RECIPES_V1[presetId.slice(7)]:null;
+    if(!recipe) fail('PRODUCT_ROSTER_SELECTION_REQUIRED');
+    const copy=clone(recipe);
+    if(!presetId.endsWith('-'+side)) copy.units.forEach((u,i)=>{u.unitInstanceId=side+'-unit-'+(i+1);});
+    return copy;
+  }
   async function create(request) {
     const matchMode=request.matchMode||'user_vs_agent';
     if(!['user_vs_agent','human_vs_human'].includes(matchMode)) fail('PRODUCT_MATCH_MODE_INVALID');
@@ -237,36 +263,15 @@ export async function createStarcraftProductRoomHostV1(input) {
         fail('PRODUCT_ROSTER_SELECTION_SOURCE_MISMATCH');
       }
     }
-    let wave3Catalogue;
-    if (setup && (request.army || request.opponentArmy)) {
-      const source=JSON.parse(await readFile(path.join(root,setup.releaseRef),'utf8'));
-      const data=JSON.parse(await readFile(path.join(root,source.source.datasetRef),'utf8'));
-      if(data.datasetHash!==source.source.datasetHash) throw Error('PRODUCT_ROOM_RELEASE_SOURCE_CHANGED');
-      const records=Object.values(data.recordsByKey);
-      wave3Catalogue={units:records.filter(r=>r.recordType==='unit').map(r=>r.payload),
-        cards:records.filter(r=>r.recordType==='tactical_card').map(r=>r.payload)};
-    }
-    function releaseRecipe(side, army, presetId) {
-      if(army && presetId) fail('PRODUCT_ROSTER_SELECTION_AMBIGUOUS');
-      if(army) return manualArmyRecipeV1(army,wave3Catalogue,side,setup.minerals,{savedUpgradeNames:true});
-      const preset=setup.presets.find(p=>p.id===presetId);
-      if(!preset) fail('PRODUCT_ROSTER_SELECTION_REQUIRED');
-      const recipe=clone(preset.recipe);
-      if (!preset.id.endsWith('-'+side)) recipe.units.forEach((u,i)=>{u.unitInstanceId=side+'-unit-'+(i+1);});
-      return recipe;
-    }
-    const recipes=setup && request.setupVersion ? clone(request.recipes) : setup ? {
-      player1:releaseRecipe('player1',request.army,request.ownPreset),
-      player2:releaseRecipe('player2',request.opponentArmy,request.opponentPreset)
-    } : request.recipes || {
-      player1:manualArmyRecipeV1(request.army,catalogue,'player1'),
-      player2:request.opponentArmy?manualArmyRecipeV1(request.opponentArmy,catalogue,'player2'):
+    const recipes=request.recipes || {
+      player1:await recipeFor(setup,'player1',request.army,request.ownPreset),
+      player2:setup || request.opponentArmy ? await recipeFor(setup,'player2',request.opponentArmy,request.opponentPreset):
         clone(OFFICIAL_STANDARD_2000_ROOM_RECIPES_V1.player2)};
     const roomId='product-'+randomUUID(),directory=path.join(roomsDirectory,roomId);
     await mkdir(directory,{recursive:true,mode:0o700});
     const pair=generateKeyPairSync('ed25519');
     const record={schema:'starcraft_product_room_v1',roomId,matchMode,
-      humanRoleMode:'player',
+      humanRoleMode:'player',...(request.lineupId?{lineupId:request.lineupId}:{}),
       title:String(request.title||'星际争霸 · '+(matchMode==='user_vs_agent'?'人机对战':'双人对战')).slice(0,120),
       createdAt:new Date().toISOString(),recipes:clone(recipes),
       mapConfiguration:setup && !request.setupVersion ? wave3HumanMapConfiguration(setup) : clone(request.mapConfiguration||mapConfiguration),
@@ -292,7 +297,7 @@ export async function createStarcraftProductRoomHostV1(input) {
     record.admissionStatus='ready';
     await save(path.join(directory,'room.private.json'),record);
     await item.startAI();
-    return {...publicRecord(record),joinUrl:await access(item)};
+    return request.lineupId?publicRecord(record):{...publicRecord(record),joinUrl:await access(item)};
   }
   async function launchOnce(request) {
     // Repeated accepted-Plan launches resume the same room and saved plan.
@@ -323,9 +328,49 @@ export async function createStarcraftProductRoomHostV1(input) {
     launches.set(request.launchKey,job);
     try{return await job;}finally{launches.delete(request.launchKey);}
   }
+  const setupFor = id => id==='legacy-standard'
+    ? {id,version:'legacy',sourceHash:catalogue.source.officialDatasetHash}
+    : releaseSetups.find(s=>s.id===id);
+  async function priorLineupRoom(lineupId) {
+    for(const id of await readdir(roomsDirectory)) {
+      let record;
+      try{record=JSON.parse(await readFile(path.join(roomsDirectory,id,'room.private.json'),'utf8'));}
+      catch(e){if(e.code==='ENOENT')continue;throw e;}
+      if(record.lineupId!==lineupId || !record.credentials) continue;
+      if(record.admissionStatus==='preparing'){
+        await open(record);record.admissionStatus='ready';await save(path.join(roomsDirectory,id,'room.private.json'),record);
+      }
+      if(record.admissionStatus==='ready') return record.roomId;
+    }
+    return null;
+  }
+  const lineups=createHumanRosterLobby({directory:path.join(dataDirectory,'lineups'),prefix:PRODUCT_PREFIX,setupFor,
+    findRoom:priorLineupRoom,
+    async compile(id,side,{army,preset}){
+      const setup=releaseSetups.find(s=>s.id===id);
+      if(army && setup && army.officialDatasetHash!==releaseDatasets.get(setup.releaseRef))
+        fail('PRODUCT_ROSTER_SELECTION_SOURCE_MISMATCH');
+      const recipe=await recipeFor(setup,side,army,preset);
+      if(setup){
+        if(!auditFactories.has(setup.id)) auditFactories.set(setup.id,loadWave3MatchBoardFactoryV1({root,setup}));
+        let factory;try{factory=await auditFactories.get(setup.id);}catch(e){auditFactories.delete(setup.id);throw e;}
+        factory.auditArmy(side,recipe);
+      }
+      return recipe;
+    },
+    start:s=>create({matchMode:'human_vs_human',setupId:s.setupId,lineupId:s.id,
+      recipes:{player1:s.player1.recipe,player2:s.player2.recipe}}),
+    async enter(id,side){return access(await get(id),side==='player1'?'human':'guest');}
+  });
   async function handle(request) {
     const {pathname,method,headers}=request,body=request.body||{};
     const query=request.query instanceof URLSearchParams?Object.fromEntries(request.query):request.query||{};
+    if(pathname.startsWith(PRODUCT_PREFIX+'/lineups')){
+      try{return await lineups(request);}catch(e){
+        if(/^(PRODUCT_ROSTER_SELECTION_|STANDARD_ROOM_|SKIRMISH_500_ROOM_|军表|请选择|请先添加|单位或规模|升级选择)/.test(e.code||e.message)) return response({ok:false,reason:e.message},422);
+        throw e;
+      }
+    }
     if(pathname===PRODUCT_PREFIX+'/catalogue'&&method==='GET'){
       const presets=Object.entries(OFFICIAL_STANDARD_2000_ROOM_RECIPES_V1).map(([side,recipe])=>{
         const roster=recipe.units.map(u=>{
@@ -351,7 +396,7 @@ export async function createStarcraftProductRoomHostV1(input) {
       const rooms=[];
       for(const id of await readdir(roomsDirectory)){
         try{const r=JSON.parse(await readFile(path.join(roomsDirectory,id,'room.private.json'),'utf8'));
-          if(r.credentials&&r.admissionStatus==='ready')rooms.push(publicRecord(r));}catch{}
+          if(!r.lineupId&&r.credentials&&r.admissionStatus==='ready')rooms.push(publicRecord(r));}catch{}
       }
       return response({ok:true,rooms});
     }
@@ -411,6 +456,7 @@ export async function createStarcraftProductRoomHostV1(input) {
     if(productMatch && method==='POST'){
       const operation=productMatch[2];
       // Loopback-only local owner's room library; guests use one-shot links.
+      if(operation==='open'&&item.record.lineupId)return response({ok:false,reason:'LINEUP_SEAT_REQUIRED'},403);
       if(operation==='open'){await item.startAI();return response({ok:true,match:{
         ...publicRecord(item.record),joinUrl:await access(item)}});}
       const auth=await item.fixture.roomRuntime.readRoom({roomId,seatToken:bearer(headers)});

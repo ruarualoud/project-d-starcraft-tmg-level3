@@ -582,6 +582,9 @@ export async function createTicket20HumanAgentDemoFixtureV1(options = {}) {
     roleMode: "supervisor",
     principalType: "human",
   }].filter(entry => !(options.opponentHumanJoin === true && entry.label === "bot"));
+  if(options.preassignedGuest && options.opponentHumanJoin) {
+    serverSeatPlan.push({label:'guest',seatKey:'player2',principalType:'human',roleMode:'player'});
+  }
   let rulesRuntime;
   let state;
   let initialStateAuthority;

@@ -23,7 +23,7 @@ export function ProductMatchLobby({ onEntered }: { onEntered?: () => void }) {
   const { ingestRoomUrl } = useLevel3ClientDomain();
   const { lang } = useI18n(), zh = lang !== 'en';
   const router = useRouter();
-  const [mode, setMode] = useState<'user_vs_agent' | 'human_vs_human'>('user_vs_agent');
+  const [mode, setMode] = useState<'user_vs_agent' | 'human_vs_human'>('human_vs_human');
   const [setupId, setSetupId] = useState('legacy-standard');
   const [own, setOwn] = useState('');
   const [opponent, setOpponent] = useState('');
@@ -34,7 +34,7 @@ export function ProductMatchLobby({ onEntered }: { onEntered?: () => void }) {
   useEffect(() => {
     let alive = true;
     Promise.all([product('/catalogue'), product('/rooms')]).then(([c, r]) => {
-      if (alive) { setCatalogue(c); setRooms(r.rooms); }
+      if (alive) { setCatalogue(c); setRooms(r.rooms); if(c.setups.some((s:MatchSetup)=>s.id==='wave3-standard-v1'))setSetupId('wave3-standard-v1'); }
     }).catch(e => { if (alive) setError(e.message); });
     return () => { alive = false; };
   }, []);
@@ -66,12 +66,12 @@ export function ProductMatchLobby({ onEntered }: { onEntered?: () => void }) {
   return <View style={s.shell} testID="product-match-lobby">
     <Text style={s.eyebrow}>STARCRAFT TMG // COMMAND CENTER</Text>
     <Text style={s.title}>{zh ? '准备你的下一场对战' : 'Prepare your next match'}</Text>
-    <Text style={s.body}>{zh ? '选择已保存的军表，或先复制一份示例到军表页自由修改。' : 'Select a saved roster, or copy an example to edit in the army builder.'}</Text>
+    <Text style={s.body}>{zh ? '选择对战配置。人人对战由两位玩家分别提交自己的军表。' : 'Choose a setup. In a two-player match, each player submits their own roster.'}</Text>
     <View style={s.row}>{([
       ['user_vs_agent', zh ? '人机对战' : 'Human vs AI'],
       ['human_vs_human', zh ? '人人对战' : 'Two players'],
     ] as const).map(([value, label]) => <Pressable key={value} testID={'product-mode-' + value}
-      onPress={() => { if (value !== mode) { setMode(value); selectSetup(); } }} style={[s.choice, mode === value && s.selected]}>
+      onPress={() => { if (value !== mode) { setMode(value); selectSetup(value==='human_vs_human'?setups.find(item=>item.id==='wave3-standard-v1'):undefined); } }} style={[s.choice, mode === value && s.selected]}>
       <Text style={s.buttonText}>{label}</Text>
     </Pressable>)}</View>
     {mode === 'human_vs_human' && <><Text style={s.label}>{zh ? '对战配置' : 'Match setup'}</Text>
@@ -85,6 +85,15 @@ export function ProductMatchLobby({ onEntered }: { onEntered?: () => void }) {
           <Text style={s.small}>{item.deployment} · {item.seedId}</Text>
         </Pressable>)}
       </View></>}
+    {mode==='human_vs_human' ? <View style={s.row}>
+      <Pressable accessibilityRole="button" testID="product-create-lineup" disabled={busy||!catalogue}
+        style={s.start} onPress={()=>void run(async()=>{
+          const r=await product('/lineups',{setupId});router.push({pathname:'/prepare',params:{lineup:r.lineup.id}});
+        })}><Text style={s.buttonText}>{zh?'创建准备房间，邀请对手':'Create lobby and invite opponent'}</Text></Pressable>
+      {typeof window!=='undefined'&&window.sessionStorage?.getItem('sc-last-lineup')&&<Pressable style={s.button}
+        onPress={()=>router.push({pathname:'/prepare',params:{lineup:window.sessionStorage.getItem('sc-last-lineup')!}})}>
+        <Text style={s.buttonText}>{zh?'返回我的准备房间':'Resume my roster lobby'}</Text></Pressable>}
+    </View> : <>
     <Text style={s.label}>{zh ? '我的军表' : 'My roster'}</Text>
     <View style={s.row}>{setup?.presets.map(p => <Pressable key={p.id} onPress={() => setOwn(p.id)}
       style={[s.choice, own === p.id && s.selected]} testID={'product-preset-'+p.id}><Text style={s.buttonText}>{p.label}</Text></Pressable>)}
@@ -123,7 +132,6 @@ export function ProductMatchLobby({ onEntered }: { onEntered?: () => void }) {
     </View>
     <Text style={s.small}>{setup ? [setup.scale, setup.minerals, setup.mission, setup.deployment, setup.seedId].join(' · ') : (zh ? '当前配置：Standard 2000 分 · Hold Position · Gauntlet · ' : 'Current setup: Standard 2000 · Hold Position · Gauntlet · ') + (catalogue?.map?.name || '…')}</Text>
     <Text style={s.small}>{zh ? '地图使用已验收的真实地形规则。未花完的资源按规则作废；非法军表会给出原因。' : 'Reviewed terrain rules apply. Unspent resources are lost; illegal rosters are rejected with a reason.'}</Text>
-    {error ? <Text accessibilityRole="alert" style={s.error}>{error}</Text> : null}
     <Pressable testID="product-start-match" disabled={busy || !ready}
       style={[s.start, (busy || !ready) && s.disabled]}
       onPress={() => void run(async () => {
@@ -131,6 +139,8 @@ export function ProductMatchLobby({ onEntered }: { onEntered?: () => void }) {
           ...(setup ? {setupId: setup.id, ownPreset: ownPreset?.id, opponentPreset: opponentPreset?.id} : {}) });
         await enter(result.match);
       })}><Text style={s.buttonText}>{busy ? (zh ? '正在校验并准备…' : 'Preparing…') : (zh ? '开始对战' : 'Start match')}</Text></Pressable>
+    </>}
+    {error ? <Text accessibilityRole="alert" style={s.error}>{error}</Text> : null}
     {rooms.length > 0 && <><Text style={s.label}>{zh ? '继续已有对局' : 'Continue a match'}</Text>
       {rooms.slice().reverse().map(room => <Pressable key={room.roomId} testID={'product-resume-'+room.roomId} disabled={busy} style={s.choice}
         onPress={() => void run(async () => {

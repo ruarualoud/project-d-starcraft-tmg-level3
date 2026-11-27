@@ -5,7 +5,8 @@ import { createSqliteOfficialReleaseStoreV1 } from '../source-data/sqlite-offici
 import { createOfficialReleaseManifestV2, createOfficialReleaseResolverV2, bindOfficialReleaseRulesRuntimeV2, verifyOfficialReleaseManifestV2 }
   from '../source-data/official-release-context-v2.mjs';
 import { createOfficialReleaseMatchRuntimeV2 } from './official-current-product-match-runtime-v1.mjs';
-import { prepareOfficialStandardReleaseOpeningV2, OFFICIAL_STANDARD_ROOM_UNSPENT_LOST_POLICY } from './official-standard-room-factory-v1.mjs';
+import {createOfficialRoomRosterDisclosureDataBundleV1} from '../source-data/official-roster-disclosure-data-bundle-v1.mjs';
+import { buildOfficialRoomArmyAuditV1, prepareOfficialStandardReleaseOpeningV2, OFFICIAL_STANDARD_ROOM_UNSPENT_LOST_POLICY } from './official-standard-room-factory-v1.mjs';
 import { prepareOfficialSkirmish500ReleaseOpeningV2 } from './official-skirmish-500-room-factory-v1.mjs';
 import { createOfficialPremadeMapConfiguratorV1 } from './official-premade-map-configurator-v1.mjs';
 import { hashStarcraftTmgContract } from '../authoritative-engine/referee-crypto-v1.mjs';
@@ -85,6 +86,14 @@ export async function loadWave3MatchBoardFactoryV1({root, setup}) {
       missionRecordKey: setup.missionRecordKey, deploymentRecordKey: setup.deploymentRecordKey,
       ...(standard ? {armySpendPolicy: OFFICIAL_STANDARD_ROOM_UNSPENT_LOST_POLICY} : {})});
   }
+  let rosterBundle;
+  function auditArmy(side,recipe) {
+    rosterBundle ??= createOfficialRoomRosterDisclosureDataBundleV1({
+      dataset:context.dataset,snapshot:context.snapshot,releaseContext:context});
+    return buildOfficialRoomArmyAuditV1(rosterBundle.unitCompositionUpgradeDataBundle,side,recipe,{
+      releaseContext:context,dataset:context.dataset,scaleId:setup.scale,mineralBudget:setup.minerals,
+      ...(setup.scale==='Standard'?{armySpendPolicy:OFFICIAL_STANDARD_ROOM_UNSPENT_LOST_POLICY}:{})});
+  }
   function bind(state) {
     const runtime = createOfficialReleaseMatchRuntimeV2({context, state, candidateVersion: setup.version});
     const descriptor = runtime.descriptor;
@@ -100,7 +109,7 @@ export async function loadWave3MatchBoardFactoryV1({root, setup}) {
     const rulesRuntime = bindOfficialReleaseRulesRuntimeV2({context: releaseContext, runtime});
     return {releaseContext, rulesRuntime};
   }
-  return {prepare, bind, datasetHash: context.dataset.datasetHash, snapshotHash: context.snapshot.snapshotHash};
+  return {prepare, bind, auditArmy, datasetHash: context.dataset.datasetHash, snapshotHash: context.snapshot.snapshotHash};
 }
 
 // Reopening uses the saved, signed initial envelope. Later turns must never become a new opening.
@@ -116,6 +125,7 @@ export async function openWave3HumanMatch({root, record, roomStore, refereeCrypt
   const roomRuntime = createStarcraftTmgRoomRuntime({authorityEngine: engine, roomStore, checkpointInterval: 8,
     characterReleaseChannel: 'development_internal'});
   const serverSeatPlan = [{label: 'human', seatKey: 'player1', principalType: 'human', roleMode: 'player'}];
+  if(record.lineupId) serverSeatPlan.push({label:'guest',seatKey:'player2',principalType:'human',roleMode:'player'});
   const {unitsVersion, cardsVersion, rulesVersion} = context.dataset.dataVersions;
   const dataVersion = [unitsVersion, cardsVersion, rulesVersion].join('/');
   const dependencies = {

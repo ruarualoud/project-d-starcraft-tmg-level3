@@ -53,6 +53,7 @@ const PRODUCT_WEB_DOCUMENTS = new Map([
   ["/index.html", "index.html"],
   ["/army", "army.html"],
   ["/match", "match.html"],
+  ["/prepare", "prepare.html"],
   ["/tools", "tools.html"],
   ["/settings", "settings.html"],
   ["/(tabs)", "(tabs)/index.html"],
@@ -112,9 +113,10 @@ async function serveFile(response, descriptor) {
   }
 }
 
-function sendJson(response, status, body) {
+function sendJson(response, status, body, extraHeaders = {}) {
   const bytes = Buffer.from(JSON.stringify(body), "utf8");
   response.writeHead(status, {
+    ...extraHeaders,
     "cache-control": "private, no-store, max-age=0",
     "content-length": String(bytes.byteLength),
     "content-type": "application/json; charset=utf-8",
@@ -246,7 +248,7 @@ export async function createRosterWorkspaceServerV1(input = {}) {
           if (result.rawBody || result.binary) {
             response.writeHead(result.status, result.headers);
             response.end(result.rawBody || result.body);
-          } else sendJson(response, result.status, result.response);
+          } else sendJson(response, result.status, result.response, result.headers);
           return;
         }
       }

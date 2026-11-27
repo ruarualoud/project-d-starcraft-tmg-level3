@@ -1,5 +1,7 @@
 # 正式对战事实清单
 
+2026-11-27 补记。Git 基线 857b313 的两席 UI 验证由房主选择两份军表，客席仅在开局后加入。活动工作树现在使用开战前的准备房间，两席分别保存并提交，正式开局使用双方自主选择的两份军表。[2000 分双浏览器证据](evidence/wave3-human-media/independent-rosters.public.json)。
+
 本页记录产品能力的适用条件、变更原因和证据。进度数字统一从[实施清单的 matchWiring](../../../coordination/wave3/implementation-plan.json)读取。两局当前动作分别见 [500 分原房](../../../build/ticket-28-wave3-human-lobby-v1/skirmish.public.json)和 [2000 分原房](../../../build/ticket-28-wave3-human-lobby-v1/standard.public.json)。
 
 | 编号 | 可核对的事实和适用范围 | 证据 |

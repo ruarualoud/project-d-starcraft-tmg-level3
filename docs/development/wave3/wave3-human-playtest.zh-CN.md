@@ -25,4 +25,4 @@ node scripts/build-slice249-learning-web-v1.mjs build/wave3-human-playtest
 node scripts/serve-starcraft-product-v1.mjs --offline --wave3-match-candidate=2.99.12 --web-root=build/wave3-human-playtest/web --data-directory=build/wave3-human-playtest/host --port=4174
 ```
 
-在浏览器打开 http://127.0.0.1:4174/match ，选择「人人对战」。第二席使用房间面板生成的邀请。验收配置使用开发媒体渠道，公网发布须另行确认素材授权。AI 对战、付费模型与副官实答保持暂停。
+原 Git 快照的演示由房主同时选定双方军表。活动工作树已修正这个流程：打开 /match，选「人人对战」并创建准备房间，在开战前分享邀请。两席分别进入军表编辑器，保存后点「返回提交军表」，各自提交；双方就绪后进入同一战桌。两台设备需要能访问同一服务地址，本地双浏览器可以使用两个独立浏览器配置或普通窗口＋无痕窗口。[双浏览器实测](evidence/wave3-human-media/independent-rosters.public.json)。验收配置使用开发媒体渠道，公网发布须另行确认素材授权。AI 对战、付费模型与副官实答保持暂停。
