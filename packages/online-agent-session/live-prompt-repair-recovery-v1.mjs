@@ -47,7 +47,8 @@ export function applyStarcraftTmgPromptRepairRecoveryV1(choice, plan, recordedAt
   // Capacity repair or early repeated-failure recovery does not grant extra
   // semantic/query rounds. Paid history and remaining budget survive restart.
   if (!["typed_truncation_after_output_contract_change",
-    "repeated_semantic_failure_after_contract_change"].includes(plan.reason)) {
+    "repeated_semantic_failure_after_contract_change",
+    "missing_planner_selection_after_contract_change"].includes(plan.reason)) {
     choice.semanticCorrectionRounds = 0;
     choice.stageCorrectionRounds = 0;
     choice.stageQueryRounds = 0;

@@ -11,7 +11,7 @@ export function batchRosterSourceChecksV1({jobs,claims,rootId}){
     if(!job.inputs.claim||job.inputs.originalDataQuestions){output.push(job);continue;}
     const key=hash({bindings:job.bindings,source:job.materialClaimSourceHash,
       question:job.inputs.question,claimScope:job.inputs.claimScope??null,
-      comparisonPurpose:job.inputs.comparisonPurpose??null});
+      comparisonPurpose:job.inputs.comparisonPurpose??null,comparisonDecisionContract:job.inputs.comparisonDecisionContract??null});
     const chunks=groups.get(key)??[];let chunk=chunks.at(-1);
     const chars=JSON.stringify(job.inputs.claim.value).length;
     if(!chunk||chunk.jobs.length>=batchLimits.checks||chunk.characters+chars>batchLimits.characters){

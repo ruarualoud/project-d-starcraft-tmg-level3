@@ -39,7 +39,8 @@ export function projectOfficialMeleeFamilyModifiersV1(bundle, state, request = {
   const piece = (state?.pieces || []).find((entry) => entry.id === request.pieceId);
   if (!piece) fail("MELEE_FAMILY_PROJECTION_PIECE_UNKNOWN", String(request.pieceId || ""));
   const impactRoute = routesFor(bundle, piece, "devastating_charge")[0] || null;
-  const legacyImpact = LEGACY_EXACT_IMPACT[piece.officialUnitRecordKey] || null;
+  const legacyImpact = bundle?.schema === 'starcraft_tmg_official_melee_family_source_bundle_v2'
+    ? null : LEGACY_EXACT_IMPACT[piece.officialUnitRecordKey] || null;
   const bonusRoute = routesFor(bundle, piece, "impact_model_bonus")[0] || null;
   const weaponRoutes = routesFor(bundle, piece, "weapon");
   const impact = impactRoute ? {

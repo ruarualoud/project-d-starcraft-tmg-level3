@@ -340,9 +340,11 @@ export function buildOfficialSemanticRoomTerrainOverlayV1(input = {}) {
         || (region.accessPoints || []).length && !agreedRamp) {
         fail("SEMANTIC_ROOM_PREMADE_PROFILE_HEIGHT_ACCESS_UNSUPPORTED", region.regionId);
       }
+      // Explicit per-group agreement owns the Size, including low impassable
+      // pieces which Large can remove. Geometry verification already checks
+      // the agreed integer Size and complete source-instance denominator.
       if (classification.openingsPolicy !== "no_openings_agreed"
-        || kind === "grass" && classification.size !== 2
-        || kind === "impassable" && classification.size < 2) {
+        || kind === "grass" && classification.size !== 2) {
         fail("SEMANTIC_ROOM_PREMADE_PROFILE_RULES_CONFLICT", region.regionId);
       }
       if (agreedRamp) {
@@ -1129,7 +1131,8 @@ export function certifyAndFreezeOfficialCompetitiveMapSemanticRoomV1(input = {})
     semanticRampAdmission = certifyOfficialSemanticRampAdmissionV1({
       binding, overlay, semanticTerrainCertificate,
       terrainHeightTierLedger, deploymentGeometryBinding: geometryBinding,
-      dataset: input.dataset,
+      dataset: input.dataset, modelGeometryBundle: input.modelGeometryBundle,
+      terrainLosDataBundle: input.terrainLosDataBundle,
       candidateRoutes: input.semanticTerrain.rampAdmissionRoutes,
     });
   }

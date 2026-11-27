@@ -1,0 +1,149 @@
+{
+  "schema": "starcraft_tmg_reviewed_deployment_geometry_v1",
+  "sourceSnapshotHash": "4412c17faaebaff04b117d1ddc666d1cdd939eca420a22f861c7c944f1179c8c",
+  "normalizedDatasetHash": "718057e86ac4f93a72c06b8e4d8f4d851ba33ee04c9dddea33e966eda9fe6685",
+  "cards": [
+    {
+      "recordKey": "faction_cards:EyCV5SmTPXTrpqS6iy3e",
+      "engagementScale": "Skirmish",
+      "sourceRecordHash": "7982b1bb0e5b89a44cf56105b383e54a6e866a5be144f3a1428c158bb7d1a4b9",
+      "payloadHash": "987e83f5fac76bc1ed5d328cbf50e43acba23795ffdee4dc6550721f23e06ccc",
+      "evidence": {
+        "frontReference": "https://firebasestorage.googleapis.com/v0/b/starcrafttmgbeta.firebasestorage.app/o/deployments%2F1791551540971_Power_lines.jpg?alt=media&token=098c8634-d5e5-47b6-bcd1-0b52bb691b0d",
+        "sourceContentHash": "9632f91cdf1b152aca4d7b27aaf54655fe48e10138c73338393b8a62ce1cd154",
+        "method": "labelled_dimension_transcription",
+        "sourceRef": "build/ticket-28-wave3-source-candidate-20261112-v1/raw/StarCraft-Terran-P2P-W3-Card-Sheets-A4_EN.pdf",
+        "reviewedOrientation": "card_title_upright",
+        "sourcePages": [
+          8
+        ],
+        "segmentDerivation": "upright centre line splits the coloured top border into equal halves; coloured vertical outer edges span the height; black bottom boundary is not an entry edge",
+        "markerDerivation": "printed horizontal and vertical measurements transformed to bottom-left origin, with neutral marker on the centre line"
+      },
+      "geometry": {
+        "dimensions": [
+          36,
+          36
+        ],
+        "red": [
+          [
+            "top",
+            18,
+            36
+          ],
+          [
+            "right",
+            0,
+            36
+          ]
+        ],
+        "blue": [
+          [
+            "top",
+            0,
+            18
+          ],
+          [
+            "left",
+            0,
+            36
+          ]
+        ],
+        "markers": [
+          [
+            1,
+            24,
+            21
+          ],
+          [
+            2,
+            12,
+            21
+          ],
+          [
+            5,
+            18,
+            6
+          ]
+        ]
+      }
+    },
+    {
+      "recordKey": "faction_cards:gWudxJ1dMPAF8vP6UghB",
+      "engagementScale": "Standard",
+      "sourceRecordHash": "c8b0784fdabd4e234b109280f75c29969dd3d501c4b506388658b4eab4b095d8",
+      "payloadHash": "edf4d7448b74ebb1d4e5491a3c5e8527893117a9ac94ea39f616a8195b5df184",
+      "evidence": {
+        "frontReference": "https://firebasestorage.googleapis.com/v0/b/starcrafttmgbeta.firebasestorage.app/o/deployments%2F1791551420892_One_bridge_too_close.jpg?alt=media&token=5117df3e-1927-4737-844e-465dc9da85c1",
+        "sourceContentHash": "9632f91cdf1b152aca4d7b27aaf54655fe48e10138c73338393b8a62ce1cd154",
+        "method": "labelled_dimension_transcription",
+        "sourceRef": "build/ticket-28-wave3-source-candidate-20261112-v1/raw/StarCraft-Terran-P2P-W3-Card-Sheets-A4_EN.pdf",
+        "reviewedOrientation": "card_title_upright",
+        "sourcePages": [
+          8
+        ],
+        "segmentDerivation": "upright centre line splits the coloured top border into equal halves; coloured vertical outer edges span the height; black bottom boundary is not an entry edge",
+        "markerDerivation": "printed horizontal and vertical measurements transformed to bottom-left origin, with neutral marker on the centre line"
+      },
+      "geometry": {
+        "dimensions": [
+          54,
+          36
+        ],
+        "red": [
+          [
+            "top",
+            27,
+            54
+          ],
+          [
+            "right",
+            0,
+            36
+          ]
+        ],
+        "blue": [
+          [
+            "top",
+            0,
+            27
+          ],
+          [
+            "left",
+            0,
+            36
+          ]
+        ],
+        "markers": [
+          [
+            1,
+            36,
+            21
+          ],
+          [
+            2,
+            18,
+            21
+          ],
+          [
+            3,
+            42,
+            6
+          ],
+          [
+            4,
+            12,
+            6
+          ],
+          [
+            5,
+            27,
+            6
+          ]
+        ]
+      }
+    }
+  ],
+  "trainingTruth": false,
+  "bundleHash": "7105ed48711960bb0db82d7b31a1776f2648b3c8bac9cc424ce51ccf87a9f412"
+}

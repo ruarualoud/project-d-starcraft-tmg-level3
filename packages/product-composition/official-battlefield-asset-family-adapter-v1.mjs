@@ -1,15 +1,28 @@
+import { listOfficialOnFieldModelFootprintsV1, assertOfficialTokenPlacementSpaceV1 }
+  from './official-battlefield-token-placement-space-v1.mjs';
+import { isOfficialUnitVisibleForActiveAbilityV1 } from './official-characteristic-status-family-adapter-v1.mjs';
+import { assertOfficialSelectedRosterSpecialAbilityWindowV1, openOfficialSelectedRosterSpecialAbilityWindowV1 }
+  from './official-selected-roster-ability-runtime-v1.mjs';
+import { quoteOfficialUnitAbilityModifiersV1, consumeOfficialUnitAbilityModifiersV1 } from './official-unit-ability-payment-modifiers-v1.mjs';
+import { canOfficialUnitBeAbilityTargetV1 } from '../rule-atoms/official-decoy-rules-v1.mjs';
+import { prepareOfficialReserveBeaconPlacementV1 } from './official-unit-lifecycle-family-adapter-v1.mjs';
+import { projectOfficialDeploymentSupplyV1 } from '../rule-atoms/official-deployment-supply-projection-v1.mjs';
+import { refreshOfficialRoundSupplyOccupancyV1 } from '../rule-atoms/official-round-supply-state-v1.mjs';
+import { bindGrantedWeapon, matchesGrantedWeapon, usesWave3FaqClarifications } from '../rule-atoms/official-wave3-faq-clarifications-v1.mjs';
 import { isDeepStrictEqual } from "node:util";
+import { hasOfficialAbilityReferencePolicyV13, officialAbilityReferenceConstraintsV13 } from '../rule-atoms/official-ability-reference-policy-v13.mjs';
 
 import { hashStarcraftTmgContract } from
   "../authoritative-engine/referee-crypto-v1.mjs";
-import { officialTerrainBlocksModelPlacementV1 } from
+import { officialTerrainBlocksModelPlacementV1, evaluateOfficialWithinWhollyWithinV1,
+  createOfficialBattlefieldTokenPhysicalFootprintV1, createOfficialModelBaseFootprintV1, createOfficialTargetPointFootprintV1, evaluateOfficialPhysicalFootprintRelationV1 } from
   "../rule-atoms/official-model-base-geometry-rules-kernel-v1.mjs";
 import { resolveOfficialAbilityResourcePaymentV1 } from
   "../rule-atoms/official-card-build-payment-rules-kernel-v1.mjs";
 import {
   createOfficialBattlefieldMarkerV1,
   createOfficialBattlefieldTokenV1,
-  resolveOfficialTokenMarkerCleanupV1,
+  resolveOfficialTokenMarkerCleanupV1, verifyOfficialBattlefieldMarkerV1,
 } from "../rule-atoms/official-battlefield-token-marker-rules-kernel-v1.mjs";
 import { verifyOfficialAbilityEffectIrCatalogueV1 } from
   "../source-data/official-ability-effect-ir-v1.mjs";
@@ -219,7 +232,37 @@ function routeBase(definition, spec) {
   };
 }
 
-function compileRoute(definition) {
+export const OFFICIAL_VENTRAL_SACS_DEFINITION_ID = 'card:overlord/ventral-sacs-any@1';
+export const OFFICIAL_WARP_PRISM_WARP_CONDUIT_DEFINITION_ID = 'card:warp_prism/warp-conduit-any@1';
+export const OFFICIAL_DROPSHIP_DUST_OFF_DEFINITION_ID = 'card:dropship/ready-for-dust-off-any@1';
+export const OFFICIAL_PYLON_WARP_CONDUIT_DEFINITION_ID = 'unit:pylon/warp-conduit-movement-phase@1';
+export const OFFICIAL_PYLON_INGENUITY_DEFINITION_ID = 'unit:pylon/khalai-ingenuity-any-phase@1';
+export const OFFICIAL_SENTRY_FORCE_FIELD_DEFINITIONS = Object.freeze({
+  'unit:sentry/force-field-movement-phase@1': 'Force Field',
+  'unit:sentry/solid-field-projectors-movement-phase@1': 'Solid-Field Projectors',
+});
+const sentryForceFieldText = "Set a Force Field token Within 8\" in an unoccupied space. Units of Size 2 or lower cannot move across Force Fields. Models of Size 3 or more can move over it, and it's then removed.";
+const pylonWarpConduitText = "Once per Round, the controlling player may deploy a Ground Unit from Reserves using this Pylon base as the Entry Edge. This Unit's Activation ends.";
+const pylonIngenuityText = 'Once per Round, when a Friendly Unit Within 4" of this Pylon uses a Special Ability that costs Psionic Energy, that ability’s PE cost is reduced by 1.';
+const reserveBeaconLandingKind = 'reserve_beacon_landing';
+const ventralLandingKind = 'ventral_sacs_reserve_landing';
+const ventralSacsText = 'Ventral Sacs <Active> <Movement Phase>: Set a Faction Indicator anywhere on the battlefield more than 10" away from any Enemy model. At the End of the Round, the controlling player may Deploy one Ground Unit from Reserves in base-to-base contact with this Faction Indicator.';
+const currentReserveBeaconSources = Object.freeze({
+  [OFFICIAL_WARP_PRISM_WARP_CONDUIT_DEFINITION_ID]: { recordKey: 'tactical_cards:warp_prism', name: 'Warp Conduit' },
+  [OFFICIAL_DROPSHIP_DUST_OFF_DEFINITION_ID]: { recordKey: 'tactical_cards:dropship', name: 'Ready For Dust-off' },
+});
+
+function isReserveBeaconRoute(route) {
+  return route?.ventralSacsLanding === true || route?.reserveBeaconLanding === true;
+}
+function reserveBeaconFailureCode(route, reason) {
+  return (route.ventralSacsLanding === true ? 'VENTRAL_SACS_' : 'RESERVE_BEACON_') + reason;
+}
+function reserveBeaconActionKind(route) {
+  return route.ventralSacsLanding === true ? ventralLandingKind : reserveBeaconLandingKind;
+}
+
+function compileRoute(definition, { explicitSource = false } = {}) {
   const name = definition.definitionName;
   const text = definition.sourceText;
   let spec = null;
@@ -240,11 +283,16 @@ function compileRoute(definition) {
   } else if (name === "Warp Conduit" && definition.sourceProductKind !== "unit") {
     spec = { effectKind: "reserve_deploy_indicator", actionKind: "active_ability",
       markerRole: "reserve_deploy_beacon", minimumEnemyGapInches: 10,
-      lifecycleEvent: "round_end", reserveUnitTag: "ground" };
+      lifecycleEvent: "round_end", reserveUnitTag: "ground",
+      ...(explicitSource && definition.definitionId === OFFICIAL_WARP_PRISM_WARP_CONDUIT_DEFINITION_ID
+        ? { reserveBeaconLanding: true } : {}) };
   } else if (["Ventral Sacs", "Ready For Dust-off"].includes(name)) {
     spec = { effectKind: "reserve_deploy_indicator", actionKind: "active_ability",
       markerRole: "reserve_deploy_beacon", minimumEnemyGapInches: 10,
-      lifecycleEvent: "round_end", reserveUnitTag: "ground" };
+      lifecycleEvent: "round_end", reserveUnitTag: "ground",
+      ...(explicitSource && definition.definitionId === OFFICIAL_DROPSHIP_DUST_OFF_DEFINITION_ID
+        ? { reserveBeaconLanding: true } : {}),
+      ...(explicitSource && definition.definitionId === OFFICIAL_VENTRAL_SACS_DEFINITION_ID ? { ventralSacsLanding: true } : {}) };
   } else if (name === "Creep Removal") {
     spec = { effectKind: "creep_removal", actionKind: "automatic_consumer",
       triggerActions: ["move", "deploy", "run", "charge", "disengage"],
@@ -252,13 +300,15 @@ function compileRoute(definition) {
   } else if (name === "Living Glob of Tissue") {
     spec = { effectKind: "creep_stay_displacement", actionKind: "automatic_consumer",
       stayInPlay: true, displacement: true };
+  } else if (definition.definitionId === 'card:reactive_creep/reactive-tissue-any@1') {
+    spec = { effectKind: 'on_creep_dodge', actionKind: 'query_modifier', dodge: 1 };
   } else if (name === "Source of Creep") {
     spec = { effectKind: "source_of_creep", actionKind: "query_modifier",
       rangeInches: 6, targetTags: ["ground", "zerg"], friendlyOrEnemy: true };
   } else if (name === "Glial Reconstitution") {
     spec = { effectKind: "on_creep_speed_active", actionKind: "active_ability",
       speedModifierOffCreep: 1, speedModifierOnCreep: 2,
-      expiresAt: "cleanup_and_refresh" };
+      expiresAt: explicitSource ? "round_end" : "cleanup_and_refresh" };
   } else if (name === "Structure") {
     spec = { effectKind: "structure", actionKind: "automatic_consumer",
       cannotActivate: true, cannotPerformActions: true, currentSupplySetTo: 0,
@@ -294,13 +344,15 @@ function compileRoute(definition) {
   } else if (["Force Field", "Solid-Field Projectors"].includes(name)) {
     spec = { effectKind: "force_field_place", actionKind: "active_ability",
       tokenKind: "force_field", rangeInches: 8, unoccupiedSpaceRequired: true,
-      maximumBlockedSize: 2, minimumCrossingRemovalSize: 3 };
+      maximumBlockedSize: 2, minimumCrossingRemovalSize: 3,
+      ...(explicitSource && Object.hasOwn(OFFICIAL_SENTRY_FORCE_FIELD_DEFINITIONS, definition.definitionId) ? { sourceBoundForceField: true } : {}) };
   } else if (name === "Zerg Creep") {
     spec = { effectKind: "zerg_creep_build", actionKind: "system_lifecycle",
       armyBuildingOnly: true, exactCreepCardCount: 1, listedCostRequired: true };
   } else if (name === "Psionic Presence") {
     spec = { effectKind: "shade_precision", actionKind: "query_modifier",
-      enemyShadeRangeInches: 4, precision: 1, allFriendlyWeapons: true };
+      enemyShadeRangeInches: 4, precision: 1, allFriendlyWeapons: true,
+      ...(explicitSource ? { requiresOwnAdeptShade: true } : {}) };
   } else if (name === "Malevolent Matriarch") {
     spec = { effectKind: "on_creep_impact", actionKind: "query_modifier",
       requiredPhase: "assault", triggerAction: "charge", impactHitModifier: 1 };
@@ -325,7 +377,7 @@ export function createOfficialBattlefieldAssetFamilySourceBundleV1(input = {}) {
   if (definitions.length !== 30 || definitions.some((entry) => !entry)) {
     fail("BATTLEFIELD_ASSET_SOURCE_DENOMINATOR_INVALID", String(definitions.length));
   }
-  const routes = definitions.map(compileRoute).sort((left, right) => (
+  const routes = definitions.map(definition => compileRoute(definition)).sort((left, right) => (
     left.definitionId.localeCompare(right.definitionId)));
   const archetypeCounts = Object.fromEntries([...new Set(routes.map((entry) => (
     entry.effectKind)))].sort().map((kind) => [kind, routes.filter((entry) => (
@@ -354,7 +406,224 @@ export function createOfficialBattlefieldAssetFamilySourceBundleV1(input = {}) {
   return bundle;
 }
 
+export const OFFICIAL_OVERSIGHT_MODE_ID = 'card:overseer/oversight-mode-any@1';
+
+const creepCardPlacementPhase = {
+  'card:lair/creep-spread-any@1': { name: 'Creep Spread', phase: 'movement', label: 'Movement' },
+  'card:hatchery/creep-spread-any@1': { name: 'Creep Spread', phase: 'movement', label: 'Movement' },
+  'card:overlord/excrete-creep-any@1': { name: 'Excrete Creep', phase: 'assault', label: 'Assault' },
+};
+
+const glialReconstitutionDefinitions = new Set([
+  'unit:roach/glial-reconstitution-movement-phase@1',
+  'unit:corpser__roach_/glial-reconstitution-movement-phase@1',
+  'unit:vile__roach_/glial-reconstitution-movement-phase@1',
+]);
+
+function reviewedBattlefieldModifierSource(row) {
+  if (row.definitionId === 'card:observer/surveillance-any@1' && row.recordKey === 'tactical_cards:observer'
+    && row.sourceKind === 'card_feature' && row.abilityName === 'Surveillance' && row.activationKind === 'active' && row.phase === 'movement'
+    && row.sourceText === "Surveillance <Active> <Movement Phase>: Set a Faction Indicator anywhere on the battlefield. While Enemy Units are Within 6\" of this Faction Indicator, they lose HIDDEN Status.") return 'detection_indicator';
+  if (row.definitionId === 'unit:adept/psionic-presence-any-phase@1' && row.recordKey === 'army_units:adept'
+    && row.sourceKind === 'unit_feature' && row.abilityName === 'Psionic Presence' && row.phase === 'any'
+    && row.activationKind === 'passive'
+    && row.sourceText === 'All Weapons of Friendly Units targeting an Enemy Unit Within 4" of this Unit’s Shade token gain PRECISION (1).') return 'shade_precision';
+  if (Object.hasOwn(OFFICIAL_SENTRY_FORCE_FIELD_DEFINITIONS, row.definitionId)
+    && row.recordKey === 'army_units:sentry' && row.sourceKind === 'unit_feature'
+    && row.abilityName === OFFICIAL_SENTRY_FORCE_FIELD_DEFINITIONS[row.definitionId]
+    && row.activationKind === 'active' && row.phase === 'movement'
+    && row.activationText === '<Active>\n(1 Psionic Energy)' && row.sourceText === sentryForceFieldText) return 'force_field_place';
+  if (row.definitionId === OFFICIAL_PYLON_WARP_CONDUIT_DEFINITION_ID && row.recordKey === 'army_units:pylon'
+    && row.sourceKind === 'unit_feature' && row.activationKind === 'passive' && row.phase === 'movement'
+    && row.abilityName === 'Warp Conduit' && row.sourceText === pylonWarpConduitText) return 'pylon_reserve_deploy';
+  if (row.definitionId === OFFICIAL_PYLON_INGENUITY_DEFINITION_ID && row.recordKey === 'army_units:pylon'
+    && row.sourceKind === 'unit_feature' && row.activationKind === 'passive' && row.phase === 'any'
+    && row.abilityName === 'Khalai Ingenuity' && row.sourceText === pylonIngenuityText) return 'pylon_pe_discount';
+  if (row.definitionId === OFFICIAL_VENTRAL_SACS_DEFINITION_ID && row.recordKey === 'tactical_cards:overlord'
+    && row.sourceKind === 'card_feature' && row.activationKind === 'active' && row.phase === 'movement'
+    && row.abilityName === 'Ventral Sacs' && row.sourceText === ventralSacsText) return 'reserve_deploy_indicator';
+  const beacon = currentReserveBeaconSources[row.definitionId];
+  if (beacon && row.recordKey === beacon.recordKey && row.sourceKind === 'card_feature'
+    && row.activationKind === 'active' && row.phase === 'movement' && row.abilityName === beacon.name
+    && row.sourceText === ventralSacsText.replace('Ventral Sacs', beacon.name)) return 'reserve_deploy_indicator';
+  if (row.definitionId === 'unit:jim_raynor/orders-movement-phase@1' && row.activationKind === 'active' && row.phase === 'movement'
+    && row.abilityName === 'Orders' && row.activationText === '<Active>\n(X Command Point)'
+    && row.sourceText === "REPEATABLE. Select another Friendly Biological Unit Within 8\", spend CP and apply one of the following effects:\n\n1 CP: That Unit’s first used weapon gains the CRITICAL HIT (2).\n\n1 CP: That Unit ignores the Disengage penalty for the remainder of the Round.\n\n2 CP: Remove the Activation Marker from that Unit.") return 'orders';
+  if (glialReconstitutionDefinitions.has(row.definitionId) && row.activationKind === 'active'
+    && row.phase === 'movement' && row.abilityName === 'Glial Reconstitution'
+    && row.activationText === '<Active>\n(1 Biomass)'
+    && row.sourceText === 'This Unit gains BUFF SPEED (1), or BUFF SPEED (2) if the Unit is ON CREEP.') {
+    return 'on_creep_speed_active';
+  }
+  if (row.definitionId === 'card:orbital_command/scanner-sweep-any@1' && row.recordKey === 'tactical_cards:orbital_command'
+    && row.sourceKind === 'card_feature' && row.abilityName === 'Scanner Sweep' && row.activationKind === 'active' && row.phase === 'movement'
+    && row.sourceText === "Scanner Sweep <Active> <Movement Phase>: Set a Faction Indicator anywhere on the battlefield. While Enemy Units are Within 6\" of this Faction Indicator, they lose HIDDEN Status.") return 'detection_indicator';
+  if (row.definitionId === OFFICIAL_OVERSIGHT_MODE_ID && row.recordKey === 'tactical_cards:overseer'
+    && row.sourceKind === 'card_feature' && row.abilityName === 'Oversight Mode' && row.activationKind === 'active' && row.phase === 'movement'
+    && row.sourceText === "Oversight Mode <Active> <Movement Phase>: Set a Faction Indicator anywhere on the battlefield. While Enemy Units are Within 6\" of this Faction Indicator, they lose HIDDEN Status.") return 'detection_indicator';
+  const placement = creepCardPlacementPhase[row.definitionId];
+  if (placement && row.activationKind === 'active' && row.phase === placement.phase
+    && row.abilityName === placement.name
+    && row.sourceText === placement.name + ' <Active> <' + placement.label + ' Phase>: '
+      + 'Set a Creep Tumor token on the battlefield Within 6" (Line of Sight is not required) of either a Friendly Entry Edge or an existing Friendly Creep Tumor token.') {
+    return 'creep_token_place';
+  }
+  if (row.definitionId === 'card:malignant_creep/malevolent-matriarch-any@1' && row.abilityName === 'Malevolent Matriarch'
+    && row.activationKind === 'passive' && row.phase === 'assault'
+    && row.recordKey === 'tactical_cards:malignant_creep' && row.sourceKind === 'card_feature'
+    && row.sourceText === 'Malevolent Matriarch <Passive> <Assault Phase>: If the active Friendly Zerg Unit declares a Charge action while ON CREEP, it gains +1 Modifier to IMPACT Hit Rolls.') {
+    return 'on_creep_impact';
+  }
+  if (row.activationKind !== 'passive' || row.phase !== 'any') return false;
+  if (row.definitionId === 'unit:queen/creep-speed-any-phase@1'
+    && row.recordKey === 'army_units:queen' && row.abilityName === 'Creep Speed'
+    && row.sourceText === "While this Unit is ON CREEP, increase this Unit's Speed characteristic by 2.") {
+    return 'on_creep_speed_passive';
+  }
+  if (row.definitionId === 'unit:hydralisk/lurking-any-phase@1'
+    && row.recordKey === 'army_units:hydralisk' && row.abilityName === 'Lurking'
+    && row.sourceText === 'If this Unit has Stationary Status, it is eligible to make an Evade Roll against the first Ranged Attack targeting it this Round. If this Unit is ON CREEP, it gains +1 Modifier to this Evade Roll.') {
+    return 'stationary_evade';
+  }
+  if (row.recordKey === 'army_units:marauder' && row.abilityName === 'Veteran of Tarsonis'
+    && row.sourceText === 'While this Unit is Within 3" of a Mission Marker, its Armour characteristic is increased by 1.') {
+    return 'marker_armour';
+  }
+  if (['army_units:bile_launcher', 'army_units:omega_worm'].includes(row.recordKey)
+      && row.definitionId === 'unit:' + row.recordKey.split(':')[1] + '/source-of-creep-any-phase@1'
+      && row.abilityName === 'Source of Creep'
+      && row.sourceText === 'A Friendly or Enemy Ground Zerg Unit Within 6" of this Unit, counts as being ON CREEP.') {
+    return 'source_of_creep';
+  }
+  if (['tactical_cards:reactive_creep', 'tactical_cards:accelerating_creep', 'tactical_cards:malignant_creep'].includes(row.recordKey)) {
+    const cardId = row.recordKey.split(':')[1];
+    if (row.definitionId === 'card:reactive_creep/reactive-tissue-any@1'
+      && row.abilityName === 'Reactive Tissue'
+      && row.sourceText === 'Reactive Tissue <Passive> <Any Phase>: While a Friendly Zerg Unit is ON CREEP, it gains DODGE (1) against any attacks targeting it.') {
+      return 'on_creep_dodge';
+    }
+    if (row.definitionId === 'card:' + cardId + '/living-glob-of-tissue-any@1'
+      && row.abilityName === 'Living Glob of Tissue'
+      && row.sourceText === 'Living Glob of Tissue <Passive> <Any Phase>: Creep Tumor tokens have STAY IN PLAY and DISPLACEMENT.') {
+      return 'creep_stay_displacement';
+    }
+    if (row.definitionId === 'card:' + cardId + '/creep-removal-any@1'
+      && row.abilityName === 'Creep Removal'
+      && row.sourceText === 'Creep Removal <Passive> <Any Phase>: If an Enemy Unit ends a Move, Deploy, Run, Charge or Disengage action Within 1" of a Friendly Creep Tumor token, remove that token from the battlefield.') {
+      return 'creep_removal';
+    }
+  }
+  return null;
+}
+
+function matchesReviewedBattlefieldComponent(row) {
+  if (row.effectKind !== reviewedBattlefieldModifierSource(row)) return false;
+  if (row.effectKind === 'shade_precision') return row.requiresOwnAdeptShade === true && row.allFriendlyWeapons === true
+    && row.actionKind === 'query_modifier' && row.enemyShadeRangeInches === 4 && row.precision === 1;
+  if (row.effectKind === 'force_field_place') {
+    return row.sourceBoundForceField === true && row.actionKind === 'active_ability' && row.tokenKind === 'force_field'
+      && row.rangeInches === 8 && row.unoccupiedSpaceRequired === true && row.maximumBlockedSize === 2
+      && row.minimumCrossingRemovalSize === 3 && row.resourceType === 'PE' && row.resourceCost === 1;
+  }
+  if (row.effectKind === 'pylon_reserve_deploy') {
+    return row.actionKind === 'system_lifecycle' && row.oncePerRound === true
+      && row.reserveUnitTag === 'ground' && row.sourceBaseIsEntryEdge === true
+      && row.endsDeployedUnitActivation === true;
+  }
+  if (row.effectKind === 'pylon_pe_discount') {
+    return row.actionKind === 'query_modifier' && row.rangeInches === 4
+      && row.resourceTypeAffected === 'PE' && row.resourceCostReduction === 1 && row.oncePerRound === true;
+  }
+  if (row.effectKind === 'reserve_deploy_indicator') {
+    const sourceMatches = row.definitionId === OFFICIAL_VENTRAL_SACS_DEFINITION_ID
+      ? row.ventralSacsLanding === true && row.reserveBeaconLanding === undefined
+      : Object.hasOwn(currentReserveBeaconSources, row.definitionId)
+        && row.reserveBeaconLanding === true && row.ventralSacsLanding === undefined;
+    return sourceMatches
+      && row.actionKind === 'active_ability' && row.markerRole === 'reserve_deploy_beacon'
+      && row.minimumEnemyGapInches === 10 && row.lifecycleEvent === 'round_end' && row.reserveUnitTag === 'ground';
+  }
+  if (row.effectKind === 'detection_indicator') return row.actionKind === 'active_ability' && row.markerRole === 'detection_aura'
+    && row.rangeInches === 6 && row.removesHidden === true;
+  if (row.effectKind === 'creep_token_place') {
+    return row.actionKind === 'active_ability' && row.tokenKind === 'creep_tumor'
+      && row.rangeInches === 6 && row.lineOfSightRequired === false;
+  }
+  if (row.effectKind === 'orders') {
+    return row.actionKind === 'active_ability' && row.repeatable === true && row.rangeInches === 8
+      && row.targetTag === 'biological' && isDeepStrictEqual(row.choices, [
+        { choice: 'critical_hit_2', resourceType: 'CP', resourceCost: 1, firstWeaponCriticalHit: 2 },
+        { choice: 'ignore_disengage_penalty', resourceType: 'CP', resourceCost: 1, expiresAt: 'round_end' },
+        { choice: 'remove_activation_marker', resourceType: 'CP', resourceCost: 2 },
+      ]);
+  }
+  if (row.effectKind === 'on_creep_speed_active') {
+    return row.actionKind === 'active_ability' && row.resourceType === 'BM' && row.resourceCost === 1
+      && row.speedModifierOffCreep === 1 && row.speedModifierOnCreep === 2 && row.expiresAt === 'round_end';
+  }
+  if (row.effectKind === 'on_creep_speed_passive') return row.actionKind === 'query_modifier' && row.speedModifier === 2;
+  if (row.effectKind === 'on_creep_impact') return row.actionKind === 'query_modifier' && row.requiredPhase === 'assault'
+    && row.triggerAction === 'charge' && row.impactHitModifier === 1;
+  if (row.effectKind === 'on_creep_dodge') return row.actionKind === 'query_modifier' && row.dodge === 1;
+  if (row.effectKind === 'stationary_evade') {
+    return row.actionKind === 'query_modifier' && row.requiresStatus === 'stationary'
+      && row.firstRangedAttackPerRound === true && row.onCreepEvadeModifier === 1;
+  }
+  if (row.effectKind === 'creep_stay_displacement') {
+    return row.actionKind === 'automatic_consumer' && row.stayInPlay === true && row.displacement === true;
+  }
+  if (row.effectKind === 'creep_removal') {
+    return row.actionKind === 'automatic_consumer' && row.rangeInches === 1
+      && row.placeDoesNotTrigger === true
+      && isDeepStrictEqual(row.triggerActions, ['move', 'deploy', 'run', 'charge', 'disengage']);
+  }
+  return row.actionKind === 'query_modifier' && (row.effectKind === 'marker_armour'
+    ? row.armourModifier === 1 && row.markerRangeInches === 3
+    : row.effectKind === 'source_of_creep' && row.rangeInches === 6
+      && row.friendlyOrEnemy === true && isDeepStrictEqual(row.targetTags, ['ground', 'zerg']));
+}
+
+export function createOfficialBattlefieldAssetFamilySourceBundleV2({ catalogue, definitionIds } = {}) {
+  verifyOfficialAbilityEffectIrCatalogueV1(catalogue);
+  if (!Array.isArray(definitionIds) || !definitionIds.length || new Set(definitionIds).size !== definitionIds.length) {
+    fail('BATTLEFIELD_ASSET_DEFINITION_SELECTION_INVALID');
+  }
+  const routes = definitionIds.map(id => {
+    const definition = catalogue.definitions.find(row => row.definitionId === id);
+    if (!definition || !reviewedBattlefieldModifierSource({ ...definition, abilityName: definition.definitionName })) {
+      fail('BATTLEFIELD_ASSET_COMPONENT_SOURCE_UNRECOGNIZED', id);
+    }
+    return compileRoute(definition, { explicitSource: true });
+  }).sort((left, right) => left.definitionId.localeCompare(right.definitionId));
+  const bundle = seal({ schema: 'starcraft_tmg_official_battlefield_asset_family_source_bundle_v2',
+    semanticVersion: OFFICIAL_BATTLEFIELD_ASSET_FAMILY_ADAPTER_VERSION,
+    sourceCatalogueHash: catalogue.catalogueHash, sourceSnapshotHash: catalogue.sourceSnapshotHash,
+    normalizedDatasetHash: catalogue.normalizedDatasetHash, dataVersions: clone(catalogue.dataVersions),
+    routeCount: routes.length, routes, definitionIds: routes.map(row => row.definitionId),
+    coveredSourceFeatureHashes: routes.map(row => row.sourceFeatureHash).sort(),
+    scope: 'explicit_source_definition_set', fullFamilyCoverage: false,
+    exactSourcePatternsRequired: true, arbitraryProseExecutionClaimed: false,
+    sourceRefreshPerformed: false, productionRoomEligible: false, trainingTruth: false,
+  }, 'bundleHash');
+  verifyOfficialBattlefieldAssetFamilySourceBundleV1(bundle);
+  return bundle;
+}
+
 export function verifyOfficialBattlefieldAssetFamilySourceBundleV1(bundle) {
+  if (bundle?.schema === 'starcraft_tmg_official_battlefield_asset_family_source_bundle_v2') {
+    if (!Number.isSafeInteger(bundle.routeCount) || bundle.routeCount < 1 || bundle.routes?.length !== bundle.routeCount
+      || new Set(bundle.definitionIds).size !== bundle.routeCount
+      || !isDeepStrictEqual(bundle.definitionIds, bundle.routes.map(row => row.definitionId))
+      || !isDeepStrictEqual(bundle.coveredSourceFeatureHashes, bundle.routes.map(row => row.sourceFeatureHash).sort())
+      || bundle.routes.some(row => !matchesReviewedBattlefieldComponent(row)
+        || row.routeHash !== hashStarcraftTmgContract(without(row, ['routeHash'])))
+      || bundle.scope !== 'explicit_source_definition_set' || bundle.fullFamilyCoverage !== false
+      || bundle.productionRoomEligible !== false || bundle.trainingTruth !== false
+      || bundle.bundleHash !== hashStarcraftTmgContract(without(bundle, ['bundleHash']))) {
+      fail('BATTLEFIELD_ASSET_SOURCE_BUNDLE_V2_INVALID');
+    }
+    return true;
+  }
   if (!object(bundle)
     || bundle.schema !== OFFICIAL_BATTLEFIELD_ASSET_FAMILY_BUNDLE_SCHEMA
     || bundle.semanticVersion !== OFFICIAL_BATTLEFIELD_ASSET_FAMILY_ADAPTER_VERSION
@@ -377,6 +646,7 @@ export function verifyOfficialBattlefieldAssetFamilySourceBundleV1(bundle) {
 
 export function createOfficialBattlefieldAssetFamilyDefinitionBindingsV1(bundle) {
   verifyOfficialBattlefieldAssetFamilySourceBundleV1(bundle);
+  if (bundle.schema !== OFFICIAL_BATTLEFIELD_ASSET_FAMILY_BUNDLE_SCHEMA) fail("BATTLEFIELD_ASSET_LEGACY_BINDING_SOURCE_REQUIRED");
   return freezeDeep(bundle.routes.map((route) => ({
     sourceFeatureHash: route.sourceFeatureHash,
     adapterId: OFFICIAL_BATTLEFIELD_ASSET_FAMILY_ADAPTER_ID,
@@ -428,6 +698,21 @@ function routeInstances(state, route) {
       .map((card) => ({ sourceInstanceId: card.cardInstanceId, sideKey, card }))
   ));
 }
+
+export function resolveOfficialCurrentPylonEntrySourcesV1(state, sideKey) {
+  const bundle = state.officialBattlefieldAssetFamilySourceBundle;
+  if (bundle?.scope !== 'explicit_source_definition_set' || state.phase !== 'movement'
+    || state.activeSideKey !== sideKey) return [];
+  const route = bundle.routes.find(row => row.definitionId === OFFICIAL_PYLON_WARP_CONDUIT_DEFINITION_ID);
+  if (!route) return [];
+  const spentSourceIds = new Set((state.spatialActionHistory || [])
+    .filter(row => row.round === Number(state.round) && row.actionType === 'deploy'
+      && row.event?.entrySource?.definitionId === route.definitionId)
+    .map(row => row.event.entrySource.sourcePieceId));
+  return routeInstances(state, route).filter(instance => instance.sideKey === sideKey
+    && instance.sourcePiece.isStructure === true && !spentSourceIds.has(instance.sourcePiece.id))
+    .map(instance => ({ piece: instance.sourcePiece, route }));
+}
 function actionActors(state, route, instance) {
   if (route.sourceKind === "unit_feature") return [instance.sourcePiece];
   return (state.pieces || []).filter((piece) => piece.sideKey === instance.sideKey
@@ -457,12 +742,20 @@ export function resolveOfficialBattlefieldAssetAbilityResourceCostV1(
   const resourceType = String(request.resourceType || "").toUpperCase();
   const piece = state.pieces?.find((entry) => entry.id === request.pieceId);
   const pylonRoute = bundle.routes.find((entry) => entry.effectKind === "pylon_pe_discount");
-  const pylon = resourceType === "PE" && printedResourceCost > 0 && piece
+  const sourceBound = bundle.scope === 'explicit_source_definition_set'
+    && pylonRoute?.definitionId === OFFICIAL_PYLON_INGENUITY_DEFINITION_ID;
+  const within = source => sourceBound
+    ? piece.sideKey === request.sideKey && activePiece(piece) && liveModels(source).some(model =>
+      evaluateOfficialWithinWhollyWithinV1({ state, dataBundle: state.officialModelBaseGeometryDataBundle,
+        source: { kind: 'model', unitId: source.id, modelId: model.id },
+        targetUnitId: piece.id, rangeMilliInches: pylonRoute.rangeInches * 1000 }).unitWithin)
+    : unitWithin(source, piece, pylonRoute.rangeInches);
+  const pylon = pylonRoute && resourceType === "PE" && printedResourceCost > 0 && piece
     ? routeInstances(state, pylonRoute).find((instance) => (
       instance.sideKey === request.sideKey
         && activePiece(instance.sourcePiece)
         && !usedThisRound(state, pylonRoute, instance.sourceInstanceId)
-        && unitWithin(instance.sourcePiece, piece, pylonRoute.rangeInches)))
+        && within(instance.sourcePiece)))
     : null;
   const reduction = pylon ? Number(pylonRoute.resourceCostReduction) : 0;
   const result = freezeDeep({ resourceType, printedResourceCost,
@@ -482,12 +775,21 @@ export function resolveOfficialBattlefieldAssetAbilityResourceCostV1(
   }
   return result;
 }
+function ownsReviewedMovementActivation(state, route) {
+  return state.officialBattlefieldAssetFamilySourceBundle?.scope === 'explicit_source_definition_set'
+    && (route.sourceBoundForceField || isReserveBeaconRoute(route) || glialReconstitutionDefinitions.has(route.definitionId) || route.definitionId === OFFICIAL_OVERSIGHT_MODE_ID || route.definitionId === 'card:orbital_command/scanner-sweep-any@1' || route.definitionId === 'card:observer/surveillance-any@1'
+      || route.definitionId === 'unit:jim_raynor/orders-movement-phase@1');
+}
+
 function available(state, route, instance, actor) {
   if (!SIDE_KEYS.has(instance.sideKey) || state.activeSideKey !== instance.sideKey
     || (route.phase !== "any" && route.phase !== state.phase)
     || !activePiece(actor) || actor.sideKey !== instance.sideKey
     || actor.isStructure === true || usedThisRound(state, route, instance.sourceInstanceId)) {
     fail("BATTLEFIELD_ASSET_ROUTE_UNAVAILABLE", route.definitionId);
+  }
+  if (ownsReviewedMovementActivation(state, route)) {
+    assertOfficialSelectedRosterSpecialAbilityWindowV1(state, actor.sideKey, actor.id, 'movement', route.definitionId);
   }
   if (instance.card && instance.card.readiness !== "ready") {
     fail("BATTLEFIELD_ASSET_SOURCE_CARD_NOT_READY", instance.sourceInstanceId);
@@ -496,9 +798,15 @@ function available(state, route, instance, actor) {
   let targets = [];
   if (route.effectKind === "orders") {
     targets = (state.pieces || []).filter((target) => target.sideKey === actor.sideKey
-      && target.id !== actor.id && activePiece(target) && target.isStructure !== true
+      && target.id !== actor.id && activePiece(target) && target.isStructure !== true && canOfficialUnitBeAbilityTargetV1(state, target)
       && tags(target).has(route.targetTag)
-      && unitWithin(actor, target, route.rangeInches)).map((entry) => entry.id).sort();
+      && (ownsReviewedMovementActivation(state, route)
+        ? liveModels(actor).some(model => evaluateOfficialWithinWhollyWithinV1({
+          state, dataBundle: state.officialModelBaseGeometryDataBundle,
+          source: { kind: 'model', unitId: actor.id, modelId: model.id },
+          targetUnitId: target.id, rangeMilliInches: route.rangeInches * 1000,
+        }).unitWithin) && isOfficialUnitVisibleForActiveAbilityV1(state, actor, target)
+        : unitWithin(actor, target, route.rangeInches))).map((entry) => entry.id).sort();
     if (targets.length === 0) fail("BATTLEFIELD_ASSET_TARGET_UNAVAILABLE", route.abilityName);
   }
   const choices = route.effectKind === "orders" ? route.choices : [{
@@ -509,7 +817,7 @@ function available(state, route, instance, actor) {
       state.officialBattlefieldAssetFamilySourceBundle, state,
       { sideKey: instance.sideKey, pieceId: actor.id,
         resourceType: choice.resourceType, printedResourceCost: choice.resourceCost });
-    return [choice.choice, cost];
+    return [choice.choice, quoteOfficialUnitAbilityModifiersV1(state, actor.id, route.sourceKind, cost)];
   }));
   const paymentsByChoice = Object.fromEntries(choices.map((choice) => [choice.choice,
     paymentSelections(state, instance.sideKey, choice.resourceType,
@@ -548,12 +856,17 @@ function domainFor(state, route, instance, actor, context) {
       choice: route.effectKind === "orders" ? { enum: context.choices } : null,
       paymentCardInstanceIdsByChoice: clone(context.paymentsByChoice) },
     constraints: { sourceRouteHash: route.routeHash,
+      ...officialAbilityReferenceConstraintsV13(state, route,
+        route.effectKind === 'reserve_deploy_indicator' ? ['enemy_proximity_restriction']
+          : route.effectKind === 'detection_indicator' ? ['area_proximity']
+          : COORDINATE_EFFECTS.has(route.effectKind) ? ['placement_origin'] : []),
       physicalTokenProfile: tokenProfileRequiredForRoute(state, route),
       resourceCostsByChoice: clone(context.costsByChoice),
       continuousCoordinatesNotClientCertified: true,
       geometry: { rangeInches: route.rangeInches || route.whollyWithinInches || null,
         minimumEnemyGapInches: route.minimumEnemyGapInches || null,
-        lineOfSightRequired: route.lineOfSightRequired ?? null,
+        lineOfSightRequired: hasOfficialAbilityReferencePolicyV13(state) && route.sourceProductKind === 'tactical_card'
+          ? route.lineOfSightRequired === true : route.lineOfSightRequired ?? null,
         entireTokenBaseInsideBattlefield: true,
         noEndOverlapWithTangibleAsset: true } },
     confirmationClass: "rules_owned_direct_action",
@@ -561,10 +874,54 @@ function domainFor(state, route, instance, actor, context) {
     trainingTruth: false,
   }, "domainId");
 }
+function resolveReserveBeacon(state, route, assetId, sideKey) {
+  const binding = state.officialBattlefieldAssetBindings?.find(row => row.assetId === assetId);
+  const marker = state.board.markers?.find(row => row.markerId === assetId);
+  if (!binding || binding.consumed || binding.sideKey !== sideKey || binding.createdRound !== Number(state.round)
+    || binding.sourceDefinitionId !== route.definitionId || binding.sourceFeatureHash !== route.sourceFeatureHash
+    || binding.bindingHash !== hashStarcraftTmgContract(without(binding, ['bindingHash']))
+    || !marker || marker.markerKind !== 'faction_indicator' || marker.markerRole !== route.markerRole
+    || marker.sideKey !== sideKey || marker.markerHash !== binding.assetHash) fail(reserveBeaconFailureCode(route, 'BEACON_BINDING_INVALID'));
+  verifyOfficialBattlefieldMarkerV1(marker, state.officialBattlefieldTokenMarkerRegistry);
+  return marker;
+}
+
+function reserveBeaconLandingDomains(bundle, state, sideKey) {
+  if (state.phase !== 'cleanup' || state.currentProductMatchLifecycle?.step !== 'round_end_choices'
+    || state.activeSideKey !== sideKey) return [];
+  return bundle.routes.filter(isReserveBeaconRoute).flatMap(route => reserveBeaconRouteDomains(state, sideKey, route));
+}
+
+function reserveBeaconRouteDomains(state, sideKey, route) {
+  const targets = state.pieces.filter(piece => piece.sideKey === sideKey && piece.isInReserves === true
+    && !piece.isOnField && !piece.isDestroyed && Number(piece.currentModels) > 0
+    && piece.isStructure !== true && tags(piece).has(route.reserveUnitTag));
+  return (state.pendingBattlefieldAssetOpportunities || []).filter(row => row.optional === true
+    && row.sideKey === sideKey && row.sourceDefinitionId === route.definitionId
+    && row.expiresAt === 'cleanup_and_refresh').flatMap(opportunity => {
+    const marker = resolveReserveBeacon(state, route, opportunity.assetId, sideKey);
+    return targets.flatMap(piece => {
+      const supply = projectOfficialDeploymentSupplyV1(state, sideKey, piece.id);
+      if (!supply.poolRequirementSatisfied) return [];
+      return [seal({ schemaVersion: 'starcraft_tmg_official_parameter_domain_v1', semanticVersion: '1.0.0',
+        actionType: 'resolve_unit_lifecycle_consumer', parameterKind: 'official_unit_lifecycle_family_plan_v1',
+        executorId: OFFICIAL_BATTLEFIELD_ASSET_FAMILY_ADAPTER_ID, executorVersion: OFFICIAL_BATTLEFIELD_ASSET_FAMILY_ADAPTER_VERSION,
+        phase: state.phase, sideKey, pieceId: piece.id, effectKind: reserveBeaconActionKind(route),
+        sourceInstanceId: marker.markerId, definitionId: route.definitionId, sourceFeatureHash: route.sourceFeatureHash,
+        abilityName: route.abilityName, parameterSchema: { type: 'object', required: ['placementPlan'],
+          placementPlan: { type: 'complete_model_placement_plan' } },
+        constraints: { opportunityId: opportunity.opportunityId, markerId: marker.markerId, markerHash: marker.markerHash,
+          markerCoordinate: clone(marker.coordinate), fullBaseGeometryRequired: true, leadingBaseTouchesMarkerPoint: true,
+          placementPlanRequired: true, supply },
+        confirmationClass: 'rules_owned_optional_lifecycle', trainingTruth: false }, 'domainId')];
+    });
+  });
+}
+
 function enumerate(bundle, state, options = {}) {
   const sideKey = String(options.sideKey || state.activeSideKey || "");
   if (!SIDE_KEYS.has(sideKey)) fail("BATTLEFIELD_ASSET_SIDE_INVALID", sideKey);
-  const parameterDomains = []; const candidates = [];
+  const parameterDomains = reserveBeaconLandingDomains(bundle, state, sideKey); const candidates = [];
   const catalogueScope = options.scope === "catalogue";
   for (const route of bundle.routes.filter((entry) => ACTIVE_EFFECTS.has(entry.effectKind))) {
     for (const instance of routeInstances(state, route).filter((entry) => (
@@ -650,18 +1007,22 @@ function assertBoard(state, footprint) {
     fail("BATTLEFIELD_ASSET_FULL_BASE_OUTSIDE_BATTLEFIELD");
   }
 }
-function rectangleGap(footprintValue, terrain) {
+function rectangleGap(footprintValue, terrain, currentGeometry = false) {
   const footprint = terrain.footprint || terrain;
-  const minX = Number(footprint.xMin ?? footprint.minX ?? 0);
-  const maxX = Number(footprint.xMax ?? footprint.maxX ?? 0);
-  const minY = Number(footprint.yMin ?? footprint.minY ?? 0);
-  const maxY = Number(footprint.yMax ?? footprint.maxY ?? 0);
+  if (currentGeometry && footprint.shape !== 'axis_aligned_rectangle') {
+    fail('BATTLEFIELD_ASSET_TERRAIN_GEOMETRY_UNSUPPORTED', terrain.id);
+  }
+  const minX = currentGeometry ? footprint.minXMilliInches / 1000 : Number(footprint.xMin ?? footprint.minX ?? 0);
+  const maxX = currentGeometry ? footprint.maxXMilliInches / 1000 : Number(footprint.xMax ?? footprint.maxX ?? 0);
+  const minY = currentGeometry ? footprint.minYMilliInches / 1000 : Number(footprint.yMin ?? footprint.minY ?? 0);
+  const maxY = currentGeometry ? footprint.maxYMilliInches / 1000 : Number(footprint.yMax ?? footprint.maxY ?? 0);
+  if (![minX, maxX, minY, maxY].every(Number.isFinite)) fail('BATTLEFIELD_ASSET_TERRAIN_GEOMETRY_REQUIRED', terrain.id);
   const terrainFootprint = rectangleFootprint(
     { x: (minX + maxX) / 2, y: (minY + maxY) / 2 },
     (maxX - minX) / 2, (maxY - minY) / 2);
   return footprintGap(footprintValue, terrainFootprint);
 }
-function assertUnoccupied(state, footprint) {
+function assertUnoccupied(state, footprint, currentGeometry = false) {
   for (const piece of (state.pieces || []).filter(activePiece)) {
     for (const model of liveModels(piece)) {
       if (footprintGap(footprint,
@@ -678,7 +1039,7 @@ function assertUnoccupied(state, footprint) {
   for (const terrain of state.board?.terrain || []) {
     if (terrain.isRemoved === true
       || !officialTerrainBlocksModelPlacementV1(terrain)) continue;
-    if (rectangleGap(footprint, terrain) < 0.001) {
+    if (rectangleGap(footprint, terrain, currentGeometry) < 0.001) {
       fail("BATTLEFIELD_ASSET_TOKEN_OVERLAPS_TERRAIN", terrain.id);
     }
   }
@@ -694,9 +1055,30 @@ function pointSegmentDistance(point, start, end) {
 function assertCoordinateGeometry(state, route, actor, point, profile) {
   const footprint = profile ? footprintForProfile(point, profile) : roundFootprint(point, 0);
   assertBoard(state, footprint);
+  if (route.sourceBoundForceField) {
+    const token = createOfficialBattlefieldTokenV1({ registry: state.officialBattlefieldTokenMarkerRegistry,
+      tokenId: 'force-field-placement', tokenKind: route.tokenKind, coordinate: point,
+      baseShape: profile.baseShape, baseDiameterMm: profile.baseDiameterMm, createdByPieceId: actor.id, createdRound: state.round });
+    const target = createOfficialBattlefieldTokenPhysicalFootprintV1(token);
+    const bases = listOfficialOnFieldModelFootprintsV1(actor, state.officialModelBaseGeometryDataBundle);
+    if (!bases.some(left => evaluateOfficialPhysicalFootprintRelationV1({ left, right: target })
+      .minimumSeparationMilliInches <= route.rangeInches * 1000)) fail('BATTLEFIELD_ASSET_FORCE_FIELD_RANGE_REQUIRED');
+    assertOfficialTokenPlacementSpaceV1(state, bases, [target], 'BATTLEFIELD_ASSET_FORCE_FIELD_POSITION_OCCUPIED');
+    return;
+  }
   if (["creep_token_place", "force_field_place", "shade_token_place"]
-    .includes(route.effectKind)) assertUnoccupied(state, footprint);
-  if (route.effectKind === "reserve_deploy_indicator") {
+    .includes(route.effectKind)) assertUnoccupied(state, footprint, route.currentGeometry === true);
+  if (isReserveBeaconRoute(route)) {
+    const origin = createOfficialTargetPointFootprintV1({ objectId: 'ventral-sacs-coordinate',
+      center: { xMilliInches: Math.round(point.x * 1000), yMilliInches: Math.round(point.y * 1000) } });
+    for (const enemy of state.pieces.filter(piece => piece.sideKey !== actor.sideKey && activePiece(piece))) {
+      for (const model of liveModels(enemy)) {
+        const base = createOfficialModelBaseFootprintV1({ piece: enemy, model, dataBundle: state.officialModelBaseGeometryDataBundle });
+        if (evaluateOfficialPhysicalFootprintRelationV1({ left: origin, right: base }).minimumSeparationMilliInches
+          <= route.minimumEnemyGapInches * 1000) fail("BATTLEFIELD_ASSET_BEACON_ENEMY_GAP_REQUIRED", model.id);
+      }
+    }
+  } else if (route.effectKind === "reserve_deploy_indicator") {
     for (const enemy of (state.pieces || []).filter((entry) => (
       entry.sideKey === otherSide(actor.sideKey) && activePiece(entry)))) {
       for (const model of liveModels(enemy)) {
@@ -769,11 +1151,43 @@ function canonicalParameters(state, route, domain, parameters) {
     result.paymentCardInstanceIds))) fail("BATTLEFIELD_ASSET_PAYMENT_SELECTION_INVALID");
   return { result, choice };
 }
+
+// The current-release producer reuses the original token footprint, board,
+// occupancy and Wholly Within checks without constructing a legacy family.
+export function prepareOfficialShadeTokenPlacementV1(state, pieceId, coordinate) {
+  return prepareOfficialTokenLeadingOriginPlacementV1(state, pieceId, coordinate, 'shade');
+}
+export function prepareOfficialTokenLeadingOriginPlacementV1(state, pieceId, coordinate, tokenKind, currentGeometry = false) {
+  if (!['shade', 'ravager_burrow'].includes(tokenKind)) fail('BATTLEFIELD_ASSET_TOKEN_LEADING_KIND_UNSUPPORTED');
+  const actor = state.pieces.find(piece => piece.id === pieceId);
+  if (!activePiece(actor)) fail('BATTLEFIELD_ASSET_SHADE_SOURCE_UNAVAILABLE');
+  const point = canonicalPoint(coordinate);
+  const profile = tokenProfile(state, tokenKind);
+  assertCoordinateGeometry(state, { effectKind: 'shade_token_place', whollyWithinInches: 12, currentGeometry },
+    actor, pointInches(point), profile);
+  return { coordinate: pointInches(point), profile };
+}
 function instantiate(bundle, state, domain, parameters) {
   const current = enumerate(bundle, state, { sideKey: domain.sideKey,
     includeDisabled: true }).parameterDomains.find((entry) => entry.domainId === domain.domainId);
   if (!current || !isDeepStrictEqual(current, domain)) fail("BATTLEFIELD_ASSET_DOMAIN_STALE");
   const route = bundle.routes.find((entry) => entry.definitionId === domain.definitionId);
+  if (isReserveBeaconRoute(route) && domain.effectKind === reserveBeaconActionKind(route)) {
+    if (!object(parameters) || Object.keys(parameters).length !== 1 || !parameters.placementPlan) {
+      fail(reserveBeaconFailureCode(route, 'PLACEMENT_PARAMETERS_INVALID'));
+    }
+    const marker = resolveReserveBeacon(state, route, domain.sourceInstanceId, domain.sideKey);
+    const target = state.pieces.find(row => row.id === domain.pieceId);
+    const placement = prepareOfficialReserveBeaconPlacementV1(state, target, marker, parameters.placementPlan);
+    const plan = seal({ domainId: domain.domainId, assetId: marker.markerId, sourceInstanceId: marker.markerId,
+      opportunityId: domain.constraints.opportunityId, sourceRouteHash: route.routeHash,
+      canonicalParameters: { placementPlan: placement.plan }, geometryHash: placement.geometryHash,
+      stateHashBefore: instantiationStateHash(state), trainingTruth: false }, 'planHash');
+    return freezeDeep({ canonicalParameters: plan.canonicalParameters, action: {
+      actionType: domain.actionType, sideKey: domain.sideKey, phase: state.phase, pieceId: domain.pieceId,
+      definitionId: route.definitionId, sourceFeatureHash: route.sourceFeatureHash, effectKind: domain.effectKind,
+      executorId: domain.executorId, executorVersion: domain.executorVersion, battlefieldAssetPlan: plan } });
+  }
   const canonical = canonicalParameters(state, route, domain, parameters);
   const priorOrdinals = [
     ...(state.officialBattlefieldAssetBindings || []).map((entry) => entry.assetId),
@@ -827,10 +1241,11 @@ function pay(state, route, action, events) {
   const choice = plan.selectedChoice;
   const resourceType = choice?.resourceType ?? route.resourceType;
   const printedResourceCost = Number(choice?.resourceCost ?? route.resourceCost ?? 0);
-  const cost = resolveOfficialBattlefieldAssetAbilityResourceCostV1(
+  const base = resolveOfficialBattlefieldAssetAbilityResourceCostV1(
     state.officialBattlefieldAssetFamilySourceBundle, state,
     { sideKey: action.sideKey, pieceId: action.pieceId, resourceType,
       printedResourceCost, planHash: plan.planHash }, { consume: true });
+  const cost = quoteOfficialUnitAbilityModifiersV1(state, action.pieceId, route.sourceKind, base);
   const resourceCost = cost.effectiveResourceCost;
   const ids = plan.canonicalParameters.paymentCardInstanceIds;
   if (resourceType) {
@@ -857,6 +1272,7 @@ function pay(state, route, action, events) {
     events.push({ type: "tactical_card_exhausted", cardInstanceId: card.cardInstanceId,
       trainingTruth: false });
   }
+  consumeOfficialUnitAbilityModifiersV1(state, cost, { definitionId: route.definitionId, planHash: plan.planHash }, events);
 }
 function createAsset(state, route, action, actor, events) {
   const plan = action.battlefieldAssetPlan;
@@ -889,9 +1305,14 @@ function createAsset(state, route, action, actor, events) {
     });
     state.board.markers.push(asset);
   }
+  return recordOfficialBattlefieldAssetCreationV1(state, route, action, actor, events, asset, plan.assetId, coordinate);
+}
+
+export function recordOfficialBattlefieldAssetCreationV1(state, route, action, actor, events, asset, assetId, coordinate) {
+  const plan = action.battlefieldAssetPlan ?? action.characteristicStatusPlan;
   const binding = seal({
     schema: "starcraft_tmg_official_battlefield_asset_binding_v1",
-    assetId: plan.assetId,
+    assetId,
     assetKind: route.tokenKind || route.markerRole,
     assetSchema: asset.schema, assetHash: asset.tokenHash || asset.markerHash,
     sideKey: action.sideKey, sourcePieceId: actor.id,
@@ -904,10 +1325,25 @@ function createAsset(state, route, action, actor, events) {
     lifecycleEvent: route.lifecycleEvent || null,
     consumed: false, trainingTruth: false,
   }, "bindingHash");
-  state.officialBattlefieldAssetBindings.push(binding);
-  events.push({ type: "battlefield_asset_created", assetId: plan.assetId,
+  (state.officialBattlefieldAssetBindings ??= []).push(binding);
+  events.push({ type: "battlefield_asset_created", assetId,
     assetKind: binding.assetKind, assetHash: binding.assetHash,
     bindingHash: binding.bindingHash, coordinate, trainingTruth: false });
+}
+
+export function recordOfficialBattlefieldTokenRelocationV1(state, previous, updated) {
+  const index = (state.officialBattlefieldAssetBindings || []).findIndex(row => row.assetId === previous.tokenId);
+  const binding = state.officialBattlefieldAssetBindings?.[index];
+  const tokenIndex = state.board.tokens.findIndex(row => row.tokenId === previous.tokenId);
+  if (!binding || binding.consumed || tokenIndex < 0
+    || previous.tokenId !== updated.tokenId || binding.assetHash !== previous.tokenHash
+    || state.board.tokens[tokenIndex].tokenHash !== previous.tokenHash) {
+    fail('BATTLEFIELD_ASSET_RELOCATION_STALE', previous.tokenId);
+  }
+  const next = seal({ ...without(binding, ["bindingHash"]), assetHash: updated.tokenHash }, "bindingHash");
+  state.board.tokens[tokenIndex] = updated;
+  state.officialBattlefieldAssetBindings[index] = next;
+  return next;
 }
 function effectFor(route, action, details) {
   return seal({ schema: "starcraft_tmg_official_battlefield_asset_effect_v1",
@@ -954,6 +1390,36 @@ function applyEffect(state, route, action, actor, events) {
       targetPieceId: target.id, choice: plan.selectedChoice.choice, trainingTruth: false });
   }
 }
+function applyReserveBeaconLanding(state, route, action, options) {
+  const plan = action.battlefieldAssetPlan;
+  const marker = resolveReserveBeacon(state, route, plan.sourceInstanceId, action.sideKey);
+  const target = state.pieces.find(row => row.id === action.pieceId);
+  const placed = prepareOfficialReserveBeaconPlacementV1(state, target, marker, plan.canonicalParameters.placementPlan);
+  if (placed.geometryHash !== plan.geometryHash) fail(reserveBeaconFailureCode(route, 'PLACEMENT_CHANGED'));
+  placed.piece.deploymentStatus = 'deployed';
+  placed.piece.activatedPhases = { ...placed.piece.activatedPhases, movement: true };
+  state.pieces = state.pieces.map(row => row.id === target.id ? placed.piece : row);
+  const manifestRow = state.reserveManifestBySide?.[action.sideKey]?.find(row => row.pieceId === target.id);
+  if (manifestRow) manifestRow.deploymentStatus = 'deployed';
+  state.pendingBattlefieldAssetOpportunities = state.pendingBattlefieldAssetOpportunities.filter(row => row.opportunityId !== plan.opportunityId);
+  const asset = state.officialBattlefieldAssetBindings.find(row => row.assetId === marker.markerId);
+  state.officialBattlefieldAssetBindings = state.officialBattlefieldAssetBindings.map(row => row === asset
+    ? seal({ ...without(row, ['bindingHash']), consumed: true }, 'bindingHash') : row);
+  if (state.officialRoundSupplyState) state.officialRoundSupplyState = refreshOfficialRoundSupplyOccupancyV1({ state });
+  const events = [{ type: 'reserve_deployed_via_special_entry', effectKind: action.effectKind,
+    pieceId: target.id, sideKey: action.sideKey, sourceAssetId: marker.markerId, opportunityId: plan.opportunityId,
+    currentSupply: Number(target.currentSupply), supplyCost: placed.supply.requestedSupply, geometryHash: placed.geometryHash,
+    markerReferenceDistanceMilliInches: placed.markerGap, deploymentBindingHash: placed.zone.deploymentBindingHash, trainingTruth: false }];
+  state.log ||= [];
+  state.log.push({ id: 'log-' + (state.log.length + 1), round: Number(state.round),
+    phase: state.phase, action: clone(action), events: clone(events) });
+  return freezeDeep({ ok: true, schema: 'starcraft_tmg_official_battlefield_asset_transition_v1',
+    runtimeId: OFFICIAL_BATTLEFIELD_ASSET_FAMILY_ADAPTER_ID, runtimeVersion: OFFICIAL_BATTLEFIELD_ASSET_FAMILY_ADAPTER_VERSION,
+    postRevision: Number(options?.postRevision || 0), state, action: clone(action), events,
+    rulesTruth: route.ventralSacsLanding === true ? 'official_ventral_sacs_round_end_deploy' : 'official_reserve_beacon_round_end_deploy',
+    trainingTruth: false });
+}
+
 function apply(bundle, stateInput, request = {}) {
   const action = request.action;
   const domain = enumerate(bundle, stateInput, { sideKey: action?.sideKey,
@@ -965,10 +1431,16 @@ function apply(bundle, stateInput, request = {}) {
   if (!isDeepStrictEqual(expected.action, action)) fail("BATTLEFIELD_ASSET_ACTION_STALE");
   const route = bundle.routes.find((entry) => entry.definitionId === action.definitionId);
   const state = clone(stateInput);
+  if (isReserveBeaconRoute(route) && action.effectKind === reserveBeaconActionKind(route)) {
+    return applyReserveBeaconLanding(state, route, action, request.options);
+  }
   const actor = state.pieces.find((entry) => entry.id === action.pieceId);
   const events = [];
   pay(state, route, action, events);
   applyEffect(state, route, action, actor, events);
+  if (ownsReviewedMovementActivation(state, route)) {
+    openOfficialSelectedRosterSpecialAbilityWindowV1(state, actor.sideKey, actor.id, 'movement');
+  }
   state.battlefieldAssetUseHistory = state.battlefieldAssetUseHistory || [];
   state.battlefieldAssetUseHistory.push({ round: Number(state.round), phase: state.phase,
     sideKey: action.sideKey, pieceId: actor.id, definitionId: route.definitionId,
@@ -1026,6 +1498,16 @@ function detectionSources(state, piece) {
         marker.coordinate, 0) <= 6.001);
   });
 }
+function ownedAdeptShades(state, sideKey, presence) {
+  const sources = new Set(routeInstances(state, presence).filter(instance => instance.sideKey === sideKey)
+    .map(instance => instance.sourceInstanceId));
+  const activeEffects = (state.pendingPsionicTransferEffects || []).filter(effect => !effect.consumed
+    && effect.definitionId === 'unit:adept/psionic-transfer-movement-phase@1' && sources.has(effect.sourcePieceId));
+  const effectsById = new Map(activeEffects.map(effect => [effect.tokenId, effect]));
+  return (state.board.tokens || []).filter(token => token.tokenKind === 'shade' && !token.isRemoved
+    && effectsById.get(token.tokenId)?.sourcePieceId === token.createdByPieceId && sources.has(token.createdByPieceId))
+    .map(token => ({ id: token.tokenId }));
+}
 function shadeTokens(state, sideKey) {
   return existingTokenRows(state).filter((entry) => entry.binding?.assetKind === "shade"
     && entry.binding.sideKey === sideKey && entry.binding.consumed !== true);
@@ -1043,23 +1525,51 @@ export function projectOfficialBattlefieldAssetFamilyModifiersV1(
     && (structureSpecialAbilitiesAvailable(state, piece)
       || route.effectKind === "structure"));
   const onCreep = isOfficialCurrentProductUnitOnCreepV1(state, piece);
+  const creepDodge = onCreep ? bundle.routes.find(route => route.effectKind === 'on_creep_dodge'
+    && routeInstances(state, route).some(instance => instance.sideKey === piece.sideKey)) : null;
   const activeEffects = (piece.officialAbilityEffects || []).filter((entry) => (
     entry.sourceAdapterId === OFFICIAL_BATTLEFIELD_ASSET_FAMILY_ADAPTER_ID));
   const target = state.pieces.find((entry) => entry.id === context.targetPieceId);
-  const shades = shadeTokens(state, piece.sideKey);
-  const targetWithinShade = target && shades.some((shade) => liveModels(target).some((model) => (
-    baseGap(pointForModel(model), modelRadius(model), shade.point, shade.radius) <= 4.001)));
+  const ownShade = bundle.routes.find(row => row.effectKind === 'shade_precision' && row.requiresOwnAdeptShade);
+  const shades = ownShade ? ownedAdeptShades(state, piece.sideKey, ownShade) : shadeTokens(state, piece.sideKey);
+  const targetWithinShade = ownShade
+    ? target && target.sideKey !== piece.sideKey && activePiece(target) && shades.some(shade =>
+      evaluateOfficialWithinWhollyWithinV1({ state, dataBundle: state.officialModelBaseGeometryDataBundle,
+        source: { kind: 'token', id: shade.id }, targetUnitId: target.id,
+        rangeMilliInches: ownShade.enemyShadeRangeInches * 1000 }).unitWithin)
+    : target && shades.some((shade) => liveModels(target).some((model) => (
+      baseGap(pointForModel(model), modelRadius(model), shade.point, shade.radius) <= 4.001)));
   const stationary = pieceRoutes.find((entry) => entry.effectKind === "stationary_evade");
   const firstRanged = Number(context.rangedAttackOrdinalAgainstTargetInRound) === 1;
   const orders = activeEffects.filter((entry) => entry.effectKind === "orders");
-  const speed = Math.max(0,
-    ...activeEffects.map((entry) => Number(entry.speedModifier || 0)),
-    ...pieceRoutes.filter((entry) => entry.effectKind === "on_creep_speed_passive" && onCreep)
-      .map((entry) => Number(entry.speedModifier || 0)));
+  const speedBuff = Math.max(0, ...activeEffects.map((entry) => Number(entry.speedModifier || 0)));
+  const speedCharacteristicIncrease = Math.max(0, ...pieceRoutes
+    .filter((entry) => entry.effectKind === "on_creep_speed_passive" && onCreep)
+    .map((entry) => Number(entry.speedModifier || 0)));
+  const splitSpeedModifiers = bundle.scope === 'explicit_source_definition_set'
+    && bundle.routes.some(route => ['on_creep_speed_active', 'on_creep_speed_passive'].includes(route.effectKind));
+  const speed = splitSpeedModifiers ? speedBuff + speedCharacteristicIncrease
+    : Math.max(speedBuff, speedCharacteristicIncrease);
   const detection = detectionSources(state, piece);
+  const markerArmourRoute = pieceRoutes.find(row => row.effectKind === 'marker_armour');
+  let markerArmourChecks = null;
+  if (bundle.schema === 'starcraft_tmg_official_battlefield_asset_family_source_bundle_v2') {
+    markerArmourChecks = [];
+    if (markerArmourRoute && activePiece(piece)) {
+      markerArmourChecks = (state.board?.missionMarkers || [])
+        .filter(marker => marker.isRemoved !== true && marker.isDestroyed !== true)
+        .map(marker => evaluateOfficialWithinWhollyWithinV1({ state, dataBundle: state.officialModelBaseGeometryDataBundle,
+          source: { kind: 'mission_marker', id: marker.id }, targetUnitId: piece.id,
+          rangeMilliInches: markerArmourRoute.markerRangeInches * 1000 }));
+    }
+  }
+  const markerArmourApplies = markerArmourChecks
+    ? markerArmourChecks.some(check => check.unitWithin) : Boolean(markerArmourRoute && markerDistance(state, piece) <= 3.001);
   return freezeDeep({
     pieceId: piece.id, onCreep,
-    applicableDefinitionIds: pieceRoutes.map((entry) => entry.definitionId).sort(),
+    applicableDefinitionIds: [...pieceRoutes, ...(creepDodge ? [creepDodge] : [])]
+      .map((entry) => entry.definitionId).sort(),
+    ...(creepDodge ? { dodge: creepDodge.dodge } : {}),
     structure: pieceRoutes.some((entry) => entry.effectKind === "structure")
       || piece.isStructure === true,
     currentSupplySetTo: pieceRoutes.some((entry) => entry.effectKind === "structure") ? 0 : null,
@@ -1068,8 +1578,9 @@ export function projectOfficialBattlefieldAssetFamilyModifiersV1(
     cannotControlOrContest:
       pieceRoutes.some((entry) => entry.effectKind === "structure") || piece.isStructure === true,
     speedModifier: speed,
-    armourModifier: pieceRoutes.some((entry) => entry.effectKind === "marker_armour")
-      && markerDistance(state, piece) <= 3.001 ? 1 : 0,
+    ...(splitSpeedModifiers ? { speedBuff, speedCharacteristicIncrease } : {}),
+    armourModifier: markerArmourApplies ? markerArmourRoute.armourModifier : 0,
+    ...(markerArmourChecks ? { markerArmourChecks } : {}),
     eligibleEvadeAgainstRanged: Boolean(stationary && statusNamed(piece, ["stationary"])
       && firstRanged),
     evadeModifier: stationary && statusNamed(piece, ["stationary"]) && firstRanged
@@ -1084,7 +1595,7 @@ export function projectOfficialBattlefieldAssetFamilyModifiersV1(
     hiddenSuppressedByDetection: detection.length > 0,
     detectionMarkerIds: detection.map((entry) => entry.markerId).sort(),
     ignoreDisengagePenalty: orders.some((entry) => entry.ignoreDisengagePenalty === true),
-    criticalHit: Math.max(0, ...orders.map((entry) => Number(entry.criticalHit || 0))),
+    criticalHit: Math.max(0, ...orders.filter(entry => matchesGrantedWeapon(entry, context.weaponName, state.round)).map(entry => Number(entry.criticalHit || 0))),
     pylonPeCostReductionAvailable: bundle.routes.some((route) => (
       route.effectKind === "pylon_pe_discount"
         && routeInstances(state, route).some((instance) => instance.sideKey === piece.sideKey
@@ -1099,19 +1610,22 @@ export function projectOfficialBattlefieldAssetFamilyModifiersV1(
   });
 }
 
-export function consumeOfficialBattlefieldAssetFirstWeaponEffectsV1(state, pieceId) {
+export function consumeOfficialBattlefieldAssetFirstWeaponEffectsV1(state, pieceId, weaponName) {
   const piece = state.pieces?.find((entry) => entry.id === pieceId);
   if (!piece) fail("BATTLEFIELD_ASSET_QUERY_PIECE_UNKNOWN", String(pieceId || ""));
   const before = piece.officialAbilityEffects || [];
   const consumed = before.filter((entry) => (
     entry.sourceAdapterId === OFFICIAL_BATTLEFIELD_ASSET_FAMILY_ADAPTER_ID
-      && entry.effectKind === "orders" && entry.firstWeaponOnly === true));
-  piece.officialAbilityEffects = before.filter((entry) => !consumed.includes(entry));
+      && entry.effectKind === "orders" && entry.firstWeaponOnly === true && !entry.boundWeaponName));
+  piece.officialAbilityEffects = usesWave3FaqClarifications(state)
+    ? before.map(entry => consumed.includes(entry)
+      ? bindGrantedWeapon({ ...entry, expiresAt: 'round_end' }, weaponName, state.round) : entry)
+    : before.filter(entry => !consumed.includes(entry));
   return freezeDeep({ pieceId, consumedEffectHashes: consumed.map((entry) => (
     entry.effectHash)).sort(), consumedCount: consumed.length, trainingTruth: false });
 }
 
-function removeAsset(state, assetId) {
+export function removeOfficialBattlefieldAssetV1(state, assetId) {
   state.board.tokens = (state.board.tokens || []).filter((entry) => (
     String(entry.tokenId || entry.id) !== assetId));
   state.board.markers = (state.board.markers || []).filter((entry) => (
@@ -1120,6 +1634,21 @@ function removeAsset(state, assetId) {
     .map((entry) => entry.assetId === assetId ? seal({
       ...without(entry, ["bindingHash"]), consumed: true,
     }, "bindingHash") : entry);
+}
+function cleanupTokenAssets(state) {
+  const cleanup = resolveOfficialTokenMarkerCleanupV1({
+    registry: state.officialBattlefieldTokenMarkerRegistry,
+    tokens: state.board.tokens || [], markers: state.board.markers || [],
+  });
+  state.board.tokens = clone(cleanup.tokens); state.board.markers = clone(cleanup.markers);
+  const retained = new Set([...cleanup.retainedTokenIds, ...cleanup.retainedMarkerIds]);
+  state.officialBattlefieldAssetBindings = (state.officialBattlefieldAssetBindings || [])
+    .filter((entry) => retained.has(entry.assetId));
+  return cleanup;
+}
+export function consumeOfficialBattlefieldTokenAssetCleanupV1(stateInput) {
+  const state = clone(stateInput);
+  return { state, cleanup: cleanupTokenAssets(state) };
 }
 function lifecycle(bundle, stateInput, request = {}) {
   const eventKind = String(request.eventKind || "");
@@ -1133,16 +1662,26 @@ function lifecycle(bundle, stateInput, request = {}) {
     const moved = state.pieces.find((entry) => entry.id === pieceId);
     if (moved && ["move", "deploy", "run", "charge", "disengage"].includes(actionType)) {
       for (const token of existingTokenRows(state)) {
-        if (token.binding?.assetKind !== "creep_tumor"
-          || token.binding.sideKey === moved.sideKey
-          || !sideHasPassive(state, token.binding.sideKey, "creep_removal")) continue;
-        const near = liveModels(moved).some((model) => footprintGap(
-          roundFootprint(pointForModel(model), modelRadius(model)),
-          token.footprint) <= 1.001);
+        if (token.binding?.assetKind !== "creep_tumor" || token.binding.sideKey === moved.sideKey) continue;
+        const removal = resolveOfficialCurrentProductSideCapabilityV1(state, {
+          sideKey: token.binding.sideKey, capability: "creep_tumor_enemy_action_removal",
+        });
+        if (!removal.enabled) continue;
+        const exactSource = removal.sources.find(row => row.recordKey === "tactical_cards:reactive_creep"
+          || (row.adapterKind === "battlefield_asset_family" && ["tactical_cards:accelerating_creep", "tactical_cards:malignant_creep"].includes(row.recordKey)
+            && bundle?.schema === "starcraft_tmg_official_battlefield_asset_family_source_bundle_v2"));
+        const exact = exactSource ? evaluateOfficialWithinWhollyWithinV1({
+          state, dataBundle: state.officialModelBaseGeometryDataBundle,
+          source: { kind: "token", id: token.id }, targetUnitId: moved.id, rangeMilliInches: 1000,
+        }) : null;
+        const near = exact ? exact.unitWithin : liveModels(moved).some((model) => footprintGap(
+          roundFootprint(pointForModel(model), modelRadius(model)), token.footprint) <= 1.001);
         if (near) {
-          removeAsset(state, token.id);
+          removeOfficialBattlefieldAssetV1(state, token.id);
           events.push({ type: "creep_tumor_removed", tokenId: token.id,
-            triggeringActionType: actionType, movingPieceId: moved.id, trainingTruth: false });
+            triggeringActionType: actionType, movingPieceId: moved.id,
+            ...(exact ? { sourceFeatureHash: exactSource.sourceFeatureHash, measurementResultHash: exact.resultHash } : {}),
+            trainingTruth: false });
         }
       }
     }
@@ -1173,14 +1712,7 @@ function lifecycle(bundle, stateInput, request = {}) {
     }
   }
   if (eventKind === "cleanup_and_refresh") {
-    const cleanup = resolveOfficialTokenMarkerCleanupV1({
-      registry: state.officialBattlefieldTokenMarkerRegistry,
-      tokens: state.board.tokens || [], markers: state.board.markers || [],
-    });
-    state.board.tokens = clone(cleanup.tokens); state.board.markers = clone(cleanup.markers);
-    const retained = new Set([...cleanup.retainedTokenIds, ...cleanup.retainedMarkerIds]);
-    state.officialBattlefieldAssetBindings = (state.officialBattlefieldAssetBindings || [])
-      .filter((entry) => retained.has(entry.assetId));
+    const cleanup = cleanupTokenAssets(state);
     state.pendingBattlefieldAssetOpportunities = [];
     for (const piece of state.pieces || []) {
       piece.officialAbilityEffects = (piece.officialAbilityEffects || []).filter((entry) => (
@@ -1200,6 +1732,12 @@ function lifecycle(bundle, stateInput, request = {}) {
     phase: state.phase, action: { actionType: "battlefield_asset_lifecycle", eventKind },
     events: clone(events) });
   return state;
+}
+export function consumeOfficialBattlefieldAssetMovementLifecycleV1(state, action) {
+  const next = lifecycle(state.officialBattlefieldAssetFamilySourceBundle, state, {
+    eventKind: 'action_performed', actionType: action.actionType, pieceId: action.pieceId });
+  const added = (next.battlefieldAssetLifecycleHistory || []).length > (state.battlefieldAssetLifecycleHistory || []).length;
+  return { state: next, events: added ? structuredClone(next.battlefieldAssetLifecycleHistory.at(-1).events) : [] };
 }
 function query(bundle, state, request = {}) {
   const queryKind = String(request.queryKind || request.kind || "");
@@ -1230,6 +1768,27 @@ function query(bundle, state, request = {}) {
 
 export function createOfficialBattlefieldAssetFamilyAdapterV1(bundle) {
   verifyOfficialBattlefieldAssetFamilySourceBundleV1(bundle);
+  if (bundle.schema !== OFFICIAL_BATTLEFIELD_ASSET_FAMILY_BUNDLE_SCHEMA) fail("BATTLEFIELD_ASSET_LEGACY_ADAPTER_SOURCE_REQUIRED");
+  return battlefieldAssetActionAdapter(bundle);
+}
+
+export function createOfficialCreepCardComponentAdapterV2(bundle) {
+  verifyOfficialBattlefieldAssetFamilySourceBundleV1(bundle);
+  if (bundle.schema !== 'starcraft_tmg_official_battlefield_asset_family_source_bundle_v2'
+    || bundle.routes.some(row => !isReserveBeaconRoute(row) && !['creep_token_place',
+      'creep_stay_displacement', 'creep_removal', 'detection_indicator', 'on_creep_speed_active', 'on_creep_speed_passive',
+      'stationary_evade', 'orders', 'pylon_reserve_deploy', 'pylon_pe_discount', 'source_of_creep', 'on_creep_dodge', 'on_creep_impact', 'force_field_place', 'shade_precision'].includes(row.effectKind))) {
+    fail('BATTLEFIELD_ASSET_CREEP_COMPONENT_SOURCE_REQUIRED');
+  }
+  const bindings = bundle.routes.map(row => ({
+    sourceFeatureHash: row.sourceFeatureHash, adapterId: OFFICIAL_BATTLEFIELD_ASSET_FAMILY_ADAPTER_ID,
+    adapterVersion: OFFICIAL_BATTLEFIELD_ASSET_FAMILY_ADAPTER_VERSION,
+    capability: row.actionKind === 'active_ability' ? 'authoritative_action' : 'automatic_consumer',
+  }));
+  return battlefieldAssetActionAdapter(bundle, bindings);
+}
+
+function battlefieldAssetActionAdapter(bundle, definitionBindings) {
   const descriptor = freezeDeep({
     adapterId: OFFICIAL_BATTLEFIELD_ASSET_FAMILY_ADAPTER_ID,
     adapterVersion: OFFICIAL_BATTLEFIELD_ASSET_FAMILY_ADAPTER_VERSION,
@@ -1245,11 +1804,44 @@ export function createOfficialBattlefieldAssetFamilyAdapterV1(bundle) {
     legalSpacePreviewApplyReplaySequencePreserved: true,
     rulesAuthority: true, trainingTruth: false,
   });
-  return freezeDeep({ descriptor,
+  return freezeDeep({ descriptor, ...(definitionBindings ? { definitionBindings } : {}),
     legalSpace: (state, options = {}) => enumerate(bundle, state, options),
     preview: (state, request = {}) => preview(bundle, state, request),
     apply: (state, request = {}) => apply(bundle, state, request),
     query: (state, request = {}) => query(bundle, state, request),
     lifecycle: (state, request = {}) => lifecycle(bundle, state, request),
+  });
+}
+
+export function createOfficialBattlefieldModifierComponentAdapterV1(bundle) {
+  verifyOfficialBattlefieldAssetFamilySourceBundleV1(bundle);
+  if (bundle.schema !== 'starcraft_tmg_official_battlefield_asset_family_source_bundle_v2'
+    || bundle.routes.some(row => row.actionKind === 'active_ability')) {
+    fail('BATTLEFIELD_MODIFIER_EXPLICIT_SOURCE_REQUIRED');
+  }
+  const adapterId = 'official-battlefield-modifier-component-adapter-v1';
+  const descriptor = freezeDeep({ adapterId, adapterVersion: '1.0.0', adapterKind: 'exact_runtime',
+    coveredDefinitionCount: bundle.routeCount, coveredSourceFeatureHashes: clone(bundle.coveredSourceFeatureHashes),
+    supportedOperations: ['legal_space', 'query'], sourceBundleHash: bundle.bundleHash,
+    automaticConsumers: ['ranged', 'melee_impact', 'automatic_hits'], fullFamilyCoverage: false,
+    rulesAuthority: true, trainingTruth: false });
+  const definitionBindings = bundle.routes.map(row => ({ sourceFeatureHash: row.sourceFeatureHash,
+    adapterId, adapterVersion: '1.0.0', capability: 'automatic_consumer' }));
+  return freezeDeep({ descriptor, definitionBindings,
+    legalSpace() { return { candidates: [], parameterDomains: [],
+      automaticConsumerDefinitionIds: clone(bundle.definitionIds), trainingTruth: false }; },
+    query(state, request) {
+      const chargeProjection = request?.context?.actionType === 'charge' && Object.keys(request.context).length === 1
+        && bundle.routes.some(route => route.effectKind === 'on_creep_impact');
+      const targetProjection = typeof request?.context?.targetPieceId === 'string' && Object.keys(request.context).length === 1
+        && bundle.routes.some(route => route.requiresOwnAdeptShade)
+        && state.pieces.some(piece => piece.id === request.context.targetPieceId);
+      if (!object(request) || Object.keys(request).some(key => key !== 'pieceId' && !(key === 'context' && (chargeProjection || targetProjection)))
+        || state.officialBattlefieldAssetFamilySourceBundle?.bundleHash !== bundle.bundleHash) {
+        fail('BATTLEFIELD_MODIFIER_QUERY_BINDING_INVALID');
+      }
+      return seal({ result: projectOfficialBattlefieldAssetFamilyModifiersV1(bundle, state, request),
+        sourceBundleHash: bundle.bundleHash, mutationAuthority: false, trainingTruth: false }, 'queryReceiptHash');
+    },
   });
 }

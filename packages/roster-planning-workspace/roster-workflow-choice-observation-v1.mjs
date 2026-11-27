@@ -1,6 +1,7 @@
 // Observing a selected state's menu is a deterministic read. It must not be
 // confused with a strategic action/formation choice, or sent as a false menu.
 import {rosterWorkflowChoiceContractV1} from '../roster-strategist/roster-workflow-graph-v1.mjs';
+import {projectRosterDelegatedNativeChoiceScopeV1} from '../roster-strategist/roster-comparison-observation-v1.mjs';
 export function createRosterWorkflowChoiceObservationV1({work,choice}) {
   const id=`${work.id}:observed-choice`,observations=[];
   const choiceContract=rosterWorkflowChoiceContractV1({state:{work:[work,{id,choiceOf:work.id}]},workId:id});
@@ -37,7 +38,8 @@ export function createRosterWorkflowChoiceObservationV1({work,choice}) {
   if(choice.operation==='native_action'&&choice.unconfirmedProposal?.selection&&pending?.experimentScope
     &&!pending.guards?.length&&!pending.resultGuards?.length){
     inputs.nativeChoiceTemplate={source:'literal',value:{orderId:'observed-native-choice',purpose:pending.purpose,
-      scenarioAssumptions:structuredClone(pending.scenarioAssumptions??[]),experimentScope:structuredClone(pending.experimentScope),
+      scenarioAssumptions:structuredClone(pending.scenarioAssumptions??[]),
+      experimentScope:projectRosterDelegatedNativeChoiceScopeV1(pending.experimentScope,choiceContract.delegatedComparison),
       steps:[{stepId:'selected-native-action',operation:'native_action',argumentsJson:JSON.stringify(choice.unconfirmedProposal),
         bindings:[],guards:[],publicReason:pending.publicReason}],completionStepId:'selected-native-action',
       stopAndReturnToModelWhen:pending.stopAndReturnToModelWhen}};

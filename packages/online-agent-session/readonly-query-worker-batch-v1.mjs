@@ -88,6 +88,7 @@ export async function evaluateStarcraftTmgReadonlyQueriesInWorkersV1(
       worker = new Worker(new URL("./readonly-query-worker-v1.mjs", import.meta.url), {
         workerData: { seatKey, aggregate: { stateRevision: aggregate.stateRevision,
           envelope: { matchBindingHash: aggregate.envelope.matchBindingHash,
+            ...(aggregate.envelope.releaseBinding ? {releaseBinding: aggregate.envelope.releaseBinding} : {}),
             stateHash: aggregate.envelope.stateHash, state: aggregate.envelope.state } } },
         execArgv: [],
       });

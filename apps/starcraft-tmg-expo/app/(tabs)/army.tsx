@@ -1,10 +1,15 @@
+import { Image as ExpoImage } from 'expo-image';
+import { starcraftTmgBattlefieldUnitMediaAssetsV1 } from '@/lib/level3/battlefield-media-assets-v1';
 import React, { useState, useMemo, useCallback } from 'react';
+import { MatchSetupCatalogue, type SetupCatalogue as SetupData } from '@/components/match-setup-catalogue';
+import { MatchPlanningClientContext, useMatchPlanningClient } from '@/lib/roster-planning/match-setup-context';
+
 import { View, Text, FlatList, TextInput, Pressable, ScrollView, Alert, StyleSheet } from 'react-native';
 import { ScreenContainer } from '@/components/screen-container';
 import { SectionDisclosure } from '@/components/ui/command-primitives';
 import { useData } from '@/lib/data-context';
 import { useI18n } from '@/lib/i18n';
-import { computeArmyState, createRosterUnit, createEmptyArmy, armyToText, textToArmy } from '@/lib/army-calc';
+import { computeArmyState, createRosterUnit, createEmptyArmy, repriceArmyCopy, armyToText, textToArmy } from '@/lib/army-calc';
 import { RosterPlanningWorkspacePanel } from '@/components/roster-planning/roster-planning-workspace-panel';
 import type { Faction, ArmyList, UnitCard, TacticalCard, RosterUnit, UnitType, Upgrade, GameCard } from '@/lib/types';
 import { FACTION_COLORS, RESOURCE_META } from '@/lib/types';
@@ -34,7 +39,7 @@ function getInnateAbilities(upgrades: Upgrade[], size: 'small' | 'large'): Upgra
   return upgrades.filter(upg => (size === 'small' ? upg.costS : upg.costL) === 0);
 }
 
-type AbilityLike = Pick<Upgrade, 'name' | 'description' | 'phase' | 'activation' | 'abilityKind' | 'resourceCost'> & {
+type AbilityLike = Pick<Upgrade, 'name' | 'description' | 'phase' | 'activation' | 'abilityKind' | 'resourceCost' | 'ruleTiming'> & {
   kind?: string;
 };
 
@@ -68,7 +73,12 @@ function abilityKindLabel(item: AbilityLike): string {
   return '';
 }
 
-function abilityPhaseText(item: AbilityLike): string {
+function abilityPhaseText(item: AbilityLike, lang: 'en' | 'zh'): string {
+  if (item.ruleTiming) {
+    const phase = item.ruleTiming.phase;
+    const names:Record<string,string> = {any:'任意阶段',movement:'移动阶段',assault:'突击阶段',combat:'战斗阶段',cleanup:'清理阶段'};
+    return lang === 'zh' ? (names[phase] ?? phase) : phase;
+  }
   if (item.phase) return item.phase;
   const text = `${item.activation || ''} ${item.description || ''}`;
   const match = text.match(/<\s*([^<>]*Phase|Any Phase|Start of the Round|End of the Round)\s*>/i);
@@ -86,7 +96,7 @@ function abilityResourceCost(item: AbilityLike): { amount: number | string; type
 }
 
 function abilityTimingCostText(item: AbilityLike, lang: 'en' | 'zh'): string {
-  const parts = [abilityKindLabel(item), abilityPhaseText(item)].filter(Boolean);
+  const parts = [abilityKindLabel(item), abilityPhaseText(item,lang)].filter(Boolean);
   const cost = abilityResourceCost(item);
   if (cost && String(cost.amount) !== '') {
     parts.push(uiText(lang, `Cost ${cost.amount} ${cost.type}`, `消耗 ${cost.amount} ${cost.type}`));
@@ -145,18 +155,36 @@ function compactAbilityPreview(upgrades: Upgrade[], lang: 'en' | 'zh'): string {
 type BuilderStep = 'list' | 'edit' | 'addUnit' | 'import' | 'plan';
 
 export default function ArmyScreen() {
+  return <MatchSetupCatalogue>{(data,client) =>
+    <MatchPlanningClientContext.Provider value={client}><ArmyEditor setupData={data} /></MatchPlanningClientContext.Provider>
+  }</MatchSetupCatalogue>;
+}
+function ArmyEditor({setupData}:{setupData?:SetupData}) {
   const { t, factionName, lang } = useI18n();
   const {
-    units,
-    cards,
-    gameCards,
-    armyLists,
-    saveArmy,
+    units:legacyUnits,
+    cards:legacyCards,
+    gameCards:legacyGameCards,
+    armyLists:storedArmies,
+    saveArmy:persistArmy,
     deleteArmy,
-    catalogueSource,
+    catalogueSource:legacySource,
     officialCatalogueAvailable,
     officialSourceMetadataVerified,
   } = useData();
+  const source = setupData?.catalogue;
+  const units = source?.units ?? legacyUnits, cards = source?.cards ?? legacyCards;
+  const gameCards = source?.gameCards ?? legacyGameCards;
+  const catalogueSource = source?.source ?? legacySource;
+  const armyLists = storedArmies.filter(army => source ? army.officialDatasetHash === source.source.officialDatasetHash
+    : !army.officialDatasetHash || army.officialDatasetHash === legacySource.officialDatasetHash);
+  const saveArmy = (army:ArmyList) => persistArmy(source ? {...army,officialDatasetHash:source.source.officialDatasetHash} : army);
+  const planningClient=useMatchPlanningClient();
+  const [refreshText,setRefreshText]=useState('');
+  const [refreshing,setRefreshing]=useState(false);
+  const [copyError,setCopyError] = useState('');
+  const copyable = setupData ? storedArmies.filter(army => army.mineralsLimit === setupData.setup.minerals
+    && (army.officialDatasetHash ?? legacySource.officialDatasetHash) === legacySource.officialDatasetHash) : [];
   const [step, setStep] = useState<BuilderStep>('list');
   const [currentArmy, setCurrentArmy] = useState<ArmyList | null>(null);
   const [importText, setImportText] = useState('');
@@ -191,6 +219,7 @@ export default function ArmyScreen() {
         <View style={s.header}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
             <Text style={s.headerTitle}>{t('armyManage')}</Text>
+            {setupData && <Text style={s.headerSub}>{setupData.setup.mission} · {setupData.setup.deployment}</Text>}
             {/* S271 workspace entry (top): reachable on 390px where the
                 floating companion dock overlays the bottom action bar. */}
             <Pressable
@@ -204,6 +233,54 @@ export default function ArmyScreen() {
           <Text style={s.headerSub}>
             {armyLists.length} {t('armyCount')} · U{catalogueSource.dataVersions.unitsVersion}/C{catalogueSource.dataVersions.cardsVersion}
           </Text>
+          {setupData && <Pressable disabled={refreshing} testID="army-skill-refresh-preview" onPress={async () => {
+            setRefreshing(true);
+            try {
+              const info=await planningClient.previewSkillRefresh();
+              setRefreshText(uiText(lang,`${info.affected} of ${info.sectionCount} sections cite changed rules or data. ${info.unrepresentedFactions.length} factions await coverage.`,
+                `${info.sectionCount} 个章节中有 ${info.affected} 个引用了变更来源。另有 ${info.unrepresentedFactions.length} 个势力待补。`));
+            } catch(err) {setRefreshText(err instanceof Error ? err.message : String(err));}
+            finally {setRefreshing(false);}
+          }}><Text style={s.planEntryText}>{uiText(lang,'Review skill changes','查看策略资料更新范围')}</Text></Pressable>}
+          {refreshText && <Text testID="army-skill-refresh-result" style={s.headerSub}>{refreshText}</Text>}
+        </View>
+
+        {/* Bottom Actions */}
+        <View style={s.bottomBar}>
+          {FACTIONS.map(f => (
+            <Pressable
+              key={f}
+              testID={`army-new-${f}`}
+              onPress={() => {
+                const army = createEmptyArmy(f, `${t('newArmyPrefix')} ${factionName(f)} ${t('armyPostfix')}`);
+                if (setupData) {
+                  army.mineralsLimit=setupData.setup.minerals;
+                  army.gasLimit=Math.floor(army.mineralsLimit / 10);
+                  army.missionId=setupData.setup.mapBinding.missionRecordKey.split(':')[1];
+                  army.deploymentId=setupData.setup.mapBinding.deploymentRecordKey.split(':')[1];
+                }
+                setCurrentArmy(army);
+                setEditTab('command');
+                setStep('edit');
+              }}
+              style={({ pressed }) => [s.newBtn, { backgroundColor: FACTION_COLORS[f] + '20', borderColor: FACTION_COLORS[f] }, pressed && { opacity: 0.7 }]}
+            >
+              <Text style={[s.newBtnText, { color: FACTION_COLORS[f] }]}>+{factionName(f)}</Text>
+            </Pressable>
+          ))}
+          <Pressable
+            onPress={() => { setStep('plan'); }}
+            style={({ pressed }) => [s.newBtn, { backgroundColor: '#22d3ee20', borderColor: '#22d3ee' }, pressed && { opacity: 0.7 }]}
+            testID="army-open-roster-planning"
+          >
+            <Text style={[s.newBtnText, { color: '#22d3ee' }]}>{uiText(lang, 'AI Planning', '智能规划')}</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => { setImportText(''); setStep('import'); }}
+            style={({ pressed }) => [s.newBtn, { backgroundColor: '#22c55e20', borderColor: '#22c55e' }, pressed && { opacity: 0.7 }]}
+          >
+            <Text style={[s.newBtnText, { color: '#22c55e' }]}>{t('importArmy')}</Text>
+          </Pressable>
         </View>
         <ScrollView style={{ flex: 1 }}>
           {armyLists.length === 0 ? (
@@ -240,40 +317,18 @@ export default function ArmyScreen() {
               );
             })
           )}
+          {setupData && copyable.map(army => <Pressable key={army.id} style={s.planEntryBtn}
+            testID={'army-reprice-'+army.id} onPress={async () => {
+              try {
+                const copy = repriceArmyCopy(army,units,cards,{datasetHash:setupData.catalogue.source.officialDatasetHash,
+                  minerals:setupData.setup.minerals,missionId:setupData.setup.mapBinding.missionRecordKey.split(':')[1],
+                  deploymentId:setupData.setup.mapBinding.deploymentRecordKey.split(':')[1]});
+                await saveArmy(copy); setCopyError(''); setCurrentArmy(copy); setEditTab('roster'); setStep('edit');
+              } catch (err) {setCopyError(err instanceof Error ? err.message : String(err));}
+            }}><Text style={s.planEntryText}>{uiText(lang,'Copy and reprice','按当前费用另存')} · {army.name}</Text></Pressable>)}
+          {copyError ? <Text accessibilityRole="alert" style={s.emptyText}>{copyError}</Text> : null}
           <View style={{ height: 100 }} />
         </ScrollView>
-
-        {/* Bottom Actions */}
-        <View style={s.bottomBar}>
-          {FACTIONS.map(f => (
-            <Pressable
-              key={f}
-              testID={`army-new-${f}`}
-              onPress={() => {
-                const army = createEmptyArmy(f, `${t('newArmyPrefix')} ${factionName(f)} ${t('armyPostfix')}`);
-                setCurrentArmy(army);
-                setEditTab('command');
-                setStep('edit');
-              }}
-              style={({ pressed }) => [s.newBtn, { backgroundColor: FACTION_COLORS[f] + '20', borderColor: FACTION_COLORS[f] }, pressed && { opacity: 0.7 }]}
-            >
-              <Text style={[s.newBtnText, { color: FACTION_COLORS[f] }]}>+{factionName(f)}</Text>
-            </Pressable>
-          ))}
-          <Pressable
-            onPress={() => { setStep('plan'); }}
-            style={({ pressed }) => [s.newBtn, { backgroundColor: '#22d3ee20', borderColor: '#22d3ee' }, pressed && { opacity: 0.7 }]}
-            testID="army-open-roster-planning"
-          >
-            <Text style={[s.newBtnText, { color: '#22d3ee' }]}>{uiText(lang, 'AI Planning', '智能规划')}</Text>
-          </Pressable>
-          <Pressable
-            onPress={() => { setImportText(''); setStep('import'); }}
-            style={({ pressed }) => [s.newBtn, { backgroundColor: '#22c55e20', borderColor: '#22c55e' }, pressed && { opacity: 0.7 }]}
-          >
-            <Text style={[s.newBtnText, { color: '#22c55e' }]}>{t('importArmy')}</Text>
-          </Pressable>
-        </View>
       </ScreenContainer>
     );
   }
@@ -1134,6 +1189,7 @@ function AddUnitView({ army, units, allCards, onAdd, onBack }: {
 }) {
   const { t, lang } = useI18n();
   const [search, setSearch] = useState('');
+  const [expandedCard, setExpandedCard] = useState<string | null>(null);
 
   const selectedFactionCard = army.factionCardId ? allCards.find(c => c.id === army.factionCardId) : null;
   const factionTags = selectedFactionCard?.factionTags || [];
@@ -1185,10 +1241,21 @@ function AddUnitView({ army, units, allCards, onAdd, onBack }: {
           const showLarge = hasValidLargeProfile(item);
           if (!showSmall && !showLarge) return null;
           const abilityPreview = compactAbilityPreview(item.upgrades || [], lang);
+          const media = starcraftTmgBattlefieldUnitMediaAssetsV1(item.id);
 
           return (
             <View style={s.unitPickCard}>
-              <Text style={[s.unitPickName, { color: fColor }]}>{item.name}</Text>
+              <View style={{flexDirection:'row', alignItems:'center', gap:10}}>
+                {media?.identityPortrait && <Pressable accessibilityRole="button"
+                  accessibilityLabel={uiText(lang, 'View unit card', '查看单位卡') + ' · ' + item.name}
+                  onPress={() => setExpandedCard(expandedCard === item.id ? null : item.id)}>
+                  <ExpoImage source={media.identityPortrait} contentFit="cover" style={{width:44,height:44,borderRadius:5}} />
+                </Pressable>}
+                <Text style={[s.unitPickName, { color: fColor }]}>{item.name}</Text>
+              </View>
+              {expandedCard === item.id && media?.unitCard &&
+                <ExpoImage source={media.unitCard} contentFit="contain" accessibilityLabel={item.name}
+                  style={{width:'100%', maxWidth:640, aspectRatio:914/600}} />}
               <Text style={s.unitPickSub}>{item.unitType} · HP:{item.stats.hp || '?'} {item.keywords || ''}</Text>
               {!!abilityPreview && <Text style={s.unitAbilityPreview}>{abilityPreview}</Text>}
               <View style={s.unitPickActions}>

@@ -5,6 +5,7 @@ export interface StarcraftTmgBattleWorkbenchSnapshotV1 {
   schemaVersion: "starcraft_tmg_battle_workbench_snapshot_v1";
   roomId: string | null;
   matchBindingHash: string | null;
+  releaseBinding?: Readonly<Record<string, string>>;
   stateRevision: number | null;
   stateHash: string | null;
   viewerSideKey: string | null;

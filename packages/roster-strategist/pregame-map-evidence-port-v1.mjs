@@ -1,3 +1,4 @@
+import {ARMY_BUILDER_CANDIDATE_INPUT_CONTRACT_V1} from './army-builder-query-port-v1.mjs';
 import { hashStarcraftTmgContract } from
   "../authoritative-engine/referee-crypto-v1.mjs";
 import { verifyOfficialCompetitiveMapRoomFreezeV1 } from
@@ -15,17 +16,51 @@ export const PREGAME_TARGET_REACHABILITY_INTERPRETATION_V1 =
 // already bound; a model never supplies a made-up mapRef or objectiveRef.
 export const PREGAME_MAP_WORKFLOW_CONTRACTS_V1=Object.freeze({
   map_summary:{method:'summarizeMap',fields:[],required:[],
+    investigationProof:{observation:'map_geometry',proofRequirement:'source_fact',roundKinds:['not_applicable','current_state']},
     purpose:'Read actual terrain, access points, missionMarkers and baseProfileIds of the bound map. Returns mapBinding, not mapRef. layoutMaterialization distinguishes frozen Native geometry from an unverified layout; terrain cells retain group IDs and placement semantics, and are not separate physical terrain pieces.'},
   map_deployment:{method:'deploymentGeometry',fields:[],required:[],
-    purpose:'Read the exact frozen materialized deployment binding: player/colour assignment, coordinate axes, entry-edge segments and Zone of Influence rectangles. These already-executable source fields do not require OCR of the card image. No per-unit deployment/movement/route legality is inferred.'},
+    investigationProof:{observation:'map_geometry',proofRequirement:'source_fact',roundKinds:['not_applicable','current_state']},
+    purpose:'Read the exact frozen materialized deployment binding: player/colour assignment, coordinate axes, entry-edge segments and Zone of Influence rectangles. This returns deploymentGeometry, not a baseId: baseId is a physical model footprint, NOT a deployment zone. These already-executable source fields do not require OCR of the card image. No per-unit deployment/movement/route legality is inferred.'},
   map_route:{method:'routeToObjective',fields:['sideId','seatKey','baseId','targetId','unitId'],required:['targetId'],
+    investigationProof:{observation:'route_feasibility',proofRequirement:'conditional_witness',roundKinds:['not_applicable','current_state']},
     alternatives:[['unitId','targetId'],['sideId','baseId','targetId'],['seatKey','baseId','targetId']],
+    parameterSemantics:{baseId:'Official physical model footprint profile from mapQueries.selectors.baseIds, NOT a deployment zone or starting location. Do not obtain it from map_deployment.',
+      unitId:'Exact mapQueries.selectors.unitBindings unitId; resolves that unit\'s side and official footprint without choosing a different base.',
+      sideId:'Player whose frozen deployment entry is used. seatKey is an alias; supplied aliases must agree.',
+      targetId:'Exact mission/task target from mapQueries.selectors.targetIds. The result is a footprint-clearance route witness, not a unit arrival time or control proof.'},
     purpose:'One exact official base/side/target route witness, or one unitId plus targetId. Not full unit arrival, deployment or earliest-round proof.'},
   map_access:{method:'compareObjectiveAccess',fields:['baseId','targetId'],required:['baseId','targetId'],
+    investigationProof:{observation:'route_feasibility',proofRequirement:'conditional_witness',roundKinds:['not_applicable','current_state']},
     purpose:'Compare BOTH sides for ONE exact baseId and targetId; no mapRef and no score-timing inference.'},
   roster_route:{method:'evaluateRosterRoute',fields:['sideId','candidateInput'],required:['sideId','candidateInput'],
+    investigationProof:{observation:'route_feasibility',proofRequirement:'conditional_witness',roundKinds:['not_applicable','current_state']},
     purpose:'Audit routes for a supplied complete Builder candidate whose sideKey equals sideId. NOT an opponent-roster lookup; inspect exposes frozen source subjects.'},
 });
+
+// Machine fields are derived from the SAME catalogue used by argument validation.
+export function describePregameMapParameterSchemaV1(operation){
+ const contract=PREGAME_MAP_WORKFLOW_CONTRACTS_V1[operation];
+ if(!contract)throw new TypeError('PREGAME_MAP_OPERATION_UNKNOWN');
+ return {type:'object',additionalProperties:false,required:[...contract.required],
+  properties:Object.fromEntries(contract.fields.map(field=>[field,field==='candidateInput'
+   ?structuredClone(ARMY_BUILDER_CANDIDATE_INPUT_CONTRACT_V1)
+   :['sideId','seatKey'].includes(field)?{type:'string',enum:['player1','player2']}:{type:'string',minLength:1}])),
+  ...(contract.alternatives?{anyOf:contract.alternatives.map(required=>({required}))}:{}),
+  description:contract.purpose};
+}
+
+// One argument-presence contract at compilation AND after dependency binding.
+// A declared dependency supplies a parameter; it is not proof that its source
+// pointer exists or that the selected physical route is reachable.
+export function inspectPregameMapWorkflowArgumentsV1(operation,args,{boundArguments=[]}={}){
+  const contract=PREGAME_MAP_WORKFLOW_CONTRACTS_V1[operation];if(!contract)return null;
+  const has=key=>Object.hasOwn(args,key)||boundArguments.includes(key);
+  const unknownFields=Object.keys(args).filter(key=>key!=='contextRef'&&!contract.fields.includes(key));
+  const missingFields=contract.required.filter(key=>!has(key));
+  const missingAlternative=Boolean(contract.alternatives&&!contract.alternatives.some(keys=>keys.every(has)));
+  return unknownFields.length||missingFields.length||missingAlternative
+    ?{unknownFields,missingFields,alternatives:contract.alternatives??null,contract}:null;
+}
 
 // Shared wire boundary for the strategist and direct map-query callers.
 export function projectPregameMapRouteRequestV1(raw = {}) {
@@ -152,7 +187,7 @@ export function projectPregameMapPhysicalFactsV1(summary) {
 }
 
 export function createPregameMapEvidencePortV1({ sourceState,
-  sourceStateHash = null } = {}) {
+  sourceStateHash = null, releaseBinding = null } = {}) {
   if (!sourceState?.board || !Array.isArray(sourceState.board.terrain)) {
     throw new TypeError("PREGAME_MAP_SOURCE_STATE_REQUIRED");
   }
@@ -229,6 +264,7 @@ export function createPregameMapEvidencePortV1({ sourceState,
     if (!id) throw new TypeError("PREGAME_MAP_QUERY_ID_REQUIRED");
     return seal({ schemaVersion: PREGAME_MAP_EVIDENCE_PORT_V1,
       queryId: id, queryKind, mapBinding: clone(mapBinding),
+      ...(releaseBinding ? {releaseBinding: clone(releaseBinding)} : {}),
       reachabilityInterpretationVersion:
         PREGAME_TARGET_REACHABILITY_INTERPRETATION_V1,
       ...result, sourcePixelsUsedAsRulesGeometry: false,

@@ -1,0 +1,255 @@
+[
+  {
+    "roomId": "creep-standard-entry-v261",
+    "source": "deploy",
+    "proposalHash": "55d1a8373d288f99dc5e033f700ba5cee08a87e43d00565dfb8aee674dcb76fc",
+    "piece": {
+      "id": "queen",
+      "sideKey": "player2",
+      "name": "Queen",
+      "isOnField": false,
+      "models": [
+        {
+          "id": "queen-model-1",
+          "isOnField": false,
+          "baseWidthInches": 3.15,
+          "baseDepthInches": 3.15,
+          "baseShape": "round",
+          "baseRotationDegrees": 0
+        }
+      ]
+    },
+    "core": {
+      "action": {
+        "actionType": "deploy",
+        "pieceId": "queen",
+        "sourceAction": {
+          "actionType": "deploy",
+          "pieceId": "queen",
+          "sourceAction": {
+            "actionType": "deploy",
+            "pieceId": "queen",
+            "originalAction": {
+              "actionType": "deploy",
+              "pieceId": "queen",
+              "spatialPlan": {
+                "canonicalPath": {
+                  "points": [
+                    {
+                      "xMilliInches": 16000,
+                      "yMilliInches": -1575,
+                      "elevation": "ground",
+                      "supportTerrainIds": [],
+                      "rotationDegrees": 0
+                    },
+                    {
+                      "xMilliInches": 16000,
+                      "yMilliInches": 2425,
+                      "elevation": "ground",
+                      "supportTerrainIds": [],
+                      "rotationDegrees": 0
+                    }
+                  ]
+                },
+                "finalModelPositions": [
+                  {
+                    "modelId": "queen-model-1",
+                    "xMilliInches": 16000,
+                    "yMilliInches": 2425,
+                    "elevation": "ground",
+                    "supportTerrainIds": [],
+                    "rotationDegrees": 0
+                  }
+                ],
+                "postDisengageAssaultRestriction": null
+              }
+            }
+          }
+        }
+      },
+      "proposal": {
+        "parameters": {
+          "path": [
+            {
+              "xMilliInches": 16000,
+              "yMilliInches": 2425,
+              "elevation": "ground",
+              "supportTerrainIds": [],
+              "rotationDegrees": 0
+            }
+          ]
+        }
+      },
+      "result": {
+        "events": [
+          {
+            "type": "unit_deploy_resolved"
+          },
+          {
+            "type": "battlefield_token_displaced"
+          }
+        ]
+      }
+    },
+    "expected": {
+      "points": [
+        {
+          "xMilliInches": 16000,
+          "yMilliInches": -1575
+        },
+        {
+          "xMilliInches": 16000,
+          "yMilliInches": 2425
+        }
+      ],
+      "placements": [
+        {
+          "modelId": "queen-model-1",
+          "xMilliInches": 16000,
+          "yMilliInches": 2425
+        }
+      ],
+      "width": 3150
+    }
+  },
+  {
+    "roomId": "creep-disengage-v261",
+    "source": "disengage",
+    "proposalHash": "37cc0de484cf454b03ad0d425bde0fa539b825a351d2ea14706a54850b1e4240",
+    "piece": {
+      "id": "nova_stealth_mode",
+      "sideKey": "player1",
+      "name": "Nova Stealth Mode",
+      "isOnField": true,
+      "models": [
+        {
+          "id": "nova_stealth_mode-model-1",
+          "isOnField": true,
+          "xInches": 17.9,
+          "yInches": 4.055,
+          "baseWidthInches": 1.575,
+          "baseDepthInches": 1.575,
+          "baseShape": "round",
+          "baseRotationDegrees": 0
+        }
+      ]
+    },
+    "core": {
+      "action": {
+        "actionType": "disengage",
+        "pieceId": "nova_stealth_mode",
+        "sourceAction": {
+          "actionType": "disengage",
+          "pieceId": "nova_stealth_mode",
+          "sourceAction": {
+            "actionType": "disengage",
+            "pieceId": "nova_stealth_mode",
+            "originalAction": {
+              "actionType": "disengage",
+              "pieceId": "nova_stealth_mode",
+              "spatialPlan": {
+                "canonicalPath": {
+                  "points": [
+                    {
+                      "xMilliInches": 17900,
+                      "yMilliInches": 4055,
+                      "elevation": "ground",
+                      "supportTerrainIds": [],
+                      "rotationDegrees": 0
+                    },
+                    {
+                      "xMilliInches": 19425,
+                      "yMilliInches": 2425,
+                      "elevation": "ground",
+                      "supportTerrainIds": [],
+                      "rotationDegrees": 0
+                    }
+                  ]
+                },
+                "finalModelPositions": [
+                  {
+                    "modelId": "nova_stealth_mode-model-1",
+                    "xMilliInches": 19425,
+                    "yMilliInches": 2425,
+                    "elevation": "ground",
+                    "supportTerrainIds": [],
+                    "rotationDegrees": 0
+                  }
+                ],
+                "postDisengageAssaultRestriction": {
+                  "schema": "starcraft_tmg_official_post_disengage_assault_restriction_v2",
+                  "semanticVersion": "2.0.0",
+                  "declaredRound": 2,
+                  "appliesToPhase": "assault",
+                  "engagedEnemyUnitIds": [
+                    "queen"
+                  ],
+                  "enemyEffectiveSupplyByUnit": {
+                    "queen": 1
+                  },
+                  "ownEffectiveSupply": 1,
+                  "combinedEnemyEffectiveSupply": 1,
+                  "commanderModifierIncluded": true,
+                  "tacticalMass": false,
+                  "rangedAttackProhibited": true,
+                  "chargeProhibited": true,
+                  "disengagePenaltyIgnoredByActiveAbility": false,
+                  "evaluatedAtDeclaration": true,
+                  "rulesTruth": "official_selected_roster_disengage_tactical_mass",
+                  "trainingTruth": false,
+                  "restrictionHash": "214c9cfebf9807a8af28e66722e96fd5e947df1c928402fc835d2c80a29ff30b"
+                }
+              }
+            }
+          }
+        }
+      },
+      "proposal": {
+        "parameters": {
+          "path": [
+            {
+              "xMilliInches": 19425,
+              "yMilliInches": 2425,
+              "elevation": "ground",
+              "supportTerrainIds": [],
+              "rotationDegrees": 0
+            }
+          ]
+        }
+      },
+      "result": {
+        "events": [
+          {
+            "type": "unit_disengage_resolved"
+          },
+          {
+            "type": "battlefield_token_displaced"
+          },
+          {
+            "type": "creep_tumor_removed"
+          }
+        ]
+      }
+    },
+    "expected": {
+      "points": [
+        {
+          "xMilliInches": 17900,
+          "yMilliInches": 4055
+        },
+        {
+          "xMilliInches": 19425,
+          "yMilliInches": 2425
+        }
+      ],
+      "placements": [
+        {
+          "modelId": "nova_stealth_mode-model-1",
+          "xMilliInches": 19425,
+          "yMilliInches": 2425
+        }
+      ],
+      "width": 1575
+    }
+  }
+]

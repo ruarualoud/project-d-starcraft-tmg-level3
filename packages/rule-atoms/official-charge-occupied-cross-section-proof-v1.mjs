@@ -3,8 +3,12 @@
 // base before it can engage any model of the declared enemy Unit. This proves
 // a path-length lower bound; a formation search returning no options does not.
 
-import { evaluateOfficialChargeCompositeCrossSectionProofV1 } from
+import { evaluateOfficialChargeCompositeCrossSectionProofV1,
+  evaluateOfficialChargeEndpointCoverProofV1 } from
   "./official-charge-composite-cross-section-proof-v1.mjs";
+import { evaluateOfficialChargeBoundedRegionProofV1,
+  evaluateOfficialChargeUnconditionalRegionProofV1 } from
+  "./official-charge-bounded-region-proof-v1.mjs";
 
 export const OFFICIAL_CHARGE_OCCUPIED_CROSS_SECTION_PROOF_VERSION =
   "starcraft_tmg_charge_occupied_cross_section_proof_v1";
@@ -146,7 +150,17 @@ export function evaluateOfficialChargeOccupiedCrossSectionShortfallProofV1(
   const original = evaluateSingleBlockerProof(state, pending);
   if (original.allLegalChargePathsExcluded) return original;
   const composite = evaluateOfficialChargeCompositeCrossSectionProofV1(state, pending);
-  return composite.allLegalChargePathsExcluded
-    ? { schemaVersion: OFFICIAL_CHARGE_OCCUPIED_CROSS_SECTION_PROOF_VERSION, ...composite }
+  if (composite.allLegalChargePathsExcluded) {
+    return { schemaVersion: OFFICIAL_CHARGE_OCCUPIED_CROSS_SECTION_PROOF_VERSION, ...composite };
+  }
+  const bounded = evaluateOfficialChargeBoundedRegionProofV1(state, pending);
+  if (bounded.allLegalChargePathsExcluded)
+    return { schemaVersion: OFFICIAL_CHARGE_OCCUPIED_CROSS_SECTION_PROOF_VERSION, ...bounded };
+  const unconditional = evaluateOfficialChargeUnconditionalRegionProofV1(state, pending);
+  if (unconditional.allLegalChargePathsExcluded)
+    return { schemaVersion: OFFICIAL_CHARGE_OCCUPIED_CROSS_SECTION_PROOF_VERSION, ...unconditional };
+  const endpoints = evaluateOfficialChargeEndpointCoverProofV1(state, pending);
+  return endpoints.allLegalChargePathsExcluded
+    ? { schemaVersion: OFFICIAL_CHARGE_OCCUPIED_CROSS_SECTION_PROOF_VERSION, ...endpoints }
     : original;
 }

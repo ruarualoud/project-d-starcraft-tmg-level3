@@ -10,10 +10,16 @@ import { getOfficialCurrentProductRecord } from
 import {
   createOfficialModelBaseGeometryDataBundleV1,
   getOfficialModelBaseGeometryProfileV1,
+  verifyOfficialModelBaseGeometryDataBundleV2,
 } from "./official-model-base-geometry-data-bundle-v1.mjs";
+import { assertOfficialReleaseSourceV2 } from "./official-release-context-v2.mjs";
+import { verifyOfficialArmyBuilderReleaseBundleV2 } from
+  "./official-army-builder-release-bundle-v2.mjs";
 
 export const OFFICIAL_UNIT_CARD_SUPPLY_DATA_BUNDLE_SCHEMA =
   "starcraft_tmg_official_unit_card_supply_data_bundle_v1";
+export const OFFICIAL_UNIT_CARD_SUPPLY_DATA_BUNDLE_SCHEMA_V2 =
+  "starcraft_tmg_official_unit_card_supply_data_bundle_v2";
 export const OFFICIAL_UNIT_CARD_SUPPLY_CORE_RULEBOOK_HASH =
   "27639c562e6db9777dd9ba984d0c9f9b581841ec30166848e021f893cd00ea54";
 
@@ -123,8 +129,9 @@ function parseSpeed(value, recordKey) {
     multiModelInches: first, singleModelInches: second,
     canMoveOrBeRepositioned: true };
 }
-function parseSupplyProfile(value, recordKey) {
-  if (!Array.isArray(value) || value.length !== 3) {
+export function parseOfficialUnitSupplyProfileV1(value, recordKey, { requiredTierCount = 3 } = {}) {
+  if (!Array.isArray(value) || value.length === 0
+    || (requiredTierCount !== null && value.length !== requiredTierCount)) {
     fail("UNIT_CARD_SUPPLY_PROFILE_INVALID", recordKey);
   }
   const tiers = value.map((row) => {
@@ -140,6 +147,9 @@ function parseSupplyProfile(value, recordKey) {
     if (minimumModels > maximumModels) fail("UNIT_CARD_SUPPLY_MODEL_RANGE_INVALID", recordKey);
     return { tier, printedModelCount, applicable: true, minimumModels, maximumModels, supply };
   }).sort((left, right) => left.tier - right.tier);
+  if (new Set(tiers.map(row => row.tier)).size !== tiers.length) {
+    fail("UNIT_CARD_SUPPLY_TIER_DUPLICATE", recordKey);
+  }
   const active = tiers.filter((row) => row.applicable);
   for (const [index, row] of active.entries()) {
     const previous = active[index - 1];
@@ -155,7 +165,7 @@ function supplyFor(profile, currentModels, recordKey) {
   if (!row) fail("UNIT_CARD_SUPPLY_COMPOSITION_UNMAPPED", recordKey);
   return row.supply;
 }
-function composition(value, kind, profile, recordKey) {
+export function compileOfficialUnitCompositionV1(value, kind, profile, recordKey) {
   if (!object(value)) fail("UNIT_CARD_SUPPLY_COMPOSITION_INVALID", recordKey);
   const models = nonNegativeInteger(value.models, "UNIT_CARD_SUPPLY_COMPOSITION_INVALID");
   const supply = nonNegativeInteger(value.supply, "UNIT_CARD_SUPPLY_COMPOSITION_INVALID");
@@ -183,12 +193,14 @@ function phaseBoxes(upgrades, recordKey) {
       definitionsHash: hashStarcraftTmgContract(definitions) };
   });
 }
-function compileProfiles(dataset, baseBundle) {
+function compileProfiles(dataset, baseBundle, options = {}) {
   const indexes = dataset.recordIndex.filter((entry) => (
     entry.recordType === "unit"
       && entry.authorityDisposition === "official_current_product_candidate"
   ));
-  if (indexes.length !== 26) fail("UNIT_CARD_SUPPLY_UNIT_DENOMINATOR_DRIFT");
+  if (options.releaseBound !== true && indexes.length !== 26) {
+    fail("UNIT_CARD_SUPPLY_UNIT_DENOMINATOR_DRIFT");
+  }
   const sourceIndex = [];
   const profiles = indexes.map((index) => {
     const record = getOfficialCurrentProductRecord(dataset, index.recordKey);
@@ -197,21 +209,27 @@ function compileProfiles(dataset, baseBundle) {
       || record.payloadHash !== index.payloadHash || !FACTIONS.has(payload.faction)) {
       fail("UNIT_CARD_SUPPLY_UNIT_RECORD_DRIFT", index.recordKey);
     }
-    const supplyProfile = parseSupplyProfile(payload.squadProfile, index.recordKey);
+    const supplyProfile = parseOfficialUnitSupplyProfileV1(payload.squadProfile, index.recordKey,
+      { requiredTierCount: options.releaseBound === true ? null : 3 });
     const unitType = String(payload.unitType || "");
     if (![...ARMY_SLOT_TYPES, "Other"].includes(unitType)) {
       fail("UNIT_CARD_SUPPLY_ARMY_SLOT_INVALID", index.recordKey);
     }
-    const base = getOfficialModelBaseGeometryProfileV1(baseBundle, index.recordKey);
+    const missingGeometry = options.releaseBound === true
+      ? baseBundle.missingProfiles.find(row => row.recordKey === index.recordKey) : null;
+    const base = missingGeometry ? null
+      : getOfficialModelBaseGeometryProfileV1(baseBundle, index.recordKey);
     const combatRangeText = String(payload.combatRange || "").trim();
     const combatRangeInches = combatRangeText === "-" ? null
       : positiveInteger(combatRangeText, "UNIT_CARD_SUPPLY_COMBAT_RANGE_INVALID");
     const compositions = [
-      composition(payload.small, "small", supplyProfile, index.recordKey),
-      composition(payload.large, "large", supplyProfile, index.recordKey),
+      compileOfficialUnitCompositionV1(payload.small, "small", supplyProfile, index.recordKey),
+      compileOfficialUnitCompositionV1(payload.large, "large", supplyProfile, index.recordKey),
     ].filter(Boolean);
     const body = {
-      schema: "starcraft_tmg_official_unit_card_supply_profile_v1",
+      schema: options.releaseBound === true
+        ? "starcraft_tmg_official_unit_card_supply_profile_v2"
+        : "starcraft_tmg_official_unit_card_supply_profile_v1",
       recordKey: record.recordKey, sourceRecordHash: record.sourceRecordHash,
       payloadHash: record.payloadHash, unitId: String(payload.id || ""),
       unitName: String(payload.name || "").normalize("NFC"),
@@ -222,12 +240,22 @@ function compileProfiles(dataset, baseBundle) {
       supplyProfile, compositions,
       phaseBoxes: phaseBoxes(payload.upgrades, index.recordKey),
       combatRange: { printedValue: combatRangeText, inches: combatRangeInches },
-      base: { shape: base.baseShape,
+      base: base ? { shape: base.baseShape,
         widthMillimetres: base.baseWidthMillimetres,
         depthMillimetres: base.baseDepthMillimetres,
         printedBase: base.printedBase,
-        p2pSourceId: base.p2pSource.sourceId,
-        p2pSourceContentHash: base.p2pSource.sourceContentHash },
+        ...(base.baseShape === 'orthogonal_cross' ? {
+          horizontalArmDepthMillimetres: base.horizontalArmDepthMillimetres,
+          verticalArmWidthMillimetres: base.verticalArmWidthMillimetres,
+          ravenOutlineSource: base.ravenOutlineSource,
+        } : base.baseShape === 'measured_contour' ? {
+          localVerticesMilliInches: base.localVerticesMilliInches,
+          ravenOutlineSource: base.ravenOutlineSource,
+        } : { p2pSourceId: base.p2pSource.sourceId, p2pSourceContentHash: base.p2pSource.sourceContentHash }) } : null,
+      ...(options.releaseBound === true ? { geometryStatus: missingGeometry
+        ? { status: "source_missing", reason: missingGeometry.reason,
+          sourceRefs: structuredClone(missingGeometry.sourceRefs) }
+        : { status: "source_bound" } } : {}),
       upgradeSide: { present: true, definitionCount: payload.upgrades.length,
         definitionsHash: hashStarcraftTmgContract(payload.upgrades) },
       rulesOwnedLayoutFields: ["faction_tag", "army_slot", "phase_boxes", "speed",
@@ -310,7 +338,155 @@ export function createOfficialUnitCardSupplyDataBundleV1(input = {}) {
   return bundle;
 }
 
+export function createOfficialUnitCardSupplyDataBundleV2(input = {}) {
+  const { dataset, snapshot, releaseContext, modelBaseGeometryDataBundle: geometry,
+    armyBuilderUnitDataBundle: units } = input;
+  const manifest = assertOfficialReleaseSourceV2(releaseContext, { dataset, snapshot });
+  verifyOfficialModelBaseGeometryDataBundleV2(geometry);
+  verifyOfficialArmyBuilderReleaseBundleV2(units, "units");
+  for (const dependency of [geometry, units]) {
+    if (dependency.sourceSnapshotHash !== dataset.sourceSnapshotHash
+      || dependency.normalizedDatasetHash !== dataset.datasetHash) {
+      fail("UNIT_CARD_SUPPLY_RELEASE_SOURCE_MISMATCH");
+    }
+  }
+  if (geometry.sourceLockHash !== manifest.source.sourceRevisionHash) {
+    fail("UNIT_CARD_SUPPLY_GEOMETRY_REVISION_MISMATCH");
+  }
+  const compiled = compileProfiles(dataset, geometry, { releaseBound: true });
+  if (compiled.profiles.length !== units.unitProfiles.length
+    || compiled.profiles.length !== geometry.unitRecordKeys.length) {
+    fail("UNIT_CARD_SUPPLY_RELEASE_DENOMINATOR_MISMATCH");
+  }
+  for (const profile of compiled.profiles) {
+    const purchase = units.unitProfiles.find(row => row.recordKey === profile.recordKey);
+    if (!purchase || purchase.sourceRecordHash !== profile.sourceRecordHash
+      || purchase.payloadHash !== profile.payloadHash
+      || hashStarcraftTmgContract(purchase.supplyProfile)
+        !== hashStarcraftTmgContract(profile.supplyProfile)
+      || hashStarcraftTmgContract(purchase.compositions)
+        !== hashStarcraftTmgContract(profile.compositions)) {
+      fail("UNIT_CARD_SUPPLY_BUILDER_FACT_MISMATCH", profile.recordKey);
+    }
+  }
+  const body = {
+    schema: OFFICIAL_UNIT_CARD_SUPPLY_DATA_BUNDLE_SCHEMA_V2,
+    version: "2.0.0",
+    sourceBinding: { releaseId: manifest.releaseId,
+      sourceSnapshotHash: dataset.sourceSnapshotHash, normalizedDatasetHash: dataset.datasetHash },
+    sourceLockHash: manifest.source.sourceRevisionHash,
+    sourceSnapshotHash: dataset.sourceSnapshotHash, normalizedDatasetHash: dataset.datasetHash,
+    coreRulebookHash: OFFICIAL_UNIT_CARD_SUPPLY_CORE_RULEBOOK_HASH,
+    officialRulesVersion: dataset.dataVersions.rulesVersion,
+    officialUnitsVersion: dataset.dataVersions.unitsVersion,
+    officialCardsVersion: dataset.dataVersions.cardsVersion,
+    ruleSectionRecords: exactRuleSectionRecords(dataset), ruleClauses: RULE_CLAUSES,
+    ruleClauseIndexHash: hashStarcraftTmgContract(RULE_CLAUSES),
+    unitProfiles: compiled.profiles,
+    unitProfileIndexHash: hashStarcraftTmgContract(compiled.profiles),
+    unitSourceIndex: compiled.sourceIndex,
+    unitSourceIndexHash: hashStarcraftTmgContract(compiled.sourceIndex),
+    armyBuilderUnitDataBundleHash: units.bundleHash,
+    baseGeometryBundleHash: geometry.bundleHash,
+    baseGeometryProfileIndexHash: hashStarcraftTmgContract(geometry.profiles),
+    audit: { unitCount: compiled.profiles.length,
+      geometryBoundCount: geometry.profiles.length,
+      geometryMissingCount: geometry.missingProfiles.length },
+    armySlotTypes: ARMY_SLOT_TYPES, phaseBoxPhases: PHASES,
+    supplyUses: ["deployment", "mission_marker_control", "scoring", "tactical_mass"],
+    sourcePolicy: { refreshDuringDevelopment: false, repositoryFallbackAllowed: false,
+      commandCenterRole: "primary_unit_characteristics_and_compositions",
+      pdfRole: "reference_and_verified_core_rules_and_base_geometry" },
+    productionRoomEligible: false,
+    rulesTruth: "official_unit_card_fields_and_current_model_count_supply_projection",
+    trainingTruth: false,
+  };
+  const bundle = freezeDeep({ ...body, bundleHash: hashStarcraftTmgContract(body) });
+  verifyOfficialUnitCardSupplyDataBundleV2(bundle);
+  return bundle;
+}
+
+export function verifyOfficialUnitCardSupplyDataBundleV2(bundle) {
+  const digest = /^[a-f0-9]{64}$/u;
+  if (!object(bundle) || bundle.schema !== OFFICIAL_UNIT_CARD_SUPPLY_DATA_BUNDLE_SCHEMA_V2
+    || bundle.version !== "2.0.0" || !bundle.sourceBinding?.releaseId
+    || bundle.sourceBinding.sourceSnapshotHash !== bundle.sourceSnapshotHash
+    || bundle.sourceBinding.normalizedDatasetHash !== bundle.normalizedDatasetHash
+    || ![bundle.sourceSnapshotHash, bundle.normalizedDatasetHash, bundle.sourceLockHash,
+      bundle.armyBuilderUnitDataBundleHash, bundle.baseGeometryBundleHash].every(value => digest.test(value))
+    || !Array.isArray(bundle.unitProfiles) || bundle.unitProfiles.length === 0
+    || !Array.isArray(bundle.unitSourceIndex)
+    || bundle.unitProfiles.length !== bundle.unitSourceIndex.length
+    || bundle.unitProfiles.length !== bundle.audit?.unitCount
+    || bundle.audit.geometryBoundCount + bundle.audit.geometryMissingCount !== bundle.audit.unitCount
+    || bundle.unitProfileIndexHash !== hashStarcraftTmgContract(bundle.unitProfiles)
+    || bundle.unitSourceIndexHash !== hashStarcraftTmgContract(bundle.unitSourceIndex)
+    || bundle.ruleClauseIndexHash !== hashStarcraftTmgContract(RULE_CLAUSES)
+    || hashStarcraftTmgContract(bundle.ruleClauses) !== hashStarcraftTmgContract(RULE_CLAUSES)
+    || bundle.coreRulebookHash !== OFFICIAL_UNIT_CARD_SUPPLY_CORE_RULEBOOK_HASH
+    || bundle.ruleSectionRecords?.length !== RULE_RECORDS.length
+    || ![bundle.officialRulesVersion, bundle.officialUnitsVersion, bundle.officialCardsVersion]
+      .every(value => /^\d+$/u.test(String(value)))
+    || bundle.sourcePolicy?.refreshDuringDevelopment !== false
+    || bundle.sourcePolicy?.repositoryFallbackAllowed !== false
+    || bundle.productionRoomEligible !== false || bundle.trainingTruth !== false
+    || bundle.bundleHash !== hashStarcraftTmgContract(without(bundle, ["bundleHash"]))) {
+    fail("UNIT_CARD_SUPPLY_DATA_BUNDLE_V2_INVALID");
+  }
+  for (const expected of RULE_RECORDS) {
+    const record = bundle.ruleSectionRecords.find(row => row.recordKey === expected.recordKey);
+    if (!record || record.payloadHash !== expected.payloadHash
+      || record.sourceRecordHash !== expected.sourceRecordHash || record.title !== expected.title
+      || record.authorityDisposition !== "official_rule_prose_review_required"
+      || record.sourceVersion !== bundle.officialRulesVersion) {
+      fail("UNIT_CARD_SUPPLY_RULE_RECORD_INVALID", expected.recordKey);
+    }
+  }
+  const keys = new Set();
+  for (const profile of bundle.unitProfiles) {
+    const source = bundle.unitSourceIndex.find(row => row.recordKey === profile.recordKey);
+    if (keys.has(profile.recordKey) || !source || !FACTIONS.has(profile.factionTag)
+      || ![...ARMY_SLOT_TYPES, null].includes(profile.armySlotType)
+      || source.sourceRecordHash !== profile.sourceRecordHash || source.payloadHash !== profile.payloadHash
+      || !digest.test(profile.sourceRecordHash) || !digest.test(profile.payloadHash)
+      || !Array.isArray(profile.supplyProfile) || !Array.isArray(profile.compositions)
+      || profile.profileHash !== hashStarcraftTmgContract(without(profile, ["profileHash"]))
+      || (profile.base === null
+        ? profile.geometryStatus?.status !== "source_missing" || !profile.geometryStatus.reason
+          || !profile.geometryStatus.sourceRefs?.length
+        : profile.geometryStatus?.status !== "source_bound")) {
+      fail("UNIT_CARD_SUPPLY_PROFILE_V2_INVALID", String(profile?.recordKey || ""));
+    }
+    keys.add(profile.recordKey);
+  }
+  if (bundle.unitProfiles.filter(row => row.base === null).length !== bundle.audit.geometryMissingCount) {
+    fail("UNIT_CARD_SUPPLY_GEOMETRY_DENOMINATOR_MISMATCH");
+  }
+  return true;
+}
+
+export function getOfficialReleaseUnitCardSupplyDataBundleV2(context) {
+  const manifest = assertOfficialReleaseSourceV2(context, context || {});
+  const bundle = context.resources?.unitCharacteristics;
+  verifyOfficialUnitCardSupplyDataBundleV2(bundle);
+  const integrity = manifest.components.unitCharacteristics?.integrity;
+  const builderUnits = context.resources.armyBuilder?.armyResourceBudgetDataBundle
+    ?.factionArmyEligibilityDataBundle?.unitDataBundle;
+  if (integrity?.field !== "bundleHash" || integrity.value !== bundle.bundleHash
+    || bundle.sourceSnapshotHash !== manifest.source.snapshotHash
+    || bundle.normalizedDatasetHash !== manifest.source.datasetHash
+    || bundle.sourceLockHash !== manifest.source.sourceRevisionHash
+    || bundle.baseGeometryBundleHash !== context.resources.geometry?.bundleHash
+    || bundle.armyBuilderUnitDataBundleHash !== builderUnits?.bundleHash) {
+    fail("UNIT_CARD_SUPPLY_RELEASE_RESOURCE_MISMATCH");
+  }
+  return bundle;
+}
+
 export function verifyOfficialUnitCardSupplyDataBundleV1(bundle) {
+  if (bundle?.schema === OFFICIAL_UNIT_CARD_SUPPLY_DATA_BUNDLE_SCHEMA_V2) {
+    return verifyOfficialUnitCardSupplyDataBundleV2(bundle);
+  }
   if (!object(bundle) || bundle.schema !== OFFICIAL_UNIT_CARD_SUPPLY_DATA_BUNDLE_SCHEMA
     || bundle.sourceLockHash !== OFFICIAL_DEVELOPMENT_TRANCHE_SOURCE_LOCK_HASH
     || bundle.sourceSnapshotHash !== OFFICIAL_DEVELOPMENT_TRANCHE_SNAPSHOT_HASH

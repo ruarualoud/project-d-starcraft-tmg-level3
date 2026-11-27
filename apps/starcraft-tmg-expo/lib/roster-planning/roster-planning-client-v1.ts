@@ -7,6 +7,8 @@
 // error/unavailable states. No credential, seat token or Room mutation ever
 // passes through this client.
 
+import type { DataPackage } from '../types';
+
 export const ROSTER_PLANNING_API_PREFIX = '/starcraft-tmg-level3/roster-planning/v1';
 
 export type WorkspaceErrorKind = 'disconnected' | 'typed';
@@ -33,12 +35,13 @@ function baseUrl(): string {
   return process.env.EXPO_PUBLIC_STARCRAFT_TMG_API_ORIGIN || '';
 }
 
-async function request<T>(method: string, subpath: string, body?: unknown): Promise<T> {
+async function send<T>(method: string, subpath: string, body?: unknown, setupId?: string): Promise<T> {
   let response: Response;
   try {
     response = await globalThis.fetch(`${baseUrl()}${ROSTER_PLANNING_API_PREFIX}/${subpath}`, {
       method,
-      headers: body !== undefined ? { 'content-type': 'application/json' } : undefined,
+      headers: { ...(body !== undefined ? { 'content-type': 'application/json' } : {}),
+        ...(setupId ? { 'x-starcraft-match-setup':setupId } : {}) },
       body: body !== undefined ? JSON.stringify(body) : undefined,
     });
   } catch {
@@ -52,7 +55,7 @@ async function request<T>(method: string, subpath: string, body?: unknown): Prom
   }
   if (!payload?.ok) {
     throw new RosterPlanningClientError('typed',
-      String(payload?.reason || 'ROSTER_WORKSPACE_REQUEST_FAILED'),
+      String(payload?.reason || payload?.error || 'ROSTER_WORKSPACE_REQUEST_FAILED'),
       response.status, payload?.detail || undefined);
   }
   return payload as T;
@@ -66,12 +69,27 @@ export interface WorkspaceSessionSetup {
   opponentInformationBoundary: string;
 }
 
-export const rosterPlanningClient = {
+export type RosterMatchSetup = {
+  id:string; mission:string; deployment:string; scale:string; minerals:number;
+  mapBinding:{missionRecordKey:string;deploymentRecordKey:string;seedId:string};
+  missionMarkers:{targetId:string}[];
+};
+
+function clientOperations(request: <T>(method:string, subpath:string, body?:unknown) => Promise<T>) {
+  return {
+  previewSkillRefresh: () => request<{previewHash:string;existingSkills:number;sectionCount:number;affected:number;
+    unrepresentedFactions:string[]}>('POST','skill-refresh-preview',{}),
+  matchSetup: () => request<{setup:RosterMatchSetup; catalogue:DataPackage & {
+    source:{officialDatasetHash:string;dataVersions:{unitsVersion:string;cardsVersion:string;rulesVersion:string}}
+  }}>('GET','match-setup'),
+  launchWorkflowRoom: (id: string, matchMode: 'user_vs_agent' | 'human_vs_human' | 'agent_vs_agent') =>
+    request<{ match: { roomId: string; joinUrl: string } }>('POST',
+      'workflows/' + encodeURIComponent(id) + '/launch-room', { matchMode }),
   health: () => request<{ descriptor: any }>('GET', 'health'),
   listWorkflows: () => request<{ workflows: any[] }>('GET', 'workflows'),
-  createWorkflow: (setup: WorkspaceSessionSetup, candidateInput?: unknown) =>
-    request<{ workflow: any }>('POST', 'workflows', { setup,
-      ...(candidateInput ? { candidateInput, mode: 'fixed' } : { mode: 'editable' }) }),
+  createWorkflow: (setup: WorkspaceSessionSetup, candidateInput?: unknown, planningEntry: 'balanced' | 'card_synergy' | 'restructure' = 'balanced') =>
+    request<{ workflow: any }>('POST', 'workflows', { setup, planningEntry,
+      ...(candidateInput ? { candidateInput, mode: planningEntry === 'restructure' ? 'editable' : 'fixed' } : { mode: 'editable' }) }),
   readWorkflow: (id: string) => request<{ workflow: any }>('GET', `workflows/${encodeURIComponent(id)}`),
   runWorkflow: (id: string) => request<{ workflow: any }>('POST', `workflows/${encodeURIComponent(id)}/run`, {}),
   pauseWorkflow: (id: string) => request<{ workflow: any }>('POST', `workflows/${encodeURIComponent(id)}/pause`, {}),
@@ -154,4 +172,11 @@ export const rosterPlanningClient = {
       'POST', `sessions/${encodeURIComponent(sessionId)}/export`, {}),
   importSession: (exportDocument: unknown) =>
     request<{ session: any }>('POST', 'sessions/import', { exportDocument }),
-};
+  };
+}
+
+export function createRosterPlanningClient(setupId?: string) {
+  return clientOperations(<T>(method: string, subpath: string, body?: unknown) =>
+    send<T>(method,subpath,body,setupId));
+}
+export const rosterPlanningClient = createRosterPlanningClient();

@@ -1,3 +1,6 @@
+import { assertSameOfficialQueryReleaseV2 } from '../source-data/official-release-context-v2.mjs';
+import { SPATIAL_RECEIPT_STATUSES_V1 } from './spatial-query-contracts-v1.mjs';
+import { spatialQueryAuthorityRejectionV1 } from './spatial-query-receipt-contract-v1.mjs';
 import { hashStarcraftTmgContract } from
   "../authoritative-engine/transition-v1.mjs";
 import { resolveStarcraftTmgEffectiveActingSideV1 } from
@@ -12,6 +15,8 @@ import { AGENT_SCHEDULED_ROSTER_PLAN_SCHEMA } from
   "../roster-strategist/agent-scheduled-roster-plan-v1.mjs";
 import { PLANNED_PRESET_ROSTER_PLAN_SCHEMA } from
   "../roster-strategist/planned-preset-roster-plan-v2.mjs";
+import { evaluateOpponentPredictionWindowV1, isCurrentOpponentPredictionCalibrationV1,
+  OPPONENT_PREDICTION_CALIBRATION_POLICY } from './opponent-prediction-window-v1.mjs';
 
 export const STARCRAFT_TMG_TURN_PLAN_RUNTIME_VERSION =
   "starcraft_tmg_turn_plan_runtime_v1";
@@ -74,6 +79,14 @@ function authority(input, expectedScope) {
     || actionSpace.authority?.legalSpaceHash !== legalSpace.legalSpaceHash) {
     throw new TypeError("TurnPlan inputs do not share one current authority");
   }
+  const releaseBinding = projection.matchBinding.releaseBinding;
+  assertSameOfficialQueryReleaseV2(releaseBinding, actionSpace.authority.releaseBinding);
+  if (releaseBinding && (projection.viewer?.seatKey !== expectedScope.seatKey
+    || actionSpace.authority.seatKey !== expectedScope.seatKey
+    || actionSpace.authority.roomId !== expectedScope.roomId
+    || actionSpace.authority.matchBindingHash !== expectedScope.matchBindingHash)) {
+    throw new TypeError('TurnPlan ActionSpace belongs to another room or seat');
+  }
   const state = projection.state || {};
   const actingSide = resolveStarcraftTmgEffectiveActingSideV1(state);
   const round = Number(state.round || 1);
@@ -88,6 +101,7 @@ function authority(input, expectedScope) {
     legalSpaceHash: legalSpace.legalSpaceHash,
     spatialObservationHash: input.spatialObservation?.observationHash || null,
     spatialActionSpaceHash: actionSpace.actionSpaceHash,
+    ...(releaseBinding ? { releaseBinding: clone(releaseBinding) } : {}),
     publicLogCursor: publicLog.length,
     publicLogHash: hashStarcraftTmgContract(publicLog),
     round,
@@ -467,20 +481,28 @@ function proposalInActionSpace(proposal, actionSpace) {
   return false;
 }
 
-function queryRefs(receipts, authorityValue) {
+function queryRefs(receipts, authorityValue, input) {
   return (Array.isArray(receipts) ? receipts : []).map((receipt) => {
     if (!object(receipt)
       || receipt.authority?.roomId !== authorityValue.roomId
       || receipt.authority?.stateHash !== authorityValue.stateHash
       || receipt.authority?.legalSpaceHash !== authorityValue.legalSpaceHash
-      || !["exact", "advisory_estimate", "unknown"].includes(receipt.status)) {
+      || !SPATIAL_RECEIPT_STATUSES_V1.includes(receipt.status)) {
       throw new TypeError("ActionIntent query receipt is stale or invalid");
+    }
+    if (authorityValue.releaseBinding || receipt.authority?.releaseBinding) {
+      const reason = spatialQueryAuthorityRejectionV1({ input, receipt });
+      if (receipt.authority?.sceneScope?.kind !== 'live_room') throw new TypeError('TurnPlan requires a live room query receipt');
+      if (!/^[a-f0-9]{64}$/.test(receipt.queryReceiptHash ?? '')) throw new TypeError('TurnPlan query receipt hash is invalid');
+      if (reason) throw new TypeError(`TurnPlan query receipt rejected: ${reason}`);
     }
     return {
       queryKind: receipt.queryKind,
       status: receipt.status,
       queryReceiptHash: receipt.queryReceiptHash,
-      rulesAuthority: receipt.status === "exact",
+      rulesAuthority: receipt.status === "exact" || receipt.status === "rejected",
+      ...(receipt.status === "rejected" ? { reason: receipt.reason, domainId: receipt.result.domainId,
+        proposalHash: receipt.result.proposalHash, scope: receipt.result.scope } : {}),
     };
   });
 }
@@ -601,6 +623,7 @@ export function createStarcraftTmgTurnPlanRuntimeV1(options = {}) {
       entry.kind === "prediction_calibration" && object(entry.payload))
       .map((entry) => clone(entry.payload));
     state.calibratedPredictionKeys = new Set(state.predictionCalibrations
+      .filter(isCurrentOpponentPredictionCalibrationV1)
       .map((entry) => `${entry.intentId}:${entry.responseId}`));
     state.sequence = records.reduce((maximum, entry) =>
       Math.max(maximum, Number(entry.sequence || 0)), state.sequence);
@@ -762,70 +785,18 @@ export function createStarcraftTmgTurnPlanRuntimeV1(options = {}) {
     job.controller.abort();
   }
 
-  function publicAction(entry) {
-    const action = object(entry?.action?.sourceAction)
-      ? entry.action.sourceAction : entry?.action;
-    if (!object(action)) return null;
-    return {
-      logId: String(entry.id || "") || null,
-      round: Number(entry.round || 0) || null,
-      phase: String(entry.phase || "") || null,
-      sideKey: String(action.sideKey || "") || null,
-      actionClass: String(action.actionType || action.resolutionStage || "")
-        || null,
-      actorUnitId: String(action.pieceId || action.actorUnitId || "") || null,
-      targetUnitId: String(action.targetId || action.targetUnitId || "") || null,
-    };
-  }
-
-  function horizonExpired(prediction, intent, authorityValue,
-    observedTransitionCount) {
-    const horizon = prediction.horizon || { kind: "next_opponent_action", count: 1 };
-    if (horizon.kind === "current_phase") {
-      return intent.authority.round !== authorityValue.round
-        || intent.authority.phase !== authorityValue.phase;
-    }
-    if (horizon.kind === "current_round") {
-      return intent.authority.round !== authorityValue.round;
-    }
-    if (horizon.kind === "bounded_public_transitions") {
-      return observedTransitionCount >= Number(horizon.count || 1);
-    }
-    return false;
-  }
-
-  function classifyPrediction(prediction, actual) {
-    if (!actual?.actionClass) return "unobservable";
-    const checks = [
-      actual.actionClass === prediction.actionClass,
-      prediction.likelyActorUnitId
-        ? actual.actorUnitId === prediction.likelyActorUnitId : true,
-      prediction.likelyTargetUnitId
-        ? actual.targetUnitId === prediction.likelyTargetUnitId : true,
-    ];
-    if (checks.every(Boolean)) return "hit";
-    if (checks.some(Boolean)) return "partial";
-    return "miss";
-  }
-
   async function calibratePredictions(state, input, authorityValue) {
     const publicLog = Array.isArray(input.roomProjection?.state?.log)
       ? input.roomProjection.state.log : [];
     const calibrations = [];
     for (const intent of state.intents) {
-      const cursor = Number(intent.authority?.publicLogCursor || 0);
-      const newEntries = publicLog.slice(cursor);
-      const opponentActions = newEntries.map(publicAction).filter((entry) =>
-        entry && entry.sideKey && entry.sideKey !== state.scope.seatKey);
       for (const prediction of intent.predictedOpponentResponses || []) {
         const key = `${intent.intentId}:${prediction.responseId}`;
         if (state.calibratedPredictionKeys.has(key)) continue;
-        const actual = opponentActions[0] || null;
-        let classification = null;
-        if (actual) classification = classifyPrediction(prediction, actual);
-        else if (horizonExpired(prediction, intent, authorityValue,
-          newEntries.length)) classification = "expired";
-        if (!classification) continue;
+        const evaluation = evaluateOpponentPredictionWindowV1({prediction,intent,
+          authority:authorityValue,publicLog,seatKey:state.scope.seatKey});
+        if (!evaluation) continue;
+        const {actual,classification,observationWindow} = evaluation;
         const payloadBody = {
           schemaVersion:
             `${STARCRAFT_TMG_TURN_PLAN_RUNTIME_VERSION}.prediction-calibration`,
@@ -833,6 +804,11 @@ export function createStarcraftTmgTurnPlanRuntimeV1(options = {}) {
           planId: intent.planRef.planId,
           responseId: prediction.responseId,
           classification,
+          calibrationPolicyVersion: OPPONENT_PREDICTION_CALIBRATION_POLICY,
+          observationWindow,
+          supersedesCalibrationHashes: state.predictionCalibrations.filter(entry =>
+            entry.intentId === intent.intentId && entry.responseId === prediction.responseId
+            && !isCurrentOpponentPredictionCalibrationV1(entry)).map(entry=>entry.calibrationHash),
           prediction: clone(prediction),
           actual,
           authorityObserved: clone(authorityValue),
@@ -930,6 +906,8 @@ export function createStarcraftTmgTurnPlanRuntimeV1(options = {}) {
     const sourcePlan = state.plan;
     const normalized = normalizePlanAssessment(input.assessment, authorityValue,
       sourcePlan);
+    const evidence = queryRefs(input.queryReceipts, authorityValue, input);
+    if (evidence.length && authorityValue.releaseBinding) normalized.queryRefs = evidence;
     const amendment = input.futureActionPlanAmendment;
     let futureActionPlans = null;
     if (amendment !== undefined) {
@@ -1071,7 +1049,7 @@ export function createStarcraftTmgTurnPlanRuntimeV1(options = {}) {
     if (!proposalInActionSpace(proposal, input.spatialActionSpace)) {
       throw new TypeError("ActionIntent proposal is absent from current ActionSpace");
     }
-    const refs = queryRefs(input.intent?.queryReceipts, authorityValue);
+    const refs = queryRefs(input.intent?.queryReceipts, authorityValue, input);
     const predictedOpponentResponses = normalizeOpponentResponses(
       input.intent?.predictedOpponentResponses);
     const tradeoffs = normalizeTradeoffs(input.intent?.tradeoffs);
@@ -1191,7 +1169,7 @@ export function createStarcraftTmgTurnPlanRuntimeV1(options = {}) {
         predictedOpponentResponses:
           normalizeOpponentResponses(entry.predictedOpponentResponses),
         tradeoffs: normalizeTradeoffs(entry.tradeoffs),
-        queryRefs: queryRefs(entry.queryReceipts, authorityValue),
+        queryRefs: queryRefs(entry.queryReceipts, authorityValue, input),
       };
     });
     if (state.searchJob && ["queued", "running"].includes(state.searchJob.status)) {

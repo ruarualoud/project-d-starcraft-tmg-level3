@@ -89,8 +89,14 @@ export function certifyOfficialSemanticRampAdmissionV1(input = {}) {
     supplied.set(route.accessPointId, route);
   }
   const record = getOfficialCurrentProductRecord(dataset, MODEL_KEY);
+  const { modelGeometryBundle, terrainLosDataBundle } = input;
+  if (Boolean(modelGeometryBundle) !== Boolean(terrainLosDataBundle)
+    || (modelGeometryBundle && [modelGeometryBundle, terrainLosDataBundle].some(bundle =>
+      bundle.normalizedDatasetHash !== dataset.datasetHash || bundle.sourceSnapshotHash !== dataset.sourceSnapshotHash))) {
+    fail("SEMANTIC_RAMP_ADMISSION_RELEASE_MISMATCH");
+  }
   const modelBase = getOfficialModelBaseGeometryProfileV1(
-    createOfficialModelBaseGeometryDataBundleV1({ dataset }), MODEL_KEY);
+    modelGeometryBundle ?? createOfficialModelBaseGeometryDataBundleV1({ dataset }), MODEL_KEY);
   if (modelBase.baseShape !== "round"
     || modelBase.baseWidthMilliInches !== modelBase.baseDepthMilliInches) {
     fail("SEMANTIC_RAMP_ADMISSION_MODEL_BASE_UNSUPPORTED");
@@ -99,7 +105,7 @@ export function certifyOfficialSemanticRampAdmissionV1(input = {}) {
   if (!speed) fail("SEMANTIC_RAMP_ADMISSION_PRINTED_SPEED_MISSING");
   const singleModelMoveMilliInches = Number(speed[2]) * 1000;
   const radius = Math.round(modelBase.baseWidthMilliInches / 2);
-  const terrainDataBundle = createOfficialTerrainLosDataBundleV1({ dataset });
+  const terrainDataBundle = terrainLosDataBundle ?? createOfficialTerrainLosDataBundleV1({ dataset });
   const surfaceState = {
     officialDeploymentGeometryBinding: deploymentGeometryBinding,
     officialTerrainHeightTierLedger: terrainHeightTierLedger,

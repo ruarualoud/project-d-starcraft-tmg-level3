@@ -83,7 +83,10 @@ const TOP_LEVEL_SCHEMAS = Object.freeze({
       timestamp: "timestampValue",
       type: "stringValue",
     }),
-    optional: Object.freeze({}),
+    optional: Object.freeze({
+      status: "stringValue",
+      isOfficial: "booleanValue",
+    }),
   }),
   community_mission: Object.freeze({
     required: Object.freeze({
@@ -128,6 +131,7 @@ const TOP_LEVEL_SCHEMAS = Object.freeze({
     optional: Object.freeze({
       isArchonFavorite: "booleanValue",
       isOfTheWeek: "booleanValue",
+      studioState: "mapValue",
     }),
   }),
 });
@@ -248,6 +252,10 @@ export function classifyOfficialCommandCenterRecord(input = {}) {
       return deepFreeze({ authorityDisposition: "official_current_product_candidate", recordType: "mission" });
     }
     if (fields.type === "deployment" && fields.faction === "the_game") {
+      if (fields.isOfficial === false
+        || (Object.hasOwn(fields, "status") && fields.status !== "approved")) {
+        fail("command_center_official_deployment_publication_conflict");
+      }
       return deepFreeze({ authorityDisposition: "official_current_product_candidate", recordType: "deployment" });
     }
     if (fields.type === "community_mission") {

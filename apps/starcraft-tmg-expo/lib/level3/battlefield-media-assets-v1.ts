@@ -169,7 +169,7 @@ function mediaOrigin() {
   }
 }
 
-function mediaUri(path: string) {
+export function mediaUri(path: string) {
   const origin = mediaOrigin();
   return origin ? new URL(path, `${origin}/`).href : null;
 }
@@ -191,6 +191,11 @@ export function starcraftTmgBattlefieldUnitMediaAssetsV1(unitId: unknown): {
   neutralPortrait: PortraitSource;
   activePortrait: PortraitSource;
   portraitAnimated: boolean;
+  identityPortrait: PortraitSource | null;
+  unitCard: PortraitSource | null;
+  sharedCommunication: boolean;
+  communicationChannel: string | null;
+  voiceChannel: string | null;
   voice: StarcraftTmgBattlefieldVoicePathsV1 | null;
   releaseChannel: StarcraftTmgBattlefieldMediaReleaseChannelV1;
 } | null {
@@ -200,20 +205,24 @@ export function starcraftTmgBattlefieldUnitMediaAssetsV1(unitId: unknown): {
   });
   if (!media) return null;
   const fallback = PUBLIC_PORTRAITS[media.unitKey];
-  if (!fallback) return null;
-  // The former public Goliath fallback was a generic robot face. Prefer the
-  // Project D original cockpit-pilot portrait for public/default sessions;
-  // the development-internal channel may still inspect owned classic media.
-  const preferProjectDOriginal = media.unitKey === "goliath"
-    && selectedChannel !== "development_internal";
-  const originalNeutral = selectedChannel !== "public" && !preferProjectDOriginal
+
+  // Keep the bundled portrait available when original game media cannot be loaded.
+  const originalNeutral = selectedChannel !== "public"
     ? mediaUri(media.neutralPortraitPath)
     : null;
-  const originalActive = selectedChannel !== "public" && !preferProjectDOriginal
+  const originalActive = selectedChannel !== "public"
     ? mediaUri(media.activePortraitPath)
     : null;
+  if ((!originalNeutral || !originalActive) && !fallback) return null;
+  const identity = media.identityPortraitPath && mediaUri(media.identityPortraitPath);
+  const card = media.unitCardPath && mediaUri(media.unitCardPath);
   return {
     unitKey: media.unitKey,
+    identityPortrait: identity ? { uri: identity } : null,
+    unitCard: card ? { uri: card } : null,
+    sharedCommunication: Boolean(originalActive && media.sharedCommunication),
+    communicationChannel: media.communicationChannel,
+    voiceChannel: media.voiceChannel,
     neutralPortrait: originalNeutral ? { uri: originalNeutral } : fallback.neutral,
     activePortrait: originalActive ? { uri: originalActive } : fallback.active,
     portraitAnimated: Boolean(originalActive && media.portraitAnimated),

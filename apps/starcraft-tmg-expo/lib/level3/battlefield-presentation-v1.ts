@@ -3,9 +3,12 @@
 export {
   createBattlefieldPresentationV1,
   isBattlefieldBaseWithinBoardV1,
+  projectCrossBaseOutlineV1,
+  projectModelBaseOutlineV1,
   projectStarcraftTmgBattlefieldPresentationV1,
   projectRotatedBaseBoundsV1,
   projectStarcraftTmgBattlefieldViewportV1,
+  usesBattlefieldBaseOutlineV1,
 } from "../../../../packages/client-domain/battlefield-presentation-v1.mjs";
 
 export type {

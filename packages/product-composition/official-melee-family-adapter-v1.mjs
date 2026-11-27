@@ -156,6 +156,24 @@ export function createOfficialMeleeFamilySourceBundleV1(input = {}) {
 }
 
 export function verifyOfficialMeleeFamilySourceBundleV1(bundle) {
+  if (bundle?.schema === 'starcraft_tmg_official_melee_family_source_bundle_v2') {
+    const routes = bundle.routes;
+    if (!Array.isArray(routes) || !routes.length || bundle.routeCount !== routes.length
+      || bundle.semanticVersion !== '2.0.0'
+      || new Set(bundle.definitionIds || []).size !== routes.length
+      || !isDeepStrictEqual(bundle.definitionIds, routes.map(row => row.definitionId))
+      || !isDeepStrictEqual(bundle.coveredSourceFeatureHashes, routes.map(row => row.sourceFeatureHash).sort())
+      || new Set(bundle.coveredSourceFeatureHashes).size !== routes.length
+      || routes.some(row => row.routeHash !== hashStarcraftTmgContract(without(row, ['routeHash']))
+        || row.exactSourcePatternCompiled !== true || row.arbitraryProseExecutionClaimed !== false)
+      || bundle.compilerScope !== 'explicit_definition_subset' || bundle.fullMatchCoverage !== false
+      || bundle.exactSourcePatternsRequired !== true || bundle.arbitraryProseExecutionClaimed !== false
+      || bundle.trainingTruth !== false || bundle.sourceRefreshPerformed !== false
+      || bundle.bundleHash !== hashStarcraftTmgContract(without(bundle, ['bundleHash']))) {
+      fail('MELEE_FAMILY_SOURCE_BUNDLE_V2_INVALID');
+    }
+    return true;
+  }
   if (!object(bundle) || bundle.schema !== OFFICIAL_MELEE_FAMILY_BUNDLE_SCHEMA
     || bundle.semanticVersion !== OFFICIAL_MELEE_FAMILY_ADAPTER_VERSION
     || bundle.routeCount !== 40 || bundle.routes?.length !== 40
@@ -177,8 +195,59 @@ export function verifyOfficialMeleeFamilySourceBundleV1(bundle) {
   return true;
 }
 
+export function createOfficialMeleeFamilySourceBundleV2({ catalogue, definitionIds, attackProfileCatalogueV2 }) {
+  verifyOfficialAbilityEffectIrCatalogueV1(catalogue);
+  verifyOfficialAttackProfileCatalogueV2(attackProfileCatalogueV2);
+  if (!Array.isArray(definitionIds) || !definitionIds.length || new Set(definitionIds).size !== definitionIds.length) {
+    fail('MELEE_FAMILY_SOURCE_SUBSET_REQUIRED');
+  }
+  if (catalogue.normalizedDatasetHash !== attackProfileCatalogueV2.normalizedDatasetHash
+    || catalogue.sourceSnapshotHash !== attackProfileCatalogueV2.sourceSnapshotHash) fail('MELEE_FAMILY_SOURCE_RELEASE_MISMATCH');
+  const routes = definitionIds.map(id => {
+    const definition = catalogue.definitions.find(row => row.definitionId === id);
+    if (!definition) fail('MELEE_FAMILY_SOURCE_DEFINITION_MISSING', id);
+    return compileRoute(definition, attackProfileCatalogueV2);
+  }).sort((a, b) => a.definitionId.localeCompare(b.definitionId));
+  const bundle = seal({ schema: 'starcraft_tmg_official_melee_family_source_bundle_v2', semanticVersion: '2.0.0',
+    sourceCatalogueHash: catalogue.catalogueHash, sourceSnapshotHash: catalogue.sourceSnapshotHash,
+    normalizedDatasetHash: catalogue.normalizedDatasetHash, dataVersions: clone(catalogue.dataVersions),
+    attackProfileCatalogueHash: attackProfileCatalogueV2.catalogueHash,
+    routeCount: routes.length, routes, definitionIds: routes.map(row => row.definitionId),
+    coveredSourceFeatureHashes: routes.map(row => row.sourceFeatureHash).sort(),
+    compilerScope: 'explicit_definition_subset', fullMatchCoverage: false,
+    exactSourcePatternsRequired: true, arbitraryProseExecutionClaimed: false,
+    sourceRefreshPerformed: false, trainingTruth: false }, 'bundleHash');
+  verifyOfficialMeleeFamilySourceBundleV1(bundle);
+  return bundle;
+}
+
+export function createOfficialMeleeModifierComponentAdapterV1(bundle) {
+  verifyOfficialMeleeFamilySourceBundleV1(bundle);
+  if (bundle.schema !== 'starcraft_tmg_official_melee_family_source_bundle_v2'
+    || bundle.routes.some(row => !['devastating_charge', 'impact_model_bonus'].includes(row.effectKind))) {
+    fail('MELEE_MODIFIER_EXPLICIT_SOURCE_REQUIRED');
+  }
+  const adapterId = 'official-melee-modifier-component-adapter-v1';
+  const descriptor = Object.freeze({ adapterId, adapterVersion: '1.0.0', adapterKind: 'exact_runtime',
+    coveredDefinitionCount: bundle.routeCount, coveredSourceFeatureHashes: clone(bundle.coveredSourceFeatureHashes),
+    supportedOperations: ['legal_space', 'query'], sourceBundleHash: bundle.bundleHash,
+    automaticConsumer: 'createOfficialSelectedRosterMeleeActionRuntimeV1', rulesAuthority: true, trainingTruth: false });
+  const definitionBindings = bundle.routes.map(row => ({ sourceFeatureHash: row.sourceFeatureHash,
+    adapterId, adapterVersion: '1.0.0', capability: 'automatic_consumer' }));
+  return freezeDeep({ descriptor, definitionBindings,
+    legalSpace() { return { candidates: [], parameterDomains: [],
+      automaticConsumerDefinitionIds: clone(bundle.definitionIds), trainingTruth: false }; },
+    query(state, request) {
+    if (!object(request) || Object.keys(request).some(key => key !== 'pieceId')
+      || state.officialMeleeFamilySourceBundle?.bundleHash !== bundle.bundleHash) fail('MELEE_MODIFIER_QUERY_BINDING_INVALID');
+    return seal({ result: projectOfficialMeleeFamilyModifiersV1(bundle, state, request), sourceBundleHash: bundle.bundleHash,
+      mutationAuthority: false, trainingTruth: false }, 'queryReceiptHash');
+  } });
+}
+
 export function createOfficialMeleeFamilyDefinitionBindingsV1(bundle) {
   verifyOfficialMeleeFamilySourceBundleV1(bundle);
+  if (bundle.schema !== OFFICIAL_MELEE_FAMILY_BUNDLE_SCHEMA) fail('MELEE_FAMILY_LEGACY_BINDING_SOURCE_REQUIRED');
   return freezeDeep(bundle.routes.map((route) => ({
     sourceFeatureHash: route.sourceFeatureHash,
     adapterId: OFFICIAL_MELEE_FAMILY_ADAPTER_ID,
@@ -372,6 +441,7 @@ function query(bundle, state, request = {}) {
 
 export function createOfficialMeleeFamilyAdapterV1(bundle) {
   verifyOfficialMeleeFamilySourceBundleV1(bundle);
+  if (bundle.schema !== OFFICIAL_MELEE_FAMILY_BUNDLE_SCHEMA) fail('MELEE_FAMILY_LEGACY_ADAPTER_SOURCE_REQUIRED');
   const descriptor = freezeDeep({
     adapterId: OFFICIAL_MELEE_FAMILY_ADAPTER_ID,
     adapterVersion: OFFICIAL_MELEE_FAMILY_ADAPTER_VERSION,

@@ -1,3 +1,14 @@
+import { normalizeAuthorityState } from '../authoritative-engine/transition-v1.mjs';
+import { projectOfficialProductCatalogueV1 } from '../source-data/official-product-catalogue-projection-v1.mjs';
+import { loadWave3MatchBoardFactoryV1, wave3HumanMapConfiguration } from './wave3-human-match-v1.mjs';
+import { createOfficialRoomRosterDisclosureDataBundleV1 } from '../source-data/official-roster-disclosure-data-bundle-v1.mjs';
+import { createRosterTeachEvidencePortV1 } from '../roster-strategist/roster-teach-evidence-port-v1.mjs';
+import { bindOfficialReleaseRulesRuntimeV2 } from '../source-data/official-release-context-v2.mjs';
+import {prepareRosterConditionalExperienceImportV1} from '../roster-planning-workspace/roster-conditional-experience-transfer-v1.mjs';
+import {queryRosterConditionalExperienceSnapshotV1} from '../roster-planning-workspace/roster-conditional-experience-reader-v1.mjs';
+import {normalizeRosterPlanningEntryV1} from '../roster-strategist/roster-planning-entry-v1.mjs';
+import {rosterOpponentIsUnknownV1,rosterOpponentKnowledgeV1,createPublicRosterLaboratoryCarrierV1} from '../roster-strategist/roster-opponent-knowledge-v1.mjs';
+import {ROSTER_REFERENCE_ARMY_PARAMETER_SCHEMA_V1} from '../roster-strategist/roster-workflow-operation-contracts-v1.mjs';
 // Ticket 27 / Slice 271 — thin product composition entry for the
 // roster-planning workspace. Wires the EXISTING frozen/read-only ports into
 // the isolated workspace service: the official development-tranche source
@@ -13,6 +24,8 @@
 // export/import and replay resume still work.
 
 import path from "node:path";
+import {isDeepStrictEqual} from 'node:util';
+import {projectRosterParticipantSourceV2} from '../roster-strategist/roster-participant-configuration-v1.mjs';
 import { competitiveMapRoomSummaryAdmittedV1 } from
   "../client-domain/competitive-map-admission-contract-v1.mjs";
 
@@ -46,6 +59,7 @@ import {
 import {createRosterDecisionProductJourneyV1} from '../roster-planning-workspace/roster-decision-product-journey-v1.mjs';
 import {
   createPregameSceneLaboratoryV1,
+  PREGAME_LAB_RECEIPT_METHODS_V1,
 } from "../roster-strategist/pregame-scene-laboratory-v1.mjs";
 import { createPregameMapEvidencePortV1,
   evaluatePregameMapReadinessV1, projectPregameMapPhysicalFactsV1 } from
@@ -63,7 +77,7 @@ import {
 } from "../roster-planning-workspace/roster-planning-draft-store-v1.mjs";
 import { createPlanningLaboratorySourceStoreV1 } from
   '../roster-planning-workspace/planning-laboratory-source-store-v1.mjs';
-import {createRosterDecisionWorkspaceRunV1} from '../roster-planning-workspace/roster-decision-workspace-run-v1.mjs';
+import {assertRosterDecisionRunScopeV1,createRosterDecisionWorkspaceRunV1} from '../roster-planning-workspace/roster-decision-workspace-run-v1.mjs';
 import {createRosterDecisionWorkflowStoreV1} from '../roster-planning-workspace/roster-decision-workflow-store-v1.mjs';
 import {createRosterWorkflowProviderBoundaryV1} from '../roster-planning-workspace/roster-workflow-provider-boundary-v1.mjs';
 import {
@@ -196,7 +210,71 @@ export function agentSelectedScoreRouteRevisionsAllowedV1(initialPlan,
         || plan.revisions.at(-1)?.revisedSectionKeys.includes("scoreRoute"))));
 }
 
+export function assertRosterPlanningSkillSourceV1(release) {
+  const expected = release.manifest.source.datasetHash;
+  const actual = release.resources.strategySkills?.sourceBinding?.dataset;
+  if (!actual || actual !== expected || expected !== release.dataset.datasetHash) {
+    throw Object.assign(Error('ROSTER_PLANNING_SKILL_SOURCE_MISMATCH'), {
+      code: 'ROSTER_PLANNING_SKILL_SOURCE_MISMATCH', expected, actual: actual ?? null,
+    });
+  }
+}
+
+export function createRosterPlanningBoardLaboratoryV1(input) {
+  const { rulesRuntime, armyBuilderPort, matchBinding } = input;
+  const rules = rulesRuntime.releaseBinding;
+  const builder = armyBuilderPort.portDescriptor().releaseBinding;
+  const room = matchBinding?.releaseBinding;
+  if (rules || builder || room) {
+    const keys = ['manifestHash', 'releaseId', 'sourceSnapshotHash', 'normalizedDatasetHash'];
+    if (!rules || !builder || keys.some(key => !rules[key] || builder[key] !== rules[key])
+      || rules.runtimeHash !== rulesRuntime.descriptor.runtimeHash
+      || room && (keys.some(key => room[key] !== rules[key]) || room.runtimeHash !== rules.runtimeHash)) {
+      throw Object.assign(Error('ROSTER_PLANNING_BOARD_RELEASE_MISMATCH'), { code: 'ROSTER_PLANNING_BOARD_RELEASE_MISMATCH' });
+    }
+  }
+  return createPregameSceneLaboratoryV1(input);
+}
+
+// Board evidence is available before strategy-pack qualification and never opens a provider.
+async function openWave3PlanningBoard(input) {
+  const setup = input.wave3MatchSetup;
+  const roomId = input.roomId || ROSTER_PLANNING_WORKSPACE_LAB_ROOM_ID;
+  const factory = await loadWave3MatchBoardFactoryV1({root: input.root, setup});
+  const opening = factory.prepare({roomId, recipes: input.referenceArmyRecipes,
+    mapConfiguration: input.mapConfiguration ?? wave3HumanMapConfiguration(setup)});
+  const {releaseContext, rulesRuntime} = factory.bind(opening.state);
+  const {unitCompositionUpgradeDataBundle} = createOfficialRoomRosterDisclosureDataBundleV1({
+    releaseContext, dataset: releaseContext.dataset, snapshot: releaseContext.snapshot});
+  const armyBuilderPort = createOfficialArmyBuilderQueryPortV1({unitCompositionUpgradeDataBundle, releaseContext});
+  const sourceState = normalizeAuthorityState(opening.state, 0);
+  const laboratory = createRosterPlanningBoardLaboratoryV1({rulesRuntime, armyBuilderPort,
+    sourceRoomRef: {roomId, stateRevision: 0}, sourceState});
+  return Object.freeze({releaseBinding: rulesRuntime.releaseBinding, armyBuilderPort, laboratory,
+    readBuilderCatalogue: () => projectOfficialProductCatalogueV1({dataset:releaseContext.dataset,
+      snapshot:releaseContext.snapshot,sourceBinding:{releaseSourceHash:setup.sourceHash},queryAbilityTiming:rulesRuntime.queryAbilityTiming}),
+    mapEvidencePort: createPregameMapEvidencePortV1({sourceState, releaseBinding: rulesRuntime.releaseBinding}),
+    teachEvidencePort: createRosterTeachEvidencePortV1(laboratory)});
+}
+
+export function createRosterDecisionDraftScopeV1({candidateInput, planHash, descriptor, mapTopologyHash}) {
+  return {
+    army: candidateInput ? hashStarcraftTmgContract(candidateInput) : 'public-reference-armies',
+    plan: planHash, rules: descriptor.rulesRuntimeHash, map: mapTopologyHash, source: descriptor.sourceStateHash,
+    ...(descriptor.releaseBinding ? {releaseManifest: descriptor.releaseBinding.manifestHash} : {}),
+  };
+}
+
 export async function createRosterPlanningProductModuleV1(input = {}) {
+  if (input.wave3MatchSetup && (!input.referenceArmyRecipes?.player1 || !input.referenceArmyRecipes.player2))
+    throw Error('WAVE3_PLANNING_REFERENCE_RECIPES_REQUIRED');
+  if (input.operation === 'board_queries') {
+    if (!input.wave3MatchSetup || input.releaseResolver || input.releaseId) throw Error('WAVE3_PLANNING_BOARD_SOURCE_REQUIRED');
+    return openWave3PlanningBoard(input);
+  }
+  if (input.wave3MatchSetup && !(input.releaseResolver && input.releaseId)) {
+    throw Error('WAVE3_PLANNING_QUALIFIED_STRATEGY_RELEASE_REQUIRED');
+  }
   const root = path.resolve(String(input.root || ""));
   if (!root) {
     throw Object.assign(new Error("ROSTER_PLANNING_PRODUCT_ROOT_REQUIRED"),
@@ -210,7 +288,7 @@ export async function createRosterPlanningProductModuleV1(input = {}) {
   }
   const deliberationFactory = input.deliberationFactory || null;
   const frozenMapConfiguration = input.mapConfiguration
-    ? clone(input.mapConfiguration) : null;
+    ? clone(input.mapConfiguration) : input.wave3MatchSetup ? wave3HumanMapConfiguration(input.wave3MatchSetup) : null;
   // Server-owned scenario input, validated by the same native army/room
   // constructor as the default. A matchup label alone cannot change a foe.
   const referenceArmyRecipes = clone(input.referenceArmyRecipes
@@ -223,12 +301,33 @@ export async function createRosterPlanningProductModuleV1(input = {}) {
   const fixtureRoot = path.resolve(String(input.fixtureRoot || root));
 
   // ---- frozen Rules/source/Skill infrastructure (read-only, 0 Provider cost)
-  const source = await loadOfficialDevelopmentTrancheSourceLockFixtureV1({
-    root: fixtureRoot });
-  const bundle = createOfficialUnitCompositionUpgradeDataBundleV1({
-    dataset: source.dataset });
+  const release = input.releaseResolver
+    ? await input.releaseResolver.resolve({ releaseId: input.releaseId, purpose: 'planning' })
+    : null;
+  if (input.releaseId && !input.releaseResolver) {
+    throw Object.assign(Error('ROSTER_RELEASE_RESOLVER_REQUIRED'), { code: 'ROSTER_RELEASE_RESOLVER_REQUIRED' });
+  }
+  if (input.wave3MatchSetup && !release) throw Error('WAVE3_PLANNING_QUALIFIED_STRATEGY_RELEASE_REQUIRED');
+  if (release) assertRosterPlanningSkillSourceV1(release);
+  const boardFactory = input.wave3MatchSetup ? await loadWave3MatchBoardFactoryV1({root,setup:input.wave3MatchSetup}) : null;
+  if (boardFactory && (release.manifest.source.datasetHash !== boardFactory.datasetHash || release.manifest.source.snapshotHash !== boardFactory.snapshotHash)) {
+    throw Error('WAVE3_PLANNING_RELEASE_SOURCE_MISMATCH');
+  }
+  const source = release ? {
+    dataset: release.dataset, snapshot: release.snapshot,
+  } : await loadOfficialDevelopmentTrancheSourceLockFixtureV1({ root: fixtureRoot });
+  const bundle = release ? release.resources.armyBuilder
+    : createOfficialUnitCompositionUpgradeDataBundleV1({ dataset: source.dataset });
+  if (release && (typeof release.resources.roomFactory?.create !== 'function'
+    || typeof release.resources.rulesRuntime?.create !== 'function')) {
+    throw Object.assign(Error('ROSTER_RELEASE_FACTORY_MISSING'), { code: 'ROSTER_RELEASE_FACTORY_MISSING' });
+  }
+  const createRoomAuthority = release
+    ? options => release.resources.roomFactory.create({ ...options, releaseContext: release })
+    : createOfficialStandardRoomInitialStateAuthorityV1;
   const builderPort = createOfficialArmyBuilderQueryPortV1({
-    unitCompositionUpgradeDataBundle: bundle });
+    unitCompositionUpgradeDataBundle: bundle,
+    ...(release ? { releaseContext: release } : {}) });
   const seatPlan = [
     { label: "player1", seatKey: "player1", roleMode: "supervisor",
       principalType: "human" },
@@ -249,14 +348,25 @@ export async function createRosterPlanningProductModuleV1(input = {}) {
         version: '1.0.0',
         factoryVersion: construction.armySpendPolicy === OFFICIAL_STANDARD_ROOM_UNSPENT_LOST_POLICY
           ? OFFICIAL_STANDARD_ROOM_UNSPENT_LOST_VERSION : OFFICIAL_STANDARD_ROOM_FACTORY_VERSION,
-        sourceLockHash: source.lock.lockHash,
+        sourceLockHash: source.lock?.lockHash || null,
+        ...(release ? { releaseManifestHash: release.manifest.manifestHash } : {}),
+        ...(boardFactory ? {wave3Setup:input.wave3MatchSetup} : {}),
         snapshotHash: source.snapshot.snapshotHash,
         datasetHash: source.dataset.datasetHash,
         construction,
       },
-      create: () => createOfficialStandardRoomInitialStateAuthorityV1({
-        dataset: source.dataset, snapshot: source.snapshot, ...construction,
-      }),
+      create: () => {
+        const qualified = createRoomAuthority({dataset: source.dataset, snapshot: source.snapshot, ...construction});
+        if (boardFactory) {
+          const match = boardFactory.prepare(construction);
+          const signed = normalizeAuthorityState(match.state,0);
+          if (hashStarcraftTmgContract(signed) !== hashStarcraftTmgContract(normalizeAuthorityState(qualified.state,0))) {
+            throw Error('WAVE3_PLANNING_QUALIFIED_ROOM_DIFFERS_FROM_MATCH');
+          }
+          return {...qualified,state:signed};
+        }
+        return qualified;
+      },
     });
   }
   const authority = pinnedAuthority({
@@ -264,18 +374,27 @@ export async function createRosterPlanningProductModuleV1(input = {}) {
     ...(frozenMapConfiguration
       ? { mapConfiguration: frozenMapConfiguration } : {}),
   });
-  const mapEvidencePort = createPregameMapEvidencePortV1({
-    sourceState: authority.state,
-  });
   const planningReferenceArmies = Object.fromEntries(['player1', 'player2'].map(side => [side, {
     factionRecordKey: authority.state.armyBuildingConfigurationBySide[side].factionRecordKey,
     recipeHash: hashStarcraftTmgContract(authority.state.armyBuildingConfigurationBySide[side]),
     mineralSpent: authority.state.armyResourceBudgetsBySide[side].mineralSpent,
     role: 'public_reference_not_observed_enemy_roster',
   }]));
-  const createPlanningRules = state => createOfficialCurrentProductMatchRuntimeV6({
-    legacyRuntime: createOfficialCurrentProductMatchRuntimeV1({ dataset: source.dataset, state: clone(state) }) });
-  const rulesRuntime = createPlanningRules(authority.state);
+  const createPlanningRules = state => release
+    ? bindOfficialReleaseRulesRuntimeV2({ context: release,
+      runtime: release.resources.rulesRuntime.create({ dataset: source.dataset, state: clone(state),
+        releaseManifest: release.manifest, releaseContext: release }) })
+    : createOfficialCurrentProductMatchRuntimeV6({
+      legacyRuntime: createOfficialCurrentProductMatchRuntimeV1({ dataset: source.dataset, state: clone(state) }) });
+  function rulesForBoard(state) {
+    const runtime=createPlanningRules(state);
+    if (boardFactory && runtime.releaseBinding.runtimeHash!==boardFactory.bind(state).rulesRuntime.releaseBinding.runtimeHash) {
+      throw Error('WAVE3_PLANNING_QUALIFIED_RULES_DIFFER_FROM_MATCH');
+    }
+    return runtime;
+  }
+  const rulesRuntime = rulesForBoard(authority.state);
+  const mapEvidencePort = createPregameMapEvidencePortV1({sourceState: authority.state, releaseBinding: rulesRuntime.releaseBinding});
   const mapTopologyHash = hashStarcraftTmgContract({
     widthInches: authority.state.board.widthInches,
     heightInches: authority.state.board.heightInches,
@@ -285,23 +404,31 @@ export async function createRosterPlanningProductModuleV1(input = {}) {
       authority.compositionEvidence.battlefieldMapManifestHash,
   });
   const createLaboratoryCore = (runAuthority = authority) =>
-    createPregameSceneLaboratoryV1({
+    createRosterPlanningBoardLaboratoryV1({
     laboratoryId: "ticket27-s271-roster-workspace-lab",
     sourceState: runAuthority.state,
     sourceRoomRef: { roomId: ROSTER_PLANNING_WORKSPACE_LAB_ROOM_ID,
       stateRevision: 0 },
     rulesRuntime: runAuthority === authority ? rulesRuntime
-      : createPlanningRules(runAuthority.state),
+      : rulesForBoard(runAuthority.state),
     armyBuilderPort: builderPort,
     matchBinding: runAuthority.matchBinding,
+    // Diagnostics stay outside model inputs, receipts and Rules authority.
+    observeQueryBatchDiagnostic: input.observeQueryBatchDiagnostic,
   });
   const laboratoryCore = createLaboratoryCore();
   const pack = await loadPortableFoundationalStrategyPackV2({
-    root, manifest: packManifest });
+    root, manifest: release ? release.resources.strategySkills : packManifest });
 
   // Per-run laboratory facade: identical to the Slice 269-270 live-runner
   // discipline — receipts of every tool query are collected into the running
   // session's sink so query/simulation evidence is attributable per plan.
+  const publicCarriers=new Map();
+  function publicCarrier(setup,sideKey,factionRecordKey){
+    const key=JSON.stringify([sideKey,factionRecordKey,setup.engagementScale,setup.mineralBudget]);
+    if(!publicCarriers.has(key))publicCarriers.set(key,createPublicRosterLaboratoryCarrierV1({builderPort,dataset:source.dataset,sideKey,factionRecordKey,scaleId:setup.engagementScale,mineralBudget:setup.mineralBudget}));
+    return clone(publicCarriers.get(key));
+  }
   function createRunLaboratory(sink, context = {}) {
     // Proof receipts include operationCount and receiptLog. Sharing the core
     // across runs would make an identical retained paid Teach reply acquire a
@@ -313,16 +440,31 @@ export async function createRosterPlanningProductModuleV1(input = {}) {
     const ownSide = selected?.sideKey || context.setup?.sideKey || 'player1';
     const opponentSide = ownSide === 'player1' ? 'player2' : 'player1';
     const requestedOpponent = context.setup?.opponentFactionRecordKey;
-    if (requestedOpponent && requestedOpponent !== referenceArmyRecipes[opponentSide].factionRecordKey) {
+    const unknown=rosterOpponentIsUnknownV1(context.setup);
+    if(context.opponentCandidateInput&&!unknown)throw Object.assign(Error('ROSTER_KNOWN_OPPONENT_HYPOTHESIS_NOT_AUTHORIZED'),{code:'ROSTER_KNOWN_OPPONENT_HYPOTHESIS_NOT_AUTHORIZED'});
+    const knowledge=unknown?rosterOpponentKnowledgeV1(context.setup,{explicitHypothesis:!!context.opponentCandidateInput}):null;
+    const recipes=unknown?{
+      [ownSide]:candidateRoomRecipe(selected??publicCarrier(context.setup,ownSide,context.setup.factionRecordKey)),
+      [opponentSide]:candidateRoomRecipe(context.opponentCandidateInput??publicCarrier(context.setup,opponentSide,requestedOpponent)),
+    }:referenceArmyRecipes;
+    if(context.opponentCandidateInput){
+      const enemy=context.opponentCandidateInput;
+      if(enemy.sideKey!==opponentSide||enemy.factionRecordKey!==requestedOpponent
+        ||enemy.scaleId!==context.setup.engagementScale||enemy.mineralBudget!==context.setup.mineralBudget)
+        throw Object.assign(Error('ROSTER_OPPONENT_HYPOTHESIS_SCOPE_MISMATCH'),{code:'ROSTER_OPPONENT_HYPOTHESIS_SCOPE_MISMATCH'});
+      const verdict=builderPort.evaluateRosterCandidate(enemy);
+      if(verdict.status!=='legal')throw Object.assign(Error('ROSTER_OPPONENT_HYPOTHESIS_ILLEGAL'),{code:'ROSTER_OPPONENT_HYPOTHESIS_ILLEGAL',detail:verdict});
+    }
+    if (requestedOpponent && requestedOpponent !== recipes[opponentSide].factionRecordKey) {
       throw Object.assign(new Error('ROSTER_PLANNING_REFERENCE_OPPONENT_MISMATCH'), {
         code: 'ROSTER_PLANNING_REFERENCE_OPPONENT_MISMATCH',
         detail: 'Configure a Rules-legal reference army for the declared opponent before querying this scene.',
       });
     }
-    const runAuthority = selected
+    const runAuthority = selected||unknown
       ? pinnedAuthority({
-        recipes: { ...clone(referenceArmyRecipes),
-          [selected.sideKey]: candidateRoomRecipe(selected) },
+        recipes: { ...clone(recipes),
+          ...(selected?{[selected.sideKey]: candidateRoomRecipe(selected)}:{}) },
         armySpendPolicy: OFFICIAL_STANDARD_ROOM_UNSPENT_LOST_POLICY,
         ...(context.setup?.missionBinding ? {
           missionRecordKey: context.setup.missionBinding.missionRecordKey,
@@ -335,28 +477,41 @@ export async function createRosterPlanningProductModuleV1(input = {}) {
     // Map geometry is unchanged, but its source-state binding includes the
     // army. Every map and scenario query must refer to this same run source.
     const runMapEvidencePort = runAuthority === authority ? mapEvidencePort
-      : createPregameMapEvidencePortV1({ sourceState: runAuthority.state });
-    const names = ["queryScene", "querySpatial", "queryProbability", "queryThreatExchange",
-      "queryMath", "runScenarioBranch", "runFormationSelectionBranch", "runProjectedScenarioBranch", "compareCandidatesSameState",
-      "missionScoringAuthority", "compareSceneConditions"];
+      : createPregameMapEvidencePortV1({sourceState: runAuthority.state, releaseBinding: runCore.labDescriptor().releaseBinding});
+    const names = PREGAME_LAB_RECEIPT_METHODS_V1;
+    const readParticipantConfigurations=({base}={})=>{
+      const value=projectRosterParticipantSourceV2({candidateInput:selected,referenceArmyRecipes:recipes,ownSide,
+        upgradeProfiles:bundle.purchasableUpgradeProfiles,snapshot:runCore.captureComparisonSnapshot({base})});
+      if(!knowledge)return value;
+      return {...value,opponentKnowledge:clone(knowledge),units:value.units.map(u=>({...u,
+        sourceKind:u.sideKey===ownSide&&selected?'selected_draft':u.sideKey===opponentSide&&context.opponentCandidateInput?'model_selected_hypothesis':'public_laboratory_carrier'})),
+        instruction:knowledge.instruction};
+    };
     return Object.freeze({
       labDescriptor: runCore.labDescriptor,
+      opponentKnowledge:()=>clone(knowledge),
+      describeComparisonInterventions: runCore.describeComparisonInterventions,
       proveMutationZero: runCore.proveMutationZero,
       // The real Teach/query contract needs named units from this same
       // immutable source/branch, not just a list of callable query methods.
-      describeQueryContext: runCore.describeQueryContext,
+      describeQueryContext(query={}) {
+        const context=runCore.describeQueryContext(query);
+        return {...context,participantSource:readParticipantConfigurations({base:{kind:'branch',branchStateHash:context.baseStateHash}})};
+      },
+      readParticipantConfigurations,
       describeMapQueries: runMapEvidencePort.describeMapQueries,
       readReferenceArmies(query={}) {
-        if(!query.queryId||query.sideKey&&!['player1','player2'].includes(query.sideKey))
+        if(!query.queryId||query.sideKey&&!ROSTER_REFERENCE_ARMY_PARAMETER_SCHEMA_V1.properties.sideKey.enum.includes(query.sideKey))
           throw new TypeError('ROSTER_REFERENCE_QUERY_ID_OR_SIDE_INVALID');
         const armies=['player1','player2'].filter(side=>!query.sideKey||query.sideKey===side).map(sideKey=>({
-          sideKey,sourceKind:sideKey===ownSide&&selected?'selected_draft':'frozen_reference_recipe',
-          recipe:clone(sideKey===ownSide&&selected?candidateRoomRecipe(selected):referenceArmyRecipes[sideKey]),
+          sideKey,sourceKind:sideKey===ownSide&&selected?'selected_draft':unknown?'hypothetical_laboratory_recipe':'frozen_reference_recipe',
+          recipe:clone(sideKey===ownSide&&selected?candidateRoomRecipe(selected):recipes[sideKey]),
         }));
         const receipt={schema:'roster_frozen_reference_inputs_v1',queryId:query.queryId,
           sourceStateHash:runCore.labDescriptor().sourceStateHash,resultStatus:'observed_frozen_inputs',
-          ownSide,opponentSide,armies,mutatesRoomState:false,trainingTruth:false,
-          evidenceScope:'Exact inputs of this private Rules source, including chosen compositions, upgrades and cards. Opponent is a frozen experimental reference, not observed hidden live-enemy truth; no strategic ranking or win prediction.'};
+          ownSide,opponentSide,armies,participantSource:readParticipantConfigurations(),mutatesRoomState:false,trainingTruth:false,
+          ...(knowledge?{opponentKnowledge:clone(knowledge)}:{}),
+          evidenceScope:knowledge?knowledge.instruction:'Exact inputs of this private Rules source, including chosen compositions, upgrades and cards. Opponent is a frozen experimental reference, not observed hidden live-enemy truth; no strategic ranking or win prediction.'};
         sink.toolReceipts.push(clone(receipt));return receipt;
       },
       restoreNativeActionBranch: runCore.restoreNativeActionBranch,
@@ -414,29 +569,34 @@ export async function createRosterPlanningProductModuleV1(input = {}) {
 
   // New P0-P6 workflow uses the same frozen source/Builder/Rules ports. It has
   // its own explicitly named Run and cannot resume or overwrite a legacy one.
-  async function openDecisionWorkflow({runId,setup={},candidateInput,planHash='unplanned',onEvent,onRequest,onReply,onTool,networkRecoveryPolicy}={}) {
+  function decisionDraftContext(draft,{setup={},candidateInput,planHash='unplanned'}={}){
+    const selected=draft?.candidateInput??candidateInput;
+    const laboratory=createRunLaboratory({toolReceipts:[]},{setup,candidateInput:selected?.units?.length?selected:undefined});
+    const descriptor=laboratory.labDescriptor();
+    return {laboratory,scope:createRosterDecisionDraftScopeV1({candidateInput:selected,
+      planHash:draft?.plan?.planHash??planHash, descriptor, mapTopologyHash})};
+  }
+  async function openDecisionWorkflow({runId,setup={},candidateInput,planHash='unplanned',onEvent,onRequest,onReply,onTool,networkRecoveryPolicy,shouldStopReadQuery}={}) {
     if(!/^[A-Za-z0-9_-]{1,80}$/u.test(runId||''))throw Error('ROSTER_DECISION_RUN_ID_INVALID');
     const directory=path.join(dataDirectory,'decision-workflows',runId);
     const store=createRosterDecisionWorkflowStoreV1({directory}),retained=await store.load();
     const savedDraft=retained?.draftRef?await store.get(retained.draftRef):null;
-    const createDraftContext=draft=>{
-      const selected=draft?.candidateInput??candidateInput;
-      const laboratory=createRunLaboratory({toolReceipts:[]},{setup,candidateInput:selected?.units?.length?selected:undefined});
-      const descriptor=laboratory.labDescriptor();
-      return {laboratory,scope:{army:selected?hashStarcraftTmgContract(selected):'public-reference-armies',plan:draft?.plan?.planHash??planHash,
-        rules:descriptor.rulesRuntimeHash,map:mapTopologyHash,source:descriptor.sourceStateHash}};
-    };
+    const createDraftContext=draft=>decisionDraftContext(draft,{setup,candidateInput,planHash});
     const {laboratory,scope}=createDraftContext(savedDraft);
+    if(retained)assertRosterDecisionRunScopeV1(retained.scope,scope);
     const port=deliberationFactory?.createForRun
-      ?await createRosterWorkflowProviderBoundaryV1({factory:deliberationFactory,sessionId:runId,runKind:'teach-framework',planHash,onEvent,networkRecoveryPolicy})
+      ?await createRosterWorkflowProviderBoundaryV1({factory:deliberationFactory,sessionId:runId,runKind:'teach-framework',planHash,onEvent,networkRecoveryPolicy,
+        dispatchJournalFile:path.join(directory,'provider-dispatches.jsonl')})
       :{deliberate:async()=>{throw Error('ROSTER_DECISION_PROVIDER_UNAVAILABLE');}};
     const resources={
       strategyRoute:query=>createStrategist({laboratory}).selectSkillRoute(query),
       unitRules:rosterSelectionUnitRulesV1(source.dataset),supportRules:rosterSelectionSupportRulesV1(source.dataset),
     };
-    const createCandidateLaboratory=selected=>createRunLaboratory({toolReceipts:[]},{setup,candidateInput:selected});
+    const createCandidateLaboratory=(selected,{opponentCandidateInput}={})=>createRunLaboratory({toolReceipts:[]},{setup,candidateInput:selected,opponentCandidateInput});
     return createRosterDecisionWorkspaceRunV1({directory,builderPort,createDraftContext,createCandidateLaboratory,resources,
-      laboratory,deliberation:port,sessionId:runId,scope,onRequest,onReply,onTool,onEvent});
+      laboratory,deliberation:port,sessionId:runId,scope,onRequest,onReply,onTool,onEvent,shouldStopReadQuery,
+      loadRetainedOfflineReply:deliberationFactory?.loadRetainedOfflineReply?.bind(deliberationFactory),
+      blindOpponent:rosterOpponentIsUnknownV1(setup)});
   }
 
   // Conservative cost estimate over accumulated redacted usage: cache
@@ -558,7 +718,55 @@ export async function createRosterPlanningProductModuleV1(input = {}) {
           teachSessionId) }) : null;
   const decisionJourney=await createRosterDecisionProductJourneyV1({
     directory:path.join(dataDirectory,'decision-product-journeys'),openWorkflow:openDecisionWorkflow,
+    async readLaunchDraft({runId,seed}){
+      const opponentSide=seed.setup.sideKey==='player1'?'player2':'player1';
+      if(referenceArmyRecipes[opponentSide]?.factionRecordKey!==seed.setup.opponentFactionRecordKey)
+        roomLaunchFail('ROSTER_DECISION_ROOM_OPPONENT_MISMATCH');
+      // Acceptance binds a durable revision. Reopening a Run here would
+      // restore older tool branches and can reconcile unfinished Teach work.
+      const store=createRosterDecisionWorkflowStoreV1({
+        directory:path.join(dataDirectory,'decision-workflows',runId),
+      });
+      const state=await store.load();
+      if(state?.schema!=='roster_decision_workflow_v1'||!state.draftRef)
+        roomLaunchFail('ROSTER_DECISION_ACCEPTANCE_STALE_REVISION');
+      const draft=await store.get(state.draftRef);
+      const {scope}=decisionDraftContext(draft,seed);
+      assertRosterDecisionRunScopeV1(state.scope,scope);
+      return {state,draft};
+    },
+    readConditionalExperiences:async({runId,query,blindOpponent})=>{
+      const store=createRosterDecisionWorkflowStoreV1({directory:path.join(dataDirectory,'decision-workflows',runId)});
+      return queryRosterConditionalExperienceSnapshotV1({state:await store.load(),store,query,blindOpponent});
+    },
+    prepareConditionalExperienceImport:async({sourceWorkflowId,evidenceId})=>{
+      const store=createRosterDecisionWorkflowStoreV1({directory:path.join(dataDirectory,'decision-workflows',sourceWorkflowId)});
+      return prepareRosterConditionalExperienceImportV1({sourceWorkflowId,evidenceId,state:await store.load(),store});
+    },
     liveAvailable:()=>typeof deliberationFactory?.createForRun==='function',
+    // Server-owned recovery of a previously created Run, never a client Plan
+    // import. Normal creation and all later scheduling/acceptance are unchanged.
+    prepareExisting:async({runId,setup:rawSetup,expectedRevision,expectedDraftRef})=>{
+      const store=createRosterDecisionWorkflowStoreV1({directory:path.join(dataDirectory,'decision-workflows',runId)});
+      const state=await store.load();
+      if(!state?.draftRef)roomLaunchFail('ROSTER_DECISION_REGISTRATION_RUN_NOT_FOUND');
+      if(state.draftRevision!==expectedRevision||state.draftRef!==expectedDraftRef)
+        roomLaunchFail('ROSTER_DECISION_REGISTRATION_STALE');
+      if(state.work.some(work=>!['superseded','returned_to_owner'].includes(work.status)
+        &&(work.status==='running'||work.operationState?.pending
+          ||work.failure?.dispatchOutcome==='unknown'||work.failure?.code==='DISPATCH_OUTCOME_UNKNOWN')))
+        roomLaunchFail('ROSTER_DECISION_REGISTRATION_WRITER_BUSY');
+      const draft=await store.get(state.draftRef),setup=service.validateSetup(rawSetup??{}),candidateInput=draft.candidateInput;
+      if(draft.revision!==expectedRevision||!['fixed','editable'].includes(draft.mode)
+        ||candidateInput.sideKey!==setup.sideKey||candidateInput.factionRecordKey!==setup.factionRecordKey
+        ||candidateInput.scaleId!==setup.engagementScale||candidateInput.mineralBudget!==setup.mineralBudget)
+        roomLaunchFail('ROSTER_DECISION_REGISTRATION_SETUP_MISMATCH');
+      const {scope}=decisionDraftContext(draft,{setup});
+      if(!isDeepStrictEqual(scope,state.scope))roomLaunchFail('ROSTER_DECISION_REGISTRATION_SOURCE_MISMATCH');
+      return {seed:{setup,candidateInput:clone(candidateInput),mode:draft.mode,provenance:clone(draft.provenance)},
+        origin:{kind:'existing_revision',sourceDraftRef:state.draftRef,sourceRevision:state.draftRevision,
+          freshGeneration:false,originalHistoryPreserved:true}};
+    },
     prepareSeed:async body=>{
       const setup=service.validateSetup(body.setup??{}),mode=body.mode??(body.candidateInput?'fixed':'editable');
       if(!['fixed','editable'].includes(mode))roomLaunchFail('ROSTER_DECISION_MODE_INVALID');
@@ -588,14 +796,14 @@ export async function createRosterPlanningProductModuleV1(input = {}) {
         opponentInformationBoundary:setup.opponentInformationBoundary,
         skillVersions:route.skillRefs.map(ref=>({skillId:ref.skillId,version:ref.version,promoted:ref.runtimeAccepted})),
         modelVersion:'provider_reported_per_request',promptVersion:'roster_scoped_workflow_v1'});
-      return {setup,candidateInput,mode,provenance};
+      return {setup,candidateInput,mode,provenance,planningEntry:normalizeRosterPlanningEntryV1(body.planningEntry)};
     },
   });
   const http = createRosterPlanningWorkspaceHttpAdapterV1({ service,
     decisionJourney,
     iterativeJourney,
     ...(typeof input.roomLaunchPort?.launch === "function"
-      ? { launchRoom: launchAgentSelectedRoom, launchPresetRoom } : {}),
+      ? { launchRoom: launchAgentSelectedRoom, launchPresetRoom, launchDecisionWorkflowRoom } : {}),
   });
 
   async function prepareAgentSelectedTeachPromotion(iterativeSessionId,
@@ -896,7 +1104,104 @@ export async function createRosterPlanningProductModuleV1(input = {}) {
     });
   }
 
-  async function launchAgentSelectedRoom(iterativeSessionId) {
+  async function prepareDecisionWorkflowRoomLaunch(workflowId, { expectedRevision } = {}) {
+    const accepted = await decisionJourney.readAccepted(workflowId);
+    if (expectedRevision !== undefined && expectedRevision !== accepted.draftRevision)
+      roomLaunchFail('ROSTER_DECISION_ROOM_REVISION_MISMATCH');
+    if (!frozenMapConfiguration?.seedId || accepted.plan.sideKey !== 'player1'
+      || accepted.plan.provenance.missionBinding.mapTopologyHash !== mapTopologyHash)
+      roomLaunchFail('ROSTER_DECISION_ROOM_MAP_OR_SEAT_MISMATCH');
+    return Object.freeze({ ...clone(accepted), recipe: candidateRoomRecipe(accepted.candidateInput),
+      referenceArmyRecipes: clone(referenceArmyRecipes), mapConfiguration: clone(frozenMapConfiguration) });
+  }
+
+  async function prepareDecisionWorkflowPlanForRoom({ workflowId, expectedRevision,
+    roomRuntime, roomId, seatToken, scope } = {}) {
+    const bundle = await prepareDecisionWorkflowRoomLaunch(workflowId, { expectedRevision });
+    return prepareAcceptedDecisionWorkflowPlanForRoom({ bundle, workflowId,
+      expectedRevision: expectedRevision ?? bundle.draftRevision,
+      roomRuntime, roomId, seatToken, scope });
+  }
+
+  // Host-only archive binding for a new versioned Room. A previously admitted
+  // snapshot is not a request to reopen (or mutate) its old Teach scheduler.
+  // No HTTP/LLM input selects this path; the replay Host verifies the snapshot
+  // against the source Room metadata before passing it here. The normal live
+  // launch still goes through readAccepted/current-draft admission above.
+  async function prepareAcceptedDecisionWorkflowPlanForRoom({ bundle, workflowId, expectedRevision,
+    roomRuntime, roomId, seatToken, scope } = {}) {
+    if (typeof roomRuntime?.readRoom !== 'function' || !roomId || !seatToken
+      || scope?.roomId !== roomId || scope?.seatKey !== 'player1')
+      roomLaunchFail('ROSTER_DECISION_ROOM_HANDOFF_INPUT_INVALID');
+    if (!bundle || bundle.workflowId !== workflowId
+      || bundle.draftRevision !== expectedRevision
+      || !frozenMapConfiguration?.seedId || bundle.plan?.sideKey !== 'player1'
+      || bundle.plan?.provenance?.missionBinding?.mapTopologyHash !== mapTopologyHash)
+      roomLaunchFail('ROSTER_DECISION_ROOM_SNAPSHOT_BINDING_MISMATCH');
+    const read = await roomRuntime.readRoom({ roomId, seatToken });
+    if (!read?.ok || !read.projection) roomLaunchFail('ROSTER_DECISION_ROOM_READ_FAILED');
+    const mapSummary = mapEvidencePort.summarizeMap({ queryId: 'accepted-workflow-room-binding' });
+    if (!roomMapMatchesPlanBinding(read.projection.state?.board?.competitiveMapRoomFreezeSummary,
+      mapSummary.mapBinding, { roomState: read.projection.state, mapSummary }))
+      roomLaunchFail('ROSTER_DECISION_ROOM_MAP_BINDING_MISMATCH');
+    const seed = createStarcraftTmgRosterTurnPlanSeedV1({ rosterPlan: bundle.plan,
+      sessionReceipt: bundle.sessionReceipt, roomProjection: read.projection, scope });
+    return Object.freeze({ plan: clone(bundle.plan), sessionReceipt: clone(bundle.sessionReceipt),
+      priorPlans: [], originHash: seed.origin.originHash,
+      roomStateRevision: seed.origin.openedAtStateRevision, trainingTruth: false });
+  }
+
+  const roomLaunchBinding = input.wave3MatchSetup ? {
+    setupId: input.wave3MatchSetup.id,
+    setupVersion: input.wave3MatchSetup.version,
+    setupSourceHash: input.wave3MatchSetup.sourceHash,
+  } : {};
+  function launchProductRoom(request) {
+    if (!boardFactory) return input.roomLaunchPort.launch(request);
+    return input.roomLaunchPort.launch({...request, ...roomLaunchBinding,
+      referenceArmyRecipes: request.referenceArmyRecipes ?? clone(referenceArmyRecipes),
+      async preparePregameRosterPlans(room) {
+        const opening = await room.roomRuntime.roomStore.loadInitialEnvelope(room.roomId);
+        const expected = boardFactory.bind(opening.state).rulesRuntime.releaseBinding;
+        const actual = opening.matchBinding.releaseBinding;
+        if (actual?.manifestHash !== expected.manifestHash || actual.runtimeHash !== expected.runtimeHash)
+          roomLaunchFail('ROSTER_PLAN_LAUNCH_RELEASE_MISMATCH');
+        return request.preparePregameRosterPlans(room);
+      }});
+  }
+  async function launchDecisionWorkflowRoom(workflowId, options = {}) {
+    const matchMode = options.matchMode || "agent_vs_agent";
+    if (!["agent_vs_agent", "user_vs_agent", "human_vs_human"].includes(matchMode))
+      roomLaunchFail("ROSTER_ROOM_MATCH_MODE_INVALID");
+    if (typeof input.roomLaunchPort?.launch !== 'function')
+      roomLaunchFail('ROSTER_WORKSPACE_ROOM_LAUNCH_UNAVAILABLE');
+    const bundle = await prepareDecisionWorkflowRoomLaunch(workflowId, options);
+    const player1Provider = options.player1Provider || 'deepseek';
+    if (!['deepseek','kimi_code'].includes(player1Provider)) roomLaunchFail('ROSTER_ROOM_PROVIDER_INVALID');
+    const launchKey = hashStarcraftTmgContract({ ...roomLaunchBinding, planningSource: 'decision_workflow', workflowId,
+      draftRevision: bundle.draftRevision, planHash: bundle.plan.planHash,
+      mapConfiguration: bundle.mapConfiguration, referenceArmyRecipes: bundle.referenceArmyRecipes,
+      player1Provider, matchMode });
+    const launched = await launchProductRoom({ launchKey, player1Provider, planningSource: 'decision_workflow',
+      decisionWorkflowId: workflowId, draftRevision: bundle.draftRevision,
+      iterativeSessionId: null, teachSessionId: null, planHash: bundle.plan.planHash,
+      recipe: clone(bundle.recipe), referenceArmyRecipes: clone(bundle.referenceArmyRecipes),
+      mapConfiguration: clone(bundle.mapConfiguration), matchMode,
+      async preparePregameRosterPlans({ roomRuntime, roomId, seats }) {
+        return { player1: await prepareDecisionWorkflowPlanForRoom({ workflowId,
+          expectedRevision: bundle.draftRevision, roomRuntime, roomId,
+          seatToken: seats.player1.seatToken, scope: seats.player1.scope }) };
+      } });
+    if (!launched?.roomId || !launched?.joinUrl) roomLaunchFail('ROSTER_DECISION_ROOM_HOST_INVALID');
+    return Object.freeze({ roomId: launched.roomId, joinUrl: launched.joinUrl,
+      matchMode, workflowId, draftRevision: bundle.draftRevision,
+      planHash: bundle.plan.planHash, player1Provider, launchKey, trainingTruth: false });
+  }
+
+  async function launchAgentSelectedRoom(iterativeSessionId, options = {}) {
+    const matchMode = options.matchMode || "agent_vs_agent";
+    if (!["agent_vs_agent", "user_vs_agent", "human_vs_human"].includes(matchMode))
+      roomLaunchFail("ROSTER_ROOM_MATCH_MODE_INVALID");
     if (typeof input.roomLaunchPort?.launch !== "function"
       || !iterativeJourney) {
       throw Object.assign(new Error("ROSTER_WORKSPACE_ROOM_LAUNCH_UNAVAILABLE"),
@@ -914,18 +1219,18 @@ export async function createRosterPlanningProductModuleV1(input = {}) {
     // Provider attachment and the user-facing recovery URL. A repeated POST
     // with the same key must return its existing Room, not create a second
     // paid match. The browser never receives the pregame plan or seat token.
-    const launchKey = hashStarcraftTmgContract({
+    const launchKey = hashStarcraftTmgContract({ ...roomLaunchBinding,
       iterativeSessionId,
       teachSessionId: bundle.teachSessionId,
       planHash: bundle.planHash,
       reviewHash: bundle.reviewHash,
-      matchMode: "agent_vs_agent",
+      matchMode,
     });
-    const launched = await input.roomLaunchPort.launch({
+    const launched = await launchProductRoom({
       launchKey,
       iterativeSessionId,
       teachSessionId: bundle.teachSessionId,
-      matchMode: "agent_vs_agent",
+      matchMode,
       recipe: clone(bundle.recipe),
       mapConfiguration: clone(bundle.mapConfiguration),
       planHash: bundle.planHash,
@@ -948,11 +1253,14 @@ export async function createRosterPlanningProductModuleV1(input = {}) {
       throw new TypeError("AGENT_SELECTED_ROOM_LAUNCH_HOST_INVALID");
     }
     return Object.freeze({ roomId: launched.roomId,
-      joinUrl: launched.joinUrl, matchMode: "agent_vs_agent",
+      joinUrl: launched.joinUrl, matchMode,
       planHash: bundle.planHash, launchKey, trainingTruth: false });
   }
 
-  async function launchPresetRoom(sessionId) {
+  async function launchPresetRoom(sessionId, options = {}) {
+    const matchMode = options.matchMode || "agent_vs_agent";
+    if (!["agent_vs_agent", "user_vs_agent", "human_vs_human"].includes(matchMode))
+      roomLaunchFail("ROSTER_ROOM_MATCH_MODE_INVALID");
     if (typeof input.roomLaunchPort?.launch !== 'function') roomLaunchFail('ROSTER_WORKSPACE_ROOM_LAUNCH_UNAVAILABLE');
     const session = service.readSession(sessionId);
     if (session.agentSelectionHandoffHash || !session.lockedRoster
@@ -964,12 +1272,12 @@ export async function createRosterPlanningProductModuleV1(input = {}) {
       row.candidate.candidateId === session.plan.rosterCandidate.candidateId)?.candidateInput;
     if (!candidate) roomLaunchFail('PRESET_ROOM_LAUNCH_CANDIDATE_MISSING');
     const planHash = session.plan.planHash;
-    const launchKey = hashStarcraftTmgContract({ planningSource: 'fixed_roster', sessionId,
-      planHash, mapConfiguration: frozenMapConfiguration, matchMode: 'agent_vs_agent' });
-    const launched = await input.roomLaunchPort.launch({ launchKey,
+    const launchKey = hashStarcraftTmgContract({ ...roomLaunchBinding, planningSource: 'fixed_roster', sessionId,
+      planHash, mapConfiguration: frozenMapConfiguration, matchMode });
+    const launched = await launchProductRoom({ launchKey,
       planningSource: 'fixed_roster', iterativeSessionId: null, teachSessionId: sessionId,
       planHash, recipe: candidateRoomRecipe(candidate), mapConfiguration: clone(frozenMapConfiguration),
-      matchMode: 'agent_vs_agent',
+      matchMode,
       async preparePregameRosterPlans({ roomRuntime, roomId, seats }) {
         return { player1: await preparePregamePlanForRoom({ sessionId, roomRuntime, roomId,
           seatToken: seats.player1.seatToken, scope: seats.player1.scope }) };
@@ -978,13 +1286,14 @@ export async function createRosterPlanningProductModuleV1(input = {}) {
     if (typeof launched?.roomId !== 'string' || !launched.roomId
       || typeof launched.joinUrl !== 'string' || !launched.joinUrl) roomLaunchFail('PRESET_ROOM_LAUNCH_HOST_INVALID');
     return Object.freeze({ roomId: launched.roomId, joinUrl: launched.joinUrl,
-      matchMode: 'agent_vs_agent', planHash, launchKey, trainingTruth: false });
+      matchMode, planHash, launchKey, trainingTruth: false });
   }
 
   const descriptorBody = {
     schema: "starcraft_tmg_roster_planning_product_module_descriptor_v1",
     module: ROSTER_PLANNING_PRODUCT_MODULE,
     version: ROSTER_PLANNING_PRODUCT_MODULE_VERSION,
+    ...(release ? { releaseId: release.manifest.releaseId, releaseManifestHash: release.manifest.manifestHash } : {}),
     laboratoryRoomId: ROSTER_PLANNING_WORKSPACE_LAB_ROOM_ID,
     isolatedLaboratorySourceState: true,
     fixtureRoot,
@@ -1114,6 +1423,7 @@ export async function createRosterPlanningProductModuleV1(input = {}) {
       authority.state.officialGameplayDataBundle.missionScoringProfile),
     mapEvidencePort,
     openDecisionWorkflow,
+    registerExistingDecisionWorkflow:input=>decisionJourney.registerExisting(input),
     decisionJourney,
     closeDecisionWorkflows:decisionJourney.close,
     iterativeDraft,
@@ -1126,6 +1436,10 @@ export async function createRosterPlanningProductModuleV1(input = {}) {
     prepareAgentSelectedTeachRoomLaunch,
     launchAgentSelectedRoom,
     launchPresetRoom,
+    prepareDecisionWorkflowRoomLaunch,
+    prepareDecisionWorkflowPlanForRoom,
+    prepareAcceptedDecisionWorkflowPlanForRoom,
+    launchDecisionWorkflowRoom,
     handle: (request) => http.handle(request),
     httpDescriptor: http.httpDescriptor,
   });

@@ -7,6 +7,10 @@ import {
   verifyOfficialMissionScoringProfileV1,
 } from "./official-gameplay-data-bundle-v1.mjs";
 
+import { OFFICIAL_WAVE3_GATHER_SKIRMISH_KEY, resolveOfficialWave3FireInSkyV1,
+  resolveOfficialWave3ArtefactHuntV1, resolveOfficialWave3GatherSkirmishV1 }
+  from './official-wave3-mission-source-v1.mjs';
+
 export const OFFICIAL_MISSION_EFFECT_IR_VERSION =
   "starcraft_tmg_official_mission_effect_ir_v1";
 export const OFFICIAL_MISSION_EFFECT_CATALOGUE_SCHEMA =
@@ -61,6 +65,12 @@ const EXPECTATIONS = Object.freeze([
     scale: "Skirmish", rounds: 4, startingSupply: 4, escalation: 1, lead: 8 }),
 ]);
 
+const WAVE3_MISSION_PAIRS = {
+  fire_in_the_sky: { option: "includeWave3FireInSky", bindingKey: "wave3FireInSky", resolve: resolveOfficialWave3FireInSkyV1,
+    missionId: "mission_fire_in_the_sky", effectKinds: ["sabotage_standard_action_replacement", "sabotage_level_marker_control_vp"] },
+  artefact_hunt: { option: "includeWave3ArtefactHunt", bindingKey: "wave3ArtefactHunt", resolve: resolveOfficialWave3ArtefactHuntV1,
+    missionId: "mission_artefact_hunt", effectKinds: ["claim_mission_marker", "drop_claimed_mission_marker", "artefact_final_marker_vp"] },
+};
 const EXPECTATION_BY_ID = new Map(EXPECTATIONS.map((entry) => [entry.missionId, entry]));
 const HASH_PATTERN = /^[a-f0-9]{64}$/u;
 
@@ -265,8 +275,14 @@ function requiredFactsFor(expected) {
   return [...facts].sort();
 }
 
-function compileMission(profile) {
-  const expected = EXPECTATION_BY_ID.get(profile?.missionId);
+function compileMission(profile, wave3Gather, extra) {
+  const fire = extra?.family === "fire_in_the_sky" ? extra : null;
+  const artefact = extra?.family === "artefact_hunt" ? extra : null;
+  const expected = extra ? { missionId: profile.missionId, name: profile.name,
+    family: extra.family, scale: profile.engagementScale,
+    rounds: profile.gameLengthRounds, startingSupply: profile.startingSupply,
+    escalation: profile.supplyEscalationPerRound, lead: extra.rules.terminal.immediateLeadThresholdVp
+  } : EXPECTATION_BY_ID.get(profile?.missionId);
   exactProfile(profile, expected);
   const sourceText = {
     missionParameters: profile.missionParameters,
@@ -290,9 +306,14 @@ function compileMission(profile) {
       supplyEscalationPerRound: expected.escalation,
       gameLengthRounds: expected.rounds,
     },
-    setup: setupFor(expected),
+    setup: fire ? { initialMarkerState: "activated", effects: [],
+      initialSabotageLevel: fire.rules.setup.initialSabotageLevel } : setupFor(expected),
     roundStartEffects: roundStartFor(expected),
-    actionDefinitions: actionsFor(expected),
+    actionDefinitions: fire ? [{ kind: "sabotage_standard_action_replacement",
+      ...fire.rules.sabotage }] : artefact ? [
+        { kind: "claim_mission_marker", ...artefact.rules.claim },
+        { kind: "drop_claimed_mission_marker", ...artefact.rules.drop },
+      ] : actionsFor(expected),
     scoring: {
       commonRules: [{
         kind: "destroyed_enemy_supply_vp",
@@ -300,21 +321,26 @@ function compileMission(profile) {
         timing: "end_of_round_scoring",
         vpPerDestroyedEnemySupply: 1,
       }],
-      objectiveRules: objectiveScoringFor(expected),
+      objectiveRules: fire ? [{ kind: "sabotage_level_marker_control_vp",
+        ...fire.rules.markerScoring }] : artefact ? [{ kind: "artefact_final_marker_vp",
+          ...artefact.rules.finalScoring }] : objectiveScoringFor(expected),
     },
     terminal: {
-      immediateLeadThresholdVp: expected.lead,
+      immediateLeadThresholdVp: wave3Gather?.immediateLeadThresholdVp ?? expected.lead,
       scheduledRoundLimit: expected.rounds,
       highestMissionScoreWins: true,
       finalTiebreaker: null,
       noTiebreakerFallback: "draw",
       armyEliminationRuleOwner: "core_rules",
     },
-    requiredRuleFacts: requiredFactsFor(expected),
+    requiredRuleFacts: extra ? [...requiredFactsFor(expected),
+      fire ? "signed_marker_sabotage_levels" : "signed_artefact_custody"].sort() : requiredFactsFor(expected),
     source: {
       semanticExtraction: "reviewed_record_key_dispatch_v1",
       sourceText,
       sourceTextHash: hashStarcraftTmgContract(sourceText),
+      ...(wave3Gather ? { wave3Gather } : {}),
+      ...(extra ? { [extra.bindingKey]: extra.binding } : {}),
     },
     execution: {
       irCompileComplete: true,
@@ -343,7 +369,31 @@ function catalogueBody(catalogue) {
 export function createOfficialMissionEffectCatalogueV1(input = {}) {
   const source = input.missionDeploymentDraftDataBundle;
   verifyOfficialMissionDeploymentDraftDataBundleV1(source);
-  const missions = source.missionProfiles.map(compileMission)
+  const missionSource = input.wave3MissionSourceContext;
+  const extraPairs = Object.entries(WAVE3_MISSION_PAIRS).filter(([, pair]) => input[pair.option] === true);
+  if (extraPairs.length > 1) fail("WAVE3_MISSION_PAIR_SELECTION_AMBIGUOUS");
+  const [family, pair] = extraPairs[0] || [];
+  const reviewedPair = pair?.resolve(missionSource);
+  const binding = reviewedPair?.binding ?? null;
+  const gather = missionSource && !pair ? resolveOfficialWave3GatherSkirmishV1(missionSource) : null;
+  for (const { bindingKey } of Object.values(WAVE3_MISSION_PAIRS)) {
+    if (source[bindingKey] && (pair?.bindingKey !== bindingKey
+      || hashStarcraftTmgContract(source[bindingKey]) !== hashStarcraftTmgContract(binding))) {
+      fail("WAVE3_MISSION_EFFECT_DRAFT_SOURCE_MISMATCH", bindingKey);
+    }
+  }
+  const wave3Gather = gather?.binding ?? null;
+  if (source.wave3Gather && (!wave3Gather
+    || hashStarcraftTmgContract(source.wave3Gather) !== hashStarcraftTmgContract(wave3Gather))) {
+    fail("WAVE3_GATHER_EFFECT_DRAFT_SOURCE_MISMATCH");
+  }
+  const missions = [
+    ...source.missionProfiles.filter(profile => !binding?.profilesByRecordKey[profile.recordKey]).map(profile =>
+      profile.recordKey === OFFICIAL_WAVE3_GATHER_SKIRMISH_KEY && gather
+        ? compileMission(gather.profile, wave3Gather) : compileMission(profile)),
+    ...(reviewedPair?.entries ?? []).map(entry => compileMission(entry.profile, null,
+      { family, bindingKey: pair.bindingKey, rules: entry.rules, binding })),
+  ]
     .sort((left, right) => left.missionRef.recordKey.localeCompare(
       right.missionRef.recordKey));
   const body = {
@@ -353,7 +403,7 @@ export function createOfficialMissionEffectCatalogueV1(input = {}) {
     sourceSnapshotHash: source.sourceSnapshotHash,
     normalizedDatasetHash: source.normalizedDatasetHash,
     missionProfileIndexHash: source.missionProfileIndexHash,
-    effectKinds: clone(OFFICIAL_MISSION_EFFECT_KINDS),
+    effectKinds: [...OFFICIAL_MISSION_EFFECT_KINDS, ...(pair?.effectKinds ?? [])],
     missions,
     counts: {
       missionEffects: missions.length,
@@ -364,7 +414,10 @@ export function createOfficialMissionEffectCatalogueV1(input = {}) {
       runtimeBoundMissionEffects: missions.filter((entry) => (
         entry.execution.scoringRuntimeBound)).length,
     },
-    compilerScope: "ten_current_official_missions_typed_ir_only",
+    compilerScope: pair ? "ten_base_missions_and_two_wave3_" + family
+      : "ten_current_official_missions_typed_ir_only",
+    ...(wave3Gather ? { wave3Gather } : {}),
+    ...(pair ? { [pair.bindingKey]: binding } : {}),
     arbitraryProseCompilationClaimed: false,
     productionRoomBindingEligible: false,
     trainingTruth: false,
@@ -376,21 +429,27 @@ export function createOfficialMissionEffectCatalogueV1(input = {}) {
 }
 
 export function verifyOfficialMissionEffectCatalogueV1(catalogue) {
+  const pairs = Object.entries(WAVE3_MISSION_PAIRS).filter(([, pair]) => catalogue?.[pair.bindingKey]);
+  if (pairs.length > 1 || (pairs.length && catalogue.wave3Gather)) fail("WAVE3_MISSION_PAIR_SELECTION_AMBIGUOUS");
+  const [, pair] = pairs[0] || [];
+  const extraIds = pair ? [pair.missionId, pair.missionId + "__skirmish_"] : [];
+  const missionsPerScale = pair ? 6 : 5;
   if (!object(catalogue)
     || catalogue.schema !== OFFICIAL_MISSION_EFFECT_CATALOGUE_SCHEMA
     || catalogue.semanticVersion !== "1.0.0"
     || catalogue.catalogueHash !== hashStarcraftTmgContract(catalogueBody(catalogue))
-    || catalogue.missions?.length !== 10
-    || catalogue.counts?.missionEffects !== 10
-    || catalogue.counts?.standardMissionEffects !== 5
-    || catalogue.counts?.skirmishMissionEffects !== 5
+    || catalogue.missions?.length !== missionsPerScale * 2
+    || catalogue.counts?.missionEffects !== missionsPerScale * 2
+    || catalogue.counts?.standardMissionEffects !== missionsPerScale
+    || catalogue.counts?.skirmishMissionEffects !== missionsPerScale
     || catalogue.counts?.runtimeBoundMissionEffects !== 0
     || catalogue.arbitraryProseCompilationClaimed !== false
     || catalogue.productionRoomBindingEligible !== false
     || catalogue.trainingTruth !== false) {
     fail("OFFICIAL_MISSION_EFFECT_CATALOGUE_INVALID");
   }
-  const expectedIds = EXPECTATIONS.map((entry) => entry.missionId).sort();
+  const expectedIds = [...EXPECTATIONS.map((entry) => entry.missionId),
+    ...extraIds].sort();
   const observedIds = catalogue.missions.map((entry) => entry.missionRef?.missionId).sort();
   if (hashStarcraftTmgContract(observedIds) !== hashStarcraftTmgContract(expectedIds)
     || catalogue.missions.some((entry) => (
@@ -402,6 +461,29 @@ export function verifyOfficialMissionEffectCatalogueV1(catalogue) {
       || entry.compatibility?.contentHashIsLineageNotCompatibilityGate !== true
       || entry.trainingTruth !== false))) {
     fail("OFFICIAL_MISSION_EFFECT_CATALOGUE_INVALID");
+  }
+  const overrides = catalogue.missions.filter(entry => entry.source?.wave3Gather);
+  const gather = catalogue.missions.find(entry => entry.missionRef.recordKey === OFFICIAL_WAVE3_GATHER_SKIRMISH_KEY);
+  if (!gather || (catalogue.wave3Gather
+    ? overrides.length !== 1 || overrides[0] !== gather
+      || hashStarcraftTmgContract(gather.source.wave3Gather) !== hashStarcraftTmgContract(catalogue.wave3Gather)
+      || gather.terminal.immediateLeadThresholdVp !== catalogue.wave3Gather.immediateLeadThresholdVp
+      || !String(catalogue.wave3Gather.releaseId || "").trim()
+      || ["manifestHash", "sourceBundleHash", "sourceSnapshotHash", "normalizedDatasetHash"]
+        .some(key => !HASH_PATTERN.test(catalogue.wave3Gather[key]))
+    : overrides.length !== 0 || gather.terminal.immediateLeadThresholdVp
+      !== EXPECTATION_BY_ID.get(gather.missionRef.missionId).lead)) {
+    fail("OFFICIAL_MISSION_EFFECT_GATHER_SOURCE_BINDING_INVALID");
+  }
+  for (const [family, descriptor] of Object.entries(WAVE3_MISSION_PAIRS)) {
+    const binding = catalogue[descriptor.bindingKey];
+    const added = catalogue.missions.filter(entry => entry.source?.[descriptor.bindingKey]);
+    if (binding
+      ? added.length !== extraIds.length || added.some(entry => !extraIds.includes(entry.missionRef.missionId)
+        || entry.missionRef.family !== family
+        || entry.missionRef.sourceProfileHash !== binding.profilesByRecordKey?.[entry.missionRef.recordKey]?.profileHash
+        || hashStarcraftTmgContract(entry.source[descriptor.bindingKey]) !== hashStarcraftTmgContract(binding))
+      : added.length !== 0) fail("WAVE3_MISSION_SOURCE_BINDING_INVALID", descriptor.bindingKey);
   }
   return true;
 }

@@ -1,5 +1,7 @@
 import { hashStarcraftTmgContract } from
   "../authoritative-engine/referee-crypto-v1.mjs";
+import { inspectOfficialContextualSupplyV1 } from
+  "../rule-atoms/official-contextual-supply-projection-v1.mjs";
 import {
   verifyOfficialAbilityEffectIrCatalogueV1,
 } from "../source-data/official-ability-effect-ir-v1.mjs";
@@ -100,6 +102,27 @@ export function createOfficialSelectedRosterAbilityAdapterV1(sourceBundle) {
       if (request.eventKind !== "cleanup_and_refresh") return null;
       return cleanupOfficialSelectedRosterAbilityEffectsV1(state);
     },
+  });
+}
+
+export function createOfficialSelectedRosterCommanderComponentAdapterV1(sourceBundle, sourceFeatureHashes) {
+  const hashes = [].concat(sourceFeatureHashes);
+  const definitions = createOfficialSelectedRosterAbilityDefinitionBindingsV1(sourceBundle);
+  const bindings = hashes.map(hash => definitions.find(row => row.sourceFeatureHash === hash
+    && row.capability === "automatic_consumer"));
+  if (!bindings.length || bindings.some(binding => !binding)) fail("SELECTED_ABILITY_COMMANDER_BINDING_MISSING");
+  const [binding] = bindings;
+  return freezeDeep({
+    definitionBindings: bindings,
+    descriptor: {
+      adapterId: binding.adapterId, adapterVersion: binding.adapterVersion,
+      adapterKind: "exact_runtime", coveredDefinitionCount: bindings.length,
+      coveredSourceFeatureHashes: bindings.map(row => row.sourceFeatureHash),
+      supportedOperations: ["legal_space", "query"],
+      rulesAuthority: true, trainingTruth: false,
+    },
+    legalSpace: () => ({ candidates: [], parameterDomains: [] }),
+    query: (state, args) => inspectOfficialContextualSupplyV1({ state, arguments: args }),
   });
 }
 
@@ -237,6 +260,19 @@ function lifecycleTransition(runtime, stateInput, request) {
     trainingTruth: false });
 }
 
+function activeContinuationAdapter(runtime, state) {
+  if (state?.pendingOfficialReactionWindow && runtime.reactionWindowAdapterId) {
+    return { adapterId: runtime.reactionWindowAdapterId, error: 'ABILITY_EFFECT_REACTION_WINDOW_REQUIRED' };
+  }
+  if (state?.pendingOfficialAutomaticHits && runtime.automaticHitsContinuationAdapterId) {
+    return { adapterId: runtime.automaticHitsContinuationAdapterId, error: 'ABILITY_EFFECT_AUTOMATIC_HITS_CONTINUATION_REQUIRED' };
+  }
+  if (state?.pendingOfficialBlastTemplateAttack && runtime.templateContinuationAdapterId) {
+    return { adapterId: runtime.templateContinuationAdapterId, error: 'ABILITY_EFFECT_TEMPLATE_CONTINUATION_REQUIRED' };
+  }
+  return null;
+}
+
 function dispatchRuntime(runtime, input = {}) {
   const operation = String(input.operation || "");
   if (!OPERATIONS.has(operation)) {
@@ -244,6 +280,11 @@ function dispatchRuntime(runtime, input = {}) {
   }
   if (!object(input.state) && operation !== "replay") {
     fail("ABILITY_EFFECT_RUNTIME_STATE_REQUIRED", operation);
+  }
+  const activeContinuation = activeContinuationAdapter(runtime, input.state);
+  if (activeContinuation && (['lifecycle', 'consume_reaction_window', 'open_reaction_window'].includes(operation)
+    || (['apply', 'preview'].includes(operation) && selectedAdapterId(input) !== activeContinuation.adapterId))) {
+    fail(activeContinuation.error);
   }
   if (operation === "legal_space") {
     const excludedAdapterIds = new Set((input.options?.excludeAdapterIds || []).map(String));
@@ -254,6 +295,7 @@ function dispatchRuntime(runtime, input = {}) {
     }
     const outputs = runtime.adapters.filter((adapter) => (
       !excludedAdapterIds.has(adapter.descriptor.adapterId)
+      && (!activeContinuation || adapter.descriptor.adapterId === activeContinuation.adapterId)
     )).map((adapter) => ({
       adapterId: adapter.descriptor.adapterId,
       result: adapter.legalSpace(input.state, input.options || {}),
@@ -284,6 +326,8 @@ function dispatchRuntime(runtime, input = {}) {
     if (!object(preState) || !object(input.action)) {
       fail("ABILITY_EFFECT_RUNTIME_REPLAY_INPUT_INVALID");
     }
+    const active = activeContinuationAdapter(runtime, preState);
+    if (active && selectedAdapterId(input) !== active.adapterId) fail(active.error);
     const adapter = adapterFor(runtime, selectedAdapterId(input), "apply");
     const transition = adapter.apply(preState, {
       action: input.action, options: input.options || {},
@@ -324,6 +368,12 @@ export function createOfficialAbilityEffectRuntimeV1(input = {}) {
   const adapters = [...exactAdapters, pendingAdapter];
   const ids = adapters.map((entry) => entry.descriptor.adapterId);
   if (new Set(ids).size !== ids.length) fail("ABILITY_EFFECT_RUNTIME_ADAPTER_DUPLICATE");
+  const reactionWindowAdapterId = input.reactionWindowAdapterId ?? null;
+  const templateContinuationAdapterId = input.templateContinuationAdapterId ?? null;
+  const automaticHitsContinuationAdapterId = input.automaticHitsContinuationAdapterId ?? null;
+  for (const id of [reactionWindowAdapterId, templateContinuationAdapterId, automaticHitsContinuationAdapterId].filter(Boolean)) {
+    adapterFor({ adapters }, id, 'apply');
+  }
   const exactDefinitions = catalogue.definitions.filter((entry) => (
     entry.execution.status === "executable_exact"));
   const covered = new Set(exactAdapters.flatMap((adapter) => (
@@ -340,6 +390,9 @@ export function createOfficialAbilityEffectRuntimeV1(input = {}) {
     executableExactDefinitionCount: catalogue.denominator.executableExact,
     pendingFamilyDefinitionCount: catalogue.denominator.pendingFamilyAdapter,
     adapterIds: ids,
+    ...(reactionWindowAdapterId ? { reactionWindowAdapterId } : {}),
+    ...(templateContinuationAdapterId ? { templateContinuationAdapterId } : {}),
+    ...(automaticHitsContinuationAdapterId ? { automaticHitsContinuationAdapterId } : {}),
     publicInterface: "dispatch(operation, state, request)",
     operations: [...OPERATIONS].sort(),
     legalSpacePreviewApplyReplaySequencePreserved: true,
@@ -352,7 +405,8 @@ export function createOfficialAbilityEffectRuntimeV1(input = {}) {
     rulesTruth: "official_ability_effect_runtime_router",
     trainingTruth: false,
   }, "runtimeHash");
-  const runtime = { descriptor, catalogue, adapters };
+  const runtime = { descriptor, catalogue, adapters, reactionWindowAdapterId,
+    templateContinuationAdapterId, automaticHitsContinuationAdapterId };
   return Object.freeze({
     descriptor,
     dispatch: (request) => dispatchRuntime(runtime, request),

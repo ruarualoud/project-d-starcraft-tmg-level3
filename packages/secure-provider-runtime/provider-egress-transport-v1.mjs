@@ -1,3 +1,5 @@
+import {createProviderTransportDiagnosticsV1} from './provider-transport-diagnostics-v1.mjs';
+import {normalizeProviderVisualInputsV1, providerVisualContentV1} from './provider-visual-input-v1.mjs';
 import { createHash } from "node:crypto";
 import { lookup as dnsLookup } from "node:dns/promises";
 import https from "node:https";
@@ -32,6 +34,7 @@ const COMPLETE_FIELDS = new Set([
 const REQUEST_FIELDS = new Set([
   "schemaVersion", "requestId", "intent", "promptPack", "promptNodes",
   "userMessage", "responseContract", "agentLoop", "maxOutputUnits",
+  "visualInputs",
 ]);
 const RESPONSE_CONTRACT_FIELDS = new Set([
   "allowedChannels", "decisionCandidateSource",
@@ -368,6 +371,8 @@ function normalizeProviderRequest(value, binding) {
     promptPack: requiredString(value.promptPack, "providerRequest.promptPack", 200),
     promptNodes: clone(value.promptNodes),
     userMessage: requiredString(value.userMessage, "providerRequest.userMessage", 64 * 1024),
+    ...(value.visualInputs !== undefined
+      ? {visualInputs:normalizeProviderVisualInputsV1(value.visualInputs)} : {}),
     responseContract: {
       allowedChannels: [...allowedChannels],
       decisionCandidateSource: requiredString(
@@ -433,7 +438,8 @@ function requestBody(request, binding) {
       },
       {
         role: "user",
-        content: JSON.stringify({ intent: request.intent, message: request.userMessage }),
+        content: providerVisualContentV1(
+          JSON.stringify({ intent: request.intent, message: request.userMessage }), request.visualInputs),
       },
       ...(nativeTools ? request.agentLoop.continuationMessages : []),
     ],
@@ -679,7 +685,9 @@ export function createStarcraftTmgProviderEgressTransportV1(options = {}) {
     const elapsedMs = () => Math.max(0, Math.floor(
       performance.now() - transportStartedAt));
     const mark = (field) => { milestonesMs[field] = elapsedMs(); };
-    // Only phase timings cross the worker boundary; no endpoint, prompt, or key.
+    const diagnostics = createProviderTransportDiagnosticsV1({elapsedMs, timeoutMs: binding.timeoutMs});
+    let timeoutCause;
+    // Numeric observations and allowlisted codes only; no endpoint, body or key.
     const transportProgress = () => ({
       phase: milestonesMs.responseHeaders !== null
         ? "reading_response_body" : milestonesMs.requestWritten !== null
@@ -688,6 +696,7 @@ export function createStarcraftTmgProviderEgressTransportV1(options = {}) {
               ? "tls_handshake" : "tcp_connect",
       elapsedMs: elapsedMs(),
       milestonesMs: { ...milestonesMs },
+      ...diagnostics.snapshot(), ...(timeoutCause ? {timeoutCause} : {}),
     });
     let physicalAttempts = 0;
 
@@ -702,15 +711,20 @@ export function createStarcraftTmgProviderEgressTransportV1(options = {}) {
         input.signal?.removeEventListener?.("abort", abort);
         operation(value);
       };
-      const fail = (error) => finish(reject, error);
+      const fail = (error) => finish(reject, new StarcraftTmgProviderEgressError(error.code, {
+        ...error.safeReceipt, status: observedStatus ?? error.safeReceipt?.status,
+        transportProgress: transportProgress(),
+      }));
       const abort = () => {
-        providerRequest?.destroy?.();
+        diagnostics.note('caller_abort');
         fail(new StarcraftTmgProviderEgressError("PROVIDER_ABORTED", {
           requestMayHaveBeenSent: physicalAttempts === 1,
           physicalAttempts,
         }));
+        providerRequest?.destroy?.();
       };
       const totalTimer = setTimeout(() => {
+        timeoutCause = 'total_deadline'; diagnostics.note('total_deadline');
         fail(new StarcraftTmgProviderEgressError("PROVIDER_TRANSPORT_TIMEOUT", {
           requestMayHaveBeenSent: physicalAttempts === 1,
           physicalAttempts, status: observedStatus,
@@ -746,6 +760,7 @@ export function createStarcraftTmgProviderEgressTransportV1(options = {}) {
             "content-length": String(Buffer.byteLength(body, "utf8")),
           },
         }, (response) => {
+          diagnostics.response(response);
           const status = Number(response?.statusCode || 0);
           observedStatus = Number.isInteger(status) && status >= 100
             && status <= 599 ? status : null;
@@ -786,7 +801,9 @@ export function createStarcraftTmgProviderEgressTransportV1(options = {}) {
           const chunks = [];
           let bytes = 0;
           response.on("data", (chunk) => {
+            if (settled) return;
             const buffer = Buffer.from(chunk);
+            diagnostics.data(buffer);
             bytes += buffer.length;
             if (bytes > maxResponseBytes) {
               response.destroy?.();
@@ -799,10 +816,16 @@ export function createStarcraftTmgProviderEgressTransportV1(options = {}) {
             }
             chunks.push(buffer);
           });
-          response.on("error", () => fail(new StarcraftTmgProviderEgressError(
-            "PROVIDER_RESPONSE_STREAM_FAILED", {
-              requestMayHaveBeenSent: true, physicalAttempts,
-            })));
+          response.on('aborted', () => { if (!settled) diagnostics.note('response_aborted'); });
+          response.on('close', () => {
+            if (settled || milestonesMs.responseCompleted !== null) return;
+            diagnostics.note('response_close_before_end');
+            fail(new StarcraftTmgProviderEgressError('PROVIDER_RESPONSE_STREAM_FAILED', {requestMayHaveBeenSent:true,physicalAttempts}));
+          });
+          response.on('error', error => {
+            if (settled) return; diagnostics.note('response_error', error);
+            fail(new StarcraftTmgProviderEgressError('PROVIDER_RESPONSE_STREAM_FAILED', {requestMayHaveBeenSent:true,physicalAttempts}));
+          });
           response.on("end", () => {
             if (settled) return;
             mark("responseCompleted");
@@ -898,7 +921,8 @@ export function createStarcraftTmgProviderEgressTransportV1(options = {}) {
             }));
           });
         });
-      } catch {
+      } catch (error) {
+        diagnostics.note('request_create_error', error);
         fail(new StarcraftTmgProviderEgressError("PROVIDER_TRANSPORT_FAILED", {
           requestMayHaveBeenSent: physicalAttempts === 1,
           physicalAttempts,
@@ -907,6 +931,7 @@ export function createStarcraftTmgProviderEgressTransportV1(options = {}) {
         return;
       }
       providerRequest.once?.("socket", (socket) => {
+        diagnostics.socket(socket);
         keepProviderSocketAliveV1(socket);
         socket.once?.("connect", () => mark("tcpConnected"));
         socket.once?.("secureConnect", () => {
@@ -921,14 +946,17 @@ export function createStarcraftTmgProviderEgressTransportV1(options = {}) {
           }
         });
       });
-      providerRequest.once?.("error", () => fail(
-        new StarcraftTmgProviderEgressError("PROVIDER_TRANSPORT_FAILED", {
-          requestMayHaveBeenSent: physicalAttempts === 1,
-          physicalAttempts,
-          status: observedStatus, transportProgress: transportProgress(),
-        })));
+      providerRequest.once?.("error", error => {
+        if (settled) return;
+        diagnostics.note("request_error", error);
+        fail(new StarcraftTmgProviderEgressError("PROVIDER_TRANSPORT_FAILED", {
+          requestMayHaveBeenSent: physicalAttempts === 1, physicalAttempts,
+        }));
+      });
       providerRequest.once?.("finish", () => mark("requestWritten"));
       providerRequest.setTimeout?.(binding.timeoutMs, () => {
+        if (settled) return;
+        timeoutCause = "socket_inactivity"; diagnostics.note("socket_inactivity");
         fail(new StarcraftTmgProviderEgressError("PROVIDER_TRANSPORT_TIMEOUT", {
           requestMayHaveBeenSent: true, physicalAttempts,
           status: observedStatus, transportProgress: transportProgress(),
@@ -937,7 +965,8 @@ export function createStarcraftTmgProviderEgressTransportV1(options = {}) {
       });
       try {
         providerRequest.end(body);
-      } catch {
+      } catch (error) {
+        diagnostics.note('request_write_error', error);
         fail(new StarcraftTmgProviderEgressError("PROVIDER_TRANSPORT_FAILED", {
           requestMayHaveBeenSent: physicalAttempts === 1,
           physicalAttempts,

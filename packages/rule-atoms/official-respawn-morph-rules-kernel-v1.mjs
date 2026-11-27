@@ -1,3 +1,4 @@
+import { projectOfficialDeploymentSupplyV1 } from "./official-deployment-supply-projection-v1.mjs";
 import { hashStarcraftTmgContract } from
   "../authoritative-engine/referee-crypto-v1.mjs";
 import {
@@ -69,6 +70,7 @@ function placedGhost(state, piece, model, placement, stagedPiece, bundle) {
 export function resolveOfficialMorphAvailabilityV1(input = {}) {
   const bundle = input.respawnMorphDataBundle;
   verifyOfficialRespawnMorphDataBundleV1(bundle);
+  if (bundle.currentMorphCarriers.length) fail("MORPH_ACTION_AVAILABILITY_REQUIRES_SOURCE_BOUND_RUNTIME");
   if (input.procedureKind !== "morph_availability"
     || input.rulesOwnedAvailabilityRequested !== true
     || input.clientSuppliedCarrier !== undefined) fail("MORPH_AVAILABILITY_REQUEST_INVALID");
@@ -89,13 +91,16 @@ export function resolveOfficialRespawnModelsV1(input = {}) {
   const bundle = input.respawnMorphDataBundle;
   verifyOfficialRespawnMorphDataBundleV1(bundle);
   const state = input.state; const piece = pieceFor(state, input.pieceId);
-  const carrier = getOfficialRespawnCarrierV1(bundle, piece.officialUnitRecordKey);
+  const carrier = getOfficialRespawnCarrierV1(bundle, piece.officialUnitRecordKey, input.sourceDefinitionId);
   if (input.procedureKind !== "respawn_models" || piece.isDestroyed === true
     || piece.isOnField !== true || Number(piece.currentModels) < 1
     || !Array.isArray(piece.models) || !Array.isArray(piece.destroyedModelIds)
     || input.rulesOwnedRespawnRequested !== true
     || input.clientSuppliedSupplyResult !== undefined
     || input.clientSuppliedMutation !== undefined) fail("RESPAWN_REQUEST_INVALID");
+  if (carrier.targetUnitProfile && (piece.sourceRecordHash !== carrier.targetUnitProfile.sourceRecordHash
+    || piece.officialPayloadHash !== carrier.targetUnitProfile.payloadHash
+    || piece.models.length > carrier.targetUnitProfile.maximumModels)) fail("RESPAWN_UNIT_SOURCE_DRIFT");
   const currentModels = piece.models.filter(activeModel);
   if (currentModels.length !== Number(piece.currentModels)) fail("RESPAWN_MODEL_COUNT_DRIFT");
   const destroyedModels = piece.models.filter((model) => (
@@ -107,7 +112,8 @@ export function resolveOfficialRespawnModelsV1(input = {}) {
   if (event.type !== "special_ability_resolved" || event.sideKey !== piece.sideKey
     || event.pieceId !== piece.id || event.abilityName !== carrier.definitionName
     || event.abilityDefinitionHash !== carrier.definitionHash
-    || event.effectKeyword !== "RESPAWN") fail("RESPAWN_EFFECT_TRIGGER_INVALID");
+    || event.effectKeyword !== "RESPAWN"
+    || (carrier.definitionId && event.sourceDefinitionId !== carrier.definitionId)) fail("RESPAWN_EFFECT_TRIGGER_INVALID");
   const onCreep = (piece.derivedKeywords || []).includes("on_creep");
   const respawnLimit = onCreep ? carrier.onCreepRespawnValue : carrier.baseRespawnValue;
   if (event.baseRespawnValue !== carrier.baseRespawnValue
@@ -163,7 +169,8 @@ export function resolveOfficialRespawnModelsV1(input = {}) {
     const setModel = { ...model, isDestroyed: false, isOnField: true,
       xInches: Number(placement.xMilliInches) / 1000,
       yInches: Number(placement.yMilliInches) / 1000,
-      baseRotationDegrees: Number(placement.rotationDegrees || 0) };
+      baseRotationDegrees: Number(placement.rotationDegrees || 0),
+      ...(carrier.targetUnitProfile ? { damage: 0, remainingWounds: carrier.targetUnitProfile.hitPoints } : {}) };
     stagedPiece.models = stagedPiece.models.map((entry) => (
       entry.id === modelId ? setModel : entry
     ));
@@ -220,3 +227,70 @@ export function certifyOfficialRespawnMorphPlanV1(input = {}) {
 }
 
 export function officialRespawnMorphProcedureKindsV1() { return [...PROCEDURE_KINDS]; }
+
+// Unit identity and Supply are common facts for LegalSpace, preview and apply.
+// Source-card timing and the exact physical placement remain in the family runtime.
+export function projectOfficialMorphPrerequisitesV2({ state, respawnMorphDataBundle: bundle, pieceId } = {}) {
+  verifyOfficialRespawnMorphDataBundleV1(bundle);
+  const carrier = bundle.currentMorphCarriers.find(row => row.definitionId === "card:cocoon/ravager-morph-any@1");
+  const actor = pieceFor(state, pieceId);
+  const sourceProfile = carrier?.sourceUnitProfiles.find(row => row.recordKey === actor.officialUnitRecordKey);
+  if (!carrier || !sourceProfile || !activeModel(actor) || actor.isOnField !== true || actor.currentModels < 1
+    || actor.sideKey !== state.activeSideKey || actor.isStructure === true
+    || actor.sourceRecordHash !== sourceProfile.sourceRecordHash || actor.officialPayloadHash !== sourceProfile.payloadHash) {
+    fail("MORPH_SOURCE_UNIT_INVALID");
+  }
+  const models = actor.models.filter(activeModel);
+  if (models.length !== Number(actor.currentModels)) fail("MORPH_SOURCE_MODEL_COUNT_DRIFT");
+  const beforeSupply = exactSupply(bundle, actor, models.length);
+  if (beforeSupply.currentSupplyValue !== Number(actor.currentSupply)) fail("MORPH_SOURCE_SUPPLY_DRIFT");
+  const requested = resolveOfficialCurrentSupplyValueV1({ unitCardSupplyDataBundle: bundle.unitCardSupplyDataBundle,
+    recordKey: carrier.createdUnitProfile.recordKey, currentModels: carrier.createdModels,
+    isDestroyed: false, rulesOwnedCurrentModelCountRequested: true });
+  const pool = projectOfficialDeploymentSupplyV1(state, actor.sideKey);
+  if (pool.mode !== "unlimited" && (!Number.isSafeInteger(pool.available) || pool.available < requested.currentSupplyValue)) {
+    fail("MORPH_AVAILABLE_SUPPLY_INSUFFICIENT");
+  }
+  return result({ schema: "starcraft_tmg_official_morph_prerequisites_v2", pieceId, sideKey: actor.sideKey,
+    sourceDefinitionId: carrier.definitionId, sourceModelIds: models.map(row => row.id).sort(),
+    createdUnitRecordKey: carrier.createdUnitProfile.recordKey, createdModels: carrier.createdModels,
+    sourceSupplyBefore: beforeSupply.currentSupplyValue, requestedSupply: requested.currentSupplyValue,
+    poolBefore: pool, sourceRemovalNotPrecredited: true, availabilityScope: "source_identity_and_preplacement_supply",
+    trainingTruth: false });
+}
+
+export function resolveOfficialMorphUnitV2({ state, respawnMorphDataBundle: bundle, pieceId, sourceModelId, createdPiece } = {}) {
+  const prerequisites = projectOfficialMorphPrerequisitesV2({ state, respawnMorphDataBundle: bundle, pieceId });
+  const actor = pieceFor(state, pieceId); const carrier = bundle.currentMorphCarriers[0];
+  if (!prerequisites.sourceModelIds.includes(sourceModelId)) fail("MORPH_SOURCE_MODEL_INVALID");
+  const createdProfile = carrier.createdUnitProfile;
+  if (!object(createdPiece) || state.pieces.some(row => row.id === createdPiece.id)
+    || createdPiece.officialUnitRecordKey !== createdProfile.recordKey
+    || createdPiece.sourceRecordHash !== createdProfile.sourceRecordHash || createdPiece.officialPayloadHash !== createdProfile.payloadHash
+    || createdPiece.sideKey !== actor.sideKey || createdPiece.currentModels !== 1 || createdPiece.models?.length !== 1
+    || createdPiece.currentSupply !== prerequisites.requestedSupply || createdPiece.sizeCharacteristic !== createdProfile.sizeCharacteristic
+    || createdPiece.isOnField !== true || createdPiece.isDestroyed !== false
+    || createdPiece.models[0].remainingWounds !== createdProfile.hitPoints
+    || createdPiece.officialMorphActivationLock?.round !== Number(state.round)
+    || createdPiece.officialMorphActivationLock?.sourceDefinitionId !== carrier.definitionId
+    || createdPiece.officialMorphActivationLock?.sourcePieceId !== actor.id) fail("MORPH_CREATED_UNIT_SOURCE_DRIFT");
+  const models = structuredClone(actor.models).map(model => model.id === sourceModelId ? {
+    ...model, isDestroyed: true, isOnField: false, remainingWounds: 0, removalCause: "morph",
+  } : model);
+  const remaining = models.filter(activeModel);
+  const afterSupply = exactSupply(bundle, actor, remaining.length);
+  const sourceProfile = carrier.sourceUnitProfiles.find(row => row.recordKey === actor.officialUnitRecordKey);
+  const damageMarker = Math.max(0, ...remaining.map(model => Number(model.damage
+    ?? Math.max(0, sourceProfile.hitPoints - Number(model.remainingWounds ?? sourceProfile.hitPoints)))));
+  const patch = { models, currentModels: remaining.length, currentSupply: afterSupply.currentSupplyValue,
+    isDestroyed: remaining.length === 0, isOnField: remaining.length > 0, isInReserves: false, damageMarker,
+    morphedModelIds: [...(actor.morphedModelIds || []), sourceModelId] };
+  return result({ schema: "starcraft_tmg_official_morph_unit_resolution_v2", pieceId, sideKey: actor.sideKey,
+    sourceDefinitionId: carrier.definitionId, removedModelId: sourceModelId,
+    createdPieceId: createdPiece.id, sourceSupplyBefore: prerequisites.sourceSupplyBefore,
+    sourceSupplyAfter: afterSupply.currentSupplyValue, createdSupply: prerequisites.requestedSupply,
+    poolBefore: prerequisites.poolBefore, sourceUnitFullyRemoved: remaining.length === 0,
+    enemyKillCredit: 0, removalCause: "morph", returnedDestroyedModel: false,
+    mutation: { sourcePiecePatch: { pieceId, expectedBeforePieceHash: hashStarcraftTmgContract(actor), set: patch },
+      createdPiece: structuredClone(createdPiece) }, trainingTruth: false });
+}

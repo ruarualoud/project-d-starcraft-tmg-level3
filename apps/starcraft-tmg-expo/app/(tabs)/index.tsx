@@ -1,7 +1,9 @@
+import { starcraftTmgBattlefieldUnitMediaAssetsV1 } from '@/lib/level3/battlefield-media-assets-v1';
 import React, { useState, useMemo } from 'react';
 import { View, Text, TextInput, Pressable, ScrollView, StyleSheet, Image } from 'react-native';
 import { ScreenContainer } from '@/components/screen-container';
 import { useData } from '@/lib/data-context';
+import { MatchSetupCatalogue, type SetupCatalogue } from '@/components/match-setup-catalogue';
 import type { Faction, UnitCard, TacticalCard, GameCard, GameCardType } from '@/lib/types';
 import { FACTION_COLORS } from '@/lib/types';
 import { useI18n } from '@/lib/i18n';
@@ -62,12 +64,15 @@ function WeaponRow({ upg, t }: { upg: any; t: (k: any) => string }) {
 function UnitDetail({ unit, onClose }: { unit: UnitCard; onClose: () => void }) {
   const { t } = useI18n();
   const fColor = FACTION_COLORS[unit.faction];
+  const media = starcraftTmgBattlefieldUnitMediaAssetsV1(unit.id);
   const weapons = unit.upgrades.filter(u => u.weapon);
   const abilities = unit.upgrades.filter(u => !u.weapon);
 
   return (
     <ScrollView style={s.detailContainer}>
       <DetailBackBar label={t('database')} onClose={onClose} />
+      {media?.unitCard && <Image source={media.unitCard} resizeMode="contain" accessibilityLabel={unit.name}
+        style={{width:'100%',maxWidth:640,aspectRatio:914/600,alignSelf:'center'}} />}
       <View style={s.detailHeader}>
         <View style={{ flex: 1 }}>
           <Text style={[s.detailName, { color: fColor }]}>{unit.name}</Text>
@@ -352,15 +357,15 @@ function MissionDetail({ card, onClose }: { card: GameCard; onClose: () => void 
 /* ──── Main Screen ──── */
 
 export default function DatabaseScreen() {
-  const {
-    units,
-    cards,
-    gameCards,
-    isLoading,
-    catalogueSource,
-    officialCatalogueAvailable,
-    officialSourceMetadataVerified,
-  } = useData();
+  return <MatchSetupCatalogue>{setup => <DatabaseCatalogue selected={setup} />}</MatchSetupCatalogue>;
+}
+
+function DatabaseCatalogue({selected}: {selected?: SetupCatalogue}) {
+  const legacy = useData();
+  const {units,cards,gameCards} = selected?.catalogue ?? legacy;
+  const catalogueSource = selected?.catalogue.source ?? legacy.catalogueSource;
+  const {officialCatalogueAvailable,officialSourceMetadataVerified} = legacy;
+  const isLoading = !selected && legacy.isLoading;
   const { t, unitName, lang } = useI18n();
   const factionLabel = (f: Faction) => lang === 'zh' ? FACTION_CN[f] : FACTION_EN[f];
   const [browseTab, setBrowseTab] = useState<BrowseTab>('factions');

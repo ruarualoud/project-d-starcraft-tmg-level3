@@ -1,3 +1,5 @@
+import {projectOfficialDeploymentSupplyV1} from '../rule-atoms/official-deployment-supply-projection-v1.mjs';
+import { bindGrantedWeapon, matchesGrantedWeapon, usesWave3FaqClarifications } from '../rule-atoms/official-wave3-faq-clarifications-v1.mjs';
 import { isDeepStrictEqual } from "node:util";
 
 import { hashStarcraftTmgContract } from
@@ -8,6 +10,9 @@ import { verifyOfficialAbilityEffectIrCatalogueV1 } from
   "../source-data/official-ability-effect-ir-v1.mjs";
 import { verifyOfficialCurrentProductAbilityDenominatorV1 } from
   "./official-current-product-ability-denominator-v1.mjs";
+import { listOfficialPhaseActivationUnitIdsV1 } from '../rule-atoms/official-phase-activation-availability-v1.mjs';
+import { applyOfficialSelectedRosterAbilityActionV1, enumerateOfficialSelectedRosterAbilityActionsV1,
+  instantiateOfficialSelectedRosterAbilityActionV1 } from './official-selected-roster-ability-runtime-v1.mjs';
 import {
   applyOfficialNonEntryEdgeDeployPlanV1,
   describeOfficialNonEntryEdgeDeployV1,
@@ -21,6 +26,9 @@ export const OFFICIAL_PROTOSS_UNIQUE_FAMILY_BUNDLE_SCHEMA =
   "starcraft_tmg_official_protoss_unique_family_source_bundle_v1";
 export const OFFICIAL_PROTOSS_UNIQUE_FAMILY_PARAMETER_KIND =
   "official_protoss_unique_family_plan_v1";
+export const OFFICIAL_KHALAI_ACTIVATION_CHAIN_DEFINITION_ID = 'card:khalai/bound-by-the-khala-any@1';
+const khalaiBundleSchema = 'starcraft_tmg_official_khalai_activation_source_bundle_v2';
+const khalaiActivationText = 'Bound by the Khala <Active> <Movement Phase>: At the end of the active Unit’s Activation, select one other Friendly Unit eligible to Activate in the current Phase. Immediately Activate that Unit.';
 
 const ACTIVE_PHASES = new Set(["movement", "assault", "combat"]);
 const EXPECTED_ARCHETYPE_COUNTS = Object.freeze({
@@ -173,7 +181,98 @@ export function createOfficialProtossUniqueFamilySourceBundleV1(input = {}) {
   return bundle;
 }
 
+function isCurrentKhalaiActivationSource(row) {
+  return row?.definitionId === OFFICIAL_KHALAI_ACTIVATION_CHAIN_DEFINITION_ID
+    && row.recordKey === 'tactical_cards:khalai' && row.sourceKind === 'card_feature'
+    && row.activationKind === 'active' && row.phase === 'movement' && row.sourceText === khalaiActivationText;
+}
+
+export const ARTANIS_COMMANDER_ID = 'unit:artanis/commander-any-phase@1';
+function isCurrentArtanisCommander(row) {
+  return row?.definitionId === ARTANIS_COMMANDER_ID && row.recordKey === 'army_units:artanis'
+    && row.phase === 'any' && row.activationKind === 'passive' && row.sourceKind === 'unit_feature'
+    && row.sourceText === "Treat this Unit’s Supply characteristic as increased by 1 for Controlling and Contesting Mission Markers, completing objectives, and resolving Disengage checks.";
+}
+
+const protossSupportCardText = Object.freeze({
+  "card:nexus/ancient-pride-any@1": "Ancient Pride <Active> <Any Phase>: The active Unit’s first Weapon used gains INSTANT.",
+  "card:warp_gate/warp-in-any@1": "Warp In <Active> <Movement Phase>: The active Ground Unit Deploys from any table edge that is not a player’s Entry Edge. This deployment must end more than 10\" away from any Enemy model. The controlling player cannot use this ability if another Friendly Ground Unit has already Deployed this Round.",
+});
+function isSelectedProtossSource(row) {
+  if (isCurrentArtanisCommander(row) || isCurrentKhalaiActivationSource(row)) return true;
+  return Boolean(row && Object.hasOwn(protossSupportCardText,row.definitionId)
+    && row.recordKey === 'tactical_cards:'+row.definitionId.slice(5).split('/')[0]
+    && row.sourceKind==='card_feature' && row.activationKind==='active'
+    && row.phase===(row.recordKey==='tactical_cards:nexus'?'any':'movement') && row.sourceText===protossSupportCardText[row.definitionId]);
+}
+
+// Preserve the original single-card bundle on historical openings.
+export function createOfficialArtanisCommanderBundleV2(catalogue, withFactionCard) {
+  verifyOfficialAbilityEffectIrCatalogueV1(catalogue);
+  const ids = withFactionCard ? [ARTANIS_COMMANDER_ID, OFFICIAL_KHALAI_ACTIVATION_CHAIN_DEFINITION_ID].sort() : [ARTANIS_COMMANDER_ID];
+  return createSelectedProtossBundle(catalogue, ids, '2.1.0');
+}
+export function createOfficialProtossSupportBundleV2(catalogue, definitionIds) {
+  verifyOfficialAbilityEffectIrCatalogueV1(catalogue);
+  if (!definitionIds.some(id=>Object.hasOwn(protossSupportCardText,id))) fail('PROTOSS_SUPPORT_CARD_REQUIRED');
+  return createSelectedProtossBundle(catalogue, [...definitionIds].sort(), '2.2.0');
+}
+function createSelectedProtossBundle(catalogue, ids, semanticVersion) {
+  const routes = ids.map(id => {
+    const def = catalogue.definitions.find(row => row.definitionId === id);
+    if (!isSelectedProtossSource(def)) fail('PROTOSS_COMMANDER_SOURCE_MISMATCH', id);
+    return compileRoute(def);
+  });
+  const bundle = seal({schema:khalaiBundleSchema,semanticVersion,sourceCatalogueHash:catalogue.catalogueHash,
+    sourceSnapshotHash:catalogue.sourceSnapshotHash,normalizedDatasetHash:catalogue.normalizedDatasetHash,dataVersions:clone(catalogue.dataVersions),
+    routes,routeCount:routes.length,definitionIds:ids,coveredSourceFeatureHashes:routes.map(r=>r.sourceFeatureHash),
+    archetypeCounts:Object.fromEntries(routes.map(r=>[r.effectKind,1])),trainingTruth:false},'bundleHash');
+  verifyOfficialProtossUniqueFamilySourceBundleV1(bundle);
+  return bundle;
+}
+
+export function createOfficialKhalaiActivationSourceBundleV2(catalogue) {
+  verifyOfficialAbilityEffectIrCatalogueV1(catalogue);
+  const definition = catalogue.definitions.find(isCurrentKhalaiActivationSource);
+  if (!definition) fail('PROTOSS_KHALAI_ACTIVATION_SOURCE_UNSUPPORTED');
+  const route = compileRoute(definition);
+  const bundle = seal({ schema: khalaiBundleSchema, semanticVersion: '2.0.0',
+    sourceCatalogueHash: catalogue.catalogueHash, sourceSnapshotHash: catalogue.sourceSnapshotHash,
+    normalizedDatasetHash: catalogue.normalizedDatasetHash, dataVersions: clone(catalogue.dataVersions),
+    routes: [route], routeCount: 1, definitionIds: [route.definitionId],
+    coveredSourceFeatureHashes: [route.sourceFeatureHash],
+    archetypeCounts: { immediate_friendly_activation_chain: 1 }, trainingTruth: false }, 'bundleHash');
+  verifyOfficialProtossUniqueFamilySourceBundleV1(bundle);
+  return bundle;
+}
+
 export function verifyOfficialProtossUniqueFamilySourceBundleV1(bundle) {
+  if (bundle?.schema === khalaiBundleSchema && ['2.1.0','2.2.0'].includes(bundle.semanticVersion)) {
+    const routes=bundle.routes;
+    const additionalCards = bundle.semanticVersion === '2.2.0';
+    if (!Array.isArray(routes) || !(additionalCards ? routes.some(r=>Object.hasOwn(protossSupportCardText,r.definitionId)) : routes.some(isCurrentArtanisCommander))
+      || routes.length>(additionalCards?4:2) || routes.length!==bundle.routeCount
+      || routes.some(r=>!(additionalCards ? isSelectedProtossSource(r) : isCurrentArtanisCommander(r)||isCurrentKhalaiActivationSource(r))
+        || !isDeepStrictEqual(compileRoute({...r, definitionName:r.abilityName}),r))
+      || new Set(routes.map(r=>r.definitionId)).size!==routes.length
+      || !isDeepStrictEqual(routes.map(r=>r.definitionId),bundle.definitionIds)
+      || !isDeepStrictEqual(routes.map(r=>r.sourceFeatureHash),bundle.coveredSourceFeatureHashes)
+      || !isDeepStrictEqual(Object.fromEntries(routes.map(r=>[r.effectKind,1])),bundle.archetypeCounts)
+      || bundle.trainingTruth!==false || bundle.bundleHash!==hashStarcraftTmgContract(without(bundle,['bundleHash']))) fail('PROTOSS_COMMANDER_BUNDLE_INVALID');
+    return true;
+  }
+  if (bundle?.schema === khalaiBundleSchema) {
+    const route = bundle.routes?.[0];
+    if (bundle.semanticVersion !== '2.0.0' || bundle.routeCount !== 1 || bundle.routes?.length !== 1
+      || !isCurrentKhalaiActivationSource(route) || !isDeepStrictEqual(compileRoute({ ...route, definitionName: route.abilityName }), route)
+      || !isDeepStrictEqual(bundle.definitionIds, [route.definitionId])
+      || !isDeepStrictEqual(bundle.coveredSourceFeatureHashes, [route.sourceFeatureHash])
+      || !isDeepStrictEqual(bundle.archetypeCounts, { immediate_friendly_activation_chain: 1 })
+      || bundle.trainingTruth !== false || bundle.bundleHash !== hashStarcraftTmgContract(without(bundle, ['bundleHash']))) {
+      fail('PROTOSS_KHALAI_ACTIVATION_SOURCE_INVALID');
+    }
+    return true;
+  }
   if (!object(bundle) || bundle.schema !== OFFICIAL_PROTOSS_UNIQUE_FAMILY_BUNDLE_SCHEMA
     || bundle.semanticVersion !== OFFICIAL_PROTOSS_UNIQUE_FAMILY_ADAPTER_VERSION
     || bundle.routeCount !== 4 || bundle.routes?.length !== 4
@@ -251,14 +350,6 @@ function priorFriendlyGroundDeploy(state, sideKey, actorId) {
       && entry.pieceId !== actorId && entry.deploymentResolved === true));
   return standard || special || protoss;
 }
-function supplyAvailable(state, sideKey) {
-  const capacity = Number(state.players?.[sideKey]?.supply || 0);
-  const committed = (state.pieces || []).filter((piece) => (
-    piece.sideKey === sideKey && activePiece(piece))).reduce((sum, piece) => (
-    sum + projectOfficialContextualSupplyValueV1({ state, pieceId: piece.id,
-      context: "supply_pool_calculation" }).effectiveSupply), 0);
-  return Math.max(0, capacity - committed);
-}
 function actionDomain(state, route, sideKey, actor, card, targetIds = []) {
   const required = ["activeUnitId"];
   const schema = { type: "object", activeUnitId: { const: actor.id } };
@@ -300,7 +391,12 @@ function actionDomain(state, route, sideKey, actor, card, targetIds = []) {
     trainingTruth: false,
   }, "domainId");
 }
-function domainsForRoute(state, route) {
+function khalaiFinishDomain(state, actor) {
+  return enumerateOfficialSelectedRosterAbilityActionsV1(state, { sideKey: actor.sideKey }).parameterDomains.find(domain =>
+    domain.actionType === 'finish_activation' && domain.pieceId === actor.id);
+}
+
+function domainsForRoute(state, route, currentKhalai) {
   if (route.effectKind === "commander_supply_bonus") return [];
   const domains = [];
   for (const { sideKey, card } of cardInstances(state, route)) {
@@ -311,9 +407,7 @@ function domainsForRoute(state, route) {
         if (actor.sideKey !== sideKey || !livePiece(actor) || actor.isOnField === true
           || actor.isInReserves !== true || actor.activatedPhases?.movement === true
           || !isGround(actor) || priorFriendlyGroundDeploy(state, sideKey, actor.id)) continue;
-        const requested = projectOfficialContextualSupplyValueV1({ state,
-          pieceId: actor.id, context: "supply_pool_calculation" }).effectiveSupply;
-        if (requested > supplyAvailable(state, sideKey)) continue;
+        if (!projectOfficialDeploymentSupplyV1(state, sideKey, actor.id).poolRequirementSatisfied) continue;
         domains.push(actionDomain(state, route, sideKey, actor, card));
       }
       continue;
@@ -322,11 +416,14 @@ function domainsForRoute(state, route) {
     if (!activeTimingAvailable(state, route, sideKey, actor)) continue;
     if (route.effectKind === "immediate_friendly_activation_chain") {
       const window = state.selectedRosterActivationWindow;
-      if (state.phase !== "movement" || window.stage !== route.requiredWindowStage) continue;
-      const targets = state.pieces.filter((target) => target.id !== actor.id
-        && target.sideKey === sideKey && activePiece(target)
-        && target.isStructure !== true && target.activatedPhases?.movement !== true)
-        .map((entry) => entry.id).sort();
+      if (state.phase !== "movement" || (currentKhalai ? !khalaiFinishDomain(state, actor) : window.stage !== route.requiredWindowStage)) continue;
+      const targets = currentKhalai
+        ? listOfficialPhaseActivationUnitIdsV1(state, sideKey).filter(id =>
+          id !== actor.id && state.pieces.find(target => target.id === id).isStructure !== true)
+        : state.pieces.filter((target) => target.id !== actor.id
+          && target.sideKey === sideKey && activePiece(target)
+          && target.isStructure !== true && target.activatedPhases?.movement !== true)
+          .map((entry) => entry.id).sort();
       if (targets.length > 0) domains.push(actionDomain(
         state, route, sideKey, actor, card, targets));
     } else {
@@ -337,7 +434,7 @@ function domainsForRoute(state, route) {
 }
 function enumerate(bundle, state, options = {}) {
   const sideKey = String(options.sideKey || state.activeSideKey || "");
-  const domains = bundle.routes.flatMap((route) => domainsForRoute(state, route))
+  const domains = bundle.routes.flatMap((route) => domainsForRoute(state, route, bundle.schema === khalaiBundleSchema))
     .filter((entry) => !sideKey || entry.sideKey === sideKey)
     .sort((left, right) => left.domainId.localeCompare(right.domainId));
   return freezeDeep({
@@ -422,6 +519,16 @@ function apply(bundle, stateInput, request = {}) {
   if (!isDeepStrictEqual(expected.action, action)) fail("PROTOSS_UNIQUE_ACTION_STALE");
   const route = bundle.routes.find((entry) => entry.definitionId === action.definitionId);
   let state = clone(stateInput);
+  let finishedEvents = [];
+  if (bundle.schema === khalaiBundleSchema) {
+    const source = state.pieces.find(piece => piece.id === action.pieceId);
+    const finishDomain = khalaiFinishDomain(state, source);
+    if (!finishDomain) fail('PROTOSS_KHALAI_ACTIVATION_END_UNAVAILABLE');
+    const finish = instantiateOfficialSelectedRosterAbilityActionV1(state, finishDomain, {});
+    const completed = applyOfficialSelectedRosterAbilityActionV1(state, finish.action, request.options);
+    state = clone(completed.state);
+    finishedEvents = completed.events;
+  }
   if (route.effectKind === "non_entry_edge_ground_deploy") {
     state = clone(applyOfficialNonEntryEdgeDeployPlanV1({ state,
       geometryPlan: action.protossUniquePlan.geometryPlan }));
@@ -431,7 +538,7 @@ function apply(bundle, stateInput, request = {}) {
     entry.cardInstanceId === action.protossUniquePlan.sourceInstanceId));
   if (!card || card.readiness !== "ready") fail("PROTOSS_UNIQUE_SOURCE_CARD_NOT_READY");
   card.readiness = "exhausted";
-  const events = [{ type: "tactical_card_exhausted",
+  const events = [...finishedEvents, { type: "tactical_card_exhausted",
     cardInstanceId: card.cardInstanceId, trainingTruth: false }];
   let effectHash = null;
   if (route.effectKind === "first_weapon_instant_active") {
@@ -493,9 +600,9 @@ export function projectOfficialProtossUniqueFamilyModifiersV1(bundle, state, req
   verifyOfficialProtossUniqueFamilySourceBundleV1(bundle);
   const piece = state.pieces?.find((entry) => entry.id === request.pieceId);
   if (!piece) fail("PROTOSS_UNIQUE_PROJECTION_PIECE_UNKNOWN", String(request.pieceId || ""));
-  const route = routeFor(bundle, "first_weapon_instant_active");
   const effects = (piece.officialAbilityEffects || []).filter((entry) => (
     entry.effectKind === "first_weapon_instant"));
+  const route = effects.length ? routeFor(bundle, "first_weapon_instant_active") : null;
   if (effects.some((effect) => effect.schema
       !== "starcraft_tmg_official_first_weapon_instant_effect_v1"
     || effect.sourceDefinitionId !== route.definitionId
@@ -506,7 +613,8 @@ export function projectOfficialProtossUniqueFamilyModifiersV1(bundle, state, req
     || effect.effectHash !== hashStarcraftTmgContract(without(effect, ["effectHash"])))) {
     fail("PROTOSS_UNIQUE_PROJECTION_EFFECT_INVALID", piece.id);
   }
-  const active = effects.filter((effect) => Number(effect.roundApplied) === Number(state.round));
+  const active = effects.filter(effect => Number(effect.roundApplied) === Number(state.round)
+    && matchesGrantedWeapon(effect, request.weaponName, state.round));
   const weaponContext = request.attackKind === "ranged"
     || request.attackKind === "close_combat";
   const body = { schema: "starcraft_tmg_official_protoss_unique_projection_v1",
@@ -521,11 +629,13 @@ export function projectOfficialProtossUniqueFamilyModifiersV1(bundle, state, req
   return freezeDeep({ ...body, projectionHash: hashStarcraftTmgContract(body) });
 }
 
-export function consumeOfficialProtossUniqueFirstWeaponEffectV1(state, pieceId) {
+export function consumeOfficialProtossUniqueFirstWeaponEffectV1(state, pieceId, weaponName) {
   const piece = state?.pieces?.find((entry) => entry.id === pieceId);
   if (!piece) fail("PROTOSS_UNIQUE_CONSUMER_PIECE_UNKNOWN", String(pieceId || ""));
   const bundle = state.officialProtossUniqueFamilySourceBundle;
   verifyOfficialProtossUniqueFamilySourceBundleV1(bundle);
+  if (!bundle.routes.some(entry => entry.effectKind === "first_weapon_instant_active")
+    && !(piece.officialAbilityEffects || []).some(entry => entry.effectKind === "first_weapon_instant")) return freezeDeep([]);
   const route = routeFor(bundle, "first_weapon_instant_active");
   const consumed = [];
   piece.officialAbilityEffects = (piece.officialAbilityEffects || []).filter((entry) => {
@@ -533,11 +643,15 @@ export function consumeOfficialProtossUniqueFirstWeaponEffectV1(state, pieceId) 
       || entry.sourceDefinitionId !== route.definitionId
       || entry.sourceFeatureHash !== route.sourceFeatureHash
       || Number(entry.roundApplied) !== Number(state.round)
-      || Number(entry.remainingUses) < 1) {
+      || entry.boundWeaponName || Number(entry.remainingUses) < 1) {
       return true;
     }
     consumed.push({ effectHash: entry.effectHash,
       sourceDefinitionId: entry.sourceDefinitionId });
+    if (usesWave3FaqClarifications(state)) {
+      Object.assign(entry, bindGrantedWeapon(entry, weaponName, state.round));
+      return true;
+    }
     return false;
   });
   return freezeDeep(consumed.sort((left, right) => left.effectHash.localeCompare(

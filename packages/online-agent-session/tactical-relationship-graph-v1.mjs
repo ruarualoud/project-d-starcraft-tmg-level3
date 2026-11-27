@@ -1,3 +1,4 @@
+import {projectOfficialMatchHorizonV1,projectOfficialActionHorizonV1} from '../rule-atoms/official-match-horizon-projection-v1.mjs';
 import { hashStarcraftTmgContract } from
   "../authoritative-engine/transition-v1.mjs";
 import {
@@ -195,6 +196,7 @@ function movementProfile(state, piece) {
 }
 
 function phaseActionAvailableThisRound(state, piece, phase) {
+  if (projectOfficialMatchHorizonV1(state).terminal) return false;
   const currentOrder = ROUND_PHASE_ORDER[String(state?.phase || "")];
   const actionOrder = ROUND_PHASE_ORDER[String(phase || "")];
   if (!Number.isInteger(currentOrder) || !Number.isInteger(actionOrder)
@@ -213,6 +215,7 @@ export function projectStarcraftTmgThreatActionWindowV1(state, piece) {
   return freeze({
     round: Number(state?.round) || null,
     currentPhase: String(state?.phase || "unknown"),
+    matchHorizon: projectOfficialMatchHorizonV1(state),
     movementCurrentRoundAvailable,
     assaultCurrentRoundAvailable,
     combatCurrentRoundAvailable,
@@ -695,16 +698,16 @@ function threatProjection(state, attacker, target, minimumDistance,
     currentRoundMoveThenAttackProfileKeys:
       currentRoundMoving.map((entry) => entry.profileKey),
     futureRoundMoveThenAttackProfileKeys:
-      moving.map((entry) => entry.profileKey),
+      actionWindow.matchHorizon.nextRoundAvailable === true ? moving.map((entry) => entry.profileKey) : [],
     actionWindow: {
       ...actionWindow,
       earliestStationaryAttackHorizon: stationary.length === 0
         ? stationaryUnknown.length > 0 ? "unknown_line_of_sight"
           : "not_in_current_spatial_band"
-        : currentRoundStationary.length > 0 ? "current_round" : "next_round",
+        : projectOfficialActionHorizonV1(state, currentRoundStationary.length > 0),
       earliestMoveThenAttackHorizon: moving.length === 0
         ? "not_in_geometric_move_then_attack_band"
-        : currentRoundMoving.length > 0 ? "current_round" : "next_round",
+        : projectOfficialActionHorizonV1(state, currentRoundMoving.length > 0),
     },
     chargeBand: {
       minimumBaseEdgeDistanceMilliInches: minimumDistance,

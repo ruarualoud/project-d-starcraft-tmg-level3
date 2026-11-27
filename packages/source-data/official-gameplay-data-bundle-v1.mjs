@@ -170,10 +170,17 @@ export function createOfficialGameplayDataBundleV1(input = {}) {
   if (missionRecordKey !== HOLD_POSITION_STANDARD_RECORD_KEY) {
     fail("official_gameplay_mission_scope_unsupported", missionRecordKey);
   }
+  // The legacy reserve contract declares its own source dependency. It is
+  // reference data, not a purchased/on-table Marine. A scene without Marines
+  // must still carry the profile needed to verify that contract.
+  const reserveDeployDataBundle = input.reserveDeployData === true
+    ? createOfficialReserveDeployDataBundleV1({ snapshot, dataset }) : null;
   const combatProfileBundle = createOfficialCombatProfileBundleV1({
     snapshot,
     dataset,
-    recordKeys: input.unitRecordKeys,
+    recordKeys: reserveDeployDataBundle && Array.isArray(input.unitRecordKeys)
+      ? [...new Set([...input.unitRecordKeys,reserveDeployDataBundle.unitMovementProfile.recordKey])]
+      : input.unitRecordKeys,
   });
   const missionScoringProfile = createHoldPositionStandardMissionProfile(
     getOfficialCurrentProductRecord(dataset, missionRecordKey),
@@ -185,9 +192,6 @@ export function createOfficialGameplayDataBundleV1(input = {}) {
         dataset,
         recordKeys: input.cleanupCardRecordKeys,
       });
-  const reserveDeployDataBundle = input.reserveDeployData === true
-    ? createOfficialReserveDeployDataBundleV1({ snapshot, dataset })
-    : null;
   const assaultRangedProfileBundle = input.assaultRangedData === true
     ? createOfficialAssaultRangedProfileBundleV1({
         snapshot,

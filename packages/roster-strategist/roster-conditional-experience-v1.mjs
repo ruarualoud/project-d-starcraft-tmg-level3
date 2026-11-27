@@ -1,8 +1,9 @@
 // Conditional observations are durable evidence, not accepted strategy skills.
 // Preserve declared intent separately from the exact executed request/result;
 // neither a successful tool call nor a numeric comparison approves a hypothesis.
-import {rosterWorkflowBindingsMatchV1} from './roster-decision-workflow-v1.mjs';
+import {rosterExperienceApplicabilityV1} from './roster-conditional-experience-bindings-v1.mjs';
 import {projectRosterMeasuredComparisonMeaningV1} from './roster-measured-comparison-v1.mjs';
+import {projectRosterRangedActivationExperienceV1} from './roster-ranged-activation-measurement-v1.mjs';
 
 const copy=structuredClone;
 const prefix='conditional-experience:';
@@ -19,6 +20,7 @@ export function projectRosterConditionalExperienceObservationV1({work,result}){
   const source={workId:work.id,resultRef:work.resultRef,resultPointer:'/value/receipt',
     evidenceId:`tool:${work.id}`,evidencePointer:'/receipt'};
   const comparisonMeaning=projectRosterMeasuredComparisonMeaningV1(receipt);
+  const ranged=projectRosterRangedActivationExperienceV1(value);
   return {
     schema:'roster_conditional_experience_observation_v1',version:1,
     recordKind:'conditional_observation_candidate',
@@ -38,7 +40,7 @@ export function projectRosterConditionalExperienceObservationV1({work,result}){
         visibleTargetModelIds:copy(estimate.visibleTargetModelIds??[])}:null,
       metricValues:receipt.resultStatus==='ok'?scalarEntries(metrics):{},
       metricSourcePointer:estimate?`/value/receipt/estimate${estimate.outcomes?'/outcomes':''}`:null,
-      comparisonMeaning,
+      ...ranged,comparisonMeaning,
       // Large distributions and full Native geometry stay at the immutable
       // source, not duplicated into every model input or experience record.
       assumptions:copy(estimate?.assumptions??[]),uncertainty:copy(estimate?.uncertainty??null),
@@ -77,7 +79,7 @@ export async function queryRosterConditionalExperienceObservationsV1({state,stor
     const record=await store.get(entry.artifactRef);
     if(record?.schema!=='roster_conditional_experience_observation_v1')continue;
     entries.push({evidenceId:entry.id,artifactRef:entry.artifactRef,
-      sourceBindingsMatchCurrent:rosterWorkflowBindingsMatchV1(entry.bindings,state.scope),record});
+      ...rosterExperienceApplicabilityV1(entry.bindings,state.scope),record});
   }
   return {schema:'roster_conditional_experience_query_v1',entries,
     strategyApprovalGranted:false,canAffectRules:false,trainingTruth:false};

@@ -1,11 +1,12 @@
 import { isDeepStrictEqual } from "node:util";
+import {ROSTER_LOSS_WINDOW_CONVENTIONS_V1} from './roster-loss-budget-basis-v1.mjs';
 
 import { hashStarcraftTmgContract } from
   "../authoritative-engine/referee-crypto-v1.mjs";
 
 export const ROSTER_PLAN_CONTRACTS_MODULE =
   "packages/roster-strategist/roster-plan-contracts-v1.mjs";
-export const ROSTER_PLAN_CONTRACTS_VERSION = "1.1.0";
+export const ROSTER_PLAN_CONTRACTS_VERSION = "1.2.0";
 
 export const ROSTER_PLAN_SCHEMA = "starcraft_tmg_roster_plan_v1";
 export const ROSTER_PLAN_PROVENANCE_SCHEMA =
@@ -98,7 +99,7 @@ export const ROSTER_FORMAL_BUDGET_CONTRACT_V1 = (() => {
 const HASH_PATTERN = /^[a-f0-9]{64}$/u;
 const ENGAGEMENT_SCALES = new Set(["Skirmish", "Standard", "Grand Offensive"]);
 const OPPONENT_INFORMATION_BOUNDARIES = new Set([
-  "open_roster", "closed_roster", "unknown",
+  "open_roster", "closed_roster", "unknown", "unknown_roster",
 ]);
 const ROUTE_KINDS = new Set([
   "mission_marker_control", "attrition", "hybrid", "unknown",
@@ -307,6 +308,10 @@ export function verifyRosterScoreRouteV1(value) {
 
 export function createRosterLossResourceBudgetV1(input = {}) {
   if (!object(input)) fail("ROSTER_PLAN_LOSS_BUDGET_INVALID");
+  if(input.lossWindowConvention!=null&&!ROSTER_LOSS_WINDOW_CONVENTIONS_V1.includes(input.lossWindowConvention))
+    fail('ROSTER_PLAN_LOSS_BUDGET_INVALID','lossWindowConvention');
+  if(input.lossConsequencesText!=null&&(typeof input.lossConsequencesText!=='string'||!input.lossConsequencesText.trim()))
+    fail('ROSTER_PLAN_LOSS_BUDGET_INVALID','lossConsequencesText');
   const lossStatus = String(input.lossBudgetStatus || "");
   const entries = (input.plannedLossBudget || []).map((entry) => ({
     resourceKind: nonEmpty(entry?.resourceKind, "ROSTER_PLAN_LOSS_BUDGET_ENTRY_INVALID"),
@@ -333,11 +338,15 @@ export function createRosterLossResourceBudgetV1(input = {}) {
     schema: ROSTER_PLAN_LOSS_RESOURCE_BUDGET_SCHEMA,
     lossBudgetStatus: lossStatus,
     plannedLossBudget: entries,
+    ...(input.lossWindowConvention==null?{}:{lossWindowConvention:input.lossWindowConvention}),
+    ...(input.lossConsequencesText==null?{}:{lossConsequencesText:input.lossConsequencesText}),
     mineralSpendIntent: { status: spendStatus, mineralBudget, plannedMineralSpend: plannedSpend },
     unspentResourceDisposition: "lost",
     trainingTruth: false,
   };
   exactKeys(body, ["schema", "lossBudgetStatus", "plannedLossBudget",
+    ...(input.lossWindowConvention==null?[]:['lossWindowConvention']),
+    ...(input.lossConsequencesText==null?[]:['lossConsequencesText']),
     "mineralSpendIntent", "unspentResourceDisposition", "trainingTruth"],
     "ROSTER_PLAN_LOSS_BUDGET_INVALID");
   return hashed(body, "lossResourceBudgetHash");
@@ -348,6 +357,10 @@ export function verifyRosterLossResourceBudgetV1(value) {
     "lossResourceBudgetHash", "ROSTER_PLAN_LOSS_BUDGET_INVALID");
   declaredOrUnknown(value.lossBudgetStatus, value.plannedLossBudget || [],
     "ROSTER_PLAN_LOSS_BUDGET_INVALID");
+  if(value.lossWindowConvention!=null&&!ROSTER_LOSS_WINDOW_CONVENTIONS_V1.includes(value.lossWindowConvention))
+    fail('ROSTER_PLAN_LOSS_BUDGET_INVALID','lossWindowConvention');
+  if(Object.hasOwn(value,'lossConsequencesText')&&(typeof value.lossConsequencesText!=='string'||!value.lossConsequencesText.trim()))
+    fail('ROSTER_PLAN_LOSS_BUDGET_INVALID','lossConsequencesText');
   if (value.trainingTruth !== false) fail("ROSTER_PLAN_LOSS_BUDGET_INVALID");
   return true;
 }

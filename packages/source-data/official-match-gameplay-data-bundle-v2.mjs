@@ -80,9 +80,16 @@ export function createOfficialMatchGameplayDataBundleV2(input = {}) {
   verifyOfficialMissionDeploymentDraftDataBundleV1(draftBundle);
   const missionEffectCatalogue = createOfficialMissionEffectCatalogueV1({
     missionDeploymentDraftDataBundle: draftBundle,
+    wave3MissionSourceContext: input.wave3MissionSourceContext,
+    includeWave3FireInSky: input.includeWave3FireInSky,
+    includeWave3ArtefactHunt: input.includeWave3ArtefactHunt,
   });
   const missionEffect = getOfficialMissionEffectIrV1(
     missionEffectCatalogue, String(input.missionRecordKey || "").trim());
+  if (input.wave3MissionSourceContext && !missionEffect.source.wave3Gather
+    && !missionEffect.source.wave3FireInSky && !missionEffect.source.wave3ArtefactHunt) {
+    fail("OFFICIAL_MATCH_WAVE3_SOURCE_BINDING_MISSION_MISMATCH");
+  }
   const combatProfileBundle = createOfficialCombatProfileBundleV1({
     snapshot, dataset, recordKeys: input.unitRecordKeys,
   });

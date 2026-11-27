@@ -19,6 +19,8 @@ import { CompetitiveMapConfigurator } from
 import { LearningConsolePanel } from "@/components/battlefield/learning-console-panel";
 import { HostedOpponentOperationsPanel } from
   "@/components/battlefield/hosted-opponent-operations-panel";
+import { ProductMatchLobby } from "@/components/battlefield/product-match-lobby";
+import { ProductRoomProviderPanel } from "@/components/battlefield/product-room-provider-panel";
 import { ScreenContainer } from "@/components/screen-container";
 import { PillTabBar } from "@/components/ui/command-primitives";
 import { useI18n } from "@/lib/i18n";
@@ -63,6 +65,7 @@ function scalar(value: unknown) {
 
 function sharingLinkConfiguration(): SharingLinkConfiguration {
   const environment = process.env.NODE_ENV === "production"
+    && process.env.EXPO_PUBLIC_STARCRAFT_TMG_LOCAL_WEB_EXPORT !== "1"
     ? "production"
     : "development";
   const configured = process.env.EXPO_PUBLIC_STARCRAFT_TMG_WEB_ORIGIN || "";
@@ -107,11 +110,14 @@ export default function MatchScreen() {
   const [notice, setNotice] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [surface, setSurface] = useState<MatchSurface>("battle");
+  const [showLobby, setShowLobby] = useState(false);
   const accessContextRef = useRef({ key: "", generation: 0 });
   const zh = lang === "zh";
 
   const projection = view.roomProjection || {};
   const room = projection.room || {};
+  const battle = projection.state;
+  const finished = battle?.gameOver === true || battle?.terminal === true;
   const viewer = projection.viewer || {};
   const projectedControl = projection.control || {};
   const boundMapSeedId = projection.state?.board?.battlefieldMapManifest
@@ -331,6 +337,13 @@ export default function MatchScreen() {
       </View>
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
+        {(!connection.roomId || showLobby) && <ProductMatchLobby onEntered={() => {
+          setShowLobby(false); setSurface("battle");
+        }} />}
+        {connection.roomId && <Pressable onPress={() => setShowLobby(value => !value)}
+          accessibilityRole="button" testID="product-toggle-lobby">
+          <Text style={styles.headerSub}>{showLobby ? (zh ? "返回当前战桌" : "Back to table") : (zh ? "新建／切换对局" : "New / switch match")}</Text>
+        </Pressable>}
         {connection.readOnly && connection.roomId && (
           <View accessibilityRole="alert" style={styles.warningCard}>
             <Text style={styles.warningTitle}>
@@ -370,11 +383,24 @@ export default function MatchScreen() {
           </View>
         )}
 
-        {surface === "battle" && (
+        {surface === 'battle' && connection.roomId && !showLobby && !projection.state?.board && (
+          <Text style={styles.noticeText}>{zh ? '正在读取战场与席位，请稍候…' : 'Loading battlefield and seat…'}</Text>
+        )}
+        {surface === "battle" && connection.roomId && !showLobby && projection.state?.board && (
           <>
+            {connection.roomId.startsWith('product-') && capabilities.has('apply') &&
+              <ProductRoomProviderPanel key={`${connection.roomId}:${viewer.seatKey}`} />}
+            {finished && <View style={styles.heroCard} testID="product-match-outcome" accessibilityLiveRegion="polite">
+              <Text style={styles.heroTitle}>{battle.winner === 'player1' || battle.winner === 'player2'
+                ? (zh ? (battle.winner === 'player1' ? '玩家一获胜' : '玩家二获胜') : (battle.winner === 'player1' ? 'Player 1 wins' : 'Player 2 wins'))
+                : battle.scores?.player1 === battle.scores?.player2 && Number.isFinite(battle.scores?.player1)
+                  ? (zh ? '平局' : 'Draw') : (zh ? '对局结束' : 'Match finished')}</Text>
+              <Text style={styles.heroBody}>{scalar(battle.scores?.player1)} – {scalar(battle.scores?.player2)}</Text>
+            </View>}
             <AuthoritativeBattleWorkspace onOpenRoomRules={() => setSurface("room")} />
-            <AgentAgentMatchControl />
-            <HostedOpponentOperationsPanel roomId={connection.roomId} />
+            {["agent_vs_agent", "agent_agent_development", "agent_agent_live_evidence"].includes(room.surfaceMode) && <AgentAgentMatchControl />}
+            {["user_vs_agent", "human_agent_development"].includes(room.surfaceMode)
+              && <HostedOpponentOperationsPanel roomId={connection.roomId} />}
           </>
         )}
         {surface === "maps" && (

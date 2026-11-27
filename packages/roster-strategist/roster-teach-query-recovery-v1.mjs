@@ -1,3 +1,4 @@
+import { projectFormationMetricsForDecisionV1 } from "../online-agent-session/formation-decision-facts-v1.mjs";
 // Recover query execution, not strategy. Persist a bounded focused correction
 // dialogue; never restart the entire Teach investigation for argument repair.
 import { hashStarcraftTmgContract as hash } from '../authoritative-engine/referee-crypto-v1.mjs';
@@ -282,7 +283,7 @@ function candidateParameterChoices(failure, inspections) {
         anchor: option.anchor, canonicalParameters: option.canonicalParameters,
         ...(option.canonicalPlacement ? { canonicalPlacement: option.canonicalPlacement,
           staticGeometryProven: option.staticGeometryProven, arrivalOrMovementLegalityProven: false } : {}),
-        tacticalMetrics: option.tacticalMetrics,
+        tacticalMetrics: projectFormationMetricsForDecisionV1(option.tacticalMetrics),
       })), selectionNotMandatory: !geometryRepairWorkflow(failure), originalQueryStillRequiresExecution: true }];
   }).filter(row => row.options.length);
 }

@@ -63,6 +63,7 @@ export function resolveOfficialUnitCardLayoutV1(input = {}) {
     phaseBoxes: structuredClone(profile.phaseBoxes), speed: structuredClone(profile.speed),
     supplyProfile: structuredClone(profile.supplyProfile),
     base: structuredClone(profile.base), combatRange: structuredClone(profile.combatRange),
+    ...(profile.geometryStatus ? { geometryStatus: structuredClone(profile.geometryStatus) } : {}),
     upgradeSide: structuredClone(profile.upgradeSide),
     rulesOwnedLayout: true, clientSuppliedLayoutAccepted: false, trainingTruth: false });
 }

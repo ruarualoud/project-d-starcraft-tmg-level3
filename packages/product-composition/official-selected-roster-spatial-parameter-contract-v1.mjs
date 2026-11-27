@@ -1,6 +1,45 @@
+import { officialSpatialRuleErrorV1 } from '../rule-atoms/official-spatial-proposal-error-v1.mjs';
+
 // Shared by Native placement canonicalization and every agent submission view.
 // This describes transport/identity only; Native still decides path and geometry.
 const KIND='official_selected_roster_spatial_path_v1';
+const gapInputFields = Object.freeze(['gapMouths', 'coherencyGapMouths']);
+
+export function officialGapInputContractV1(state) {
+  return state.officialHostDerivedGapInputs === true ? {hostDerivedFields:gapInputFields} : {};
+}
+
+export function canonicalOfficialGapInputsV1(state, parameters) {
+  if (state.officialHostDerivedGapInputs === true) {
+    const field = gapInputFields.find(key => Object.hasOwn(parameters, key));
+    if (field) throw officialSpatialRuleErrorV1('SELECTED_SPATIAL_GAP_INPUT_HOST_DERIVED', field);
+    return {};
+  }
+  return {gapMouths:structuredClone(parameters.gapMouths || []),
+    coherencyGapMouths:structuredClone(parameters.coherencyGapMouths || [])};
+}
+
+const DELEGATED_MOVEMENT='resolve_khassar_movement';
+
+function record(value) {
+  return value && typeof value === 'object' && !Array.isArray(value) ? value : null;
+}
+
+export function getOfficialDelegatedRosterSpatialDomainV1(domain) {
+  if (domain?.actionType !== DELEGATED_MOVEMENT) return null;
+  const native = record(domain.nativeDomain?.sourceDomain) ?? record(domain.nativeDomain);
+  if (native?.parameterKind !== KIND
+    || !record(native.constraints)
+    || !['move', 'run', 'disengage'].includes(native.actionType)
+    || native.actionType !== domain.constraints?.authorizedActionType
+    || !native.pieceId
+    || native.pieceId !== domain.recipientUnitId
+    || native.pieceId !== domain.constraints?.recipientUnitId
+    || native.sideKey !== domain.sideKey || native.phase !== domain.phase) {
+    return null;
+  }
+  return native;
+}
 const fail=(code,detail='')=>{throw Error(detail?`${code}:${detail}`:code);};
 export function remainingOfficialSelectedRosterSpatialModelIdsV1(domain,leadingModelId,placements){
   if(!Array.isArray(placements)||placements.length!==domain.constraints.modelProfiles.length-1)

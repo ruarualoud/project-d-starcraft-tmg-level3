@@ -1,3 +1,4 @@
+import { projectOfficialUnitRestrictionsV1 } from './official-unit-restrictions-v1.mjs';
 import { hashStarcraftTmgContract } from
   "../authoritative-engine/referee-crypto-v1.mjs";
 import { verifyOfficialHiddenBurrowedDataBundleV1 } from
@@ -158,6 +159,9 @@ export function resolveOfficialBurrowedHiddenLifecycleV1(input = {}) {
   let burrowedAdded = false; let hiddenAdded = false;
   let burrowedRemoved = false; let hiddenRemoved = false;
   if (triggerKind === "gain_burrowed") {
+    if (projectOfficialUnitRestrictionsV1(state, piece.id).cannotGainBurrowed) {
+      fail('UNIT_RESTRICTION_BURROWED_PROHIBITED', piece.id);
+    }
     const beforeBurrowed = hasStatus({ statuses }, "burrowed");
     const beforeHidden = hasStatus({ statuses }, "hidden");
     statuses = addStatus(statuses, "burrowed", input.triggerEventHash);
@@ -255,7 +259,8 @@ export function resolveOfficialHiddenBurrowedAttackDefenseV1(input = {}) {
   ))) fail("HIDDEN_BURROWED_ATTACK_EVENT_ALREADY_RESOLVED");
   const hidden = hasStatus(target, "hidden");
   const burrowed = hasStatus(target, "burrowed");
-  const impactImmune = attackKind === "impact" && hidden;
+  const impactImmune = attackKind === "impact" && (hidden
+    || projectOfficialUnitRestrictionsV1(state, target.id).impactImmune);
   const evadeEligible = attackKind === "targeting_attack" && (hidden || burrowed);
   return result({
     schema: "starcraft_tmg_official_hidden_burrowed_attack_defense_resolution_v1",

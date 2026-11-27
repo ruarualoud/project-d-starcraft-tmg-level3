@@ -9,8 +9,11 @@ import { verifyOfficialDeploymentGeometryDataBundleV1 } from
   "./official-deployment-geometry-data-bundle-v1.mjs";
 import {
   createOfficialModelBaseGeometryDataBundleV1,
+  getOfficialReleaseModelBaseGeometryBundleV2,
   verifyOfficialModelBaseGeometryDataBundleV1,
 } from "./official-model-base-geometry-data-bundle-v1.mjs";
+
+import { assertOfficialReleaseSourceV2 } from "./official-release-context-v2.mjs";
 
 export const OFFICIAL_BALANCED_TERRAIN_RULES_DATA_BUNDLE_SCHEMA =
   "starcraft_tmg_official_balanced_terrain_rules_data_bundle_v1";
@@ -22,6 +25,14 @@ const PART_9_REVIEW_PACKET_HASH =
 const PART_12_REVIEW_PACKET_HASH =
   "adbb3f56aae3c75572a8de3d4d278be9ba83867b64dd0338991f4c10c056c1a3";
 const HASH_PATTERN = /^[a-f0-9]{64}$/u;
+const REVIEWED_RULES = Object.freeze([
+  ["rules_sections:Rj6sMyNODPQ8OHUc9Clp",
+    "8c91884a93418869ca6878fdf0f3868278008728f1d28995f3f6e3bf8e85e282",
+    "3197f311085315cabe06dcda95a0e2ab3a744d7c97571c9df02d27a27186dc2a"],
+  ["rules_sections:gMXfLyHJfnGYKw2rmoPS",
+    "572cb18a86731b32f12d81a26c777f99115a1da4bf57ef73b18215fadd18abc9",
+    "faf1f3771196090c327ead1144f4015bf2d633b6d90ccc83dc62091c5a3e7b38"],
+]);
 
 function fail(code, detail = "") {
   throw new Error(detail ? `${code}:${detail}` : code);
@@ -144,26 +155,57 @@ const PREMADE_MAPS = Object.freeze([
 ]);
 
 export function createOfficialBalancedTerrainRulesDataBundleV1(input = {}) {
-  const dataset = input.dataset;
-  const geometryBundle = input.deploymentGeometryDataBundle;
-  if (!object(dataset) || dataset.datasetHash !== OFFICIAL_DEVELOPMENT_TRANCHE_DATASET_HASH
-    || dataset.sourceSnapshotHash !== OFFICIAL_DEVELOPMENT_TRANCHE_SNAPSHOT_HASH
-    || dataset.repositoryFallbackAllowed !== false) {
+  const { dataset, snapshot, releaseContext, unitRecordKeys,
+    deploymentGeometryDataBundle: geometryBundle } = input;
+  if (!object(dataset) || dataset.repositoryFallbackAllowed !== false) {
     fail("BALANCED_TERRAIN_DATASET_INVALID");
   }
   verifyOfficialDeploymentGeometryDataBundleV1(geometryBundle);
-  if (geometryBundle.normalizedDatasetHash !== dataset.datasetHash) {
+  const binding = geometryBundle.releaseBinding;
+  if (geometryBundle.normalizedDatasetHash !== dataset.datasetHash
+    || geometryBundle.sourceSnapshotHash !== dataset.sourceSnapshotHash) {
     fail("BALANCED_TERRAIN_GEOMETRY_DATA_MISMATCH");
   }
-  const modelBaseBundle = createOfficialModelBaseGeometryDataBundleV1({ dataset });
-  verifyOfficialModelBaseGeometryDataBundleV1(modelBaseBundle);
-  const maximumCurrentBaseDepthMm = Math.max(...modelBaseBundle.profiles.map((entry) => (
-    entry.baseDepthMillimetres
-  )));
+  if (binding) {
+    const manifest = assertOfficialReleaseSourceV2(releaseContext, { dataset, snapshot });
+    if (binding.releaseId !== manifest.releaseId || binding.manifestHash !== manifest.manifestHash
+      || binding.sourceRevisionHash !== manifest.source.sourceRevisionHash) {
+      fail("BALANCED_TERRAIN_GEOMETRY_RELEASE_MISMATCH");
+    }
+    for (const [key, recordHash, payloadHash] of REVIEWED_RULES) {
+      const record = dataset.recordsByKey[key];
+      if (record?.sourceRecordHash !== recordHash || record?.payloadHash !== payloadHash) {
+        fail("BALANCED_TERRAIN_RELEASE_RULES_REVIEW_REQUIRED", key);
+      }
+    }
+  } else if (dataset.datasetHash !== OFFICIAL_DEVELOPMENT_TRANCHE_DATASET_HASH
+    || dataset.sourceSnapshotHash !== OFFICIAL_DEVELOPMENT_TRANCHE_SNAPSHOT_HASH) {
+    fail("BALANCED_TERRAIN_DATASET_INVALID");
+  }
+  const modelBaseBundle = binding ? getOfficialReleaseModelBaseGeometryBundleV2(releaseContext)
+    : createOfficialModelBaseGeometryDataBundleV1({ dataset });
+  if (!binding) verifyOfficialModelBaseGeometryDataBundleV1(modelBaseBundle);
+  let witnessProfiles = modelBaseBundle.profiles;
+  let witnessRecordKeys;
+  if (binding && unitRecordKeys !== undefined) {
+    if (!Array.isArray(unitRecordKeys) || !unitRecordKeys.length
+      || unitRecordKeys.some(key => typeof key !== "string" || !key)) {
+      fail("BALANCED_TERRAIN_ROSTER_GEOMETRY_SCOPE_INVALID");
+    }
+    witnessRecordKeys = [...new Set(unitRecordKeys)].sort();
+    const profilesByRecordKey = new Map(modelBaseBundle.profiles.map(profile => [profile.recordKey, profile]));
+    witnessProfiles = witnessRecordKeys.map(key => {
+      const profile = profilesByRecordKey.get(key);
+      if (!profile) fail("BALANCED_TERRAIN_ROSTER_MODEL_GEOMETRY_UNAVAILABLE", key);
+      return profile;
+    });
+  }
+  const maximumCurrentBaseDepthMm = Math.max(...witnessProfiles.map(profile => profile.baseDepthMillimetres));
   const body = { schema: OFFICIAL_BALANCED_TERRAIN_RULES_DATA_BUNDLE_SCHEMA,
-    sourceLockHash: OFFICIAL_DEVELOPMENT_TRANCHE_SOURCE_LOCK_HASH,
-    sourceSnapshotHash: OFFICIAL_DEVELOPMENT_TRANCHE_SNAPSHOT_HASH,
-    normalizedDatasetHash: OFFICIAL_DEVELOPMENT_TRANCHE_DATASET_HASH,
+    sourceLockHash: geometryBundle.sourceLockHash,
+    sourceSnapshotHash: dataset.sourceSnapshotHash, normalizedDatasetHash: dataset.datasetHash,
+    ...(binding ? { releaseBinding: binding } : {}),
+    ...(witnessRecordKeys ? { manoeuvreWitnessUnitRecordKeys: witnessRecordKeys } : {}),
     coreRulesHash: CORE_RULES_HASH,
     part9ReviewPacketHash: PART_9_REVIEW_PACKET_HASH,
     part12ReviewPacketHash: PART_12_REVIEW_PACKET_HASH,
@@ -205,12 +247,22 @@ export function createOfficialBalancedTerrainRulesDataBundleV1(input = {}) {
 }
 
 export function verifyOfficialBalancedTerrainRulesDataBundleV1(bundle) {
+  const binding = bundle?.releaseBinding;
+  const sourceInvalid = binding
+    ? !binding.releaseId || !HASH_PATTERN.test(binding.manifestHash)
+      || !HASH_PATTERN.test(binding.sourceRevisionHash)
+      || !HASH_PATTERN.test(binding.sourceSnapshotHash)
+      || !HASH_PATTERN.test(binding.normalizedDatasetHash)
+      || binding.sourceRevisionHash !== bundle.sourceLockHash
+      || binding.sourceSnapshotHash !== bundle.sourceSnapshotHash
+      || binding.normalizedDatasetHash !== bundle.normalizedDatasetHash
+    : bundle?.sourceLockHash !== OFFICIAL_DEVELOPMENT_TRANCHE_SOURCE_LOCK_HASH
+      || bundle?.sourceSnapshotHash !== OFFICIAL_DEVELOPMENT_TRANCHE_SNAPSHOT_HASH
+      || bundle?.normalizedDatasetHash !== OFFICIAL_DEVELOPMENT_TRANCHE_DATASET_HASH;
   if (!object(bundle)
     || bundle.schema !== OFFICIAL_BALANCED_TERRAIN_RULES_DATA_BUNDLE_SCHEMA
     || bundle.bundleHash !== hashStarcraftTmgContract(without(bundle, ["bundleHash"]))
-    || bundle.sourceLockHash !== OFFICIAL_DEVELOPMENT_TRANCHE_SOURCE_LOCK_HASH
-    || bundle.sourceSnapshotHash !== OFFICIAL_DEVELOPMENT_TRANCHE_SNAPSHOT_HASH
-    || bundle.normalizedDatasetHash !== OFFICIAL_DEVELOPMENT_TRANCHE_DATASET_HASH
+    || sourceInvalid
     || bundle.coreRulesHash !== CORE_RULES_HASH
     || bundle.part9ReviewPacketHash !== PART_9_REVIEW_PACKET_HASH
     || bundle.part12ReviewPacketHash !== PART_12_REVIEW_PACKET_HASH
@@ -221,6 +273,11 @@ export function verifyOfficialBalancedTerrainRulesDataBundleV1(bundle) {
       !== true
     || bundle.distributionContract?.fireLaneMinimumWidthInches !== 6
     || bundle.distributionContract?.majorStructureMinimumSeparationInches !== 3
+    || (bundle.manoeuvreWitnessUnitRecordKeys !== undefined
+      && (!binding || !Array.isArray(bundle.manoeuvreWitnessUnitRecordKeys)
+        || !bundle.manoeuvreWitnessUnitRecordKeys.length
+        || bundle.manoeuvreWitnessUnitRecordKeys.some(key => typeof key !== "string" || !key)
+        || new Set(bundle.manoeuvreWitnessUnitRecordKeys).size !== bundle.manoeuvreWitnessUnitRecordKeys.length))
     || bundle.sourcePolicy?.refreshDuringDevelopment !== false
     || bundle.sourcePolicy?.repositoryFallbackAllowed !== false
     || bundle.trainingTruth !== false) {

@@ -2,6 +2,21 @@
 // and verified-Apply issue closure. This is not an automatic retry policy:
 // dispatch settlement, credentials, budget and Rules remain separate gates.
 export const STARCRAFT_TMG_RECOVERABLE_PROVIDER_FINDING_CODES_V1 = Object.freeze([
+  // Kimi complete replies can fail locally after ACP settlement. An explicit
+  // later run admits the preserved choice; Live consumes the saved reply by
+  // exact request binding. Fresh failures still block and are not discarded.
+  "KIMI_BATTLE_PROVIDER_FAILED",
+  // ACP may settle a failed turn without a usable reply. The battle adapter
+  // preserves this native code; admit only an explicitly later recovery.
+  // Fresh failures, auth/quota and unknown-dispatch settlement still block.
+  "ROSTER_WORKSPACE_KIMI_TURN_FAILED",
+  // Native Kimi ACP prompt timeout: the adapter retained an incomplete reply
+  // and unknown usage. Admit only the explicitly later run; Live still checks
+  // saved output and requires retryApproved before a new physical request.
+  "ROSTER_WORKSPACE_AMBIGUOUS_DISPATCH_STOP",
+  // Admission is not permission to resend: the durable observer must settle
+  // the exact outstanding dispatch before generate can continue.
+  "LIVE_DECISION_PROVIDER_COMMIT_UNKNOWN",
   "provider_worker_protocol_rejected",
   "provider_worker_failed",
   // The credential worker's result deadline can expire after dispatch even
@@ -20,6 +35,11 @@ export const STARCRAFT_TMG_RECOVERABLE_PROVIDER_FINDING_CODES_V1 = Object.freeze
   // choice. Authentication/payment/rate-limit errors have separate codes and
   // are deliberately excluded; any new rejection in that run still blocks.
   "provider_http_rejected",
+  // Settled server 5xx or a completed empty reply has no usable decision.
+  // Admit only an explicit later run; preserve the unknown bill and old issue.
+  // Any recurrence remains blocking until another authorized recovery.
+  "provider_upstream_failed",
+  "provider_response_empty_content",
   // An unsafe gateway envelope is never consumed as a decision. After a
   // concrete normalization fix, only an explicit later run may retry the
   // saved choice; a fresh occurrence in that run still blocks immediately.
@@ -53,6 +73,15 @@ export const STARCRAFT_TMG_RECOVERABLE_DECISION_FINDING_CODES_V1 = Object.freeze
   "LIVE_DECISION_PLANNER_DID_NOT_CONVERGE",
   "LIVE_DECISION_PROVIDER_OUTPUT_INVALID",
   "LIVE_DECISION_SEMANTIC_CORRECTION_LIMIT_REACHED",
+  // Only an explicit later run after a concrete search/Rules repair may enter.
+  // Live retains the cumulative no-progress count and still refuses unchanged
+  // retries. A new Rules-owned legal domain may resolve the original action;
+  // only its verified Apply closes the historical finding.
+  "LIVE_DECISION_PLACEMENT_SEARCH_DID_NOT_CONVERGE",
+  // The seat projects this semantic reason from the enclosing output-invalid
+  // outcome. It shares explicit-resume admission AND verified-Apply closure;
+  // same-run occurrences still block, and Live owns version-scoped recovery.
+  "PLACEMENT_SEARCH_REPEATED_WITHOUT_NEW_INTENT",
   "LIVE_DECISION_TERMINAL_TOOL_INVALID",
   // A Host-side candidate-classification repair may restore the same frozen
   // LegalSpace. Only an explicit later run may try it; the historical High

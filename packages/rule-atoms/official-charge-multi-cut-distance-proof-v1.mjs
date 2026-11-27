@@ -19,11 +19,10 @@ function disksFor(blockers) {
   }).filter(b => b.radius > 0);
 }
 
-export function evaluateOfficialChargeMultiCutDistanceProofV1({
-  leader, target, blockers, maximum,
+function evaluateEndpointDiskBound({
+  leader, target, blockers, maximum, radius,
 }) {
   const d = Math.hypot(target.x - leader.x, target.y - leader.y);
-  const radius = leader.radiusCeil + target.radiusCeil + 1002;
   if (!(d > radius) || !Number.isSafeInteger(maximum)) return null;
   const ex = (target.x - leader.x) / d, ey = (target.y - leader.y) / d;
   const disks = disksFor(blockers).map(b => ({
@@ -101,4 +100,15 @@ export function evaluateOfficialChargeMultiCutDistanceProofV1({
     cutPlanes: cuts.map(c => ({ advanceMilliInches: c.u,
       conservativeForbiddenNormalIntervals: c.intervals.map(i => [i.left, i.right]) })),
   };
+}
+
+// Same continuous-crossing relaxation, with an explicit enclosing endpoint
+// disk. Used only for complete cell covers; this is never a sampled-path proof.
+export function evaluateOfficialChargeEndpointDiskDistanceProofV1({leader, target, blockers, maximum, radius}) {
+  if (!Number.isFinite(radius) || radius < 0) return null;
+  return evaluateEndpointDiskBound({leader,target,blockers,maximum,radius});
+}
+export function evaluateOfficialChargeMultiCutDistanceProofV1({leader,target,blockers,maximum}) {
+  return evaluateEndpointDiskBound({leader,target,blockers,maximum,
+    radius:leader.radiusCeil + target.radiusCeil + 1002});
 }

@@ -1,3 +1,7 @@
+import { assertOfficialReleaseSourceV2 } from '../source-data/official-release-context-v2.mjs';
+import { requireOfficialReleaseRoomAbilityRuntimeV2 } from './official-release-room-ability-admission-v2.mjs';
+import { inspectOfficialReleaseRoomRosterCoverageV2, prepareOfficialReleaseRoomNativeActionsV2,
+  officialReleaseRosterIncrementOptionsV2 } from './official-release-room-native-actions-v2.mjs';
 import { isDeepStrictEqual } from "node:util";
 import { createOfficialArmyBuilderQueryPortV1 } from
   "../roster-strategist/army-builder-query-port-v1.mjs";
@@ -40,7 +44,7 @@ import { resolveOfficialCompleteArmyCompositionUpgradeAuditV1 } from
   "../rule-atoms/official-unit-composition-upgrade-rules-kernel-v1.mjs";
 import { createOfficialSupplyLossLedgerV1 } from
   "../rule-atoms/official-supply-loss-ledger-v1.mjs";
-import { createOfficialAttackProfileCatalogueV1 } from
+import { createOfficialAttackProfileCatalogueV1, createOfficialAttackProfileCatalogueV3 } from
   "../source-data/official-attack-profile-catalogue-v1.mjs";
 import { createOfficialAttackProfileCatalogueV2 } from
   "../source-data/official-attack-profile-catalogue-v2.mjs";
@@ -60,29 +64,34 @@ import { createOfficialDeploymentGeometryDataBundleV1 } from
   "../source-data/official-deployment-geometry-data-bundle-v1.mjs";
 import { createOfficialGameplayDataBundleV1 } from
   "../source-data/official-gameplay-data-bundle-v1.mjs";
+import { bindOfficialWave3FireDraftProfilesV1, bindOfficialWave3ArtefactDraftProfilesV1 }
+  from "../source-data/official-wave3-mission-source-v1.mjs";
+import { selectOfficialWave3RoomMissionSourceContextV1, verifyOfficialWave3RoomMissionBindingV1 }
+  from "./official-wave3-room-mission-binding-v1.mjs";
+import { prepareOfficialCurrentProductFirstRoundV1 } from "./official-first-round-setup-v1.mjs";
 import { createOfficialMatchGameplayDataBundleV2 } from
   "../source-data/official-match-gameplay-data-bundle-v2.mjs";
 import { createOfficialMissionDeploymentDraftDataBundleV1 } from
   "../source-data/official-mission-deployment-draft-data-bundle-v1.mjs";
-import { createOfficialMissionSetupBindingV1 } from
+import { createOfficialMissionSetupBindingV1, createOfficialMissionSetupBindingV2 } from
   "../source-data/official-mission-setup-binding-v1.mjs";
 import { validateOfficialFactionRequiredTacticalCardGroupsV1 } from
   "./official-faction-army-building-card-requirements-v1.mjs";
 import { createOfficialModelBaseGeometryDataBundleV1,
-  getOfficialModelBaseGeometryProfileV1 } from
+  getOfficialModelBaseGeometryProfileV1, getOfficialReleaseModelBaseGeometryBundleV2 } from
   "../source-data/official-model-base-geometry-data-bundle-v1.mjs";
-import { createOfficialReserveLifecycleDataBundleV1 } from
+import { createOfficialReserveLifecycleDataBundleV1, createOfficialReserveLifecycleDataBundleV2 } from
   "../source-data/official-reserve-lifecycle-data-bundle-v1.mjs";
 import { createOfficialRespawnMorphDataBundleV1,
   verifyOfficialRespawnMorphDataBundleV1 } from
   "../source-data/official-respawn-morph-data-bundle-v1.mjs";
-import { createOfficialRosterDisclosureDataBundleV1 } from
+import { createOfficialRoomRosterDisclosureDataBundleV1 } from
   "../source-data/official-roster-disclosure-data-bundle-v1.mjs";
-import { createOfficialUnitCardSupplyDataBundleV1 } from
+import { createOfficialUnitCardSupplyDataBundleV1, getOfficialReleaseUnitCardSupplyDataBundleV2 } from
   "../source-data/official-unit-card-supply-data-bundle-v1.mjs";
 import { createOfficialSummonDataBundleV1, verifyOfficialSummonDataBundleV1 } from
   "../source-data/official-summon-data-bundle-v1.mjs";
-import { createOfficialTerrainLosDataBundleV1 } from
+import { createOfficialTerrainLosDataBundleV1, createOfficialTerrainLosDataBundleV2 } from
   "../source-data/official-terrain-los-data-bundle-v1.mjs";
 import {
   composeOfficialCurrentProductActionRuntimeV1,
@@ -115,6 +124,7 @@ import { resolveOfficialStarcraft2MapGalleryArtAssetV1 } from
   "./official-starcraft-2-map-gallery-v1.mjs";
 import { createOfficialStandardActionRouteCatalogueV1 } from
   "./official-standard-action-route-catalogue-v1.mjs";
+import { projectOfficialMissionRoundStartStateV13 } from '../rule-atoms/official-mission-round-start-policy-v13.mjs';
 
 export const OFFICIAL_STANDARD_ROOM_FACTORY_SCHEMA =
   "starcraft_tmg_official_standard_room_initial_state_authority_v1";
@@ -167,7 +177,8 @@ function placementHistory(pieces) {
     placedByPlayerId: index % 2 === 0 ? "player1" : "player2" }));
 }
 
-export function createOfficialStandard2000BalancedTerrainPlanV1() {
+export function createOfficialStandard2000BalancedTerrainPlanV1({ minimumManoeuvreWidthInches = 0 } = {}) {
+  const manoeuvreWidthInches = Math.max(100 / 25.4, minimumManoeuvreWidthInches);
   const pieces = [
     terrain("std-grass-sw", 2, "grass", 3, 5, 3, 5),
     terrain("std-grass-se", 2, "grass", 49, 51, 3, 5),
@@ -193,13 +204,13 @@ export function createOfficialStandard2000BalancedTerrainPlanV1() {
     size3PlusAvailable: true,
     quadrantManoeuvreLanes: [
       { quadrant: "south_west", laneId: "std-manoeuvre-sw",
-        start: { x: 8, y: 10 }, end: { x: 20, y: 10 }, widthInches: 100 / 25.4 },
+        start: { x: 8, y: 10 }, end: { x: 20, y: 10 }, widthInches: manoeuvreWidthInches },
       { quadrant: "south_east", laneId: "std-manoeuvre-se",
-        start: { x: 34, y: 10 }, end: { x: 46, y: 10 }, widthInches: 100 / 25.4 },
+        start: { x: 34, y: 10 }, end: { x: 46, y: 10 }, widthInches: manoeuvreWidthInches },
       { quadrant: "north_west", laneId: "std-manoeuvre-nw",
-        start: { x: 8, y: 26 }, end: { x: 20, y: 26 }, widthInches: 100 / 25.4 },
+        start: { x: 8, y: 26 }, end: { x: 20, y: 26 }, widthInches: manoeuvreWidthInches },
       { quadrant: "north_east", laneId: "std-manoeuvre-ne",
-        start: { x: 34, y: 26 }, end: { x: 46, y: 26 }, widthInches: 100 / 25.4 },
+        start: { x: 34, y: 26 }, end: { x: 46, y: 26 }, widthInches: manoeuvreWidthInches },
     ],
     fireLanes: [
       { laneId: "std-fire-west", start: { x: 21, y: 0 },
@@ -404,7 +415,9 @@ export function buildOfficialRoomArmyAuditV1(bundle, sideKey, recipe,
       ||!isDeepStrictEqual(candidate.units,recipe.units))
       fail("STANDARD_ROOM_NATIVE_CANDIDATE_SCOPE_MISMATCH",sideKey);
     const verdict=createOfficialArmyBuilderQueryPortV1({
-      unitCompositionUpgradeDataBundle:bundle}).evaluateRosterCandidate(candidate);
+      unitCompositionUpgradeDataBundle: bundle,
+      releaseContext: configuration.releaseContext,
+    }).evaluateRosterCandidate(candidate);
     if(verdict.status!=="legal")throw Object.assign(
       new Error("STANDARD_ROOM_NATIVE_CANDIDATE_REJECTED"),
       {code:"STANDARD_ROOM_NATIVE_CANDIDATE_REJECTED",detail:verdict});
@@ -512,6 +525,17 @@ export function createOfficialRoomPieceFromRosterUnitV1(dataset,
     String(entry.name || "").normalize("NFC").trim().toLowerCase() === "structure"));
   const printedSize = Number(record.payload.stats?.size);
   const sizeCharacteristic = Number.isFinite(printedSize) ? printedSize : 0;
+  const largeIndex = record.payload.upgrades.findIndex(entry => entry.name === "Large");
+  if (largeIndex >= 0 && !/physical gaps smaller than 3" wide, regardless of its size\./u
+    .test(record.payload.upgrades[largeIndex].description)) {
+    fail("STANDARD_ROOM_LARGE_SOURCE_UNSUPPORTED", record.recordKey);
+  }
+  const largeMovementTrait = largeIndex < 0 ? null : {
+    minimumGapMilliInches: 3000, sourceRecordHash: record.sourceRecordHash, payloadHash: record.payloadHash,
+    sourceFeatureHash: hashStarcraftTmgContract({ recordKey: record.recordKey,
+      sourceRecordHash: record.sourceRecordHash, payloadHash: record.payloadHash,
+      index: largeIndex, feature: record.payload.upgrades[largeIndex] }),
+  };
   const expectedEquipment = deriveOfficialUnitExpectedEquipmentV1({
     rosterDisclosureDataBundle: registryContext.bundle,
     rosterRegistryResult: registryContext.result,
@@ -536,6 +560,7 @@ export function createOfficialRoomPieceFromRosterUnitV1(dataset,
     maxModels: composition.startingModelCount,
     currentSupply: composition.startingSupply,
     sizeCharacteristic,
+    ...(largeMovementTrait ? { officialLargeMovementTrait: largeMovementTrait } : {}),
     destroyedModelIds: [], isOnField: false, isInReserves: true,
     isDestroyed: false, isStructure,
     combatTag: String(record.payload.tags || "").toLowerCase().includes("flying")
@@ -562,6 +587,13 @@ export function createOfficialRoomPieceFromRosterUnitV1(dataset,
       id: modelId, baseShape: geometry.baseShape,
       baseWidthInches: geometry.baseWidthMilliInches / 1000,
       baseDepthInches: geometry.baseDepthMilliInches / 1000,
+      ...(geometry.baseShape === 'orthogonal_cross' ? {
+        baseHorizontalArmDepthInches: geometry.horizontalArmDepthMilliInches / 1000,
+        baseVerticalArmWidthInches: geometry.verticalArmWidthMilliInches / 1000,
+      } : {}),
+      ...(geometry.baseShape === 'measured_contour' ? {
+        baseLocalVerticesMilliInches: clone(geometry.localVerticesMilliInches),
+      } : {}),
       baseRotationDegrees: 0, elevation: "ground_level",
       supportTerrainIds: [], adjacentAccessPointIds: [],
       damage: 0, remainingWounds: Number(record.payload.stats?.hp || 0),
@@ -594,9 +626,35 @@ function versionFor(dataset) {
     .map((entry) => String(entry || "unbound")).join("/");
 }
 
+const WAVE3_FIRE_STANDARD = "faction_cards:mission_fire_in_the_sky";
+const WAVE3_ARTEFACT_STANDARD = "faction_cards:mission_artefact_hunt";
+
 export function createOfficialStandardRoomInitialStateAuthorityV1(input = {}) {
+  return buildOfficialStandardRoom(input);
+}
+
+export function prepareOfficialStandardReleaseOpeningV2(input = {}) {
+  if (!input.releaseContext) fail("STANDARD_ROOM_RELEASE_OPENING_SOURCE_REQUIRED");
+  return buildOfficialStandardRoom(input, opening => prepareOfficialReleaseRoomNativeActionsV2({
+    ...opening, ...officialReleaseRosterIncrementOptionsV2(input.releaseMatchVersion),
+  }));
+}
+
+export function inspectOfficialStandardReleaseOpeningCoverageV2(input = {}) {
+  if (!input.releaseContext) fail("STANDARD_ROOM_RELEASE_OPENING_SOURCE_REQUIRED");
+  return buildOfficialStandardRoom(input, opening => inspectOfficialReleaseRoomRosterCoverageV2({
+    ...opening, releaseMatchVersion: input.releaseMatchVersion,
+  }));
+}
+
+function buildOfficialStandardRoom(input, prepareReleaseOpening) {
+  if (input.prepareFirstRound !== undefined && typeof input.prepareFirstRound !== "boolean") {
+    fail("STANDARD_ROOM_FIRST_ROUND_PREPARATION_INVALID");
+  }
   const dataset = input.dataset;
   const snapshot = input.snapshot;
+  const releaseManifest = input.releaseContext
+    ? assertOfficialReleaseSourceV2(input.releaseContext, { dataset, snapshot }) : null;
   if (!object(dataset) || !object(snapshot)) fail("STANDARD_ROOM_SOURCE_INPUT_REQUIRED");
   const armySpendPolicy = input.armySpendPolicy || "exact_budget";
   if (armySpendPolicy !== "exact_budget"
@@ -609,14 +667,27 @@ export function createOfficialStandardRoomInitialStateAuthorityV1(input = {}) {
   }
   const missionRecordKey = String(input.missionRecordKey || HOLD_POSITION);
   const deploymentRecordKey = String(input.deploymentRecordKey || GAUNTLET);
-  if (missionRecordKey !== HOLD_POSITION) {
+  const missionPolicy = input.missionRoundStartPolicy
+    ? projectOfficialMissionRoundStartStateV13({}, input.missionRoundStartPolicy).officialMissionRoundStartPolicy : null;
+  const fireInTheSky = missionRecordKey === WAVE3_FIRE_STANDARD;
+  const artefactHunt = missionRecordKey === WAVE3_ARTEFACT_STANDARD;
+  const wave3MissionSourceContext = selectOfficialWave3RoomMissionSourceContextV1(input, fireInTheSky || artefactHunt);
+  const wave3Mission = Boolean(wave3MissionSourceContext && (fireInTheSky || artefactHunt));
+  const missionUsesCurrentGameplay = wave3Mission
+    || Boolean(missionPolicy && missionRecordKey === 'faction_cards:mission_supply_drop');
+  if ((wave3MissionSourceContext && !wave3Mission) || (missionRecordKey !== HOLD_POSITION && !missionUsesCurrentGameplay)) {
     fail("STANDARD_ROOM_GAMEPLAY_BUNDLE_MISSION_UNSUPPORTED", missionRecordKey);
   }
-  const rosterBundle = createOfficialRosterDisclosureDataBundleV1({ dataset });
+  const rosterBundle = createOfficialRoomRosterDisclosureDataBundleV1({
+    dataset, snapshot, releaseContext: input.releaseContext,
+  });
+  const releaseGameplay = Boolean(rosterBundle.sourceBinding);
+  const currentMissionData = missionUsesCurrentGameplay || releaseGameplay;
   const compositionBundle = rosterBundle.unitCompositionUpgradeDataBundle;
   const audits = Object.fromEntries(SIDE_KEYS.map((sideKey) => [
     sideKey, buildOfficialRoomArmyAuditV1(compositionBundle, sideKey, recipes[sideKey], {
       dataset, armySpendPolicy,
+      ...(rosterBundle.sourceBinding ? { releaseContext: input.releaseContext } : {}),
     }),
   ]));
   const players = Object.fromEntries(SIDE_KEYS.map((sideKey) => [sideKey, {
@@ -660,11 +731,15 @@ export function createOfficialStandardRoomInitialStateAuthorityV1(input = {}) {
       playerId: entry.playerId, closedListsAgreed: entry.closedListsAgreed,
     })),
   });
-  const draftBundle = createOfficialMissionDeploymentDraftDataBundleV1({ dataset });
+  const baseDraftBundle = createOfficialMissionDeploymentDraftDataBundleV1({
+    dataset, snapshot, releaseContext: input.releaseContext,
+  });
+  const bindWave3Draft = artefactHunt ? bindOfficialWave3ArtefactDraftProfilesV1 : bindOfficialWave3FireDraftProfilesV1;
+  const draftBundle = wave3Mission ? bindWave3Draft(baseDraftBundle, wave3MissionSourceContext) : baseDraftBundle;
   const draft = completeOfficialRoomDraftV1(
     draftBundle, missionRecordKey, deploymentRecordKey);
   const geometryBundle = createOfficialDeploymentGeometryDataBundleV1({
-    dataset, missionDeploymentDraftDataBundle: draftBundle,
+    dataset, snapshot, releaseContext: input.releaseContext, missionDeploymentDraftDataBundle: draftBundle,
   });
   const geometryBinding = createOfficialDeploymentGeometryBindingV1({
     deploymentGeometryDataBundle: geometryBundle,
@@ -673,8 +748,15 @@ export function createOfficialStandardRoomInitialStateAuthorityV1(input = {}) {
   });
   const balancedTerrainRulesDataBundle =
     createOfficialBalancedTerrainRulesDataBundleV1({
-      dataset, deploymentGeometryDataBundle: geometryBundle,
+      dataset, snapshot, releaseContext: input.releaseContext, deploymentGeometryDataBundle: geometryBundle,
+      unitRecordKeys: SIDE_KEYS.flatMap(sideKey => recipes[sideKey].units.map(unit => unit.recordKey)),
     });
+  const modelGeometryBundle = rosterBundle.sourceBinding
+    ? getOfficialReleaseModelBaseGeometryBundleV2(input.releaseContext)
+    : createOfficialModelBaseGeometryDataBundleV1({ dataset });
+  const terrainLosDataBundle = rosterBundle.sourceBinding
+    ? createOfficialTerrainLosDataBundleV2({ context: input.releaseContext })
+    : createOfficialTerrainLosDataBundleV1({ dataset });
   const requestedMapConfiguration = object(input.mapConfiguration)
     ? clone(input.mapConfiguration) : null;
   // Public native setup and internal frozen setup converge before the same
@@ -744,7 +826,7 @@ export function createOfficialStandardRoomInitialStateAuthorityV1(input = {}) {
           compilation: competitiveMapCompilation,
           roomId,
           semanticTerrain,
-          dataset,
+          dataset, modelGeometryBundle, terrainLosDataBundle,
           participantIds: [...SIDE_KEYS],
           deploymentGeometryBinding: geometryBinding,
           deploymentGeometryDataBundle: geometryBundle,
@@ -768,7 +850,9 @@ export function createOfficialStandardRoomInitialStateAuthorityV1(input = {}) {
     }
   }
   const terrainPlan = clone(competitiveMapRoomFreeze?.setupPlan
-    || input.terrainPlan || createOfficialStandard2000BalancedTerrainPlanV1());
+    || input.terrainPlan || createOfficialStandard2000BalancedTerrainPlanV1({
+      minimumManoeuvreWidthInches: balancedTerrainRulesDataBundle.distributionContract.manoeuvreWitnessMinimumWidthInches,
+    }));
   const terrainArtifacts = semanticRoomFreezeResult?.terrainArtifacts
     || certifyOfficialBalancedTerrainSetupV1({
       deploymentGeometryBinding: geometryBinding,
@@ -826,41 +910,44 @@ export function createOfficialStandardRoomInitialStateAuthorityV1(input = {}) {
     entry.recordType === "unit"
       && entry.authorityDisposition === "official_current_product_candidate"
   )).map((entry) => entry.recordKey).sort((left, right) => left.localeCompare(right));
-  const gameplayBundle = createOfficialGameplayDataBundleV1({
+  const currentProductGameplayBundle = createOfficialMatchGameplayDataBundleV2({
+    snapshot, dataset, missionDeploymentDraftDataBundle: draftBundle,
+    missionRecordKey, unitRecordKeys: currentProductUnitRecordKeys, wave3MissionSourceContext,
+    includeWave3FireInSky: fireInTheSky, includeWave3ArtefactHunt: artefactHunt,
+  });
+  const gameplayBundle = currentMissionData ? currentProductGameplayBundle : createOfficialGameplayDataBundleV1({
     snapshot, dataset,
     unitRecordKeys: [...new Set(SIDE_KEYS.flatMap((sideKey) => (
       recipes[sideKey].units.map((entry) => entry.recordKey))))],
-    missionRecordKey,
-    reserveDeployData: true,
+    missionRecordKey, reserveDeployData: true,
   });
-  const currentProductGameplayBundle = createOfficialMatchGameplayDataBundleV2({
-    snapshot, dataset, missionDeploymentDraftDataBundle: draftBundle,
-    missionRecordKey, unitRecordKeys: currentProductUnitRecordKeys,
-  });
-  const legacyMissionBinding = createOfficialMissionSetupBindingV1({
+  const bindMission = currentMissionData ? createOfficialMissionSetupBindingV2 : createOfficialMissionSetupBindingV1;
+  const legacyMissionBinding = bindMission({
     gameplayDataBundle: gameplayBundle,
     missionDraftReceiptHash: draft.draftBinding.missionDraftReceiptHash,
     deploymentDraftReceiptHash: draft.draftBinding.deploymentDraftReceiptHash,
     seatColorAssignment: draft.colourByPlayer,
   });
-  const modelGeometryBundle = createOfficialModelBaseGeometryDataBundleV1({ dataset });
-  const attackProfileCatalogue = createOfficialAttackProfileCatalogueV1({
-    snapshot, dataset, recordKeys: currentProductUnitRecordKeys,
-  });
+  const attackProfileCatalogue = rosterBundle.sourceBinding
+    ? createOfficialAttackProfileCatalogueV3({ context: input.releaseContext, recordKeys: currentProductUnitRecordKeys })
+    : createOfficialAttackProfileCatalogueV1({ snapshot, dataset, recordKeys: currentProductUnitRecordKeys });
   const attackProfileCatalogueV2 = createOfficialAttackProfileCatalogueV2({
     previousCatalogue: attackProfileCatalogue,
   });
-  const terrainLosDataBundle = createOfficialTerrainLosDataBundleV1({ dataset });
   const terrainElevationAgreement = createOfficialTerrainElevationAgreementV1({
     supportRelations: [],
   });
-  const unitSupplyBundle = createOfficialUnitCardSupplyDataBundleV1({ dataset });
-  const cardBuildPaymentDataBundle = createOfficialCardBuildPaymentDataBundleV1({ dataset });
-  const summonDataBundle = createOfficialSummonDataBundleV1({ dataset });
-  const respawnMorphDataBundle = createOfficialRespawnMorphDataBundleV1({ dataset });
+  const unitSupplyBundle = rosterBundle.sourceBinding
+    ? getOfficialReleaseUnitCardSupplyDataBundleV2(input.releaseContext)
+    : createOfficialUnitCardSupplyDataBundleV1({ dataset });
+  const cardBuildPaymentDataBundle = rosterBundle.sourceBinding
+    ? compositionBundle.armyResourceBudgetDataBundle.factionArmyEligibilityDataBundle.cardDataBundle
+    : createOfficialCardBuildPaymentDataBundleV1({ dataset });
+  const summonDataBundle = createOfficialSummonDataBundleV1({ dataset, snapshot, releaseContext: input.releaseContext });
+  const respawnMorphDataBundle = createOfficialRespawnMorphDataBundleV1({ dataset, snapshot, releaseContext: input.releaseContext });
   const battlefieldTokenMarkerRulesDataBundle =
     createOfficialBattlefieldTokenMarkerRulesDataBundleV1({
-      dataset, deploymentGeometryDataBundle: geometryBundle,
+      dataset, snapshot, releaseContext: input.releaseContext, deploymentGeometryDataBundle: geometryBundle,
     });
   const battlefieldTokenMarkerRegistry = createOfficialBattlefieldTokenMarkerRegistryV1({
     battlefieldTokenMarkerRulesDataBundle,
@@ -868,7 +955,8 @@ export function createOfficialStandardRoomInitialStateAuthorityV1(input = {}) {
   });
   const battlefieldAssetComponentProfile =
     createOfficialBattlefieldAssetComponentProfileV1();
-  const reserveLifecycleBundle = createOfficialReserveLifecycleDataBundleV1({
+  const createReserveBundle = currentMissionData ? createOfficialReserveLifecycleDataBundleV2 : createOfficialReserveLifecycleDataBundleV1;
+  const reserveLifecycleBundle = createReserveBundle({
     dataset, gameplayDataBundle: gameplayBundle,
   });
   const registryContext = { bundle: rosterBundle, result: registry };
@@ -878,6 +966,7 @@ export function createOfficialStandardRoomInitialStateAuthorityV1(input = {}) {
     sourceRefreshPerformed: false, repositoryFallbackUsed: false,
     rulesTruth: "official_standard_2000_room_server_composition",
     round: 1, phase: "setup", stage: "army_in_reserves",
+    ...(missionPolicy ? { officialMissionRoundStartPolicy: clone(missionPolicy) } : {}),
     activeSideKey: "player1", firstPlayerSideKey: "player1",
     firstPassSideByPhase: {}, phaseFirstActorByRound: {},
     players, participantIds: [...SIDE_KEYS], teamGame: false,
@@ -1001,7 +1090,8 @@ export function createOfficialStandardRoomInitialStateAuthorityV1(input = {}) {
     eligibleForTraining: false, trainingTruth: false,
   };
   const missionRuntime = createOfficialMissionRuntimeV2({
-    missionEffectCatalogue: currentProductGameplayBundle.missionEffectCatalogue,
+    missionEffectCatalogue: currentProductGameplayBundle.missionEffectCatalogue, wave3MissionSourceContext,
+    artefactHuntMissionRecordKey: artefactHunt ? missionRecordKey : null,
   });
   state.officialMissionRuntimeDescriptor = missionRuntime.descriptor;
   state.supplyLossLedger = createOfficialSupplyLossLedgerV1({
@@ -1029,6 +1119,14 @@ export function createOfficialStandardRoomInitialStateAuthorityV1(input = {}) {
   state.officialActionRouteCatalogue = createOfficialStandardActionRouteCatalogueV1({
     dataset, state,
   });
+  if (rosterBundle.sourceBinding) {
+    if (prepareReleaseOpening) {
+      return prepareReleaseOpening({ context: input.releaseContext,
+        state: { ...state, officialMissionEffectCatalogue: currentProductGameplayBundle.missionEffectCatalogue } });
+    }
+    requireOfficialReleaseRoomAbilityRuntimeV2({ context: input.releaseContext, state });
+  }
+  if (prepareReleaseOpening) fail("STANDARD_ROOM_RELEASE_OPENING_SOURCE_REQUIRED");
   const actionRuntimeComposition = composeOfficialCurrentProductActionRuntimeV1({
     dataset, state,
   });
@@ -1046,13 +1144,20 @@ export function createOfficialStandardRoomInitialStateAuthorityV1(input = {}) {
         battlefieldMapManifest,
         competitiveMapRoomFreeze } },
   };
+  if (input.prepareFirstRound === true) state = prepareOfficialCurrentProductFirstRoundV1(state);
   const authorityBody = {
+    ...(releaseManifest ? { releaseId: releaseManifest.releaseId, releaseManifestHash: releaseManifest.manifestHash } : {}),
     schema: OFFICIAL_STANDARD_ROOM_FACTORY_SCHEMA,
-    version: armySpendPolicy === OFFICIAL_STANDARD_ROOM_UNSPENT_LOST_POLICY
+    version: currentMissionData ? '3.0.0' : armySpendPolicy === OFFICIAL_STANDARD_ROOM_UNSPENT_LOST_POLICY
       ? OFFICIAL_STANDARD_ROOM_UNSPENT_LOST_VERSION
       : OFFICIAL_STANDARD_ROOM_FACTORY_VERSION,
     source: "server_factory",
-    setupId: String(input.setupId || "official-standard-2000-hold-gauntlet-v1"),
+    setupId: String(input.setupId || (wave3Mission ? 'official-standard-2000-'
+      + (artefactHunt ? 'artefact-hunt' : 'fire-in-the-sky') + '-v1'
+      : releaseGameplay && missionRecordKey === HOLD_POSITION
+        ? 'official-standard-2000-hold-gauntlet-release-v2'
+        : currentMissionData ? 'official-standard-2000-supply-drop-gauntlet-v2'
+          : "official-standard-2000-hold-gauntlet-v1")),
     state, dataVersion: versionFor(dataset), dependencies,
     serverSeatPlan: clone(input.serverSeatPlan || [
       { label: "host", seatKey: "player1", roleMode: "supervisor",
@@ -1080,6 +1185,9 @@ export function createOfficialStandardRoomInitialStateAuthorityV1(input = {}) {
         currentProductGameplayBundle.missionEffectCatalogue.catalogueHash,
       rosterVisibility: visibility.rosterVisibility,
       selectedMissionRecordKey: missionRecordKey,
+      ...(draftBundle.wave3FireInSky ? { wave3FireInSky: draftBundle.wave3FireInSky } : {}),
+      ...(draftBundle.wave3ArtefactHunt ? { wave3ArtefactHunt: draftBundle.wave3ArtefactHunt } : {}),
+      ...(input.prepareFirstRound === true ? { firstRoundPrepared: true } : {}),
       selectedDeploymentRecordKey: deploymentRecordKey,
       sourceSnapshotHash: dataset.sourceSnapshotHash,
       normalizedDatasetHash: dataset.datasetHash,
@@ -1119,7 +1227,41 @@ export function createOfficialStandardRoomInitialStateAuthorityV1(input = {}) {
 export function verifyOfficialStandardRoomInitialStateAuthorityV1(authority) {
   const state = authority?.state;
   const evidence = authority?.compositionEvidence;
-  const unspentLost = authority?.version === OFFICIAL_STANDARD_ROOM_UNSPENT_LOST_VERSION;
+  const wave3MissionKey = evidence?.wave3ArtefactHunt ? WAVE3_ARTEFACT_STANDARD
+    : evidence?.wave3FireInSky ? WAVE3_FIRE_STANDARD : null;
+  const draftRelease = state?.officialMissionDeploymentDraftDataBundle?.releaseBinding;
+  const disclosureRelease = state?.officialRosterDisclosureDataBundle?.sourceBinding;
+  const releasedHoldPosition = Boolean(draftRelease && disclosureRelease
+    && draftRelease.releaseId === authority?.releaseId
+    && draftRelease.manifestHash === authority?.releaseManifestHash
+    && disclosureRelease.releaseId === draftRelease.releaseId
+    && disclosureRelease.normalizedDatasetHash === draftRelease.normalizedDatasetHash
+    && disclosureRelease.sourceSnapshotHash === draftRelease.sourceSnapshotHash
+    && state?.mission?.recordKey === HOLD_POSITION);
+  const currentMissionData = authority?.version === '3.0.0'
+    && (wave3MissionKey ? state?.mission?.recordKey === wave3MissionKey
+      : releasedHoldPosition || (state?.officialMissionRoundStartPolicy !== undefined
+        && state?.mission?.recordKey === 'faction_cards:mission_supply_drop'));
+  if (currentMissionData) {
+    if (state.officialMissionRoundStartPolicy) projectOfficialMissionRoundStartStateV13({}, state.officialMissionRoundStartPolicy);
+    if (wave3MissionKey) verifyOfficialWave3RoomMissionBindingV1(state, evidence, wave3MissionKey);
+    const gameplay = state.officialGameplayDataBundle;
+    const expectedSetup = createOfficialMissionSetupBindingV2({ gameplayDataBundle: gameplay,
+      missionDraftReceiptHash: state.officialMissionSetupBinding?.missionDraftReceiptHash,
+      deploymentDraftReceiptHash: state.officialMissionSetupBinding?.deploymentDraftReceiptHash,
+      seatColorAssignment: state.officialMissionSetupBinding?.seatColorAssignment });
+    const expectedReserve = createOfficialReserveLifecycleDataBundleV2({ gameplayDataBundle: gameplay });
+    if (gameplay.missionScoringProfile.recordKey !== state.mission.recordKey
+      || state.officialCurrentProductGameplayDataBundle?.gameplayDataBundleHash !== gameplay.gameplayDataBundleHash
+      || state.officialMissionSetupBinding?.missionSetupBindingHash !== expectedSetup.missionSetupBindingHash
+      || state.officialReserveLifecycleDataBundle?.bundleHash !== expectedReserve.bundleHash
+      || state.officialMissionRuntimeState?.missionRecordKey !== state.mission.recordKey
+      || evidence?.selectedMissionRecordKey !== state.mission.recordKey) {
+      fail('STANDARD_ROOM_CURRENT_MISSION_BINDING_INVALID');
+    }
+  }
+  const unspentLost = authority?.version === OFFICIAL_STANDARD_ROOM_UNSPENT_LOST_VERSION
+    || (currentMissionData && evidence?.armySpendPolicy === OFFICIAL_STANDARD_ROOM_UNSPENT_LOST_POLICY);
   const audits = state?.armyCompositionUpgradeAuditsBySide;
   const auditedUnits = SIDE_KEYS.flatMap((sideKey) => audits?.[sideKey]?.units || []);
   const auditedUnitIds = auditedUnits.map((unit) => unit.unitInstanceId);
@@ -1140,10 +1282,13 @@ export function verifyOfficialStandardRoomInitialStateAuthorityV1(authority) {
       === true;
   if (!object(authority)
     || authority.schema !== OFFICIAL_STANDARD_ROOM_FACTORY_SCHEMA
-    || (!unspentLost && authority.version !== OFFICIAL_STANDARD_ROOM_FACTORY_VERSION)
+    || (!currentMissionData && !unspentLost && authority.version !== OFFICIAL_STANDARD_ROOM_FACTORY_VERSION)
     || authority.source !== "server_factory"
     || authority.receiptHash !== hashStarcraftTmgContract(
       without(authority, ["receiptHash"]))
+    || (evidence?.firstRoundPrepared === true && (state?.phase !== "start_of_round"
+      || state.stage !== "mission_start_of_round" || state.round !== 1
+      || state.activeSideKey !== state.firstPlayerSideKey))
     || state?.engagementScale !== "Standard"
     || state?.board?.widthInches !== 54 || state?.board?.heightInches !== 36
     || (unspentLost

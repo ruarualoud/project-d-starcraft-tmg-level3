@@ -145,7 +145,7 @@ function upgradeRows(piece) {
     ...stringRows(piece.selectedUpgradeNames),
     ...rows(piece.selectedUpgrades).map((entry) => text(entry.name)).filter(Boolean),
   ]);
-  return rows(piece.upgrades).map((upgrade, index) => ({
+  const listed = rows(piece.upgrades).map((upgrade, index) => ({
     id: text(upgrade.id) || `${text(piece.id) || "piece"}:upgrade:${index + 1}`,
     name: text(upgrade.name) || `Upgrade ${index + 1}`,
     selected: selectedNames.has(text(upgrade.name)),
@@ -154,6 +154,13 @@ function upgradeRows(piece) {
     specialist: upgrade.specialist === true || text(upgrade.compositionKind) === "specialist",
     description: text(upgrade.description ?? upgrade.text ?? upgrade.rulesText) || null,
   }));
+  for (const name of selectedNames) {
+    if (!listed.some(entry => entry.name === name)) listed.push({
+      id: `${text(piece.id)}:installed:${name}`, name, selected: true,
+      costSmall: null, costLarge: null, specialist: null, description: null,
+    });
+  }
+  return listed;
 }
 
 function modelRows(piece) {
@@ -195,6 +202,10 @@ function unitRows(state, source = {}) {
     const models = modelRows({ ...piece, id });
     const combatProfile = officialCombatProfile(piece, source);
     const movementProfile = officialMovementProfile(piece, source);
+    const baseProfile = rows(source.modelBaseGeometryBundle?.profiles)
+      .find(entry => entry.recordKey === piece.officialUnitRecordKey);
+    const ownAudit = piece.sideKey === source.viewerSideKey
+      ? rows(source.ownUnitAudits).find(entry => entry.unitInstanceId === id) : null;
     const officialStats = combatProfile ? {
       hp: number(combatProfile.hitPoints),
       shield: number(combatProfile.shield) ?? 0,
@@ -223,18 +234,19 @@ function unitRows(state, source = {}) {
       sideKey: text(piece.sideKey ?? piece.controllerSideKey) || "unknown_side",
       faction: text(piece.faction ?? combatProfile?.faction) || null,
       unitType: text(piece.unitType) || null,
-      profileSize: text(piece.profileSize) || null,
+      profileSize: text(piece.profileSize ?? piece.compositionKind) || null,
       armySlotType: text(piece.armySlotType) || null,
       base: {
-        shape: text(piece.baseShape) || null,
-        widthMm: number(piece.baseWidthMm ?? piece.baseMm),
-        depthMm: number(piece.baseDepthMm ?? piece.baseMm),
-        source: text(piece.baseSource) || null,
+        shape: text(piece.baseShape ?? baseProfile?.baseShape) || null,
+        widthMm: number(piece.baseWidthMm ?? piece.baseMm ?? baseProfile?.baseWidthMillimetres),
+        depthMm: number(piece.baseDepthMm ?? piece.baseMm ?? baseProfile?.baseDepthMillimetres),
+        source: text(piece.baseSource) || (baseProfile ? "official_model_base_geometry" : null),
       },
       currentModels,
       maxModels: Math.max(currentModels, Math.trunc(number(piece.maxModels) ?? currentModels)),
       currentSupply: number(piece.currentSupply ?? piece.supply),
-      mineralCost: number(piece.mineralCost ?? piece.cost),
+      mineralCost: number(piece.mineralCost ?? piece.cost ?? (ownAudit
+        ? ownAudit.unitCompositionResult.mineralCost + ownAudit.mineralCost : undefined)),
       location,
       damage,
       hpPerModel,
@@ -261,9 +273,10 @@ function unitRows(state, source = {}) {
 
 function scenarioView(state) {
   const board = object(state.board) ? state.board : {};
-  const mission = object(state.selectedMission) ? state.selectedMission
+  const mission = object(state.selectedMission) && Object.keys(state.selectedMission).length ? state.selectedMission
     : object(state.mission) ? state.mission : null;
-  const deployment = object(state.selectedDeployment) ? state.selectedDeployment : null;
+  const deployment = object(state.selectedDeployment) && Object.keys(state.selectedDeployment).length
+    ? state.selectedDeployment : null;
   return {
     mission: mission ? clone(mission) : null,
     deployment: deployment ? clone(deployment) : {
@@ -344,6 +357,7 @@ function snapshotCore(input) {
     schemaVersion: STARCRAFT_TMG_BATTLE_WORKBENCH_VERSION,
     roomId: text(room.roomId) || null,
     matchBindingHash: text(matchBinding.bindingHash ?? room.matchBindingHash) || null,
+    ...(matchBinding.releaseBinding ? { releaseBinding: { ...matchBinding.releaseBinding } } : {}),
     stateRevision: Number.isSafeInteger(room.stateRevision) ? room.stateRevision : null,
     stateHash: text(room.stateHash) || null,
     viewerSideKey: text(projection.viewer?.seatKey) || null,
@@ -410,6 +424,9 @@ export function isStarcraftTmgBattleWorkbenchSnapshotV1(value, expected = {}) {
   if (hashStarcraftTmgClientContract(core) !== snapshotHash) return false;
   if (expected.roomId && value.roomId !== expected.roomId) return false;
   if (expected.matchBindingHash && value.matchBindingHash !== expected.matchBindingHash) return false;
+  if (expected.viewerSideKey && value.viewerSideKey !== expected.viewerSideKey) return false;
+  if (Object.hasOwn(expected, "releaseBinding") &&
+    hashStarcraftTmgClientContract(value.releaseBinding ?? null) !== hashStarcraftTmgClientContract(expected.releaseBinding ?? null)) return false;
   if (Number.isSafeInteger(expected.stateRevision)
     && value.stateRevision !== expected.stateRevision) return false;
   if (expected.stateHash && value.stateHash !== expected.stateHash) return false;

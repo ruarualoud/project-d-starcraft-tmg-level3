@@ -74,6 +74,11 @@ export function routeOfficialCurrentProductStrategySkillsV1(input = {}) {
     entry.skill.skillId,
     entry,
   ]));
+  // Base route stays mandatory. Add only the explicitly supplied, applicable
+  // procedural candidates; no registry/global lookup or opponent assets.
+  selected.push(...selectPostgameProceduralEntriesV1(loadedEntries, ownFactionRecordKey, opponentFactionRecordKey)
+    .filter(e => manifest.entries.some(m => m.skillId === e.skill.skillId && m.skillHash === e.skill.hash))
+    .map(e => ({ ...e, skillId: e.skill.skillId, skillHash: e.skill.hash })));
   const skillRefs = selected.map((entry) => refFor(entry, loadedById));
   const skillEntries = selected.map((entry) => loadedById.get(entry.skillId));
   return Object.freeze({
@@ -90,3 +95,5 @@ export function routeOfficialCurrentProductStrategySkillsV1(input = {}) {
     trainingTruth: false,
   });
 }
+import { selectPostgameProceduralEntriesV1 } from './postgame-procedural-skill-v1.mjs';
+

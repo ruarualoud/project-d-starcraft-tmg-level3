@@ -12,7 +12,7 @@ export async function projectRosterComparisonObservationSourcesV1({inputs,state,
     const number=state.evidence.findIndex(e=>e.id===ref.id&&e.artifactRef===ref.artifactRef)+1;
     if(!number)continue;
     const source=state.evidence[number-1],saved=await readArtifact(source.artifactRef),body=saved.value??saved;
-    if(!['threat_exchange','probability'].includes(body.operation)||!body.receipt)continue;
+    if(!['threat_exchange','probability','native_action'].includes(body.operation)||!body.receipt)continue;
     const origin=body.experimentOrigin,comparison=origin?.comparisonBinding;
     const estimates=body.receipt.exchange?.attackEstimates??body.receipt.queryReceipt?.result?.attackEstimates??[];
     entries.push({evidenceNumber:number,evidenceId:source.id,artifactRef:source.artifactRef,
@@ -25,11 +25,23 @@ export async function projectRosterComparisonObservationSourcesV1({inputs,state,
       declaredParticipants:structuredClone(origin?.participantUnitIds??[]),
       submittedQuery:structuredClone(body.submittedArguments??body.request??null),
       observedWeapons:[...new Set(estimates.map(e=>e.weaponName).filter(Boolean))],
+      configurationCoverage:{designOwnedParticipantsDeclared:comparison?.participantContractVersion===2,
+        originalDeclaredSelections:structuredClone(origin?.participantConfigurations??null),
+        designControlledSelections:structuredClone(comparison?.controlledParticipantConfigurations??null),
+        legacyMissingDeclarationIsNotAMatch:true},
+      nativeObservation:body.operation==='native_action'?{
+        actionType:body.receipt.nativeAction?.actionType??null,
+        actorUnitId:body.receipt.nativeAction?.pieceId??null,
+        events:structuredClone(body.receipt.nativeEvents??[]),
+        conditionalOnOutcome:body.receipt.conditionalOnOutcome??null,
+        outcomeProbability:body.receipt.outcomeProbability??null,
+        read:{evidenceNumber:number,pointer:'/receipt'},
+      }:null,
       declaredOriginIsNotNativeConfigurationProof:true,
       read:{evidenceNumber:number,pointer:'/experimentOrigin'}});
   }
-  return {version:1,entries,
-    instruction:'These are exact immutable ORIGINAL observation identities, not labels from the new design. sameCommittedArmy=false does not make a historical measurement false; it means it is not automatically a measurement of the current army. Original armDescription is its declared old design, observedWeapons comes from the actual saved estimate; neither can be renamed by a new Plan. For each cited observation, explicitly assess whether it is historical context or a valid measurement of a declared new arm, and why configuration AND relevant controlled conditions match. Use the current selected configuration and exact source, not the new author assertion that an old number is the current baseline. If equivalence is not established, keep it historical and require the meaningful local new observation, not a full match. No host-selected winner, inferred damage or automatic replay.'};
+  return {version:1,nativeActionOriginVersion:1,entries,
+    instruction:'These are exact immutable ORIGINAL observation identities, not labels from the new design. sameCommittedArmy=false does not make a historical measurement false; it means it is not automatically a measurement of the current army. Original armDescription is its declared old design, observedWeapons comes from the actual saved estimate; neither can be renamed by a new Plan. Native action actors/events are actual saved results; a fixed-outcome sample is not expected damage, and pending defender casualty selection is not completed removal. A legacy missing design-owned participant declaration is UNVERIFIED, not a matching baseline or a false tool result. Verify actual OWN AND ENEMY types, selected sizes, living models, upgrades and the relevant geometry/phase/chance premises from exact sources. For each cited observation, explicitly assess whether it is historical context or a valid measurement of a declared new arm, and why configuration AND relevant controlled conditions match. Use the current selected configuration and exact source, not the new author assertion that an old number is the current baseline. If equivalence is not established, keep it historical and require the meaningful local new observation, not a full match. No host-selected winner, inferred damage or automatic replay.'};
 }
 
 // A passing army check must actually assess the cited measurement sources,

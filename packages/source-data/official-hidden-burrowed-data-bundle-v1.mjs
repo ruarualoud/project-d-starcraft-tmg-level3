@@ -12,6 +12,8 @@ import {
   verifyOfficialModelBaseGeometryDataBundleV1,
 } from "./official-model-base-geometry-data-bundle-v1.mjs";
 
+export const OFFICIAL_BURROWED_ENGAGEMENT_RANGE_MILLI_INCHES_V1 = 1000;
+
 export const OFFICIAL_HIDDEN_BURROWED_DATA_BUNDLE_SCHEMA =
   "starcraft_tmg_official_hidden_burrowed_data_bundle_v1";
 export const OFFICIAL_HIDDEN_BURROWED_CORE_RULEBOOK_HASH =
@@ -194,7 +196,7 @@ export function createOfficialHiddenBurrowedDataBundleV1(input = {}) {
     },
     ruleConstants: {
       hiddenMaximumTargetingDistanceMilliInches: 4000,
-      burrowedEngagementRangeMilliInches: 1000,
+      burrowedEngagementRangeMilliInches: OFFICIAL_BURROWED_ENGAGEMENT_RANGE_MILLI_INCHES_V1,
       burrowedEffectiveSize: 0,
       burrowedDisengageCurrentSupply: 0,
       burrowedActionWhitelist: ["close_ranks", "deploy", "disengage", "hold", "move", "run"],
@@ -243,7 +245,7 @@ export function verifyOfficialHiddenBurrowedDataBundleV1(bundle) {
     || bundle.pathOfShadows?.definitionName !== "Path of Shadows"
     || bundle.burrowedCarrierRegistry?.entries?.length !== 0
     || bundle.ruleConstants?.hiddenMaximumTargetingDistanceMilliInches !== 4000
-    || bundle.ruleConstants?.burrowedEngagementRangeMilliInches !== 1000
+    || bundle.ruleConstants?.burrowedEngagementRangeMilliInches !== OFFICIAL_BURROWED_ENGAGEMENT_RANGE_MILLI_INCHES_V1
     || bundle.ruleConstants?.burrowedEffectiveSize !== 0
     || bundle.ruleConstants?.burrowedDisengageCurrentSupply !== 0
     || bundle.sourceReconciliation?.corePdfContainsStartOfRoundHiddenGrant !== true

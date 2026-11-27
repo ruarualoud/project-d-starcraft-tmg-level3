@@ -13,6 +13,11 @@ export interface StarcraftTmgBattlefieldUnitMediaV1 {
   unitKey: string;
   neutralPortraitPath: string;
   activePortraitPath: string;
+  identityPortraitPath: string | null;
+  unitCardPath: string | null;
+  communicationChannel: string | null;
+  voiceChannel: string | null;
+  sharedCommunication: boolean;
   portraitAnimated: boolean;
   voice: StarcraftTmgBattlefieldVoicePathsV1 | null;
   releaseChannel: StarcraftTmgBattlefieldMediaReleaseChannelV1;

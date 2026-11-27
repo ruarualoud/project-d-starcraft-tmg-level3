@@ -118,17 +118,40 @@ export function normalizeStarcraftTmgOutputContractRefV1(value) {
   });
 }
 
+// Untagged tool steps are safe only when their semantic schemas are provably
+// disjoint. This admits Host-owned discriminators without accepting ambiguity.
+function disjointSchemaVariants(a,b){
+  if(a.anyOf)return a.anyOf.every(v=>disjointSchemaVariants(v,b));
+  if(b.anyOf)return b.anyOf.every(v=>disjointSchemaVariants(a,v));
+  if(a.type!==b.type&&!(['number','integer'].includes(a.type)&&['number','integer'].includes(b.type)))return true;
+  if(a.enum&&b.enum&&!a.enum.some(v=>b.enum.includes(v)))return true;
+  if(a.type==='object'&&b.type==='object'&&a.additionalProperties===false&&b.additionalProperties===false){
+    if(a.required.some(k=>!Object.hasOwn(b.properties,k))||b.required.some(k=>!Object.hasOwn(a.properties,k)))return true;
+    return a.required.some(k=>b.required.includes(k)&&disjointSchemaVariants(a.properties[k],b.properties[k]));
+  }
+  return false;
+}
+
 function assertSchemaNode(value, path = "$", depth = 0, root = false) {
-  if (!object(value) || depth > 12) {
+  if (!object(value) || depth > 32) {
     throw new TypeError(`${path} is outside the JSON Schema subset`);
   }
-  // Standard nullable tool arguments: null means "no edit", never an invented
-  // default. Keep the supported union narrow; all prior schemas are unchanged.
+  // Nullable values, tagged commands, or provably disjoint semantic tool steps.
+  // Overlapping/general unions remain outside this subset.
   if (Object.hasOwn(value, "anyOf")) {
-    if (root || Object.keys(value).length !== 1 || !Array.isArray(value.anyOf)
-      || value.anyOf.length !== 2 || value.anyOf.filter(s => s?.type === "null").length !== 1) {
-      throw new TypeError(`${path} must be a two-branch nullable schema`);
-    }
+    const branches=value.anyOf;
+    const nullable=Array.isArray(branches)&&branches.length===2
+      &&branches.filter(s=>s?.type==='null').length===1;
+    const tags=Array.isArray(branches)?branches.map(s=>s?.type==='object'
+      &&s.properties?.kind?.type==='string'&&s.properties.kind.enum?.length===1
+      ?s.properties.kind.enum[0]:null):[];
+    const tagged=tags.length>=2&&tags.length<=64&&tags.every(t=>typeof t==='string')
+      &&new Set(tags).size===tags.length;
+    const disjoint=Array.isArray(branches)&&branches.length>=2&&branches.length<=64
+      &&branches.every(s=>s?.type==='object'&&s.additionalProperties===false&&Array.isArray(s.required)&&object(s.properties))
+      &&branches.every((a,i)=>branches.slice(i+1).every(b=>disjointSchemaVariants(a,b)));
+    if(root||Object.keys(value).length!==1||!nullable&&!tagged&&!disjoint)
+      throw new TypeError(`${path} must be nullable, uniquely tagged, or closed disjoint object variants`);
     for (const branch of value.anyOf) {
       if (branch.type === "null") {
         if (Object.keys(branch).length !== 1) throw new TypeError(`${path} null branch must contain only type`);
@@ -140,7 +163,7 @@ function assertSchemaNode(value, path = "$", depth = 0, root = false) {
   const allowed = type === "object" ? OBJECT_SCHEMA_KEYS
     : type === "array" ? ARRAY_SCHEMA_KEYS
       : type === "string" ? STRING_SCHEMA_KEYS
-        : type === "integer" ? INTEGER_SCHEMA_KEYS
+        : type === "integer" || type === "number" ? INTEGER_SCHEMA_KEYS
           : type === "boolean" ? BOOLEAN_SCHEMA_KEYS : null;
   if (!allowed || Object.keys(value).some((key) => !allowed.has(key))) {
     throw new TypeError(`${path} uses an unsupported JSON Schema keyword or type`);
@@ -171,11 +194,11 @@ function assertSchemaNode(value, path = "$", depth = 0, root = false) {
         depth + 1, false);
     }
   } else if (type === "array") {
-    const minimum = boundedInteger(value.minItems, `${path}.minItems`, 0, 128);
+    const minimum = boundedInteger(value.minItems, `${path}.minItems`, 0, Number.MAX_SAFE_INTEGER);
     // Zero is a valid maximum for a read-only/control return that cannot submit
     // actions. Omitted maxima remain unbounded; min/max consistency is checked below.
     const maximum = value.maxItems === undefined ? null
-      : boundedInteger(value.maxItems, `${path}.maxItems`, 0, 128);
+      : boundedInteger(value.maxItems, `${path}.maxItems`, 0, Number.MAX_SAFE_INTEGER);
     if (maximum !== null && minimum > maximum || !object(value.items)
       || value.uniqueItems !== undefined && value.uniqueItems !== true) {
       throw new TypeError(`${path} array bounds are invalid`);
@@ -192,11 +215,27 @@ function assertSchemaNode(value, path = "$", depth = 0, root = false) {
           || entry.length < minimum || entry.length > maximum))) {
       throw new TypeError(`${path}.enum is invalid`);
     }
+  } else if (type === "number") {
+    for (const key of ["minimum", "maximum"]) {
+      if (value[key] !== undefined && !Number.isFinite(value[key])) {
+        throw new TypeError(`${path}.${key} must be a finite number`);
+      }
+    }
+    if (value.minimum !== undefined && value.maximum !== undefined && value.minimum > value.maximum) {
+      throw new TypeError(`${path} number bounds are invalid`);
+    }
+    if (value.enum !== undefined && (!Array.isArray(value.enum) || !value.enum.length
+      || value.enum.length > 64 || new Set(value.enum).size !== value.enum.length
+      || value.enum.some(entry => !Number.isFinite(entry)
+        || value.minimum !== undefined && entry < value.minimum
+        || value.maximum !== undefined && entry > value.maximum))) {
+      throw new TypeError(`${path}.enum is invalid`);
+    }
   } else if (type === "integer") {
     const minimum = boundedInteger(value.minimum, `${path}.minimum`,
-      -1_000_000_000, 1_000_000_000);
+      Number.MIN_SAFE_INTEGER, Number.MAX_SAFE_INTEGER);
     const maximum = boundedInteger(value.maximum, `${path}.maximum`,
-      -1_000_000_000, 1_000_000_000);
+      Number.MIN_SAFE_INTEGER, Number.MAX_SAFE_INTEGER);
     if (minimum > maximum) throw new TypeError(`${path} integer bounds are invalid`);
     if (value.enum !== undefined
       && (!Array.isArray(value.enum) || !value.enum.length
@@ -211,9 +250,8 @@ function assertSchemaNode(value, path = "$", depth = 0, root = false) {
 
 export function assertStarcraftTmgProviderJsonSchemaSubsetV1(value) {
   const normalized = clone(value);
-  if (Buffer.byteLength(JSON.stringify(normalized), "utf8") > 128 * 1024) {
-    throw new TypeError("Provider output schema is too large");
-  }
+  // Schema shape is validated below. Request transport owns byte capacity;
+  // a growing semantic-choice catalogue is not an invalid schema.
   assertSchemaNode(normalized, "$", 0, true);
   return freeze(normalized);
 }
@@ -221,8 +259,23 @@ export function assertStarcraftTmgProviderJsonSchemaSubsetV1(value) {
 function collectValidationIssues(schema, value, path, issues) {
   if (issues.length >= 32) return;
   if (schema.anyOf) {
-    if (value === null) return;
-    collectValidationIssues(schema.anyOf.find(s => s.type !== "null"), value, path, issues);
+    const nullable=schema.anyOf.some(s=>s.type==='null');
+    if(nullable){
+      if(value===null)return;
+      collectValidationIssues(schema.anyOf.find(s=>s.type!=='null'),value,path,issues);
+    }else if(schema.anyOf.every(s=>s.properties?.kind?.enum?.length===1)){
+      const branch=object(value)&&schema.anyOf.find(s=>s.properties.kind.enum[0]===value.kind);
+      if(!branch)issues.push({path:`${path}.kind`,code:'tagged_operation_required',
+        allowedValues:schema.anyOf.map(s=>s.properties.kind.enum[0])});
+      else collectValidationIssues(branch,value,path,issues);
+    }else{
+      const operationMatches=schema.anyOf.filter(s=>s.properties?.operation?.enum?.includes(value?.operation));
+      const candidates=operationMatches.length?operationMatches:schema.anyOf;
+      const results=candidates.map(branch=>{const found=[];collectValidationIssues(branch,value,path,found);return found;});
+      const valid=results.filter(found=>found.length===0);
+      if(valid.length>1)issues.push({path,code:'ambiguous_semantic_variant'});
+      else if(!valid.length)issues.push(...results.sort((a,b)=>a.length-b.length)[0]);
+    }
     return;
   }
   if (schema.type === "object") {
@@ -286,6 +339,19 @@ function collectValidationIssues(schema, value, path, issues) {
       code: "enum_mismatch", allowedValues: schema.enum });
     return;
   }
+  if (schema.type === "number") {
+    if (typeof value !== "number" || !Number.isFinite(value)) {
+      issues.push({ path, code: "type_finite_number_required", expectedType: "number" });
+      return;
+    }
+    if (schema.minimum !== undefined && value < schema.minimum) issues.push({ path,
+      code: "number_too_small", actualValue: value, minimum: schema.minimum });
+    if (schema.maximum !== undefined && value > schema.maximum) issues.push({ path,
+      code: "number_too_large", actualValue: value, maximum: schema.maximum });
+    if (schema.enum && !schema.enum.includes(value)) issues.push({ path,
+      code: "enum_mismatch", allowedValues: schema.enum });
+    return;
+  }
   if (schema.type === "integer") {
     if (!Number.isSafeInteger(value)) {
       issues.push({ path, code: "type_integer_required",
@@ -310,6 +376,19 @@ function collectValidationIssues(schema, value, path, issues) {
 
 export function validateStarcraftTmgProviderJsonSchemaValueV1(schema, value) {
   const normalizedSchema = assertStarcraftTmgProviderJsonSchemaSubsetV1(schema);
+  return validateNormalizedSchemaValue(normalizedSchema, value);
+}
+
+// Host discriminators and retained repair branches are never sent to a Provider.
+// Keep the same dialect/node checks; a wire-size budget is not a value-validity
+// rule for these expanded, locally generated schemas.
+export function validateStarcraftTmgHostJsonSchemaValueV1(schema, value) {
+  const normalizedSchema = clone(schema);
+  assertSchemaNode(normalizedSchema, "$", 0, true);
+  return validateNormalizedSchemaValue(normalizedSchema, value);
+}
+
+function validateNormalizedSchemaValue(normalizedSchema, value) {
   const issues = [];
   collectValidationIssues(normalizedSchema, value, "$", issues);
   return freeze({

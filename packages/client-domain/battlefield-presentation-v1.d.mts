@@ -1,11 +1,14 @@
-export type BattlefieldBaseShape = "round" | "oval" | "rectangle";
+export type BattlefieldBaseShape = "round" | "oval" | "rectangle" | "orthogonal_cross" | "measured_contour";
 
 export interface BattlefieldPointV1 { xMilliInches: number; yMilliInches: number; }
 export interface BattlefieldModelV1 extends BattlefieldPointV1 {
-  kind: "model"; id: string; pieceId: string; unitId: string | null;
+  kind: "model"; id: string; pieceId: string; unitId: string | null; officialUnitRecordKey?: string | null;
   label: string; sideKey: string;
   baseShape: BattlefieldBaseShape | null; baseWidthMilliInches: number | null;
   baseDepthMilliInches: number | null; baseRotationDegrees: number;
+  horizontalArmDepthMilliInches?: number | null;
+  verticalArmWidthMilliInches?: number | null;
+  localVerticesMilliInches?: readonly BattlefieldPointV1[] | null;
   baseBounds: BattlefieldBaseBoundsV1 | null; withinBoard: boolean;
   geometryRenderable: boolean; selected: boolean; destroyed: boolean;
   statuses: readonly string[];
@@ -27,15 +30,22 @@ export interface BattlefieldWeaponRangeReferenceV1 {
   projectedRangeMilliInches: number | null;
 }
 export interface BattlefieldAreaV1 extends BattlefieldPointV1 {
-  id: string; kind: "terrain" | "marker" | "token"; label: string;
+  id: string; kind: "terrain" | "marker" | "token"; label: string; sourceTokenId?: string;
   shape: BattlefieldBaseShape | null; widthMilliInches: number | null;
   depthMilliInches: number | null; rotationDegrees: number; geometryRenderable: boolean;
   terrainKind: string | null; terrainSize: number | null;
   elevation: string | null; elevationSurface: boolean;
+  footprintCells?: readonly {
+    minXMilliInches: number; maxXMilliInches: number;
+    minYMilliInches: number; maxYMilliInches: number;
+  }[];
 }
 export interface BattlefieldPlacementV1 extends BattlefieldPointV1 {
   modelId: string; baseShape: BattlefieldBaseShape | null;
   baseWidthMilliInches: number | null; baseDepthMilliInches: number | null;
+  horizontalArmDepthMilliInches?: number | null;
+  verticalArmWidthMilliInches?: number | null;
+  localVerticesMilliInches?: readonly BattlefieldPointV1[] | null;
   baseRotationDegrees: number; geometryRenderable: boolean;
 }
 export interface BattlefieldActionV1 {
@@ -45,13 +55,20 @@ export interface BattlefieldActionV1 {
 export type BattlefieldParameterSupport =
   | "legacy_path_only" | "official_standard_move"
   | "official_standard_deploy" | "parameterless" | "unsupported";
-export interface BattlefieldEntrySegmentV1 {
-  segmentId: string; side: "top" | "bottom" | "left" | "right";
+export type BattlefieldEntrySegmentV1 = {
+  kind?: undefined; segmentId: string; side: "top" | "bottom" | "left" | "right";
   startInches: number; endInches: number;
-}
+} | {
+  kind: "unit_base_perimeter"; segmentId: string; sourcePieceId: string; sourceModelId: string;
+  center: BattlefieldPointV1; radiusMilliInches: number; maximumAlongEdgeMilliInches: number;
+  remainingSupply: number | null; supplyLimit: number | null;
+};
 export interface BattlefieldModelProfileV1 {
   modelId: string; baseShape: BattlefieldBaseShape | null;
   baseWidthMilliInches: number | null; baseDepthMilliInches: number | null;
+  horizontalArmDepthMilliInches?: number | null;
+  verticalArmWidthMilliInches?: number | null;
+  localVerticesMilliInches?: readonly BattlefieldPointV1[] | null;
   baseRotationDegrees: number;
 }
 export interface BattlefieldParameterDomainV1 {
@@ -59,8 +76,10 @@ export interface BattlefieldParameterDomainV1 {
   pieceId: string | null; label: string; support: BattlefieldParameterSupport;
   modelIds: readonly string[];
   modelStartPoints: Readonly<Record<string, BattlefieldPointV1>>;
+  supportsTokenDisplacements: boolean;
   modelProfiles: readonly BattlefieldModelProfileV1[];
   entrySegments: readonly BattlefieldEntrySegmentV1[];
+  deploymentSupply: { requested: number; available: number | null; mode?: string } | null;
   start: BattlefieldPointV1 | null; maxDistanceMilliInches: number | null;
   maxPathPoints: number | null;
   exactRemainingPlacementCount: number | null; raw: Record<string, unknown>;
@@ -93,7 +112,9 @@ export interface BattlefieldSceneV1 {
   previewPath: readonly BattlefieldPointV1[];
   previewPlacements: readonly BattlefieldPlacementV1[]; previewId: string | null;
   preview: { previewId: string; path: readonly BattlefieldPointV1[];
-    placements: readonly BattlefieldPlacementV1[] } | null;
+    placements: readonly BattlefieldPlacementV1[];
+    disengageAssaultRestriction?: { round: number; ownSupply: number; opposingSupply: number;
+      rangedAttackProhibited: boolean; chargeProhibited: boolean } } | null;
   actions: { finite: readonly BattlefieldActionV1[];
     parameterDomains: readonly BattlefieldParameterDomainV1[] };
   diagnostics: readonly string[];
@@ -102,13 +123,29 @@ export interface BattlefieldSceneV1 {
     excludes: readonly string[] };
   trainingTruth: false;
 }
+export function projectCrossBaseOutlineV1(input: Pick<BattlefieldPlacementV1,
+  "baseShape" | "baseWidthMilliInches" | "baseDepthMilliInches" | "baseRotationDegrees" |
+  "xMilliInches" | "yMilliInches" | "horizontalArmDepthMilliInches" | "verticalArmWidthMilliInches"
+>): readonly BattlefieldPointV1[] | null;
+export function usesBattlefieldBaseOutlineV1(shape?: BattlefieldBaseShape | null): boolean;
+export function projectModelBaseOutlineV1(input: Pick<BattlefieldPlacementV1,
+  "baseShape" | "baseWidthMilliInches" | "baseDepthMilliInches" | "baseRotationDegrees" |
+  "xMilliInches" | "yMilliInches" | "horizontalArmDepthMilliInches" | "verticalArmWidthMilliInches" |
+  "localVerticesMilliInches"
+>): readonly BattlefieldPointV1[] | null;
 export function projectRotatedBaseBoundsV1(input: BattlefieldPointV1 & {
   baseShape: BattlefieldBaseShape; baseWidthMilliInches: number;
   baseDepthMilliInches: number; baseRotationDegrees?: number;
+  horizontalArmDepthMilliInches?: number | null;
+  verticalArmWidthMilliInches?: number | null;
+  localVerticesMilliInches?: readonly BattlefieldPointV1[] | null;
 }): BattlefieldBaseBoundsV1 | null;
 export function isBattlefieldBaseWithinBoardV1(input: BattlefieldPointV1 & {
   baseShape: BattlefieldBaseShape; baseWidthMilliInches: number;
   baseDepthMilliInches: number; baseRotationDegrees?: number;
+  horizontalArmDepthMilliInches?: number | null;
+  verticalArmWidthMilliInches?: number | null;
+  localVerticesMilliInches?: readonly BattlefieldPointV1[] | null;
   boardWidthMilliInches: number; boardHeightMilliInches: number;
 }): boolean;
 export interface BattlefieldViewportV1 {

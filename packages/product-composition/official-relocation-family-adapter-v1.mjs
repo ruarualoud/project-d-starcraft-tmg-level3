@@ -1,12 +1,32 @@
+import { officialSpatialRuleErrorV1 } from '../rule-atoms/official-spatial-proposal-error-v1.mjs';
+import { quoteOfficialUnitAbilityModifiersV1, consumeOfficialUnitAbilityModifiersV1 } from './official-unit-ability-payment-modifiers-v1.mjs';
+import {projectOfficialDeploymentSupplyV1} from '../rule-atoms/official-deployment-supply-projection-v1.mjs';
+import {usesWave3FaqClarifications} from '../rule-atoms/official-wave3-faq-clarifications-v1.mjs';
+import {unitEntryPerimeters,unitEntryReceipt,assertUnitEntryElevation} from './official-unit-entry-perimeters-v1.mjs';
+import { deriveOfficialFinalPlacementSurfaceSupportV13 } from '../rule-atoms/official-semantic-surface-support-v1.mjs';
 import { isDeepStrictEqual } from "node:util";
+import { enumerateOfficialAbilityResourcePaymentsV1, resolveOfficialAbilityResourcePaymentFromCardsV1 }
+  from '../rule-atoms/official-card-build-payment-rules-kernel-v1.mjs';
+import { resolveOfficialMatchLifecycleAbilityResourceCostV1 } from './official-match-lifecycle-family-adapter-v1.mjs';
+import { assertOfficialSelectedRosterSpecialAbilityWindowV1, openOfficialSelectedRosterSpecialAbilityWindowV1 }
+  from './official-selected-roster-ability-runtime-v1.mjs';
+import { deriveOfficialEngagementGraphV2 } from '../rule-atoms/official-engagement-graph-v2.mjs';
 import {inspectOfficialRelocationPlacementIdsV1} from './official-relocation-parameter-contract-v1.mjs';
+import { hasOfficialAbilityReferencePolicyV13, isOfficialAbilityModelPresenceV13,
+  officialAbilityReferenceConstraintsV13 } from '../rule-atoms/official-ability-reference-policy-v13.mjs';
+import { hasOfficialRelocationGeometryPolicyV13, isOfficialRelocationPlacementOriginV13 }
+  from '../rule-atoms/official-relocation-geometry-policy-v13.mjs';
 
 import { hashStarcraftTmgContract } from
   "../authoritative-engine/referee-crypto-v1.mjs";
 import {
   createOfficialModelBaseFootprintV1,
+  createOfficialTerrainCellFootprintsV1,
+  doOfficialPhysicalFootprintsOverlapV1,
+  isOfficialPhysicalFootprintWhollyWithinRangeV1,
   evaluateOfficialBaseMeasurementV1,
   evaluateOfficialCoherencyPlacementV1,
+  evaluateOfficialAssaultPlaceCoherencyV1,
 } from "../rule-atoms/official-model-base-geometry-rules-kernel-v1.mjs";
 import { projectOfficialContextualSupplyValueV1 } from
   "../rule-atoms/official-contextual-supply-projection-v1.mjs";
@@ -18,10 +38,13 @@ import { verifyOfficialModelBaseGeometryDataBundleV1 } from
   "../source-data/official-model-base-geometry-data-bundle-v1.mjs";
 import { verifyOfficialCurrentProductAbilityDenominatorV1 } from
   "./official-current-product-ability-denominator-v1.mjs";
+import { projectOfficialHorizontalCoherencyV1 } from
+  "./official-characteristic-status-family-adapter-v1.mjs";
 
 export const OFFICIAL_RELOCATION_FAMILY_ADAPTER_ID =
   "official-relocation-family-adapter-v1";
 export const OFFICIAL_RELOCATION_FAMILY_ADAPTER_VERSION = "1.2.0";
+export const OFFICIAL_LEAPING_STRIKE_DEFINITION_ID = 'unit:kerrigan/leaping-strike-assault-phase@1';
 export const OFFICIAL_RELOCATION_FAMILY_BUNDLE_SCHEMA =
   "starcraft_tmg_official_relocation_family_source_bundle_v1";
 export const OFFICIAL_RELOCATION_FAMILY_PARAMETER_KIND =
@@ -57,7 +80,7 @@ const EXPECTED_ARCHETYPE_COUNTS = Object.freeze({
 });
 
 function fail(code, detail = "") {
-  throw new Error(detail ? `${code}:${detail}` : code);
+  throw officialSpatialRuleErrorV1(code, detail);
 }
 function object(value) {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
@@ -100,6 +123,20 @@ function statusName(value) {
 function activePiece(piece) {
   return piece?.isOnField === true && piece?.isDestroyed !== true
     && piece?.isStructure !== true && Number(piece?.currentModels || 0) > 0;
+}
+function referencePiece(state, piece) {
+  return hasOfficialAbilityReferencePolicyV13(state)
+    ? isOfficialAbilityModelPresenceV13(piece) : activePiece(piece);
+}
+function placementOrigin(state, route, piece) {
+  return hasOfficialRelocationGeometryPolicyV13(state)
+    ? isOfficialRelocationPlacementOriginV13(route, piece) : referencePiece(state, piece);
+}
+function referenceRoles(route) {
+  return [
+    ...(route.minimumEnemyGapMilliInchesExclusive ? ['enemy_proximity_restriction'] : []),
+    ...(['friendly_anchor_place', 'entry_edge_place'].includes(route.effectKind) ? ['placement_origin'] : []),
+  ];
 }
 function livePiece(piece) {
   return piece?.isDestroyed !== true && Number(piece?.currentModels || 0) > 0;
@@ -176,10 +213,21 @@ function compileRoute(definition) {
       maxDistanceMilliInches: 2000, actionLimitConsumed: false,
       requiredActorTag: "biological", opensAfterActionWindow: true,
       reserveExplicit: false };
+  } else if (definition.definitionId === 'unit:twilight_templar__high_templar_/warp-in-movement-phase@1'
+    && definition.recordKey === 'army_units:twilight_templar__high_templar_'
+    && name === 'Warp-In' && text === 'Resolve the PLACE (6) effect.') {
+    spec = { effectKind: 'direct_place', actionKind: 'active_ability',
+      maxDistanceMilliInches: 6000, minimumEnemyGapMilliInchesExclusive: 1000, reserveExplicit: false };
   } else if (name === "Blink" && /PLACE \(6\)/iu.test(text)) {
     spec = { effectKind: "direct_place", actionKind: "active_ability",
       maxDistanceMilliInches: 6000, minimumEnemyGapMilliInchesExclusive: 1000,
       reserveExplicit: false };
+  } else if ((name === 'Void Blink' || name === 'Phase Reactor Suit'
+    && definition.recordKey === 'army_units:nova_assault_mode'
+    || definition.definitionId === OFFICIAL_LEAPING_STRIKE_DEFINITION_ID)
+    && text === 'If Unengaged, resolve the PLACE (6) effect.') {
+    spec = { effectKind: 'direct_place', actionKind: 'active_ability', maxDistanceMilliInches: 6000,
+      requiresUnengaged: true, reserveExplicit: false };
   } else if (name === "Phase" && /PLACE \(3\)/iu.test(text)) {
     spec = { effectKind: "direct_place", actionKind: "active_ability",
       maxDistanceMilliInches: 3000, minimumEnemyGapMilliInchesExclusive: 1000,
@@ -277,7 +325,246 @@ export function createOfficialRelocationFamilySourceBundleV1(input = {}) {
   return bundle;
 }
 
+const currentBundleSchema = 'starcraft_tmg_official_relocation_family_source_bundle_v2';
+export const OFFICIAL_RAYNOR_PICKUP_DEFINITION_ID = 'card:raynor_s_raiders/ready-for-pickup-any@1';
+const legEnhancementsProfile = Object.freeze({
+    "abilityName": "Leg Enhancements",
+    "phase": "movement",
+    "sourceText": "This Unit performs a 2\" Move action. This does not count towards its action limit.",
+    "activationKind": "active",
+    "activationText": "<Active>\n(1 Psionic Energy)",
+    "resourceType": "PE",
+    "resourceCost": 1,
+    "effectKind": "extra_move",
+    "actionKind": "active_ability",
+    "reserveExplicit": false,
+    "maxDistanceMilliInches": 2000,
+    "actionLimitConsumed": false,
+    "opensAfterActionWindow": true
+});
+const reviewedPlacements = Object.freeze({
+  'unit:point_defense_drone/gliding-any-phase@1': {
+    recordKey: 'army_units:point_defense_drone', abilityName: 'Gliding', phase: 'any',
+    sourceText: 'This model has DISPLACEMENT.', activationKind: 'passive', activationText: '<Passive>',
+    resourceType: null, resourceCost: 0, effectKind: 'displacement_permission', actionKind: 'query_modifier',
+    reserveExplicit: false,
+  },
+  'unit:raynor_s_raider__marine_/raiders-roll-movement-phase@1': {
+    "recordKey": "army_units:raynor_s_raider__marine_",
+    "abilityName": "Raiders Roll!",
+    "phase": "movement",
+    "sourceText": "When this Unit is nominated to deploy from Reserves, it may resolve its Stimpack ability with the CP cost reduced by 1 (to a minimum of 0).",
+    "activationKind": "passive",
+    "activationText": "<Passive>",
+    "resourceType": null,
+    "resourceCost": 0,
+    "effectKind": "deployment_stimpack_discount",
+    "actionKind": "query_modifier",
+    "reserveExplicit": true,
+    "resourceCostReduction": 1,
+    "minimumResourceCost": 0
+  },
+  'unit:raynor_s_raider__marine_/rapid-reinforcements-movement-phase@1': {
+    "recordKey": "army_units:raynor_s_raider__marine_",
+    "abilityName": "Rapid Reinforcements",
+    "phase": "movement",
+    "sourceText": "When this Unit is nominated to deploy from Reserves, it may resolve the PLACE (10) effect from another Friendly Unit. No model may be set Within 8\" of any Enemy model. This Unit's Activation ends.",
+    "activationKind": "passive",
+    "activationText": "<Passive>",
+    "resourceType": null,
+    "resourceCost": 0,
+    "effectKind": "friendly_anchor_place",
+    "actionKind": "deploy_from_reserves",
+    "reserveExplicit": true,
+    "activationEnds": true,
+    "maxDistanceMilliInches": 10000,
+    "minimumEnemyGapMilliInchesExclusive": 8000
+  },
+  'unit:praetor_guard__zealot_/leg-enhancements-movement-phase@1': { ...legEnhancementsProfile, recordKey: 'army_units:praetor_guard__zealot_' },
+  'unit:zealot/leg-enhancements-movement-phase@1': { ...legEnhancementsProfile, recordKey: 'army_units:zealot' },
+  [OFFICIAL_RAYNOR_PICKUP_DEFINITION_ID]: {
+    recordKey: 'tactical_cards:raynor_s_raiders', abilityName: 'Ready for Pickup?', phase: 'movement', sourceKind: 'card_feature',
+    sourceText: "Ready for Pickup? <Active> <Movement Phase>: Once per Game. The active Unit resolves the PLACE (12) effect. Models set by this effect cannot be set up Within the Engagement Range of any Enemy Unit. This resolves instead of performing a standard action.",
+    activationKind: 'active', activationText: '', resourceType: null, resourceCost: 0,
+    effectKind: 'direct_place', actionKind: 'active_ability', maxDistanceMilliInches: 12000,
+    minimumEnemyGapMilliInchesExclusive: 1000, opensAfterActionWindow: true, reserveExplicit: false,
+    oncePerGame: true, replacesStandardAction: true, useScope: 'source_card',
+  },
+  'card:warp_prism/phase-any@1': {
+    recordKey: 'tactical_cards:warp_prism', abilityName: 'Phase', phase: 'movement', sourceKind: 'card_feature',
+    sourceText: 'Phase <Active> <Movement Phase>: The active Unit resolves the PLACE (3) effect.',
+    activationKind: 'active', activationText: '', resourceType: null, resourceCost: 0,
+    effectKind: 'direct_place', actionKind: 'active_ability', maxDistanceMilliInches: 3000,
+    minimumEnemyGapMilliInchesExclusive: 1000, reserveExplicit: false,
+  },
+  'card:barracks__proxy_/armed-and-ready-any@1': {
+    recordKey: 'tactical_cards:barracks__proxy_', abilityName: "Armed and Ready", phase: 'movement', sourceKind: 'card_feature',
+    sourceText: "Armed and Ready <Active> <Movement Phase>: The active Biological Unit Deploys from any table edge that is not a player's Entry Edge. No model may be set up Within 10\" of any Enemy model. This ability cannot be used if another Friendly Biological Unit has already been Deployed this Round.",
+    activationKind: 'active', activationText: '', resourceType: null, resourceCost: 0, effectKind: 'non_entry_edge_deploy', actionKind: 'special_deploy', minimumEnemyGapMilliInchesExclusive: 10000,
+    requiredActorTag: 'biological', oneFriendlyBiologicalDeployPerRound: true, opensAfterActionWindow: true, reserveExplicit: true,
+  },
+  ...Object.fromEntries(['barracks','barracks__tech_lab_','barracks__proxy_'].map(key => [
+    'card:'+key+'/go-go-go-any@1', {
+    recordKey: 'tactical_cards:'+key, abilityName: "Go! Go! Go!", phase: 'movement', sourceKind: 'card_feature',
+    sourceText: "Go! Go! Go! <Active> <Movement Phase>: The active Biological Unit performs a 2\" Move action. This does not count towards its action limit.",
+    activationKind: 'active', activationText: '', resourceType: null, resourceCost: 0, effectKind: 'extra_move', actionKind: 'active_ability', maxDistanceMilliInches: 2000,
+    requiredActorTag: 'biological', opensAfterActionWindow: false, actionLimitConsumed: false, reserveExplicit: false,
+  }])),
+  'card:orbital_command/comsat-station-any@1': {
+    recordKey: 'tactical_cards:orbital_command', abilityName: 'ComSat Station', phase: 'movement', sourceKind: 'card_feature',
+    sourceText: "ComSat Station <Active> <Movement Phase>: Select one table edge that is not a player’s Entry Edge. Until the End of the Round, Enemy Units cannot Deploy from that edge.",
+    activationKind: 'active', activationText: '', resourceType: null, resourceCost: 0, effectKind: 'deployment_edge_lock',
+    actionKind: 'active_ability', expiresAt: 'round_end', reserveExplicit: false,
+  },
+  'card:spawning_pool__six_pool_/timing-push-any@1': {
+    recordKey: 'tactical_cards:spawning_pool__six_pool_', abilityName: "Timing Push", phase: 'movement', sourceKind: 'card_feature',
+    sourceText: "Timing Push <Active> <Movement Phase>: The active Zergling Unit Deploys from any table edge that is not a Player’s Entry Edge. This action must end more than 10\" away from any Enemy model.",
+    activationKind: 'active', activationText: '', resourceType: null, resourceCost: 0, effectKind: 'non_entry_edge_deploy', actionKind: 'special_deploy', minimumEnemyGapMilliInchesExclusive: 10000,
+    requiredActorRecordKey: 'army_units:zergling', opensAfterActionWindow: true, reserveExplicit: true,
+  },
+  ...Object.fromEntries(['corpser__roach_', 'roach', 'vile__roach_'].map(unit => [
+    `unit:${unit}/tunneling-claws-any-phase@1`, {
+      recordKey: `army_units:${unit}`, abilityName: "Tunneling Claws", phase: "any",
+      sourceText: "While this Unit has the Burrowed Status, it may perform the Move and Run actions without losing that Status. It may also move through other Units’ bases.",
+      activationKind: "passive", activationText: "<Passive>", resourceType: null, resourceCost: 0,
+      effectKind: "burrow_movement_permission",
+    },
+  ])),
+  ...Object.fromEntries(['corpser__roach_', 'roach', 'vile__roach_', 'swarmling__zergling_',
+    'hydralisk', 'raptor__zergling_', 'zergling'].map(unit => [
+    `unit:${unit}/burrow-ambush-movement-phase@1`, {
+      recordKey: `army_units:${unit}`, abilityName: "Burrow Ambush", phase: "movement",
+      sourceText: `When this Unit is nominated to deploy from the Reserves, it may resolve the PLACE (18) effect from the controlling player's Entry Edge. No model may be set Within 10" of any Enemy model. This Unit's Activation ends.`,
+      activationKind: "passive", activationText: "<Passive>", resourceType: null, resourceCost: 0,
+      effectKind: "entry_edge_place", maxDistanceMilliInches: 18000,
+    },
+  ])),
+  'unit:twilight_templar__high_templar_/warp-in-movement-phase@1': {
+    recordKey: 'army_units:twilight_templar__high_templar_', abilityName: 'Warp-In', phase: 'movement',
+    sourceText: 'Resolve the PLACE (6) effect.', activationKind: 'active',
+    activationText: '<Active>\n(1 Psionic Energy)', resourceType: 'PE', resourceCost: 1,
+    effectKind: 'direct_place', maxDistanceMilliInches: 6000, minimumEnemyGapMilliInchesExclusive: 1000,
+  },
+  'unit:stalker/blink-movement-phase@1': {
+    recordKey: 'army_units:stalker', abilityName: 'Blink', phase: 'movement',
+    sourceText: 'Resolve the PLACE (6) effect. Models set by this effect cannot be set up Within the Engagement Range of any Enemy Unit.',
+    activationKind: 'active', activationText: '<Active>\n(1 Psionic Energy)',
+    resourceType: 'PE', resourceCost: 1, effectKind: 'direct_place', maxDistanceMilliInches: 6000,
+  },
+  [OFFICIAL_LEAPING_STRIKE_DEFINITION_ID]: {
+    recordKey: 'army_units:kerrigan', abilityName: 'Leaping Strike', phase: 'assault',
+    sourceText: 'If Unengaged, resolve the PLACE (6) effect.',
+    activationKind: 'active', activationText: '<Active>\n(1 Biomass)',
+    resourceType: 'BM', resourceCost: 1, effectKind: 'direct_place', maxDistanceMilliInches: 6000,
+    requiresUnengaged: true,
+  },
+  'unit:zeratul/void-blink-assault-phase@1': {
+    recordKey: 'army_units:zeratul', abilityName: 'Void Blink', phase: 'assault',
+    sourceText: 'If Unengaged, resolve the PLACE (6) effect.',
+    activationKind: 'active', activationText: '<Active>\n(1 Psionic Energy)',
+    resourceType: 'PE', resourceCost: 1, effectKind: 'direct_place', maxDistanceMilliInches: 6000,
+    requiresUnengaged: true,
+  },
+  'unit:nova_assault_mode/phase-reactor-suit-assault-phase@1': {
+    recordKey: 'army_units:nova_assault_mode', abilityName: 'Phase Reactor Suit', phase: 'assault',
+    sourceText: 'If Unengaged, resolve the PLACE (6) effect.',
+    activationKind: 'active', activationText: '<Active>\n(1 Command Point)',
+    resourceType: 'CP', resourceCost: 1, effectKind: 'direct_place', maxDistanceMilliInches: 6000,
+    requiresUnengaged: true,
+  },
+  'unit:ravager/burrow-ambush-movement-phase@1': {
+    recordKey: 'army_units:ravager', abilityName: 'Burrow Ambush', phase: 'movement',
+    sourceText: "When this Unit is nominated to deploy from the Reserves, it may resolve the PLACE (18) effect from the controlling player's Entry Edge. No model may be set Within 10\" of any Enemy model. This Unit's Activation ends.",
+    activationKind: 'passive', activationText: '<Passive>', resourceType: null, resourceCost: 0,
+    effectKind: 'entry_edge_place', maxDistanceMilliInches: 18000,
+  },
+  'unit:vileling__zergling_/burrow-ambush-movement-phase@1': {
+    recordKey: 'army_units:vileling__zergling_', abilityName: 'Burrow Ambush', phase: 'movement',
+    sourceText: "When this Unit is nominated to deploy from the Reserves, it may resolve the PLACE (18) effect from the controlling player's Entry Edge. No model may be set Within 10\" of any Enemy model. This Unit's Activation ends.",
+    activationKind: 'passive', activationText: '<Passive>', resourceType: null, resourceCost: 0,
+    effectKind: 'entry_edge_place', maxDistanceMilliInches: 18000,
+  },
+  'unit:bile_launcher/burrow-ambush-movement-phase@1': {
+    recordKey: 'army_units:bile_launcher', abilityName: 'Burrow Ambush', phase: 'movement',
+    sourceText: "When this Unit is nominated to deploy from the Reserves, it may resolve the PLACE (18) effect from the controlling player's Entry Edge. No model may be set Within 10\" of any Enemy model. This Unit's Activation ends.",
+    activationKind: 'passive', activationText: '<Passive>', resourceType: null, resourceCost: 0,
+    effectKind: 'entry_edge_place', maxDistanceMilliInches: 18000,
+  },
+  'unit:defiler/burrow-ambush-movement-phase@1': {
+    recordKey: 'army_units:defiler', abilityName: 'Burrow Ambush', phase: 'movement',
+    sourceText: `When this Unit is nominated to deploy from Reserves, it may resolve the PLACE (18) effect from the controlling player's Entry Edge. No model may be placed Within 10" of any Enemy model. This Unit's Activation ends.`,
+    activationKind: 'passive', activationText: '<Passive>', resourceType: null, resourceCost: 0,
+    effectKind: 'entry_edge_place', maxDistanceMilliInches: 18000,
+  },
+});
+export function isOfficialReviewedReserveAmbushV2(definitionId) {
+  return reviewedPlacements[definitionId]?.effectKind === 'entry_edge_place';
+}
+
+export function createOfficialRelocationFamilySourceBundleV2({ catalogue, definitionIds }) {
+  verifyOfficialAbilityEffectIrCatalogueV1(catalogue);
+  if (!Array.isArray(definitionIds) || !definitionIds.length || new Set(definitionIds).size !== definitionIds.length) {
+    fail('RELOCATION_COMPONENT_SELECTION_INVALID');
+  }
+  const routes = definitionIds.map(id => {
+    const reviewed = reviewedPlacements[id];
+    const definition = catalogue.definitions.find(row => row.definitionId === id);
+    if (!reviewed || !definition || definition.recordKey !== reviewed.recordKey
+      || definition.definitionName !== reviewed.abilityName || definition.phase !== reviewed.phase
+      || definition.sourceText !== reviewed.sourceText || definition.sourceKind !== (reviewed.sourceKind ?? 'unit_feature')
+      || definition.activationKind !== reviewed.activationKind || definition.activationText !== reviewed.activationText) {
+      fail('RELOCATION_COMPONENT_SOURCE_UNSUPPORTED', id);
+    }
+    return seal({ ...without(compileRoute(definition), ['routeHash']),
+      resourceType: reviewed.resourceType, resourceCost: reviewed.resourceCost,
+      ...(reviewed.useScope ? { useScope: reviewed.useScope } : {}),
+      ...(reviewed.opensAfterActionWindow === false ? { opensAfterActionWindow: false } : {}) }, 'routeHash');
+  }).sort((left, right) => left.definitionId.localeCompare(right.definitionId));
+  const bundle = seal({ schema: currentBundleSchema, semanticVersion: '2.0.0',
+    sourceCatalogueHash: catalogue.catalogueHash, sourceSnapshotHash: catalogue.sourceSnapshotHash,
+    normalizedDatasetHash: catalogue.normalizedDatasetHash, dataVersions: clone(catalogue.dataVersions),
+    routeCount: routes.length, routes, definitionIds: routes.map(route => route.definitionId),
+    coveredSourceFeatureHashes: routes.map(route => route.sourceFeatureHash).sort(),
+    archetypeCounts: Object.fromEntries([...new Set(routes.map(route => route.effectKind))].sort()
+      .map(kind => [kind, routes.filter(route => route.effectKind === kind).length])), compilerDenominatorComplete: false,
+    compilerScope: 'reviewed_current_release_place_subset', sourceRefreshPerformed: false, trainingTruth: false }, 'bundleHash');
+  verifyOfficialRelocationFamilySourceBundleV1(bundle);
+  return bundle;
+}
+
 export function verifyOfficialRelocationFamilySourceBundleV1(bundle) {
+  if (bundle?.schema === currentBundleSchema) {
+    const routes = bundle.routes;
+    if (bundle.semanticVersion !== '2.0.0' || !Array.isArray(routes) || !routes.length || routes.length > Object.keys(reviewedPlacements).length
+      || bundle.routeCount !== routes.length || !isDeepStrictEqual(bundle.definitionIds, routes.map(row => row.definitionId))
+      || new Set(bundle.definitionIds).size !== routes.length
+      || !isDeepStrictEqual(bundle.coveredSourceFeatureHashes, routes.map(row => row.sourceFeatureHash).sort())
+      || !isDeepStrictEqual(bundle.archetypeCounts, Object.fromEntries([...new Set(routes.map(route => route.effectKind))].sort()
+        .map(kind => [kind, routes.filter(route => route.effectKind === kind).length])))
+      || routes.some(route => { const reviewed = reviewedPlacements[route.definitionId];
+        return !reviewed || route.recordKey !== reviewed.recordKey || route.abilityName !== reviewed.abilityName
+          || route.phase !== reviewed.phase || route.sourceText !== reviewed.sourceText || route.resourceType !== reviewed.resourceType
+          || route.activationKind !== reviewed.activationKind
+          || route.resourceCost !== reviewed.resourceCost || route.effectKind !== reviewed.effectKind
+          || ['activationEnds', 'reserveExplicit', 'resourceCostReduction', 'minimumResourceCost', 'actionLimitConsumed'].some(
+            field => Object.hasOwn(reviewed, field) && reviewed[field] !== route[field])
+          || route.useScope !== reviewed.useScope || route.oncePerGame !== reviewed.oncePerGame
+          || route.replacesStandardAction !== reviewed.replacesStandardAction
+          || route.maxDistanceMilliInches !== reviewed.maxDistanceMilliInches
+          || route.requiresUnengaged !== reviewed.requiresUnengaged
+          || (reviewed.sourceKind === 'card_feature' && ['sourceKind', 'actionKind', 'requiredActorRecordKey',
+            'requiredActorTag', 'oneFriendlyBiologicalDeployPerRound', 'opensAfterActionWindow', 'actionLimitConsumed', 'reserveExplicit']
+            .some(field => route[field] !== reviewed[field]))
+          || (reviewed.minimumEnemyGapMilliInchesExclusive !== undefined
+            && route.minimumEnemyGapMilliInchesExclusive !== reviewed.minimumEnemyGapMilliInchesExclusive)
+          || route.effectKind === 'entry_edge_place' && (route.minimumEnemyGapMilliInchesExclusive !== 10000
+            || route.activationEnds !== true || route.reserveExplicit !== true)
+          || route.routeHash !== hashStarcraftTmgContract(without(route, ['routeHash'])); })
+      || bundle.compilerDenominatorComplete !== false || bundle.compilerScope !== 'reviewed_current_release_place_subset'
+      || bundle.sourceRefreshPerformed !== false || bundle.trainingTruth !== false
+      || bundle.bundleHash !== hashStarcraftTmgContract(without(bundle, ['bundleHash']))) fail('RELOCATION_COMPONENT_SOURCE_BUNDLE_INVALID');
+    return true;
+  }
   if (!object(bundle) || bundle.schema !== OFFICIAL_RELOCATION_FAMILY_BUNDLE_SCHEMA
     || bundle.semanticVersion !== OFFICIAL_RELOCATION_FAMILY_ADAPTER_VERSION
     || bundle.routeCount !== 25 || bundle.routes?.length !== 25
@@ -343,7 +630,7 @@ function actorMatches(route, piece) {
     && piece.officialUnitRecordKey !== route.requiredActorRecordKey) return false;
   return true;
 }
-function activeTimingAvailable(state, route, sideKey, actor) {
+function activeTimingAvailable(state, route, sideKey, actor, sourceInstanceId) {
   if (!SIDE_KEYS.has(sideKey) || state.activeSideKey !== sideKey
     || (route.phase !== "any" && state.phase !== route.phase)
     || state.players?.[sideKey]?.passedPhases?.[state.phase] === true
@@ -353,8 +640,13 @@ function activeTimingAvailable(state, route, sideKey, actor) {
   const window = state.selectedRosterActivationWindow;
   if (window && (window.sideKey !== sideKey || window.pieceId !== actor.id
     || window.phase !== state.phase)) return false;
+  if (route.useScope === 'source_card') {
+    if (actor.isStructure || actor.activatedPhases?.[state.phase] || window?.stage === 'after_action') return false;
+    if ((state.activeAbilityUseHistory || []).some(use => use.sideKey === sideKey
+      && use.routeId === route.definitionId && use.sourceInstanceId === sourceInstanceId)) return false;
+  }
   if (usedThisRound(state, route, actor.id)) return false;
-  if (route.oncePerGame === true && usedThisGame(state, route, actor.id)) return false;
+  if (route.oncePerGame === true && route.useScope !== 'source_card' && usedThisGame(state, route, actor.id)) return false;
   return true;
 }
 function deployTimingAvailable(state, route, sideKey, actor) {
@@ -370,14 +662,6 @@ function deployTimingAvailable(state, route, sideKey, actor) {
     && actor.isOnField !== true && actor.activatedPhases?.movement !== true
     && actorMatches(route, actor);
 }
-function supplyAvailable(state, sideKey) {
-  const capacity = Number(state.players?.[sideKey]?.supply || 0);
-  const committed = (state.pieces || []).filter((piece) => (
-    piece.sideKey === sideKey && activePiece(piece))).reduce((sum, piece) => (
-    sum + projectOfficialContextualSupplyValueV1({ state, pieceId: piece.id,
-      context: "supply_pool_calculation" }).effectiveSupply), 0);
-  return Math.max(0, capacity - committed);
-}
 function priorBiologicalDeploy(state, sideKey, actorId) {
   const standard = (state.spatialActionHistory || []).some((entry) => {
     if (Number(entry.round) !== Number(state.round) || entry.actionType !== "deploy") return false;
@@ -391,13 +675,17 @@ function priorBiologicalDeploy(state, sideKey, actorId) {
       && entry.actorBiological === true));
   return standard || special;
 }
-function entrySegments(state, sideKey) {
+function entrySegments(state, actor, route) {
+  const sideKey=actor.sideKey;
   const rows = state.officialDeploymentGeometryBinding?.entryEdgesByPlayer?.[sideKey]
     ?.segments;
   if (!Array.isArray(rows) || rows.length < 1) {
     fail("RELOCATION_ENTRY_EDGE_UNAVAILABLE", sideKey);
   }
-  return rows;
+  if(!usesWave3FaqClarifications(state)||route.abilityName!=='Burrow Ambush')return rows;
+  const supply=projectOfficialDeploymentSupplyV1(state,sideKey,actor.id);
+  return rows.concat(unitEntryPerimeters(state,sideKey,actor,supply)
+    .filter(s=>s.segmentId.startsWith('omega-worm:')||s.segmentId.startsWith('infested-drop:')));
 }
 function nonEntrySides(state) {
   const entry = new Set(Object.values(state.officialDeploymentGeometryBinding
@@ -416,29 +704,38 @@ function movementProfile(state, piece) {
   if (!profile) fail("RELOCATION_MOVEMENT_PROFILE_UNAVAILABLE", piece.id);
   return profile.movementProfile;
 }
+function horizontalCoherency(state, actor, assumeDeployed) {
+  if (state.officialCharacteristicStatusFamilySourceBundle) {
+    return projectOfficialHorizontalCoherencyV1(state.officialCharacteristicStatusFamilySourceBundle, state,
+      { pieceId: actor.id, assumeDeployed }).horizontalCoherencyMilliInches;
+  }
+  const profile = movementProfile(state, actor);
+  if (!profile || !Number.isFinite(profile.horizontalCoherencyInches)) {
+    fail('RELOCATION_COHERENCY_PROFILE_UNAVAILABLE', actor.id);
+  }
+  return milli(profile.horizontalCoherencyInches);
+}
 function actionActors(state, route, instance) {
   if (route.sourceKind === "unit_feature") return [instance.actor];
   const pieces = (state.pieces || []).filter((piece) => piece.sideKey === instance.sideKey);
   if (route.actionKind === "special_deploy") return pieces.filter((piece) => (
     deployTimingAvailable(state, route, instance.sideKey, piece)));
   return pieces.filter((piece) => actorMatches(route, piece)
-    && activeTimingAvailable(state, route, instance.sideKey, piece));
+    && activeTimingAvailable(state, route, instance.sideKey, piece, instance.sourceInstanceId));
 }
 function routeAvailable(state, route, instance, actor) {
   cardReady(instance);
   if (route.actionKind === "deploy_from_reserves"
     || route.actionKind === "special_deploy") {
     if (!deployTimingAvailable(state, route, instance.sideKey, actor)) return false;
-    const requestedSupply = projectOfficialContextualSupplyValueV1({ state,
-      pieceId: actor.id, context: "supply_pool_calculation" }).effectiveSupply;
-    if (requestedSupply > supplyAvailable(state, instance.sideKey)) {
+    if (!projectOfficialDeploymentSupplyV1(state, instance.sideKey, actor.id).poolRequirementSatisfied) {
       return false;
     }
     if (route.oneFriendlyBiologicalDeployPerRound === true
       && priorBiologicalDeploy(state, instance.sideKey, actor.id)) return false;
     return true;
   }
-  return activeTimingAvailable(state, route, instance.sideKey, actor);
+  return activeTimingAvailable(state, route, instance.sideKey, actor, instance.sourceInstanceId);
 }
 function parameterSchema(state, route, actor) {
   if (route.effectKind === "deployment_edge_lock") return {
@@ -458,13 +755,13 @@ function parameterSchema(state, route, actor) {
   }
   if (route.effectKind === "entry_edge_place") {
     required.push("entrySegmentId");
-    schema.entrySegmentId = { enum: entrySegments(state, actor.sideKey)
+    schema.entrySegmentId = { enum: entrySegments(state, actor, route)
       .map((entry) => entry.segmentId).sort() };
   }
   if (route.effectKind === "friendly_anchor_place") {
     required.push("anchorPieceId", "anchorModelId");
     schema.anchorPieceId = { enum: (state.pieces || []).filter((piece) => (
-      piece.sideKey === actor.sideKey && piece.id !== actor.id && activePiece(piece)))
+      piece.sideKey === actor.sideKey && piece.id !== actor.id && placementOrigin(state, route, piece)))
       .map((piece) => piece.id).sort() };
   }
   if (route.effectKind === "non_entry_edge_deploy") {
@@ -474,11 +771,35 @@ function parameterSchema(state, route, actor) {
   }
   return schema;
 }
-function domainFor(state, route, instance, actor) {
+function currentResourceCost(state, route, actor, options = {}) {
+  const base = state.officialMatchLifecycleFamilySourceBundle
+    ? resolveOfficialMatchLifecycleAbilityResourceCostV1(state.officialMatchLifecycleFamilySourceBundle, state,
+      { sideKey: actor.sideKey, pieceId: actor.id, resourceType: route.resourceType,
+        printedResourceCost: route.resourceCost, planHash: options.planHash || null }, { consume: options.consume === true })
+    : { resourceType: route.resourceType, printedResourceCost: route.resourceCost,
+      resourceCostReduction: 0, effectiveResourceCost: route.resourceCost, discountSourcePieceId: null, trainingTruth: false };
+  return quoteOfficialUnitAbilityModifiersV1(state, actor.id, route.sourceKind, base);
+}
+function currentPaymentChoices(state, route, actor) {
+  return enumerateOfficialAbilityResourcePaymentsV1({ cardDataBundle: state.officialCardBuildPaymentDataBundle,
+    resourceType: route.resourceType, resourceCost: currentResourceCost(state, route, actor).effectiveResourceCost,
+    cardInstances: state.cardResources?.[actor.sideKey] || [] });
+}
+function currentPaidRoute(bundle, route) {
+  return bundle.schema === currentBundleSchema && Number(route.resourceCost) > 0;
+}
+function domainFor(bundle, state, route, instance, actor) {
   const profile = route.effectKind === "non_entry_edge_deploy"
     ? movementProfile(state, actor) : null;
   const maxDistanceMilliInches = route.effectKind === "non_entry_edge_deploy"
     ? milli(profile.currentDeploySpeedInches) : route.maxDistanceMilliInches || null;
+  const paid = currentPaidRoute(bundle, route);
+  const schema = parameterSchema(state, route, actor);
+  const coherencyRangeMilliInches = horizontalCoherency(state, actor, actor.isOnField !== true);
+  if (paid) {
+    schema.required.push('paymentCardInstanceIds');
+    schema.paymentCardInstanceIds = { enum: currentPaymentChoices(state, route, actor) };
+  }
   const body = {
     schemaVersion: "starcraft_tmg_official_parameter_domain_v1",
     semanticVersion: "1.0.0",
@@ -495,9 +816,16 @@ function domainFor(state, route, instance, actor) {
     pieceId: actor.id,
     abilityName: route.abilityName,
     effectKind: route.effectKind,
-    parameterSchema: parameterSchema(state, route, actor),
+    parameterSchema: schema,
     constraints: {
+      ...officialAbilityReferenceConstraintsV13(state, route, referenceRoles(route)),
+      ...(hasOfficialRelocationGeometryPolicyV13(state) ? {
+        physicalPathIncludesStructures: route.effectKind === 'extra_move',
+        placementOriginExcludesStructures: route.effectKind === 'friendly_anchor_place'
+          && route.recordKey === 'army_units:raynor_s_raider__marine_',
+      } : {}),
       maxDistanceMilliInches,
+      coherencyRangeMilliInches,
       minimumEnemyGapMilliInchesExclusive:
         route.minimumEnemyGapMilliInchesExclusive || null,
       reserveExplicit: route.reserveExplicit === true,
@@ -507,6 +835,9 @@ function domainFor(state, route, instance, actor) {
       fullBaseBoundaryRequired: true,
       completeFormationCoherencyRequired: true,
       sourceRouteHash: route.routeHash,
+      ...(paid ? { resourceCost: currentResourceCost(state, route, actor),
+        coherencySource: state.officialCharacteristicStatusFamilySourceBundle
+          ? 'characteristic_projection' : 'source_bound_standard_action_catalogue' } : {}),
     },
     confirmationClass: "rules_owned_direct_action",
     rulesTruth: "official_current_product_relocation_parameter_domain",
@@ -529,10 +860,22 @@ function enumerate(bundle, state, options = {}) {
       const actors = actionActors(state, route, instance);
       for (const actor of actors) {
         try {
+          if (bundle.schema === currentBundleSchema) {
+            if (!route.reserveExplicit) {
+              assertOfficialSelectedRosterSpecialAbilityWindowV1(state, instance.sideKey, actor.id, state.phase);
+            }
+            const initiative = state.phaseFirstActorByRound?.[`${state.round}:${state.phase}`];
+            if (initiative?.round !== Number(state.round) || initiative.phase !== state.phase
+              || !SIDE_KEYS.has(initiative.chosenFirstActorSideKey)) fail('RELOCATION_PHASE_INITIATIVE_UNRESOLVED');
+            if (route.requiresUnengaged && deriveOfficialEngagementGraphV2(state).engagedUnitIds.includes(actor.id)) {
+              fail('RELOCATION_UNENGAGED_ACTOR_REQUIRED');
+            }
+            if (currentPaidRoute(bundle, route) && !currentPaymentChoices(state, route, actor).length) fail('RELOCATION_PAYMENT_UNAVAILABLE');
+          }
           if (!routeAvailable(state, route, instance, actor)) {
             fail("RELOCATION_ROUTE_UNAVAILABLE");
           }
-          const domain = domainFor(state, route, instance, actor);
+          const domain = domainFor(bundle, state, route, instance, actor);
           if (Object.values(domain.parameterSchema).some((entry) => (
             object(entry) && Array.isArray(entry.enum) && entry.enum.length === 0))) {
             fail("RELOCATION_PARAMETER_CHOICE_EMPTY");
@@ -568,7 +911,7 @@ function enumerate(bundle, state, options = {}) {
       left.domainId.localeCompare(right.domainId))),
     queryOnlyDefinitionIds: bundle.routes.filter((entry) => QUERY_EFFECTS.has(
       entry.effectKind)).map((entry) => entry.definitionId).sort(),
-    currentProductRelocationDenominatorComplete: true,
+    currentProductRelocationDenominatorComplete: bundle.schema !== currentBundleSchema,
     searchAndStrategyExcludedFromAuthority: true,
     trainingTruth: false,
   });
@@ -602,7 +945,7 @@ function footprintAt(state, piece, model, placement) {
     position: { ...placement, rotationDegrees: placement.rotationDegrees || 0 } });
 }
 function rectangleVertices(raw) {
-  if (raw.shape === "rectangle") return raw.vertices;
+  if (Array.isArray(raw.vertices) && raw.vertices.length >= 3) return raw.vertices;
   const minX = Number(raw.minX ?? raw.minXMilliInches);
   const maxX = Number(raw.maxX ?? raw.maxXMilliInches);
   const minY = Number(raw.minY ?? raw.minYMilliInches);
@@ -751,7 +1094,9 @@ function canonicalPath(state, actor, leadingModel, placement, raw, maxDistance,
     fail("RELOCATION_FULL_BASE_OUTSIDE_BATTLEFIELD");
   }
   const blockers = (state.pieces || []).filter((piece) => piece.id !== actor.id
-    && activePiece(piece)).flatMap((piece) => liveModels(piece).map((model) => ({
+    && (hasOfficialRelocationGeometryPolicyV13(state)
+      ? isOfficialAbilityModelPresenceV13(piece) : activePiece(piece)))
+    .flatMap((piece) => liveModels(piece).map((model) => ({
     id: model.id, footprint: footprintAt(state, piece, model, {
       ...modelPoint(model), rotationDegrees: model.baseRotationDegrees || 0,
     }) })));
@@ -817,12 +1162,22 @@ function canonicalPath(state, actor, leadingModel, placement, raw, maxDistance,
 function supportAndGrass(state, actor, placements) {
   const grass = new Set();
   const supported = new Set();
+  const sharedSurface = usesWave3FaqClarifications(state);
   for (const placement of placements) {
     const model = liveModels(actor).find((entry) => entry.id === placement.modelId);
     const footprint = footprintAt(state, actor, model, placement);
-    const actualSupports = [];
+    const surface = sharedSurface ? deriveOfficialFinalPlacementSurfaceSupportV13(state, footprint) : null;
+    const actualSupports = surface ? [...surface.supportTerrainIds] : [];
     for (const terrain of (state.board.terrain || []).filter((entry) => (
       entry.isRemoved !== true && entry.isDestroyed !== true))) {
+      if (surface) {
+        const isGrass = normalized(terrain.terrainKind) === "grass";
+        if (!isGrass && (!terrain.standableHorizontalSurface || actualSupports.includes(terrain.id))) continue;
+        if (!createOfficialTerrainCellFootprintsV1(terrain).some(cell => doOfficialPhysicalFootprintsOverlapV1(footprint, cell))) continue;
+        if (!isGrass) fail("RELOCATION_TERRAIN_ENDPOINT_UNSUPPORTED", terrain.id);
+        grass.add(terrain.id);
+        continue;
+      }
       const terrainGeometry = terrainFootprint(terrain);
       const terrainShape = { shape: "rectangle", vertices: rectangleVertices(terrainGeometry) };
       if (!footprintOverlap(footprint, terrainShape)) continue;
@@ -841,7 +1196,7 @@ function supportAndGrass(state, actor, placements) {
     }
     const highest = actualSupports.reduce((value, id) => Math.max(value,
       Number(state.board.terrain.find((entry) => entry.id === id)?.size || 0)), 0);
-    const expectedElevation = highest >= 3 ? "high" : highest >= 1 ? "mid" : "ground";
+    const expectedElevation = surface?.elevation ?? (highest >= 3 ? "high" : highest >= 1 ? "mid" : "ground");
     if (placement.elevation !== expectedElevation) {
       fail("RELOCATION_TERRAIN_ELEVATION_MISMATCH", placement.modelId);
     }
@@ -872,7 +1227,7 @@ function enemyGapCheck(projected, actor, minimumExclusive) {
   if (!minimumExclusive) return;
   for (const model of liveModels(actor)) {
     for (const enemy of projected.pieces.filter((piece) => (
-      piece.sideKey !== actor.sideKey && activePiece(piece)))) {
+      piece.sideKey !== actor.sideKey && referencePiece(projected, piece)))) {
       for (const enemyModel of liveModels(enemy)) {
         const measurement = evaluateOfficialBaseMeasurementV1({
           state: projected,
@@ -940,10 +1295,10 @@ function maximumTargetDistanceFromSource(source, target) {
   }
   fail("RELOCATION_FOOTPRINT_RELATION_UNSUPPORTED");
 }
-function anchorConstraint(state, actor, leadingPlacement, leadingModel, parameters,
+function anchorConstraint(state, route, actor, leadingPlacement, leadingModel, parameters,
   maximumDistance) {
   const anchorPiece = state.pieces.find((entry) => entry.id === parameters.anchorPieceId
-    && entry.sideKey === actor.sideKey && entry.id !== actor.id && activePiece(entry));
+    && entry.sideKey === actor.sideKey && entry.id !== actor.id && placementOrigin(state, route, entry));
   const anchorModel = liveModels(anchorPiece).find((entry) => (
     entry.id === parameters.anchorModelId));
   if (!anchorModel) fail("RELOCATION_FRIENDLY_ANCHOR_INVALID");
@@ -951,7 +1306,12 @@ function anchorConstraint(state, actor, leadingPlacement, leadingModel, paramete
     ...modelPoint(anchorModel), rotationDegrees: anchorModel.baseRotationDegrees || 0,
   });
   const target = footprintAt(state, actor, leadingModel, leadingPlacement);
-  if (maximumTargetDistanceFromSource(source, target) > maximumDistance + TOLERANCE) {
+  // Preserve the established round/rectangle predicate for signed legacy rooms.
+  const simpleBase = (base) => base.shape === "round" || base.shape === "rectangle";
+  const within = simpleBase(source) && simpleBase(target)
+    ? maximumTargetDistanceFromSource(source, target) <= maximumDistance + TOLERANCE
+    : isOfficialPhysicalFootprintWhollyWithinRangeV1({ source, target, rangeMilliInches: maximumDistance });
+  if (!within) {
     fail("RELOCATION_FRIENDLY_ANCHOR_DISTANCE_EXCEEDED");
   }
 }
@@ -996,7 +1356,7 @@ export function describeOfficialNonEntryEdgeDeployV1(input = {}) {
       baseDepthMilliInches: milli(model.baseDepthInches),
     })).sort((left, right) => left.modelId.localeCompare(right.modelId)),
     maxDistanceMilliInches: milli(profile.currentDeploySpeedInches),
-    coherencyRangeMilliInches: 3000,
+    coherencyRangeMilliInches: horizontalCoherency(state, actor, true),
     minimumEnemyGapMilliInchesExclusive:
       Number(input.minimumEnemyGapMilliInchesExclusive || 10000),
     fullBaseBoundaryRequired: true,
@@ -1050,6 +1410,7 @@ export function planOfficialNonEntryEdgeDeployV1(input = {}) {
     pieceId: actor.id, descriptionHash: description.descriptionHash,
     leadingModelId, finalModelPositions: placements,
     edgeSide, maxDistanceMilliInches: description.maxDistanceMilliInches,
+    coherencyRangeMilliInches: description.coherencyRangeMilliInches,
     minimumEnemyGapMilliInchesExclusive:
       description.minimumEnemyGapMilliInchesExclusive,
     coherencyResultHash: coherency.resultHash,
@@ -1098,6 +1459,23 @@ function instantiate(bundle, state, domain, parameters = {}) {
   const route = bundle.routes.find((entry) => entry.definitionId === domain.definitionId);
   const actor = state.pieces.find((entry) => entry.id === domain.pieceId);
   if (!route || !actor || !object(parameters)) fail("RELOCATION_ACTION_INPUT_INVALID");
+  let paymentCardInstanceIds;
+  if (bundle.schema === currentBundleSchema) {
+    const allowed = [...domain.parameterSchema.required, ...(domain.parameterSchema.optional || [])];
+    if (Object.keys(parameters).some(key => !allowed.includes(key))) {
+      fail('RELOCATION_SEMANTIC_PARAMETERS_REQUIRED');
+    }
+  }
+  if (currentPaidRoute(bundle, route)) {
+    paymentCardInstanceIds = parameters.paymentCardInstanceIds;
+    if (!Array.isArray(paymentCardInstanceIds) || new Set(paymentCardInstanceIds).size !== paymentCardInstanceIds.length) {
+      fail('RELOCATION_PAYMENT_SELECTION_INVALID');
+    }
+    paymentCardInstanceIds = [...paymentCardInstanceIds].sort();
+    if (!domain.parameterSchema.paymentCardInstanceIds.enum.some(ids => isDeepStrictEqual(ids, paymentCardInstanceIds))) {
+      fail('RELOCATION_PAYMENT_SELECTION_INVALID');
+    }
+  }
   let canonicalParameters;
   let geometryPlan = null;
   if (route.effectKind === "deployment_edge_lock") {
@@ -1115,7 +1493,7 @@ function instantiate(bundle, state, domain, parameters = {}) {
     const ignoredTerrainIds = [...new Set([
       ...terrain.supportedTerrainIds, ...terrain.grassRemovedTerrainIds,
     ])].sort();
-    let pathResult = null;
+    let pathResult = null, entrySource;
     if (route.effectKind === "extra_move") {
       pathResult = canonicalPath(state, actor, leadingModel, leadingPlacement,
         parameters.path, domain.constraints.maxDistanceMilliInches,
@@ -1128,13 +1506,20 @@ function instantiate(bundle, state, domain, parameters = {}) {
       }
     } else if (route.effectKind === "entry_edge_place") {
       const segmentId = String(parameters.entrySegmentId || "");
-      const segment = entrySegments(state, actor.sideKey).find((entry) => (
+      const segment = entrySegments(state, actor, route).find((entry) => (
         entry.segmentId === segmentId));
       if (!segment) fail("RELOCATION_ENTRY_SEGMENT_INVALID", segmentId);
-      edgeConstraint(state, actor, leadingPlacement, leadingModel, segment.side,
+      if(segment.kind==='unit_base_perimeter'){
+        const leader=footprintAt(state,actor,leadingModel,leadingPlacement);
+        if(maximumTargetDistanceFromSource({shape:'round',center:segment.center,radiusMilliInches:segment.radiusMilliInches},leader)
+          > domain.constraints.maxDistanceMilliInches+TOLERANCE)fail('RELOCATION_EDGE_DISTANCE_EXCEEDED');
+        assertUnitEntryElevation(state,segment,placements);
+        enemyZoneCheck(state,actor,placements);
+        entrySource=unitEntryReceipt(segment,projectOfficialDeploymentSupplyV1(state,actor.sideKey,actor.id).requestedSupply);
+      }else edgeConstraint(state, actor, leadingPlacement, leadingModel, segment.side,
         domain.constraints.maxDistanceMilliInches, segment);
     } else if (route.effectKind === "friendly_anchor_place") {
-      anchorConstraint(state, actor, leadingPlacement, leadingModel, parameters,
+      anchorConstraint(state, route, actor, leadingPlacement, leadingModel, parameters,
         domain.constraints.maxDistanceMilliInches);
     } else if (route.effectKind === "non_entry_edge_deploy") {
       const edgeSide = String(parameters.edgeSide || "");
@@ -1146,10 +1531,14 @@ function instantiate(bundle, state, domain, parameters = {}) {
       enemyZoneCheck(state, actor, placements);
     }
     const projected = projectGeometry(state, actor, placements, ignoredTerrainIds);
-    const coherency = evaluateOfficialCoherencyPlacementV1({
+    const assaultPlace = bundle.schema === currentBundleSchema && state.phase === 'assault'
+      && route.effectKind === 'direct_place' && !route.minimumEnemyGapMilliInchesExclusive;
+    const evaluateCoherency = assaultPlace ? evaluateOfficialAssaultPlaceCoherencyV1 : evaluateOfficialCoherencyPlacementV1;
+    const coherency = evaluateCoherency({
       state: projected.state, actor: projected.actor,
+      ...(assaultPlace ? { assaultPlaceSourceDefinitionId: route.definitionId } : {}),
       dataBundle: state.officialModelBaseGeometryDataBundle,
-      coherencyRangeMilliInches: 3000,
+      coherencyRangeMilliInches: domain.constraints.coherencyRangeMilliInches,
       plan: { planId: `relocation-${domain.domainId.slice(-24)}`,
         leadingModelId, placements: placements.map((entry) => ({
           ...entry, outcome: "placed",
@@ -1159,6 +1548,7 @@ function instantiate(bundle, state, domain, parameters = {}) {
     enemyGapCheck(projected.state, projected.actor,
       domain.constraints.minimumEnemyGapMilliInchesExclusive);
     canonicalParameters = { leadingModelId, placements,
+      ...(paymentCardInstanceIds ? { paymentCardInstanceIds } : {}),
       ...(pathResult ? { path: pathResult.points,
         elevationTransitions: clone(parameters.elevationTransitions || []) } : {}),
       ...(parameters.entrySegmentId
@@ -1174,8 +1564,10 @@ function instantiate(bundle, state, domain, parameters = {}) {
       pieceId: actor.id,
       leadingModelId,
       finalModelPositions: placements,
+      ...(entrySource ? {entrySource} : {}),
       distanceTravelledMilliInches: pathResult?.distanceMilliInches || null,
       maxDistanceMilliInches: domain.constraints.maxDistanceMilliInches,
+      coherencyRangeMilliInches: domain.constraints.coherencyRangeMilliInches,
       coherencyResultHash: coherency.resultHash,
       grassRemovedTerrainIds: [...new Set([
         ...terrain.grassRemovedTerrainIds,
@@ -1268,7 +1660,7 @@ function placeActor(state, actor, plan) {
   actor.inCoherency = true;
   actor.coherencyStatus = { schemaVersion: "starcraft_tmg_unit_coherency_status_v1",
     status: "in_coherency", isOutOfCoherency: false,
-    coherencyRangeMilliInches: 3000 };
+    coherencyRangeMilliInches: plan.geometryPlan.coherencyRangeMilliInches };
   actor.lastLeadingModelId = plan.geometryPlan.leadingModelId;
   actor.lastRelocationAbilityPlanHash = plan.planHash;
   for (const terrainId of plan.geometryPlan.grassRemovedTerrainIds) {
@@ -1304,6 +1696,20 @@ function apply(bundle, stateInput, request = {}) {
   const route = bundle.routes.find((entry) => entry.definitionId === action.definitionId);
   const actor = state.pieces.find((entry) => entry.id === action.pieceId);
   const events = [];
+  if (currentPaidRoute(bundle, route)) {
+    const ids = action.relocationPlan.canonicalParameters.paymentCardInstanceIds;
+    const cost = currentResourceCost(state, route, actor, { planHash: action.relocationPlan.planHash, consume: true });
+    const payment = resolveOfficialAbilityResourcePaymentFromCardsV1({ cardDataBundle: state.officialCardBuildPaymentDataBundle,
+      resourceType: route.resourceType, resourceCost: cost.effectiveResourceCost,
+      cardInstances: ids.map(id => state.cardResources[action.sideKey].find(card => card.cardInstanceId === id)) });
+    for (const card of state.cardResources[action.sideKey]) {
+      if (payment.selectedCardsExhaustOnCommit.includes(card.cardInstanceId)) card.readiness = 'exhausted';
+    }
+    events.push({ type: 'relocation_resource_paid', resourceType: route.resourceType,
+      resourceCost: cost.effectiveResourceCost, paymentResultHash: payment.resultHash,
+      exhaustedCardInstanceIds: payment.selectedCardsExhaustOnCommit, trainingTruth: false });
+    consumeOfficialUnitAbilityModifiersV1(state, cost, { definitionId: route.definitionId, planHash: action.relocationPlan.planHash }, events);
+  }
   if (route.sourceKind === "card_feature") {
     const card = (state.cardResources?.[action.sideKey] || []).find((entry) => (
       entry.cardInstanceId === action.relocationPlan.sourceInstanceId));
@@ -1363,9 +1769,13 @@ function apply(bundle, stateInput, request = {}) {
       useKey: `${state.round}:${route.abilityName}:${actor.id}`,
       round: Number(state.round), phase: state.phase, sideKey: action.sideKey,
       pieceId: actor.id, routeId: route.definitionId,
+      ...(route.useScope === 'source_card' ? { sourceInstanceId: action.relocationPlan.sourceInstanceId } : {}),
       abilityName: route.abilityName, planHash: action.relocationPlan.planHash,
       trainingTruth: false,
     });
+  }
+  if (bundle.schema === currentBundleSchema && route.activationKind === 'active') {
+    openOfficialSelectedRosterSpecialAbilityWindowV1(state, action.sideKey, actor.id, state.phase);
   }
   state.relocationAbilityHistory = state.relocationAbilityHistory || [];
   state.relocationAbilityHistory.push({
@@ -1374,6 +1784,7 @@ function apply(bundle, stateInput, request = {}) {
     effectKind: route.effectKind,
     deploymentResolved: ["deploy_from_reserves", "special_deploy"]
       .includes(route.actionKind),
+    ...(action.relocationPlan.geometryPlan?.entrySource ? {entrySource:clone(action.relocationPlan.geometryPlan.entrySource)} : {}),
     actorBiological: (actor.combatTags || []).map(normalized).includes("biological"),
     planHash: action.relocationPlan.planHash, events: clone(events), trainingTruth: false,
   });
@@ -1388,6 +1799,24 @@ function apply(bundle, stateInput, request = {}) {
     state: freezeDeep(state), action: clone(action), events,
     rulesTruth: "official_current_product_relocation_transition",
     trainingTruth: false });
+}
+
+function applicableRelocationModifierRoutes(bundle, piece) {
+  return (bundle?.routes || []).filter(route => QUERY_EFFECTS.has(route.effectKind)
+    && route.recordKey === piece.officialUnitRecordKey && fieldedFeature(piece, route)
+    && (activePiece(piece) || route.reserveExplicit === true
+      || (bundle.schema === currentBundleSchema && route.effectKind === 'displacement_permission'
+        && piece.isStructure === true && piece.isOnField === true && livePiece(piece))));
+}
+
+function hasBurrowMovementPermission(piece, routes) {
+  return (piece.statuses || []).some(entry => statusName(entry) === "burrowed")
+    && routes.some(entry => entry.effectKind === "burrow_movement_permission");
+}
+
+export function hasOfficialTunnelingClawsMovementV1(state, piece, actionType) {
+  return (actionType === "move" || actionType === "run")
+    && hasBurrowMovementPermission(piece, applicableRelocationModifierRoutes(state.officialRelocationFamilySourceBundle, piece));
 }
 
 function query(bundle, state, request = {}) {
@@ -1412,24 +1841,21 @@ function query(bundle, state, request = {}) {
   if (queryKind === "definition_routes") {
     return seal({ schema: "starcraft_tmg_official_relocation_query_v1",
       semanticVersion: "1.0.0", queryKind, precision: "exact",
-      result: { routes: clone(bundle.routes), routeCount: bundle.routeCount },
+      result: { routes: bundle.routes.map(route => ({ ...clone(route),
+        ...officialAbilityReferenceConstraintsV13(state, route, referenceRoles(route)) })), routeCount: bundle.routeCount },
       source: OFFICIAL_RELOCATION_FAMILY_ADAPTER_ID,
       rulesAuthority: true, mutationAuthority: false,
       sourceRefreshPerformed: false, trainingTruth: false }, "queryReceiptHash");
   }
   const piece = state.pieces.find((entry) => entry.id === request.pieceId);
   if (!piece) fail("RELOCATION_QUERY_PIECE_UNKNOWN", String(request.pieceId || ""));
-  const routes = bundle.routes.filter((route) => QUERY_EFFECTS.has(route.effectKind)
-    && route.recordKey === piece.officialUnitRecordKey && fieldedFeature(piece, route)
-    && (activePiece(piece) || route.reserveExplicit === true));
-  const burrowed = (piece.statuses || []).some((entry) => statusName(entry) === "burrowed");
+  const routes = applicableRelocationModifierRoutes(bundle, piece);
+  const tunneling = hasBurrowMovementPermission(piece, routes);
   const result = {
     pieceId: piece.id,
     applicableDefinitionIds: routes.map((entry) => entry.definitionId).sort(),
-    retainsBurrowedStatusOnMoveAndRun: burrowed && routes.some((entry) => (
-      entry.effectKind === "burrow_movement_permission")),
-    mayMoveThroughOtherUnitBases: burrowed && routes.some((entry) => (
-      entry.effectKind === "burrow_movement_permission")),
+    retainsBurrowedStatusOnMoveAndRun: tunneling,
+    mayMoveThroughOtherUnitBases: tunneling,
     maximumImpassableTerrainSize: Math.max(0, ...routes.filter((entry) => (
       entry.effectKind === "raptor_terrain_permission"))
       .map((entry) => Number(entry.maximumImpassableTerrainSize || 0))),
@@ -1485,6 +1911,7 @@ export function createOfficialRelocationFamilyAdapterV1(bundle) {
     fullRoundBaseSweptPathGeometry: true,
     legalSpacePreviewApplyReplaySequencePreserved: true,
     consumerQuerySeamExplicit: true,
+    coherencyPolicy: "current_characteristic_projection_v1",
     rulesAuthority: true,
     trainingTruth: false,
   });

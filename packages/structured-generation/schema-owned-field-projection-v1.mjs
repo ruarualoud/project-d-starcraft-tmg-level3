@@ -43,6 +43,38 @@ export function projectSchemaOwnedChildFieldsV1(input,schema){
   return {output,projection};
 }
 
+// Visit declared containers, then lift an extra field only ONE level to its
+// declared parent. Nullable unions are selected by actual type only when unique.
+// No ancestor search, new values, object synthesis, overwrites or semantic edits.
+export function projectSchemaOwnedParentFieldsV1(input,schema){
+  const output=structuredClone(input),projection=[];
+  const escape=key=>key.replaceAll('~','~0').replaceAll('/','~1');
+  const matches=(value,s)=>!(s.enum&&!s.enum.includes(value))&&(!Object.hasOwn(s,'const')||s.const===value)
+    &&(s.type==='null'?value===null:s.type==='array'?Array.isArray(value):s.type==='object'
+      ?value!==null&&typeof value==='object'&&!Array.isArray(value):s.type==='integer'?Number.isInteger(value):typeof value===s.type);
+  function selected(value,s){
+    if(!s)return null;
+    const variants=s.anyOf??s.oneOf;if(!variants)return s;
+    const candidates=variants.filter(v=>matches(value,v));return candidates.length===1?selected(value,candidates[0]):null;
+  }
+  function visit(value,raw,path,parent=null){
+    const s=selected(value,raw);
+    if(!s||value===null||typeof value!=='object')return;
+    if(Array.isArray(value)){if(s.items&&!Array.isArray(s.items))value.forEach((v,i)=>visit(v,s.items,path+'/'+i));return;}
+    if(s.type!=='object'||s.additionalProperties!==false||!s.properties||s.patternProperties)return;
+    for(const key of Object.keys(value))if(Object.hasOwn(s.properties,key))
+      visit(value[key],s.properties[key],path+'/'+escape(key),{value,s,path});
+    if(!parent)return;
+    for(const key of Object.keys(value)){
+      if(Object.hasOwn(s.properties,key)||!Object.hasOwn(parent.s.properties,key)||Object.hasOwn(parent.value,key))continue;
+      parent.value[key]=value[key];delete value[key];
+      projection.push({rule:'schema_owned_parent_field_relocation_v1',from:path+'/'+escape(key),
+        to:parent.path+'/'+escape(key),valuePreserved:true,semanticApprovalGranted:false});
+    }
+  }
+  visit(output,schema,'');return {output,projection};
+}
+
 // Closed contracts may safely ignore a redundant extra string only when the
 // identical nonempty value already occupies ONE canonical sibling field.
 // Unknown unique content, conflicts and ambiguous unions remain validation
@@ -75,6 +107,40 @@ export function projectSchemaDuplicateFieldsV1(input,schema){
       }
     }
     for(const key of Object.keys(value))if(Object.hasOwn(s.properties,key))visit(value[key],s.properties[key],path+'/'+escape(key));
+  }
+  visit(output,schema,'');return {output,projection};
+}
+
+// A closed, unambiguous object contract cannot consume unknown null fields.
+// Drop only those placeholders from the execution copy, with an audit trail.
+// Declared nulls, unknown non-null content and ambiguous unions stay untouched;
+// ordinary whole-command validation must still run after this projection.
+export function projectSchemaUnknownNullFieldsV1(input,schema){
+  const output=structuredClone(input),projection=[];
+  const escape=key=>key.replaceAll('~','~0').replaceAll('/','~1');
+  const matches=(value,s)=>{
+    if(!s||typeof s!=='object')return false;
+    if(s.enum&&!s.enum.includes(value)||Object.hasOwn(s,'const')&&s.const!==value)return false;
+    return s.type==='null'?value===null:s.type==='array'?Array.isArray(value):s.type==='object'
+      ?value!==null&&typeof value==='object'&&!Array.isArray(value):s.type==='integer'
+      ?Number.isInteger(value):s.type===undefined||typeof value===s.type;
+  };
+  function visit(value,s,path){
+    if(!s||typeof s!=='object'||value===null||typeof value!=='object')return;
+    if(s.anyOf||s.oneOf){
+      const alternatives=(s.anyOf??s.oneOf).filter(option=>matches(value,option));
+      if(alternatives.length===1)visit(value,alternatives[0],path);
+      return;
+    }
+    if(Array.isArray(value)){if(s.items&&!Array.isArray(s.items))value.forEach((v,i)=>visit(v,s.items,path+'/'+i));return;}
+    if(s.type!=='object'||s.additionalProperties!==false||!s.properties||s.patternProperties||s.allOf||s.$ref)return;
+    for(const key of Object.keys(value)){
+      if(Object.hasOwn(s.properties,key)){visit(value[key],s.properties[key],path+'/'+escape(key));continue;}
+      if(value[key]!==null)continue;
+      delete value[key];
+      projection.push({rule:'schema_unknown_null_projection_v1',from:path+'/'+escape(key),value:null,
+        originalReplyUnchanged:true,semanticApprovalGranted:false});
+    }
   }
   visit(output,schema,'');return {output,projection};
 }

@@ -1,5 +1,6 @@
 import { evaluateOfficialWithinWhollyWithinV1 } from
   "../rule-atoms/official-model-base-geometry-rules-kernel-v1.mjs";
+import { projectOfficialCompletedPointDefenseV1 } from './official-point-defense-attack-context-v1.mjs';
 
 export const OFFICIAL_RANGED_FAMILY_PROJECTION_VERSION = "1.0.0";
 
@@ -67,7 +68,11 @@ export function projectOfficialRangedFamilyModifiersV1(bundle, state, request = 
     .filter(() => normalized(context.abilityName) === "optical flare");
   const stabilizerRoutes = routesFor(bundle, piece, "medpack_model_bonus")
     .filter(() => ["life support", "medpack"].includes(normalized(context.abilityName)));
-  const availablePointDefenseSources = target ? (state.pieces || []).filter((source) => (
+  const currentPointDefense = bundle?.pointDefenseTiming === 'mandatory_passive_removal_before_hit_roll';
+  const completedPointDefense = currentPointDefense ? projectOfficialCompletedPointDefenseV1(state,
+    { ...context, attackerPieceId: piece.id }) : null;
+  const availablePointDefenseSources = target && !(currentPointDefense && context.templateSpillover)
+    ? (state.pieces || []).filter((source) => (
     source.id !== target.id && source.sideKey === target.sideKey && activePiece(source)
       && routesFor(bundle, source, "point_defense_laser").length > 0
       && unitWithin(state, source, target, 4000)
@@ -106,6 +111,7 @@ export function projectOfficialRangedFamilyModifiersV1(bundle, state, request = 
       removeSourcesAfterResolution: true,
       defenderChoiceRequired: true,
     } : null,
+    ...(currentPointDefense ? { completedPointDefense } : {}),
     sourceRefreshPerformed: false,
     rulesTruth: "official_current_product_ranged_family_consumer_projection",
     trainingTruth: false,

@@ -1,3 +1,5 @@
+import {inspectOfficialMultiModelCasualtySelectionV1} from
+  '../rule-atoms/official-multi-model-casualty-resolution-kernel-v1.mjs';
 import { isDeepStrictEqual } from "node:util";
 import { hashStarcraftTmgContract } from
   "../authoritative-engine/transition-v1.mjs";
@@ -139,8 +141,20 @@ export function compileStarcraftTmgActionParameterContractV1(value) {
   return freeze({ schemaVersion: STARCRAFT_TMG_ACTION_PARAMETER_CONTRACT_VERSION,
     domainId: domain.domainId || null, requiredFields: required,
     conditionalRequiredFields: clone(schema.conditionalRequiredFields || []),
+    ...(schema.hostDerivedFields ? {hostDerivedFields: clone(schema.hostDerivedFields)} : {}),
     additionalFieldsAllowed: chargeFields ? false : schema.additionalProperties !== false,
     fieldContracts: clone(fields),
+    ...(domain.constraints?.selectionMode === 'explicit_model_ids'
+      && domain.constraints?.selectionContract ? {
+        casualtySelection: {
+          ...inspectOfficialMultiModelCasualtySelectionV1({
+            targetPieceId:domain.constraints.targetPieceId || domain.pieceId,
+            selectionContract:domain.constraints.selectionContract, complete:false,
+          }),
+          instruction:'Choose casualtyModelIds in removal order. legalNextModelIds applies to the first removal; each later removal is checked against the remaining engagement graph by the same Rules executor. The Host does not choose losses for you.',
+          orderedRemovalRequired:domain.constraints.selectionContract.orderedRemovalRequired,
+        },
+      } : {}),
     // Current ground-place domains advertise flat input coordinates while
     // Rules returns the same coordinates in its canonical placement object.
     canonicalGroundPlacementAccepted: object(schema.groundPoint)
@@ -170,12 +184,11 @@ export function inspectStarcraftTmgActionParametersV1(domain, parameters) {
   };
   if (!object(parameters)) add(null, "object_required", parameters);
   else {
-    if (!contract.additionalFieldsAllowed) {
-      for (const field of Object.keys(parameters)) {
-        if (!Object.hasOwn(contract.fieldContracts, field)) {
-          add(field, "additional_field_not_allowed", parameters[field],
-            Object.keys(contract.fieldContracts));
-        }
+    for (const field of Object.keys(parameters)) {
+      if (contract.hostDerivedFields?.includes(field)) {
+        add(field, "field_computed_by_rules", parameters[field], []);
+      } else if (!contract.additionalFieldsAllowed && !Object.hasOwn(contract.fieldContracts, field)) {
+        add(field, "additional_field_not_allowed", parameters[field], Object.keys(contract.fieldContracts));
       }
     }
     const point = contract.canonicalGroundPlacementAccepted
@@ -250,12 +263,28 @@ export function inspectStarcraftTmgActionParametersV1(domain, parameters) {
       }
     }
     const native = sourceDomain(domain);
-    if (describeOfficialRelocationParameterFieldsV1(native)) {
-      const identity=inspectOfficialRelocationPlacementIdsV1(
-        native.parameterSchema.placements.exactModelIds,parameters.placements);
+    if (fieldIssues.length === 0 && contract.casualtySelection) {
+      const selection = inspectOfficialMultiModelCasualtySelectionV1({
+        targetPieceId:native.constraints.targetPieceId || native.pieceId,
+        selectionContract:native.constraints.selectionContract,
+        casualtyModelIds:parameters.casualtyModelIds,
+      });
+      if (!selection.valid) add(selection.invalidIndex === null ? 'casualtyModelIds'
+        : 'casualtyModelIds[' + selection.invalidIndex + ']', selection.code,
+        selection.invalidIndex === null ? parameters.casualtyModelIds
+          : parameters.casualtyModelIds[selection.invalidIndex], selection.legalNextModelIds);
+    }
+    const relocationFields=describeOfficialRelocationParameterFieldsV1(native);
+    if (relocationFields) {
+      const ids=relocationFields.placements.exactModelIds;
+      const identity=inspectOfficialRelocationPlacementIdsV1(ids,parameters.placements);
       if(!identity.valid)add('placements','relocation_complete_model_identity_or_count_invalid',
         parameters.placements,[{...identity,includesLeadingModel:true,
-          exactModelIds:native.parameterSchema.placements.exactModelIds}]);
+          exactModelIds:ids}]);
+      for(const field of ['placements','path'])for(const [index,point]of (Array.isArray(parameters[field])?parameters[field]:[]).entries()) {
+        for(const axis of ['x','y'])if(Object.hasOwn(point||{},axis+'Inches'))
+          add(`${field}[${index}].${axis}Inches`,'coordinate_units_conflicting_or_not_exact',point[axis+'Inches']);
+      }
     }
     if (fieldIssues.length === 0 && describeOfficialSelectedRosterSpatialParameterFieldsV1(native)) {
       try { remainingOfficialSelectedRosterSpatialModelIdsV1(native,parameters.leadingModelId,parameters.placements); }
@@ -419,6 +448,13 @@ export function planStarcraftTmgParameterFailureRecoveryV1({ domain, parameters,
     && context?.doesNotProveProposalLegal === true
     && Boolean(context.leadingModelId && context.leadingModelBase
       && Array.isArray(context.submittedPath) && context.submittedPath.length > 0);
+  const relocationGeometry=issue.valid&&receipt?.mayRepairSameChoice===true
+    &&receipt?.findingSeverity==='Medium'
+    &&receipt?.failureStage==='instantiate_current_rules_domain'
+    &&receipt?.reason==='RELOCATION_EDGE_DISTANCE_EXCEEDED'
+    &&context?.doesNotProveProposalLegal===true
+    &&context?.relocationGeometryDescription?.schema==='starcraft_tmg_official_non_entry_edge_deploy_description_v1';
+  const recoverableGeometry=geometry||relocationGeometry;
   const fieldIssues = typed ? issue.fieldIssues : [];
   const failureSignature = hashStarcraftTmgContract({ domainId: domain?.domainId || null,
     reason: receipt?.reason || "validation_receipt_missing",
@@ -428,11 +464,11 @@ export function planStarcraftTmgParameterFailureRecoveryV1({ domain, parameters,
   });
   const sameCauseRounds = history.filter(row => row.failureSignature === failureSignature).length + 1;
   const totalRounds = history.length + 1;
-  const action = !(typed || geometry) || totalRounds >= maximumRounds ? "needs_attention"
-    : issue.requiresReplan || sameCauseRounds > 1 ? "replan" : "repair_same_choice";
+  const action = !(typed || recoverableGeometry) || totalRounds >= maximumRounds ? "needs_attention"
+    : issue.requiresReplan || relocationGeometry || sameCauseRounds > 1 ? "replan" : "repair_same_choice";
   return freeze({ schemaVersion: "starcraft_tmg_action_parameter_recovery_v1",
     kind: typed ? "parameter_submission_invalid"
-      : geometry ? "rules_geometry_rejected" : "unclassified_authority_or_rules_failure",
+      : recoverableGeometry ? "rules_geometry_rejected" : "unclassified_authority_or_rules_failure",
     scope: "current_decision", severity: receipt?.findingSeverity || "High",
     domainId: domain?.domainId || null, action, sameCauseRounds, totalRounds,
     maximumRounds, failureSignature, reason: receipt?.reason || "validation_receipt_missing",
@@ -446,10 +482,10 @@ export function planStarcraftTmgParameterFailureRecoveryV1({ domain, parameters,
       instruction: action === "replan"
         ? "The submitted choice cannot execute as proposed. Re-evaluate the existing plan using current admissible targets, choices and payments, then select a current candidate. Do not silently change its target/effect or default to Pass."
         : "Correct the listed parameter fields only. Preserve supported intent. [] payment combinations means unavailable; only [[]] permits empty payment. Every new proposal still requires Rules validation." }
-      : geometry ? { failureCode: receipt.reason,
+      : recoverableGeometry ? { failureCode: receipt.reason,
         geometryRepairContext: clone(context),
         instruction: action === "replan"
-          ? "The same geometry rejection has not progressed. Re-evaluate the spatial intent and current alternatives through the Planner, preserving prior goal and failure evidence. Do not default to Pass."
+          ? "The submitted position does not satisfy the current Native action geometry. Re-evaluate the spatial intent and current alternatives through the Planner, preserving the exact failure and prior goal. A static formation proves only its reported static constraints; it does not prove this action can reach that position. Do not default to Pass."
           : "Use the submitted path, model base and current distance/coherency limits to repair this candidate's geometry. Keep unsupported conclusions unknown; only a new exact Rules receipt can accept it." } : null,
     resolved: false, mayApply: false, trainingTruth: false });
 }
@@ -484,4 +520,44 @@ export function applyStarcraftTmgParameterFailureRecoveryV1(choice, recovery,
   }
   choice.warnings.push(`PARAMETER_RECOVERY:${recovery.action}:${recovery.reason}`);
   choice.status = recovery.action === "needs_attention" ? "provider_output_invalid" : "generating";
+}
+
+// One explicit recovery for the legacy Action-only relocation failure. Native
+// placement/edge failure stays false; the Planner gets ownership of a new plan.
+// No allowance is granted for another failed proposal and counters are retained.
+export function planStarcraftTmgRelocationPlannerRecoveryV1(choice,{retryApproved,authority}={}) {
+  const last=choice?.parameterRecoveryHistory?.at(-1);
+  if(retryApproved!==true||choice?.status!=='provider_output_invalid'
+    ||!choice.plannerResult||choice.completedDecision||choice.relocationPlannerRecovery
+    ||last?.action!=='needs_attention'||last.kind!=='rules_geometry_rejected'
+    ||last.reason!=='RELOCATION_EDGE_DISTANCE_EXCEEDED'
+    ||last.sameCauseRounds<2)return null;
+  for(const field of ['roomId','matchBindingHash','seatKey','stateRevision','stateHash','legalSpaceHash','spatialActionSpaceHash']) {
+    if(authority?.[field]!==choice.authority?.[field])return null;
+  }
+  const receipt=(choice.queryReceipts||[]).find(r=>r.queryReceiptHash===last.queryReceiptHash);
+  const geometry=receipt?.repairContext?.relocationGeometryDescription;
+  if(receipt?.reason!==last.reason||receipt.failureStage!=='instantiate_current_rules_domain'
+    ||geometry?.schema!=='starcraft_tmg_official_non_entry_edge_deploy_description_v1'
+    ||!Number.isSafeInteger(geometry.maxDistanceMilliInches))return null;
+  return {schemaVersion:'starcraft_tmg_relocation_planner_recovery_v1',
+    reason:last.reason,queryReceiptHash:last.queryReceiptHash,
+    authority:clone(authority),geometryDescription:clone(geometry),
+    priorParameterRecoveryCount:choice.parameterRecoveryHistory.length,
+    priorProposalValidationRounds:choice.proposalValidationRounds,
+    additionalInvalidProposalAllowance:0,paidHistoryRewritten:false};
+}
+export function applyStarcraftTmgRelocationPlannerRecoveryV1(choice,recovery,recordedAt) {
+  if(!recovery||choice.relocationPlannerRecovery)throw Error('RELOCATION_PLANNER_RECOVERY_NOT_ADMITTED');
+  choice.relocationPlannerRecovery={...clone(recovery),recordedAt};
+  choice.failedPlannerResults=[...(choice.failedPlannerResults||[]),{
+    plannerResult:clone(choice.plannerResult),reason:recovery.reason,recordedAt}];
+  choice.plannerResult=null;choice.stage='planning';choice.status='generating';
+  choice.stageQueryRounds=0;choice.stageCorrectionRounds=0;
+  choice.providerContinuationMessages.push({role:'user',content:JSON.stringify({
+    kind:'native_geometry_requires_planner_revision',
+    failedQueryReceiptHash:recovery.queryReceiptHash,reason:recovery.reason,
+    nativeGeometry:recovery.geometryDescription,
+    instruction:'The previous position fails the selected action edge/distance constraint. Re-evaluate the plan using current Native action domains. A static formation result does not prove Warp In reachability. You may keep the action with a different admissible plan or choose another current action; the Host chooses neither. Previous queries, paid answers and failure counters are retained. Another invalid action proposal stops this explicit recovery.'})});
+  choice.warnings.push('EXPLICIT_RELOCATION_PLANNER_RECOVERY:history_preserved');
 }

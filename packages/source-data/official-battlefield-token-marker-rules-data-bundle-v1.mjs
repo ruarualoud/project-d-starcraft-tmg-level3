@@ -8,6 +8,8 @@ import {
 import { verifyOfficialDeploymentGeometryDataBundleV1 } from
   "./official-deployment-geometry-data-bundle-v1.mjs";
 
+import { assertOfficialReleaseSourceV2 } from "./official-release-context-v2.mjs";
+
 export const OFFICIAL_BATTLEFIELD_TOKEN_MARKER_RULES_DATA_BUNDLE_SCHEMA =
   "starcraft_tmg_official_battlefield_token_marker_rules_data_bundle_v1";
 
@@ -16,6 +18,11 @@ const CORE_RULES_HASH =
 const PART_7_REVIEW_PACKET_HASH =
   "af23ae532b1189dc6ef0be2216929e18e77b1c429f5caab64785bc0ea11cc152";
 const HASH_PATTERN = /^[a-f0-9]{64}$/u;
+const REVIEWED_PART_7 = Object.freeze({
+  recordKey: "rules_sections:cB7X7UfOMHh3Wxn79ASF",
+  sourceRecordHash: "13e9d29032e246f947f59948389d437dead1f14911a890b688ee88a61e6f0688",
+  payloadHash: "56c942f90b76d67836accf996e9506a8cb318c631512960ffb83d7635fda96a6",
+});
 
 function fail(code, detail = "") {
   throw new Error(detail ? `${code}:${detail}` : code);
@@ -97,22 +104,37 @@ const RULE_CLAUSES = Object.freeze([
 ].sort((left, right) => left.atomId.localeCompare(right.atomId)));
 
 export function createOfficialBattlefieldTokenMarkerRulesDataBundleV1(input = {}) {
-  const dataset = input.dataset;
-  const geometryBundle = input.deploymentGeometryDataBundle;
-  if (!object(dataset) || dataset.datasetHash !== OFFICIAL_DEVELOPMENT_TRANCHE_DATASET_HASH
-    || dataset.sourceSnapshotHash !== OFFICIAL_DEVELOPMENT_TRANCHE_SNAPSHOT_HASH
-    || dataset.repositoryFallbackAllowed !== false) {
+  const { dataset, snapshot, releaseContext, deploymentGeometryDataBundle: geometryBundle } = input;
+  if (!object(dataset) || dataset.repositoryFallbackAllowed !== false) {
     fail("BATTLEFIELD_TOKEN_MARKER_DATASET_INVALID");
   }
   verifyOfficialDeploymentGeometryDataBundleV1(geometryBundle);
-  if (geometryBundle.normalizedDatasetHash !== dataset.datasetHash) {
+  const binding = geometryBundle.releaseBinding;
+  if (geometryBundle.normalizedDatasetHash !== dataset.datasetHash
+    || geometryBundle.sourceSnapshotHash !== dataset.sourceSnapshotHash) {
     fail("BATTLEFIELD_TOKEN_MARKER_GEOMETRY_DATA_MISMATCH");
+  }
+  if (binding) {
+    const manifest = assertOfficialReleaseSourceV2(releaseContext, { dataset, snapshot });
+    if (binding.releaseId !== manifest.releaseId || binding.manifestHash !== manifest.manifestHash
+      || binding.sourceRevisionHash !== manifest.source.sourceRevisionHash) {
+      fail("BATTLEFIELD_TOKEN_MARKER_GEOMETRY_RELEASE_MISMATCH");
+    }
+    const rules = dataset.recordsByKey[REVIEWED_PART_7.recordKey];
+    if (manifest.source.references?.core?.byteHash !== CORE_RULES_HASH
+      || rules?.sourceRecordHash !== REVIEWED_PART_7.sourceRecordHash
+      || rules?.payloadHash !== REVIEWED_PART_7.payloadHash) {
+      fail("BATTLEFIELD_TOKEN_MARKER_RELEASE_RULES_REVIEW_REQUIRED");
+    }
+  } else if (dataset.datasetHash !== OFFICIAL_DEVELOPMENT_TRANCHE_DATASET_HASH
+    || dataset.sourceSnapshotHash !== OFFICIAL_DEVELOPMENT_TRANCHE_SNAPSHOT_HASH) {
+    fail("BATTLEFIELD_TOKEN_MARKER_DATASET_INVALID");
   }
   const body = {
     schema: OFFICIAL_BATTLEFIELD_TOKEN_MARKER_RULES_DATA_BUNDLE_SCHEMA,
-    sourceLockHash: OFFICIAL_DEVELOPMENT_TRANCHE_SOURCE_LOCK_HASH,
-    sourceSnapshotHash: OFFICIAL_DEVELOPMENT_TRANCHE_SNAPSHOT_HASH,
-    normalizedDatasetHash: OFFICIAL_DEVELOPMENT_TRANCHE_DATASET_HASH,
+    sourceLockHash: geometryBundle.sourceLockHash,
+    sourceSnapshotHash: dataset.sourceSnapshotHash, normalizedDatasetHash: dataset.datasetHash,
+    ...(binding ? { releaseBinding: binding } : {}),
     coreRulesHash: CORE_RULES_HASH,
     part7ReviewPacketHash: PART_7_REVIEW_PACKET_HASH,
     deploymentGeometryDataBundleHash: geometryBundle.bundleHash,
@@ -160,12 +182,22 @@ export function createOfficialBattlefieldTokenMarkerRulesDataBundleV1(input = {}
 }
 
 export function verifyOfficialBattlefieldTokenMarkerRulesDataBundleV1(bundle) {
+  const binding = bundle?.releaseBinding;
+  const sourceInvalid = binding
+    ? !binding.releaseId || !HASH_PATTERN.test(binding.manifestHash)
+      || !HASH_PATTERN.test(binding.sourceRevisionHash)
+      || !HASH_PATTERN.test(binding.sourceSnapshotHash)
+      || !HASH_PATTERN.test(binding.normalizedDatasetHash)
+      || binding.sourceRevisionHash !== bundle.sourceLockHash
+      || binding.sourceSnapshotHash !== bundle.sourceSnapshotHash
+      || binding.normalizedDatasetHash !== bundle.normalizedDatasetHash
+    : bundle?.sourceLockHash !== OFFICIAL_DEVELOPMENT_TRANCHE_SOURCE_LOCK_HASH
+      || bundle?.sourceSnapshotHash !== OFFICIAL_DEVELOPMENT_TRANCHE_SNAPSHOT_HASH
+      || bundle?.normalizedDatasetHash !== OFFICIAL_DEVELOPMENT_TRANCHE_DATASET_HASH;
   if (!object(bundle)
     || bundle.schema !== OFFICIAL_BATTLEFIELD_TOKEN_MARKER_RULES_DATA_BUNDLE_SCHEMA
     || bundle.bundleHash !== hashStarcraftTmgContract(without(bundle, ["bundleHash"]))
-    || bundle.sourceLockHash !== OFFICIAL_DEVELOPMENT_TRANCHE_SOURCE_LOCK_HASH
-    || bundle.sourceSnapshotHash !== OFFICIAL_DEVELOPMENT_TRANCHE_SNAPSHOT_HASH
-    || bundle.normalizedDatasetHash !== OFFICIAL_DEVELOPMENT_TRANCHE_DATASET_HASH
+    || sourceInvalid
     || bundle.coreRulesHash !== CORE_RULES_HASH
     || bundle.part7ReviewPacketHash !== PART_7_REVIEW_PACKET_HASH
     || bundle.ruleClauses?.length !== 11

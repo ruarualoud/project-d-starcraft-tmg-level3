@@ -138,3 +138,12 @@ export function verifyOfficialReplacementWeaponLoadoutV1(input = {}) {
   if (!isDeepStrictEqual(receipt, expected)) fail("WEAPON_LOADOUT_RECEIPT_CONTENT_MISMATCH");
   return true;
 }
+
+export function isOfficialRosterAttackProfileFieldedV1(state, piece, profile) {
+  const normalize = value => String(value || '').normalize('NFC').trim().toLowerCase();
+  const selected = (piece.selectedUpgradeNames || []).some(name => normalize(name) === normalize(profile.weaponName));
+  const withoutCost = Number(profile.costSmall || 0) === 0 && Number(profile.costLarge || 0) === 0;
+  const releasedReplacement = state.officialRosterDisclosureDataBundle?.sourceBinding
+    && profile.linkedTo && profile.linkedTo !== '-';
+  return selected || (withoutCost && !releasedReplacement);
+}

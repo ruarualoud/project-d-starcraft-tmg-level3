@@ -1,58 +1,84 @@
+import {prepareRosterResourceOptionsV1,assessRosterResourceChoiceV1} from '../roster-strategist/roster-resource-choice-v1.mjs';
+import {createRosterConstructionAfterInquiryV1,rosterConstructionInquiryReturnV1} from '../roster-strategist/roster-construction-inquiry-return-v1.mjs';
+import {createRosterWorkflowCandidatePreviewV1,createRosterWorkflowCandidatePreviewWorkV1} from '../roster-strategist/roster-workflow-candidate-preview-v1.mjs';
+import {ROSTER_BUDGET_CURRENT_GENERATION_POLICY} from '../roster-strategist/roster-budget-branch-query-v1.mjs';
+import {projectRosterComparisonProgressInputsV1,createRosterRetentionProgressOwnerInputV1} from '../roster-strategist/roster-comparison-plan-continuity-v1.mjs';
+import {reconsiderRosterMethodContractV1} from '../roster-strategist/roster-method-contract-reconsideration-v1.mjs';
 // Product-facing P1-P3 Run. The same injected laboratory/secure Provider used
 // by the workspace owns facts and calls; scripts are only clients of this seam.
 import {createRosterDecisionWorkflowStoreV1} from './roster-decision-workflow-store-v1.mjs';
+import {createRosterBuilderFactSourceRecheckV1} from '../roster-strategist/roster-builder-fact-review-recheck-v1.mjs';
 import {hashStarcraftTmgContract as hash} from '../authoritative-engine/referee-crypto-v1.mjs';
 import {createRosterDecisionWorkflowV1,rosterWorkflowOperationReplacementsV1,rosterWorkflowBindingsMatchV1} from '../roster-strategist/roster-decision-workflow-v1.mjs';
 import {settleRosterWorkflowCompletedReplacementsV1} from '../roster-strategist/roster-workflow-replacement-settlement-v1.mjs';
 import {createRosterWorkflowReadRoleExecutorV1,projectRosterUnissuedReadRoleRecoveryV1} from '../roster-strategist/roster-workflow-read-role-v1.mjs';
+import {expandRosterAtomicReviewJobsV1,aggregateRosterAtomicReviewV1} from '../roster-strategist/roster-atomic-review-v1.mjs';
 import {isRosterWorkOrderCapabilityReturnV1} from '../roster-strategist/roster-workflow-order-failure-v1.mjs';
-import {rosterInvestigationDecisionWorkIdV1} from '../roster-strategist/roster-inquiry-review-stage-v1.mjs';
+import {assessRosterComparisonParticipantPreflightV1,blockedRosterComparisonWorkIdsV1} from '../roster-strategist/roster-comparison-participant-preflight-v1.mjs';
+import {createRosterInvestigationDecisionWorkV1} from '../roster-strategist/roster-workflow-investigation-decision-v1.mjs';
 import {createRosterWorkflowLaboratoryExecutorV1,compileRosterWorkflowExperimentV1,projectRosterWorkflowToolRepairV1} from '../roster-strategist/roster-workflow-laboratory-v1.mjs';
 import {publishRosterWorkflowPlanBlocksV1} from '../roster-strategist/roster-workflow-plan-blocks-v1.mjs';
 import {projectRosterWorkflowReceiptViewV1} from '../roster-strategist/roster-workflow-receipt-view-v1.mjs';
-import {publishRosterConditionalExperienceObservationV1,queryRosterConditionalExperienceObservationsV1} from '../roster-strategist/roster-conditional-experience-v1.mjs';
-import {archiveRosterConditionalConclusionV1,queryRosterConditionalConclusionsV1} from './roster-conditional-conclusion-v1.mjs';
+import {publishRosterConditionalExperienceObservationV1} from '../roster-strategist/roster-conditional-experience-v1.mjs';
+import {archiveRosterConditionalConclusionV1} from './roster-conditional-conclusion-v1.mjs';
+import {queryRosterConditionalExperienceSnapshotV1} from './roster-conditional-experience-reader-v1.mjs';
 import {projectRosterConfigurationReconsiderationV1} from '../roster-strategist/roster-configuration-reconsideration-v1.mjs';
 import {createRosterWorkflowDraftV1,projectRosterWorkflowDraftV1,applyRosterWorkflowDraftV1,
-  projectRosterWorkflowRevisionReviewV1} from '../roster-strategist/roster-workflow-draft-v1.mjs';
+  projectRosterWorkflowRevisionReviewV1,projectRosterWorkflowAuthorDraftInputV1} from '../roster-strategist/roster-workflow-draft-v1.mjs';
 import {isDeepStrictEqual} from 'node:util';
+import {isRosterReadOnlyObservationV1} from '../roster-strategist/roster-read-only-query-recovery-v1.mjs';
 import {rosterWorkflowCompletedOutputFailureV1,reconcileRosterCompletedFailureIdentityV1} from './roster-workflow-provider-boundary-v1.mjs';
 import {createRosterWorkflowChoiceObservationV1} from './roster-workflow-choice-observation-v1.mjs';
+import {projectRosterEmptyFormationChoiceV1} from '../roster-strategist/roster-workflow-tool-choice-v1.mjs';
 import {createRosterWorkflowCompletedMethodHandoffsV1,createRosterWorkflowCompletedMethodOwnerReturnsV1} from '../roster-strategist/roster-workflow-completed-method-handoff-v1.mjs';
 import {projectRosterRepeatedObservationContextV1,projectRosterExperimentProgressInputsV1,
   projectCompletedRosterNativeTransitionsV1} from '../roster-strategist/roster-experiment-progress-v1.mjs';
 import {rosterExperimentLifecycleV1,createRosterExperimentOwnerContinuationV1,createRosterExperimentSourceReviewV1,
   createRosterExperimentReviewRevisionV1,assessRosterExperimentConclusionV1,projectRosterExperimentQuestionEvidenceV1,
-  projectRosterExperimentBatchProgressV1} from '../roster-strategist/roster-workflow-experiment-owner-v1.mjs';
+  projectRosterExperimentBatchProgressV1,projectRosterExperimentControlReturnsV1,
+  projectRosterAssignedAuthorControlsV1} from '../roster-strategist/roster-workflow-experiment-owner-v1.mjs';
 import {pageRosterQuestionEvidenceDirectoryV1} from '../roster-strategist/roster-workflow-experiment-owner-v1.mjs';
 import {rosterOrderRepairContextV1,rosterSourceReviewNeedsContractCheckV1} from '../roster-strategist/roster-source-review-repair-handoff-v1.mjs';
 import {assessRosterWorkflowReadinessV1,createRosterWorkflowReviewAssignmentsV1,
-  assessRosterWorkflowFinalReviewsV1,createRosterWorkflowReviewResolutionV1} from '../roster-strategist/roster-workflow-readiness-v1.mjs';
+  assessRosterWorkflowFinalReviewsV1,createRosterWorkflowReviewResolutionV1,createRosterWorkflowReviewOwnerV1,
+  ROSTER_WORKFLOW_REVIEW_DOMAINS_V1} from '../roster-strategist/roster-workflow-readiness-v1.mjs';
+import {selectReusableRosterReviewsV1} from '../roster-strategist/roster-review-reuse-v1.mjs';
 import {createRosterWorkflowOwnershipIndexV1,selectRosterPurposePriorityV1} from '../roster-strategist/roster-workflow-ownership-v1.mjs';
 import {createRosterWorkflowGraphV1,rosterWorkflowChoiceContractV1,rosterWorkflowChoiceScopeReturnV1} from '../roster-strategist/roster-workflow-graph-v1.mjs';
 import {rosterSavedMethodRecoveryOwnerV1} from '../roster-strategist/roster-workflow-method-recovery-owner-v1.mjs';
 import {assessRosterComparisonPrerequisitesV1} from '../roster-strategist/roster-comparison-prerequisites-v1.mjs';
 import {createRosterWorkflowBatchSummaryV1} from '../roster-strategist/roster-workflow-batch-summary-v1.mjs';
 import {publishRosterWorkflowDecisionEvidenceDirectoryV1,projectRosterWorkflowRoleSourceInputsV1} from '../roster-strategist/roster-workflow-evidence-lineage-v1.mjs';
-import {createRosterWorkflowNonRevisionOutcomeV1,publishRosterWorkflowDecisionEvidenceV1} from '../roster-strategist/roster-workflow-decision-records-v1.mjs';
+import {createRosterWorkflowNonRevisionOutcomeV1,publishRosterWorkflowDecisionEvidenceV1,
+  projectRosterWorkflowDeclaredBlockersV1,assertRosterWorkflowNoDeclaredBlockersV1,collectRosterWorkflowAppliedDecisionsV1} from '../roster-strategist/roster-workflow-decision-records-v1.mjs';
 import {rosterPlanRecordRecoveryV1} from '../roster-strategist/roster-plan-record-recovery-v1.mjs';
 import {loadRosterProductHypothesisChallengeV1,assessRosterProductHypothesisCycleV1,ROSTER_STRATEGIC_COMPARISON_OBLIGATIONS_V1} from './roster-hypothesis-cycle-v1.mjs';
-import {resolveRosterComparisonDesignRequestV1} from '../roster-strategist/roster-comparison-redesign-v1.mjs';
+import {resolveRosterComparisonDesignRequestV1,projectRosterComparisonAuthorReviewInputV1} from '../roster-strategist/roster-comparison-redesign-v1.mjs';
+import {rosterComparisonCapabilityCatalogueV1} from '../roster-strategist/roster-comparison-execution-question-v1.mjs';
+import {rosterComparisonGroundingV1} from '../roster-strategist/roster-comparison-grounding-v1.mjs';
+import {projectRosterDecisionFactSlotsV1,restoreRosterSelectedFactSlotsV1} from '../roster-strategist/roster-decision-fact-slots-v1.mjs';
+import {createRosterComparisonValueReviewWorkV1,assessRosterComparisonValueReviewV1,
+  requireRosterComparisonValueApprovalV1} from '../roster-strategist/roster-comparison-value-review-v1.mjs';
 import {resolveRosterComparisonClosureRequestV1,ROSTER_COMPARISON_CLOSURE_OBLIGATIONS_V1} from '../roster-strategist/roster-comparison-closure-v1.mjs';
+import {createRosterInitialRetentionReviewV1} from '../roster-strategist/roster-initial-retention-v1.mjs';
 import {resolveRosterWorkflowBudgetSelectionV1} from '../roster-strategist/roster-workflow-budget-selection-v1.mjs';
 import {projectRosterWorkflowHypothesisContextV1,rosterWorkflowNeedsSourceLineageV1} from '../roster-strategist/roster-workflow-hypothesis-context-v1.mjs';
-import {projectRosterWorkflowFactInquiryV1,rosterDecisionInquiryDispatchV1} from '../roster-strategist/roster-workflow-fact-inquiry-v1.mjs';
+import {projectRosterWorkflowFactInquiryV1,projectRosterWorkflowBuilderAuthorityV1,rosterDecisionInquiryDispatchV1} from '../roster-strategist/roster-workflow-fact-inquiry-v1.mjs';
+import {projectRosterUnissuedScopeReturnV1} from '../roster-strategist/roster-investigation-scope-continuity-v1.mjs';
 import {createRosterWorkflowFrontierReturnsV1} from '../roster-strategist/roster-workflow-frontier-return-v1.mjs';
+import {refreshRosterBuilderConstraintDiagnosticsV1} from '../roster-strategist/roster-builder-constraint-diagnostics-v1.mjs';
+import {projectRosterCompletedInquiryInputsV1} from '../roster-strategist/roster-completed-inquiry-handoff-v1.mjs';
 import {ROSTER_COMPARISON_PREFLIGHT_OBLIGATIONS_V1,rosterComparisonDesignContractRepairV1,rosterComparisonPreflightContractRepairV1,
-  isRosterComparisonDesignStageV1} from '../roster-strategist/roster-comparison-purpose-v1.mjs';
+  isRosterComparisonDesignStageV1,rosterComparisonPurposeFromProposalV1,rosterComparisonDecisionContractV1,
+  assessRosterComparisonDecisionPreflightV1,rosterComparisonArmyBaselineCheckedV1,
+  currentRosterComparisonPreflightV1,rosterComparisonPlanContextRecheckV1} from '../roster-strategist/roster-comparison-purpose-v1.mjs';
+import {ROSTER_COMPARISON_DECISION_REVIEW_INSTRUCTION_V1,ROSTER_COMPARISON_CAUSAL_BOUNDARY_V1,rosterComparisonDecisionTestErrorsV1} from '../roster-strategist/roster-comparison-decision-test-v1.mjs';
 import {rosterToolCapabilityCatalogueV1} from '../roster-strategist/roster-tool-proof-scope-v1.mjs';
-import {createRosterWorkflowToolReturnWorkV1,publishRosterWorkflowUnresolvedSourcesV1,
-  rosterWorkflowReturnedFailureInputsV1} from '../roster-strategist/roster-workflow-tool-return-v1.mjs';
-export function rosterFrozenTaskInputsV1(current){
-  const source=current.evidence.findLast(entry=>/^tool:discovery:r\d+:scoring$/u.test(entry.id)
-    &&rosterWorkflowBindingsMatchV1(entry.bindings,current.scope));
-  return source?{frozenTaskAuthority:{source:'evidence',id:source.id,pointer:'/receipt'}}:{};
-}
+import {createRosterWorkflowToolReturnWorkV1,publishRosterWorkflowUnresolvedSourcesV1,publishRosterWorkflowCompletedToolSourcesV1,
+  rosterWorkflowReturnedFailureInputsV1,ROSTER_REPAIR_METHOD_RESOLUTION_V1,
+  projectRosterUnstartedToolRepairReconsiderationV1} from '../roster-strategist/roster-workflow-tool-return-v1.mjs';
+import {rosterFrozenTaskInputsV1,selectRosterCurrentDiscoveryReceiptsV1} from '../roster-strategist/roster-frozen-task-inputs-v1.mjs';
+export {rosterFrozenTaskInputsV1} from '../roster-strategist/roster-frozen-task-inputs-v1.mjs';
 // A caller-supplied task must not disappear when converted to a role input.
 // Accept the existing literal-input spelling losslessly; new callers use the
 // top-level question. Ambiguous/missing tasks fail BEFORE any model dispatch.
@@ -86,6 +112,17 @@ export function projectRosterUnissuedOrderRecoveryV1({state,work,failure,index,l
     if(!Array.isArray(jobs)||jobs.length!==failure.order.steps.length)return null;
     if(priorRecoveries.length)return null;
   }catch(error){
+    if(!priorRecoveries.length&&failure.error.code==='ROSTER_COMPARISON_SCENE_SOURCE_REQUIRED'
+      &&failure.error.dispatchOutcome==='not_dispatched'&&!failure.error.detail?.sourceSelection
+      &&error.code===failure.error.code&&error.detail?.sourceSelection?.version===1
+      &&error.detail.sourceSelection.designEvidenceIsState===false
+      &&failure.order.steps.some(step=>step.stepId===error.detail.stepId&&step.operation==='spatial'))
+      return {limit:generation,contractRecovery:{kind:'comparison_scene_source_diagnostic_v1',
+        originalResultRef:work.resultRef,originalOrderIndex:index,originalFailureCode:failure.error.code,
+        originalRepairLimit:limit,additionalConfirmationLimit:1,historyReset:false,providerReplayed:false,
+        remainingInputError:{code:error.code,detail:structuredClone(error.detail),queryRepair:structuredClone(error.queryRepair)}},
+        instruction:'The compiler now identifies the actual spatial step and its missing parent-state argument. The prior purposeSource number was DESIGN provenance, never a Native scene or a formation option. '+error.detail.sourceSelection.instruction+
+          ' Correct this same never-executed method once; preserve the purpose, sources, old errors, paid replies and repair generations. No geometry, measurement or strategy is approved by this correction.'};
     const stepDiagnostics=error.detail?.workOrderDiagnostics;
     if(failure.error.dispatchOutcome==='not_dispatched'&&error.code===failure.error.code
       &&!failure.error.detail?.workOrderDiagnostics&&stepDiagnostics?.version===1
@@ -197,7 +234,9 @@ export async function prepareRosterWorkflowMethodCompilationV1({state,work,resul
   // lose it merely because the immutable model order did not transcribe it.
   const context=choiceContract?.delegatedComparison||orders.some(order=>order.experimentScope?.comparisonBinding)
     ?await projectRosterWorkflowHypothesisContextV1({state,workId:work.id,readArtifact}):null;
-  return {choiceContract,comparisonPurpose:context?.sourceInputs?.comparisonPurpose};
+  const authority=await projectRosterWorkflowBuilderAuthorityV1({work,state,readArtifact});
+  return {choiceContract,comparisonPurpose:context?.sourceInputs?.comparisonPurpose,
+    builderCandidateAuthority:authority?.value};
 }
 export function projectRosterOrderCorrectionTaskV1({failure,recovery}){
   const remaining=recovery?.contractRecovery?.remainingInputError??null;
@@ -240,7 +279,7 @@ export async function createRosterCompletionRevalidationV1({state,work,result,re
         newProviderCall:false,historyReset:false}}};
 }
 export function createRosterComparisonPreflightWorkV1({current,id,cycleId,purposeWorkId,purposeResultRef,
-  designReviewRound=1,toolDescriptor,contractRepair,prerequisiteReturn}){
+  designReviewRound=1,toolDescriptor,contractRepair,prerequisiteReturn,planContextRecheck,decisionContract,grounding}){
   const purpose=current.work.find(work=>work.id===purposeWorkId);
   if(!purpose||purpose.resultRef!==purposeResultRef||purpose.strategyComparisonDesignCycleId!==cycleId)
     throw Error('ROSTER_COMPARISON_ACTUAL_PURPOSE_REQUIRED');
@@ -253,7 +292,17 @@ export function createRosterComparisonPreflightWorkV1({current,id,cycleId,purpos
       prerequisiteRecheckOf:prerequisiteReturn.sourceReviewWorkId}:{}),
     ...(contractRepair?{comparisonPreflightContractRepairOf:contractRepair.sourceWorkId,
       controlledRecovery:structuredClone(contractRepair)}:{}),
+    ...(planContextRecheck?{comparisonPlanContextReviewOf:planContextRecheck.sourceReviewId}:{}),
     inputs:{...task,
+      causalBoundary:{source:'literal',value:structuredClone(ROSTER_COMPARISON_CAUSAL_BOUNDARY_V1)},
+      ...(purpose.inputs.redesignContract?{
+        designOwnerScope:structuredClone(purpose.inputs.redesignContract),
+        designOwnerRequest:structuredClone(purpose.inputs.authorRedesignRequest)}:{}),
+      ...(decisionContract?{comparisonDecisionContract:{source:'literal',value:structuredClone(decisionContract)}}:{}),
+      ...(grounding?{comparisonGrounding:{source:'literal',value:structuredClone(grounding)}}:{}),
+      ...(planContextRecheck?{
+        previousPreflight:{source:'evidence',id:'role:'+planContextRecheck.sourceReviewId,pointer:'',scopeUsage:'historical_reference'},
+        planContextRecheck:{source:'literal',value:structuredClone(planContextRecheck)}}:{}),
       ...(prerequisiteReturn?{
         previousPreflight:{source:'evidence',id:'role:'+prerequisiteReturn.sourceReviewWorkId,pointer:''},
         prerequisiteFacts:{source:'evidence',id:'role:'+prerequisiteReturn.ownerWorkId,pointer:''},
@@ -264,22 +313,48 @@ export function createRosterComparisonPreflightWorkV1({current,id,cycleId,purpos
       proposedDesign:{source:'evidence',id:'role:'+purposeWorkId,pointer:''},
       draft:{source:'evidence',id:`draft:r${current.draftRevision}:summary`,pointer:'',scopeUsage:'historical_reference'},
       tools:{source:'literal',value:toolDescriptor},
+      decisionTestReview:{source:'literal',value:{version:2,
+        instruction:'When designOwnerScope is present, first compare its decisionToEnable and actual owner request with the proposed design: both must address the same delegated decision. The designer cannot replace a reaction/positioning choice with an unrelated purchasable-upgrade comparison. A mistaken owner premise is returned explicitly for correction, not silently obeyed or replaced; neither owner nor reviewer selects an alternative experiment for the author. Check the actual operation/queryKind proofScope for EACH promised observable and endpoint, including exclusions. A mere matching operation name is not sufficient. action_specific_threat explicitly excludes charge roll success; scenario is construction, not a damage measurement. Distinguish a known method requirement (authored_choice, cite the contract and retain the requirement) from missing facts/capabilities (necessary_fact). Do not launch discovery to prove a known interface. The Host resultPartition fixes disjoint outcomes, but you must still assess causal relevance, one bounded interaction, meaningful primary metric and justified threshold/cost implications. Different consequence wording, nonzero arithmetic or a predeclared arbitrary threshold do not by themselves prove decision value. Missing choice/bounds or an invalid decision criterion returns to the design author; no result is required before a valid test runs.'}},
       review:{source:'literal',value:{domainId:'comparison_preflight',requirementClassificationVersion:1,armyBaselineContractVersion:1,measurementOriginContractVersion:1,methodHandoffContractVersion:1,
-        obligations:structuredClone(ROSTER_COMPARISON_PREFLIGHT_OBLIGATIONS_V1),
+        obligations:structuredClone([...ROSTER_COMPARISON_PREFLIGHT_OBLIGATIONS_V1.map(o=>
+          grounding?.decisionValueApproval&&o.checkId==='decision_value'?{...o,
+            question:'策略比较的目标、成本取舍和结果用途已在decisionValueApproval的同一提案中通过。这里只检验方法是否忠实实现：干预、场景、指标、原始量含义、方向、阈值及结果→选择与批准提案一致，且工具覆盖终点。不要重新证明相同偏好或增添整场优越性标准；方法改变比较含义则退回设计作者，发现新来源矛盾明确指出，不受旧批准豁免。没有测量结果本身不是设计缺陷。'}:o),...(grounding?.obligations??[])]),
         instruction:'Read-only PRE-EXECUTION design review, not result review or final Plan approval. Check frozen premises, the exact current army versus the declared experiment arms, and whether a bounded design can answer its question using the exposed proof scopes. Cite currentArmyConfiguration in army_baseline; historical draft/Plan intent cannot override current selected upgrades/cards. An unexecuted but valid measurement is expected, not itself a missing-fact blocker. Do not demand experimental results before permitting the experiment. Reject wrong premises; identify author choices or concrete unavailable tool capabilities. Use exactly the assigned checks. No Native execution, fabricated observations, whole-game proof or strategy preference.'}}}};
 }
+export function assertRosterDecisionRunScopeV1(retainedScope,scope){
+  if(isDeepStrictEqual(retainedScope,scope))return;
+  const keys=[...new Set([...Object.keys(retainedScope??{}),...Object.keys(scope)])];
+  const changedFields=keys.filter(key=>!isDeepStrictEqual(retainedScope?.[key],scope[key]));
+  const code='ROSTER_DECISION_RUN_SCOPE_CHANGED';
+  throw Object.assign(Error(code+': '+changedFields.join(', ')),{
+    code,httpStatus:409,detail:{changedFields,
+      retainedScope:Object.fromEntries(changedFields.map(key=>[key,retainedScope?.[key]??null])),
+      currentScope:Object.fromEntries(changedFields.map(key=>[key,scope[key]??null]))},
+  });
+}
+
 export async function createRosterDecisionWorkspaceRunV1({directory,workflowStore,laboratory,deliberation,sessionId,scope,
-  builderPort,createDraftContext,createCandidateLaboratory,resources,onRequest,onReply,onTool}) {
+  builderPort,createDraftContext,createCandidateLaboratory,resources,onRequest,onReply,onTool,loadRetainedOfflineReply,shouldStopReadQuery,blindOpponent=false}) {
   const store=workflowStore??createRosterDecisionWorkflowStoreV1({directory});
-  const budgetNamespace=current=>`budget-options:v2:${current.scope.army.slice(0,20)}:${current.scope.rules.slice(0,12)}:${current.scope.source.slice(0,12)}`;
+  const budgetNamespace=current=>`budget-options:${ROSTER_BUDGET_CURRENT_GENERATION_POLICY}:${current.scope.army.slice(0,20)}:${current.scope.rules.slice(0,12)}:${current.scope.source.slice(0,12)}`;
   const budgetView=current=>current.evidence.find(e=>e.id===`tool-view:${budgetNamespace(current)}:budget`
     &&rosterWorkflowBindingsMatchV1(e.bindings,current.scope));
   const getCandidateInput=async()=>{const s=await store.load();if(!s?.draftRef)throw Error('ROSTER_WORKFLOW_DRAFT_REQUIRED');
     return (await store.get(s.draftRef)).candidateInput;};
-  const createTool=()=>createRosterWorkflowLaboratoryExecutorV1({laboratory,store,onTool,builderPort,getCandidateInput,createCandidateLaboratory});
+  const createTool=()=>createRosterWorkflowLaboratoryExecutorV1({laboratory,store,onTool,builderPort,getCandidateInput,createCandidateLaboratory,shouldStopReadQuery});
   let tool=createTool();
-  const executeRole=createRosterWorkflowReadRoleExecutorV1({deliberation,store,sessionId,onRequest,onReply});
+  const executeRole=createRosterWorkflowReadRoleExecutorV1({deliberation,store,sessionId,onRequest,onReply,shouldStop:shouldStopReadQuery});
   const model=async(assignment,control)=>{
+    if(assignment.inputs.atomicReviewAggregate?.value?.version===1)
+      return aggregateRosterAtomicReviewV1({assignment,state:await store.load(),readArtifact:store.get});
+    // An atomic reviewer already owns exact current claim/Native inputs.
+    // Do not append the global strategy/history wrappers used by its author.
+    if(assignment.inputs.atomicReviewItem?.value?.version===1)return executeRole(assignment,control);
+    if(assignment.role==='roster_workflow_experiment_planner'){
+      const snapshot=await store.load(),work=snapshot.work.find(w=>w.id===assignment.workId);
+      const scopeReturn=await projectRosterUnissuedScopeReturnV1({state:snapshot,work,readArtifact:store.get});
+      if(scopeReturn)return scopeReturn;
+    }
     const repeated=assignment.role==='roster_workflow_experiment_planner'
       ?await projectRosterRepeatedObservationContextV1({assignment,store}):null;
     const needsLineage=rosterWorkflowNeedsSourceLineageV1(assignment);
@@ -288,7 +363,9 @@ export async function createRosterDecisionWorkspaceRunV1({directory,workflowStor
       ?projectRosterExperimentQuestionEvidenceV1({state:current,owner:current.work.find(w=>w.id===assignment.workId)}):null;
     const sourceInputs=await projectRosterWorkflowRoleSourceInputsV1({assignment,state:current,readArtifact:store.get,
       projectToolRepair:value=>tool.projectRepair(value),compareSceneConditions:pair=>tool.compareSavedSceneConditions(pair)});
+    const authorControls=current?await projectRosterAssignedAuthorControlsV1({assignment,state:current,readArtifact:store.get}):{};
     const factInquiry=current?await projectRosterWorkflowFactInquiryV1({work:assignment,state:current,readArtifact:store.get}):null;
+    const builderAuthority=current?await projectRosterWorkflowBuilderAuthorityV1({work:assignment,state:current,readArtifact:store.get}):null;
     const reviewOwner=current&&assignment.role==='roster_workflow_final_review'
       ?current.work.find(w=>w.id===current.work.find(w=>w.id===assignment.workId)?.experimentSourceReviewOf):null;
     const reviewInquiry=reviewOwner?await projectRosterWorkflowFactInquiryV1({work:reviewOwner,state:current,readArtifact:store.get}):null;
@@ -297,11 +374,24 @@ export async function createRosterDecisionWorkspaceRunV1({directory,workflowStor
     const strategicChallenge=current?.draftRef
       ?await loadRosterProductHypothesisChallengeV1({state:current,draft:await store.get(current.draftRef),
         readArtifact:store.get,role:assignment.role}):null;
+    const comparisonReview=assignment.role==='roster_workflow_strategy_decision'&&current
+      ?await projectRosterComparisonAuthorReviewInputV1({state:current,challenge:strategicChallenge,readArtifact:store.get}):{};
     // A continued frontier retains its OLD assigned source. Also deliver the
     // actually read current candidate budget view, without rebinding that old
     // receipt or pretending the new options are a strategic recommendation.
     const currentBudget=assignment.role==='roster_workflow_strategy_decision'&&current?budgetView(current):null;
-    const baseInputs={...sourceInputs,...factInquiry,...(reviewInquiry?{question:reviewInquiry.question}:{}),
+    const completedInputs=current?await projectRosterCompletedInquiryInputsV1({state:current,
+      work:current.work.find(w=>w.id===assignment.workId),readArtifact:store.get}):{};
+    const completedInquiryInputs={};
+    for(const [key,input] of Object.entries(completedInputs)){
+      if(input.source==='literal'){completedInquiryInputs[key]=input;continue;}
+      const entry=current.evidence.find(e=>e.id===input.id),value=await store.get(entry.artifactRef);
+      completedInquiryInputs[key]={source:'evidence',evidenceId:entry.id,evidenceNumber:current.evidence.indexOf(entry)+1,
+        artifactRef:entry.artifactRef,pointer:input.pointer,status:'read',scopeUsage:input.scopeUsage,
+        validity:input.scopeUsage==='historical_reference'?'historical':'current',value:value.decisions};
+    }
+    const baseInputs={...sourceInputs,...authorControls,...factInquiry,...(reviewInquiry?{question:reviewInquiry.question}:{}),
+      ...(builderAuthority?{builderCandidateAuthority:builderAuthority}:{}),
       // The author chooses whether a missing fact needs another supported
       // method. Publishing a repaired descriptor only in the evidence index
       // leaves it reasoning from old contracts carried by the dispute.
@@ -313,9 +403,11 @@ export async function createRosterDecisionWorkspaceRunV1({directory,workflowStor
       ...(declaredHypotheses?{activeHypothesisTests:{source:'literal',value:declaredHypotheses.context},
         ...declaredHypotheses.sourceInputs}:{}),
       ...(strategicChallenge?{strategicHypothesisChallenge:{source:'literal',value:strategicChallenge}}:{}),
+      ...comparisonReview,
       ...(currentBudget?{currentBudgetOptions:{source:'evidence',evidenceId:currentBudget.id,
         evidenceNumber:current.evidence.findIndex(e=>e.id===currentBudget.id)+1,pointer:'',status:'read',
         value:await store.get(currentBudget.artifactRef)}}:{}),
+      ...completedInquiryInputs,
       ...(directory?{questionEvidenceDirectory:{source:'literal',value:directory}}:{})};
     const inputs=repeated?projectRosterExperimentProgressInputsV1({inputs:baseInputs,progress:repeated}):baseInputs;
     return executeRole(assignment.role==='roster_workflow_experiment_planner'
@@ -334,7 +426,10 @@ export async function createRosterDecisionWorkspaceRunV1({directory,workflowStor
     job.inputs.requirements={source:'literal',value:await assessReadiness(state)};
     return job;
   }
-  const workflowCore=await createRosterDecisionWorkflowV1({store,projectReconsideration,
+  const workflowCore=await createRosterDecisionWorkflowV1({store,projectReconsideration,blindOpponent,
+    shouldStop:shouldStopReadQuery,
+    validateToolBindings:(selected,inputs)=>tool.validateBindings(selected,inputs),
+    recoverSharedRoundOnePreparation:tool.recoverSharedRoundOnePreparation,loadRetainedOfflineReply,
     reconcileReadOnlyInterruption:projectRosterUnissuedReadRoleRecoveryV1,execute:(assignment,control)=>assignment.role==='roster_workflow_tool'
     ?tool.execute(assignment,control):model(assignment,control)});
   // All scheduling/contract helpers are read-only consumers. Reuse one frozen
@@ -343,9 +438,10 @@ export async function createRosterDecisionWorkspaceRunV1({directory,workflowStor
   let state=await workflow.inspect();
   if(!state)await workflow.dispatch({type:'initialize',scope});
   else {
-    if(!isDeepStrictEqual(state.scope,scope))throw Error('ROSTER_DECISION_RUN_SCOPE_CHANGED');
+    assertRosterDecisionRunScopeV1(state.scope,scope);
     await tool.restore({workflowState:state});
   }
+  await workflow.dispatch({type:'reconcile_comparison_authorizations'});
   async function publishDraft(){
     const current=await workflow.inspect();if(!current.draftRef)return;
     const draft=await store.get(current.draftRef),prefix=`draft:r${draft.revision}`;
@@ -370,6 +466,12 @@ export async function createRosterDecisionWorkspaceRunV1({directory,workflowStor
         'Immutable interface description, not an observed result, Rules approval or strategy endorsement',
         'Available operations do not broaden the assigned local experiment'],
       value:descriptor});
+    const participantSource=tool.participantSource();
+    if(participantSource)await workflow.dispatch({type:'publish_evidence',id:`participant-source:${hash(participantSource)}`,
+      title:'Exact frozen participating army selections and separate source-scene model counts (both sides)',
+      kind:'tool_receipt',bindings:{source:participantSource.sourceStateHash},conditions:[
+        'Read-only inputs/current Native scene projection, not a combat/arrival observation or comparison approval',
+        'Opponent is a frozen experimental reference, not hidden live-enemy knowledge'],value:participantSource});
     publishedTool=tool;
   }
   const boundTaskInputs=rosterFrozenTaskInputsV1;
@@ -400,23 +502,19 @@ export async function createRosterDecisionWorkspaceRunV1({directory,workflowStor
         if(current.evidence.some(e=>e.id===id))sources.add(id);
       }
     }
-    return Object.fromEntries([...sources].map((id,index)=>[`repairSource${index}`,{source:'evidence',id,pointer:''}]));
+    return {...Object.fromEntries([...sources].map((id,index)=>[`repairSource${index}`,{source:'evidence',id,pointer:''}])),
+      ...(work.inputs.request?.value?.builderCandidateAuthority?{builderCandidateAuthority:{source:'literal',
+        value:structuredClone(work.inputs.request.value.builderCandidateAuthority)}}:{})};
   }
   async function assessReadiness(current){
     const draft=current.draftRef?await store.get(current.draftRef):null;
     const verdict=draft?.builderVerdictRef?await store.get(draft.builderVerdictRef):null;
-    const acceptedDecisions=[],settledDecisionIds=[];
-    for(const work of current.work.filter(w=>w.role==='roster_workflow_strategy_decision'&&w.draftOutcomeRef)){
-      const outcome=await store.get(work.draftOutcomeRef);
-      if(work.status==='evidence_ready'&&(outcome.applied===true||['retain','retained','investigate'].includes(outcome.status)))
-        settledDecisionIds.push(work.id);
-      if(outcome.applied!==true&&!['retain','retained'].includes(outcome.status))continue;
-      const result=await store.get(work.resultRef);
-      for(const decision of result.value.decisions||[])acceptedDecisions.push({workId:work.id,revision:work.draftRevision,
-        resultRef:work.resultRef,decision,
-        carriedQuestions:work.inputs.investigationFrontier?.value?.unresolvedQuestions??[]});
-    }
-    return assessRosterWorkflowReadinessV1({draft,verdict,work:current.work,acceptedDecisions,settledDecisionIds});
+    const {acceptedDecisions,settledDecisionIds}=await collectRosterWorkflowAppliedDecisionsV1({state:current,readArtifact:store.get});
+    const workflowBlockers=await projectRosterWorkflowDeclaredBlockersV1({state:current,readArtifact:store.get});
+    const readiness=assessRosterWorkflowReadinessV1({draft,verdict,state:current,acceptedDecisions,settledDecisionIds,workflowBlockers});
+    const resourceChoice=await assessRosterResourceChoiceV1({draft,verdict,state:current,
+      amounts:readiness.mechanicalFacts.resourceAllocation?.vespene?.amounts,acceptedDecisions,readArtifact:store.get});
+    return {...readiness,resourceChoice,generationReady:resourceChoice.complete};
   }
   async function applyDecision(work,result){
     const current=await workflow.inspect(),draft=await store.get(current.draftRef);
@@ -426,15 +524,22 @@ export async function createRosterDecisionWorkspaceRunV1({directory,workflowStor
       throw Object.assign(Error('ROSTER_COMPARISON_CONTINUATION_REQUIRES_NEW_AUTHORITY'),
         {code:'ROSTER_COMPARISON_CONTINUATION_REQUIRES_NEW_AUTHORITY'});
     if(decision.disposition==='revise'){
-      let transition;
+      let transition,resolvedRosterBranch;
       try{
-        const resolvedRosterBranch=await resolveRosterWorkflowBudgetSelectionV1({decision,draft,state:current,work,store});
+        resolvedRosterBranch=await resolveRosterWorkflowBudgetSelectionV1({decision,draft,state:current,work,store});
         transition=applyRosterWorkflowDraftV1({draft,expectedRevision:work.draftRevision,mutation:decision.mutation,
-          publicReason:decision.publicReason,evidenceRefs:decision.evidenceRefs,builderPort,resolvedRosterBranch});
+          publicReason:decision.publicReason,evidenceRefs:decision.evidenceRefs,strategicChanges:decision.strategicChanges,
+          builderPort,resolvedRosterBranch});
       }catch(error){outcome={applied:false,status:'draft_input_rejected',code:error.code||error.message,
         detail:error.detail??null,draftUnchanged:true,correctionOwner:'strategic_decision'};}
       if(transition){
         if(transition.applied){
+          const preview=createRosterWorkflowCandidatePreviewV1({work,draft,draftRef:current.draftRef,decision,transition,
+            beforeVerdict:draft.builderVerdictRef?await store.get(draft.builderVerdictRef):builderPort.evaluateRosterCandidate(draft.candidateInput),resolvedRosterBranch});
+          if(preview){
+            await workflow.dispatch({type:'record_draft_outcome',workId:work.id,outcome:preview});
+            return; // The original army/Plan is unchanged until an informed author choice.
+          }
           // A Plan is advisory text, not a Native source mutation. Rebuilding
           // that identical source is expensive and discards retained private
           // branches. Only an actual army change constructs a new authority,
@@ -450,24 +555,54 @@ export async function createRosterDecisionWorkspaceRunV1({directory,workflowStor
           if(changedLaboratory)tool=createTool();
           await publishDraft();return;
         }
-        outcome=transition;
+        outcome=transition.status==='draft_unchanged'?{...transition,decision:structuredClone(decision)}:transition;
       }
     }else outcome=createRosterWorkflowNonRevisionOutcomeV1(decision);
     await workflow.dispatch({type:'record_draft_outcome',workId:work.id,outcome});
   }
   async function finalReviewState(){
-    const current=await workflow.inspect(),readiness=await assessReadiness(current),reviews=[];
+    let current=await workflow.inspect(),readiness=await assessReadiness(current);
+    const assignments=createRosterWorkflowReviewAssignmentsV1({state:current,readiness});
+    const {reused,invalidated}=await selectReusableRosterReviewsV1({state:current,readiness,
+      assignments:expandRosterAtomicReviewJobsV1(assignments),readArtifact:store.get,
+      readDependencies:workflowCore.readDependencies});
+    const reconciled=await workflow.dispatch({type:'reconcile_review_dependency_reuse',reused,
+      consideredWorkIds:expandRosterAtomicReviewJobsV1(assignments).map(work=>work.id)});
+    if(reconciled.changed.length){current=await workflow.inspect();readiness=await assessReadiness(current);}
+    const reviews=[];
     for(const work of current.work.filter(w=>w.role==='roster_workflow_final_review'
-      &&w.status==='evidence_ready'&&w.draftRevision===current.draftRevision))
+      &&w.status==='evidence_ready'&&w.draftRevision===current.draftRevision&&!w.reviewDependencyReuse))
       reviews.push({workId:work.id,resultRef:work.resultRef,value:(await store.get(work.resultRef)).value});
-    return {current,readiness,assessment:assessRosterWorkflowFinalReviewsV1({state:current,readiness,reviews})};
+    reviews.push(...reused);
+    return {current,readiness,assignments,reused,assessment:{...assessRosterWorkflowFinalReviewsV1({state:current,readiness,reviews}),reviewReuseInvalidations:invalidated}};
   }
   async function progressFinalReviews(){
-    const {current,readiness,assessment}=await finalReviewState();
+    const ownerMerge=projectRosterUnissuedReviewOwnerMergeV1({state:await workflow.inspect()});
+    if(ownerMerge)await workflow.dispatch({type:'enqueue',work:[ownerMerge]});
+    // A completed comparison cannot leave its older, unissued history read
+    // blocking every domain. The core verifies the actual reviewed outcome;
+    // this settles queue ownership only, never final semantic acceptance.
+    await workflow.dispatch({type:'settle_completed_comparison_navigation'});
+    // Capture capability dependencies before selecting/reusing review work.
+    // resolveFinalReviews is also a public entry; it need not follow advance.
+    await prepareToolContracts();
+    const {current,readiness,assessment,assignments,reused}=await finalReviewState();
+    // New evidence/contradictions may invalidate a formerly reused domain.
+    // Put its normal review back on the SAME queue instead of leaving a missing
+    // review that neither the resolver nor the product can advance.
+    const reopened=assignments.filter(job=>!current.work.some(w=>w.id===job.id)
+      &&!reused.some(r=>r.appliesToWorkId===job.id));
+    if(reopened.length){
+      const ids=new Set(reopened.map(w=>w.id));
+      const contextual=createRosterWorkflowReviewAssignmentsV1({state:current,readiness,
+        evidenceLineage:await prepareDecisionEvidenceDirectory(),revisionReviewContext:await revisionReviewContext(current)})
+        .filter(w=>ids.has(w.id));
+      await workflow.dispatch({type:'enqueue',work:expandRosterAtomicReviewJobsV1(contextual)});
+      return {scheduled:reopened.map(w=>w.id),assessment:(await finalReviewState()).assessment};}
     const jobs=createRosterWorkflowReviewResolutionV1({state:current,assessment,readiness}).map(job=>
       job.role==='roster_workflow_experiment_planner'?{...job,experimentGoalId:job.id,
         inputs:{...job.inputs,experimentLifecycle:{source:'literal',value:rosterExperimentLifecycleV1(job.id)}}}:job);
-    if(jobs.length)await workflow.dispatch({type:'enqueue',work:jobs});
+    if(jobs.length)await workflow.dispatch({type:'enqueue',work:expandRosterAtomicReviewJobsV1(jobs)});
     return {scheduled:jobs.map(w=>w.id),assessment};
   }
   async function returnInvestigation(owner,result,summaryIds,reason,{projectOnly=false}={}){
@@ -484,23 +619,10 @@ export async function createRosterDecisionWorkspaceRunV1({directory,workflowStor
     if(members.some(w=>w.status==='running'||w.operationState?.pending))return null;
     const draft=await store.get(current.draftRef);
     const progress=await projectRosterExperimentBatchProgressV1({state:current,summaryIds,store});
-    const unavailableCapabilities=[],delegationBoundaryRequests=[],sourceInterpretationChallenges=[];
-    for(const id of summaryIds){
-      const summary=current.work.find(w=>w.id===id);
-      if(!summary?.resultRef)continue;
-      const returned=(await store.get(summary.resultRef)).value?.coordination;
-      if(returned?.kind==='work_order_capability_return')
-        unavailableCapabilities.push({workId:id,resultRef:summary.resultRef,...structuredClone(returned)});
-      if(returned?.kind==='work_order_delegation_return')
-        delegationBoundaryRequests.push({workId:id,resultRef:summary.resultRef,...structuredClone(returned)});
-      if(returned?.kind==='source_interpretation_challenge')
-        sourceInterpretationChallenges.push({workId:id,resultRef:summary.resultRef,...structuredClone(returned)});
-    }
+    const controls=await projectRosterExperimentControlReturnsV1({state:current,summaryIds,readArtifact:store.get});
+    const {unavailableCapabilities,delegationBoundaryRequests,sourceInterpretationChallenges,comparisonDesignRequests,scopeRevisionRequests,authorCandidateRequests}=controls;
     const returnReason=blockedAssessment?.sourceControlDispute?'source_control_dispute'
-      :unavailableCapabilities.length?'experimental_capability_unavailable'
-      :delegationBoundaryRequests.length?'experimental_method_requires_authorization'
-      :sourceInterpretationChallenges.length?'source_interpretation_dispute'
-      :reason??(progress.noNewObservation?'completed_batch_contains_only_exact_reused_observations':undefined);
+      :controls.returnReason??reason??(progress.noNewObservation?'completed_batch_contains_only_exact_reused_observations':undefined);
     const job=createRosterExperimentOwnerContinuationV1({state:current,owner,result,summaryIds,draft,
       requirements:await assessReadiness(current),returnReason,sourceControlDispute:blockedAssessment?.sourceControlDispute});
     if(!job)return null;
@@ -508,6 +630,9 @@ export async function createRosterDecisionWorkspaceRunV1({directory,workflowStor
     if(unavailableCapabilities.length)job.inputs.unavailableCapabilities={source:'literal',value:unavailableCapabilities};
     if(delegationBoundaryRequests.length)job.inputs.delegationBoundaryRequests={source:'literal',value:delegationBoundaryRequests};
     if(sourceInterpretationChallenges.length)job.inputs.sourceInterpretationChallenges={source:'literal',value:sourceInterpretationChallenges};
+    if(comparisonDesignRequests.length)job.inputs.comparisonDesignRequests={source:'literal',value:comparisonDesignRequests};
+    if(scopeRevisionRequests.length)job.inputs.scopeRevisionRequests={source:'literal',value:scopeRevisionRequests};
+    if(authorCandidateRequests.length)job.inputs.authorCandidateRequests={source:'literal',value:authorCandidateRequests};
     if(projectOnly)return job;
     // Review domains share ONE draft writer. A fast author-only domain must
     // not commit first and invalidate its still-working siblings. Factual
@@ -569,12 +694,23 @@ export async function createRosterDecisionWorkspaceRunV1({directory,workflowStor
     return true;
   }
   async function synchronize(){
+    // A crash can occur after commit_draft and before publishDraft completes.
+    // Recover deterministic evidence from that same immutable committed draft,
+    // not by rerunning the author's decision or constructing another army.
+    const publication=await workflow.inspect();
+    if(publication.draftRef){
+      const committed=await store.get(publication.draftRef),prefix='draft:r'+committed.revision;
+      const required=[prefix+':summary',...(committed.builderVerdictRef?[prefix+':builder']:[]),
+        ...(committed.plan?[prefix+':plan:structure']:[])];
+      if(required.some(id=>!publication.evidence.some(entry=>entry.id===id)))await publishDraft();
+    }
     // Repair a saved legacy collection omission before any new experiment or
     // Teach can use the incomplete Plan. The author, not Host, chooses the edit.
     if(await reconcilePlanRecordLoss())return;
     // Publish before scheduler input snapshots; never mutate workflow state
     // from within an in-flight model request or create a parallel read path.
     await reconcileRosterCompletedFailureIdentityV1({workflow,store});
+    await workflow.dispatch({type:'reconcile_shared_round_one_preparations'});
     await workflow.dispatch({type:'reconcile_method_recovery_owners'});
     await workflow.dispatch({type:'reconcile_source_review_lineage'});
     await workflow.dispatch({type:'reconcile_review_request_shapes'});
@@ -601,10 +737,19 @@ export async function createRosterDecisionWorkspaceRunV1({directory,workflowStor
     await workflow.dispatch({type:'reconcile_unissued_input_failures'});
     await workflow.dispatch({type:'reconcile_receipt_pointer_roots'});
     state=await workflow.inspect();
+    await publishRosterWorkflowCompletedToolSourcesV1({state,readArtifact:store.get,publish:workflow.dispatch});
+    state=await workflow.inspect();
     // Publish negative/unknown facts BEFORE handing their method back. They
     // need an independently readable source just as successful tools do.
     await publishRosterWorkflowUnresolvedSourcesV1({state,readArtifact:store.get,publish:workflow.dispatch});
     state=await workflow.inspect();
+    for(const work of state.work.filter(w=>w.role==='roster_workflow_tool'&&w.status==='needs_model_choice'
+      &&w.inputs?.request?.value?.operation==='formation_scene'&&!w.branchReturnRef)){
+      const empty=await projectRosterEmptyFormationChoiceV1({state,workId:work.id,readArtifact:store.get});
+      if(!empty)continue;
+      await workflow.dispatch({type:'return_empty_formation_branch',workId:work.id});
+      state=await workflow.inspect();
+    }
     for(const work of state.work.filter(row=>row.role==='roster_workflow_tool'
       &&row.status==='needs_model_choice'&&!row.branchReturnRef
       &&['probability','threat_exchange'].includes(row.inputs?.request?.value?.operation))){
@@ -625,9 +770,9 @@ export async function createRosterDecisionWorkspaceRunV1({directory,workflowStor
       const report=await store.get(returned.reportRef),reportId=`branch-return:${owner.id}:${report.control.orderIndex}`;
       if(!state.evidence.some(e=>e.id===reportId))await workflow.dispatch({type:'publish_evidence',id:reportId,
         title:'Returned experimental method; not Native success or Plan approval',kind:'proposal',bindings:owner.bindings,
-        conditions:['Model control-flow report, original source facts must be read separately'],value:report});
+         conditions:['Control-flow report, original source facts must be read separately; not Native success'],value:report});
       const inputs={question:{source:'literal',value:{
-        purpose:report.originalOrder.purpose,instruction:'Summarize this returned experimental method using the original cited facts. Distinguish a model control return from Native success; do not erase negative or blocked facts. The original question owner will select the next method or conclude after source review.'}},
+         purpose:report.originalOrder.purpose,instruction:'Summarize this returned experimental method using the original cited facts. Distinguish a model or tool control return from Native success; do not erase negative or blocked facts. The original question owner will select the next method or conclude after source review.'}},
         branchReturn:{source:'evidence',id:reportId,pointer:'/conclusion'},
         returnScope:{source:'literal',value:{kind:report.kind,nativeActionSucceeded:false,planApproved:false,
           sourceReviewStillRequired:true,stoppedWorkCount:report.stoppedWork.length,
@@ -679,20 +824,13 @@ export async function createRosterDecisionWorkspaceRunV1({directory,workflowStor
     // A successful leaf may resolve several nested input/choice continuations.
     // Drain these finite saved edges now, before NO_READY_WORK can be reported.
     state=(await settleRosterWorkflowCompletedReplacementsV1(workflow)).state;
+    await publishRosterWorkflowCompletedToolSourcesV1({state,readArtifact:store.get,publish:workflow.dispatch});
+    state=await workflow.inspect();
     for(const work of state.work.filter(w=>w.status==='evidence_ready')){
       const result=await store.get(work.resultRef);
       if(work.role!=='roster_workflow_tool'&&!state.evidence.some(e=>e.id===`role:${work.id}`))
         await workflow.dispatch({type:'publish_evidence',id:`role:${work.id}`,title:`${work.role}: ${work.id}`,
           kind:result.kind,bindings:work.bindings,conditions:result.conditions,value:result.value});
-      if(work.role==='roster_workflow_tool'&&!state.evidence.some(e=>e.id===`tool:${work.id}`)){
-        await workflow.dispatch({type:'publish_evidence',id:`tool:${work.id}`,title:`${result.value.operation}: ${work.id}`,
-          kind:'tool_receipt',bindings:work.bindings,conditions:result.conditions,value:result.value});
-      }
-      if(work.role==='roster_workflow_tool'&&!state.evidence.some(e=>e.id===`tool-view:${work.id}`)){
-        await workflow.dispatch({type:'publish_evidence',id:`tool-view:${work.id}`,title:`Receipt view: ${work.id}`,
-          kind:'tool_receipt',bindings:work.bindings,conditions:result.conditions,
-          value:projectRosterWorkflowReceiptViewV1({evidenceId:`tool:${work.id}`,value:result.value,conditions:result.conditions})});
-      }
       await publishRosterConditionalExperienceObservationV1({workflow,state,work,result});
       if(work.role!=='roster_workflow_experiment_planner'||work.branchReturnRef)continue;
       const savedCompletion=await createRosterCompletionRevalidationV1({state,work,result,readArtifact:store.get});
@@ -730,7 +868,8 @@ export async function createRosterDecisionWorkspaceRunV1({directory,workflowStor
           orderRepairLimit:recovery?.limit??limit,...(recovery?{contractRecovery:recovery.contractRecovery}:{}),
           inputs:{...rosterOrderRepairContextV1(work),task:{source:'literal',value:{...projectRosterOrderCorrectionTaskV1({failure,recovery}),
             instruction:(recovery?.instruction??'Correct ONLY this invalid work order. Valid sibling orders are already scheduled and must not be returned or rerun. Use the actual tool for the intended fact; do not deliberately submit an invalid request to obtain a known error. inspect exposes frozen source units and probability/spatial input contracts; roster_route is a supplied-army map audit, not a roster lookup. Return a necessary executable replacement or a precise unresolved capability question.')
-              +' The failed order and reviewer are proposals, not Rules truth. Preserve the original question/design and inherited source-review context, not a disproved method premise. If the intended correction requires an invalid premise, a changed experimental objective or a strategic choice, use action=conclude with strategy_required and exact evidence/unresolvedQuestions to return control; do not buy a different experiment merely to make the old order executable. This return does not approve a fact or a Plan.'}},
+               +' The failed order and reviewer are proposals, not Rules truth. '+ROSTER_REPAIR_METHOD_RESOLUTION_V1.instruction,
+             methodResolution:structuredClone(ROSTER_REPAIR_METHOD_RESOLUTION_V1)}},
             draft:{source:'evidence',id:`draft:r${state.draftRevision}:summary`,pointer:'',
               ...(!Object.hasOwn(work.bindings??{},'plan')?{scopeUsage:'historical_reference'}:{})},
             tools:{source:'literal',value:tool.descriptor()}}}]});
@@ -742,7 +881,7 @@ export async function createRosterDecisionWorkspaceRunV1({directory,workflowStor
         const jobs=compileRosterWorkflowExperimentV1({order,scope:work.bindings,namespace,retainedWork:state.work,evidenceDirectory:state.evidence,priorSteps,
           ...compilationContext});
         jobs.forEach(job=>{job.experimentOwnerId=work.id;});
-        jobs.forEach((job,i)=>priorSteps.push({stepId:order.steps[i].stepId,workId:job.id}));
+        jobs.forEach((job,i)=>priorSteps.push({stepId:order.steps[i].stepId,workId:job.id,operation:order.steps[i].operation}));
         const originalRepair=pendingOf?state.work.find(w=>w.id===pendingOf):null;
         const completionWorkId=order.completionStepId?`${namespace}:${order.completionStepId}`:null;
         const replacementJobs=originalRepair?rosterWorkflowOperationReplacementsV1({
@@ -808,11 +947,20 @@ export async function createRosterDecisionWorkspaceRunV1({directory,workflowStor
     state=await workflow.inspect();
     for(const work of state.work.filter(w=>w.role==='roster_workflow_strategy_decision'&&w.draftOutcomeRef)){
       const outcome=await store.get(work.draftOutcomeRef),repairId=`${work.id}:repair`;
+      const previewWork=createRosterWorkflowCandidatePreviewWorkV1({work,outcome,state});
+      if(previewWork){
+        const evidenceId='candidate-preview:'+work.id;
+        if(!state.evidence.some(e=>e.id===evidenceId))await workflow.dispatch({type:'publish_evidence',id:evidenceId,
+          title:'Native-audited proposed army before commitment; not the current army',kind:'tool_receipt',bindings:work.bindings,
+          value:outcome.candidateSource,conditions:['Exact legal candidate preview. Current draft is unchanged; no strategic or final approval. Selecting this candidate is rechecked by current Native Builder.']});
+        await workflow.dispatch({type:'enqueue',work:[previewWork]});
+        continue;
+      }
       // Resume-safe publication: a stop after recording the outcome but before
       // publishing its evidence record is completed on the next synchronize.
       await publishRosterWorkflowDecisionEvidenceV1({work,outcome,evidence:state.evidence,dispatch:workflow.dispatch});
       if(work.status!=='evidence_ready')continue; // historical records publish, old investigations never restart
-      if(['investigate','retain','retained'].includes(outcome.status)&&outcome.decision
+      if(['investigate','retain','retained','draft_unchanged'].includes(outcome.status)&&outcome.decision
         &&rosterDecisionInquiryDispatchV1(outcome.decision).dispatch){
         const investigationId=`${work.id}:investigation`;
         if(!state.work.some(w=>w.id===investigationId))await workflow.dispatch({type:'enqueue',work:[{
@@ -823,11 +971,38 @@ export async function createRosterDecisionWorkspaceRunV1({directory,workflowStor
              experimentLifecycle:{source:'literal',value:rosterExperimentLifecycleV1(investigationId)},
             task:{source:'literal',value:'Resolve only the strategic decision requiredData. Select actual source tools or read existing receipts. Return explicit independent work orders with testable assumptions; do not repeat Teach, choose the final roster, or assert unexecuted results. Builder audit/choices/branches are available and read-only. A strategic scenario is conditional, not a prediction.'}}}]});
       }
-      if(!['builder_rejected','draft_input_rejected'].includes(outcome.status)||state.work.some(w=>w.id===repairId)||(work.repairGeneration||0)>=3)continue;
+      const constructionReturn=rosterConstructionInquiryReturnV1(work)&&outcome.decision?.disposition==='retain'
+        &&!state.work.some(w=>w.id===work.id+':construction-after-inquiry-v1')
+        ?createRosterConstructionAfterInquiryV1({state,work,outcome,readiness:await assessReadiness(state)}):null;
+      if(constructionReturn){
+        const currentDraft=await store.get(state.draftRef);
+        constructionReturn.inputs.wholeDraft=projectRosterWorkflowAuthorDraftInputV1(currentDraft);
+        constructionReturn.inputs.draft={source:'evidence',id:`draft:r${state.draftRevision}:summary`,pointer:''};
+        await workflow.dispatch({type:'enqueue',work:[constructionReturn]});
+      }
+      // A syntactically valid construction edit can be an actual no-op (for
+      // example adding an already selected upgrade). The saved Native outcome,
+      // not the author's claimed gain, owns progress. Return it through the
+      // same bounded author repair lane rather than leaving the product idle.
+      const constructionNoop=outcome.status==='draft_unchanged'
+        &&outcome.decision?.disposition==='revise'
+        &&work.draftRevision===state.draftRevision
+        &&Object.entries(work.bindings).every(([key,value])=>state.scope[key]===value)
+        &&work.inputs?.completionObligations?.value?.stage==='construct_army_and_plan'
+        &&!rosterDecisionInquiryDispatchV1(outcome.decision).dispatch;
+      const constructionReadiness=constructionNoop?await assessReadiness(state):null;
+      const needsConstructionRepair=Boolean(constructionReadiness?.mechanicalBlockers.length);
+      if(!(['builder_rejected','draft_input_rejected'].includes(outcome.status)||needsConstructionRepair)
+        ||state.work.some(w=>w.id===repairId)||(work.repairGeneration||0)>=3)continue;
       await workflow.dispatch({type:'enqueue',work:[{id:repairId,role:work.role,bindings:scope,draftRevision:state.draftRevision,
         repairGeneration:(work.repairGeneration||0)+1,inputs:{...work.inputs,
           localFailure:{source:'literal',value:{originalDecision:(await store.get(work.resultRef)).value.decisions[0],outcome,
-            instruction:'The attempted joint draft was not applied. Correct the specific input using this actual failure. Keep sound strategic reasons; do not invent results or repeat successful unrelated work.'}}}}]});
+            ...(needsConstructionRepair?{constructionFeedback:{version:1,sourceOutcomeRef:work.draftOutcomeRef,
+              draftRevision:state.draftRevision,actualChange:false,
+              mechanicalBlockers:constructionReadiness.mechanicalBlockers,mechanicalFacts:constructionReadiness.mechanicalFacts}}:{}),
+            instruction:needsConstructionRepair
+              ?'The submitted army and Plan already match the current draft: no upgrade was newly purchased and no budget gain occurred. Use the actual Native outcome, current selected inventory and remaining construction requirements, not the prior claimed gain. Choose a meaningful permitted revision, a necessary bounded inquiry, or a source-backed unavailable-capability/external-input blocker. Do not resubmit the same selections as new purchases or claim completion. Host does not choose units, cards or strategy. This is the existing bounded repair cycle; previous replies, fees and attempts remain.'
+              :'The attempted joint draft was not applied. Correct the specific input using this actual failure. Keep sound strategic reasons; do not invent results or repeat successful unrelated work.'}}}}]});
     }
     state=await workflow.inspect();
     async function batchSummaries(work){
@@ -895,39 +1070,11 @@ export async function createRosterDecisionWorkspaceRunV1({directory,workflowStor
       return null;
     }
     for(const investigator of state.work.filter(w=>w.role==='roster_workflow_experiment_planner'&&w.investigationFor&&w.status==='evidence_ready')){
-      const summaryIds=await investigationSummaries(investigator),nextId=rosterInvestigationDecisionWorkIdV1({state,investigator,summaryIds});
-      if(summaryIds===null||!summaryIds.length||state.work.some(w=>w.id===nextId))continue;
-      const prior=state.work.find(w=>w.id===investigator.investigationFor);
-      const inheritedInputs=structuredClone(prior.inputs),historicalInputs={};
-      // A completed child inquiry is a new decision boundary. Preserve the
-      // earlier failure/frontier verbatim as HISTORY, not as today's task.
-      // Pending predicates are still read from the original owner decision;
-      // this transport transition does not classify or resolve any of them.
-      for(const key of Object.keys(inheritedInputs))if([
-        'unavailableCapabilities','delegationBoundaryRequests','sourceInterpretationChallenges','investigationFrontier',
-        'unfinishedMethods','batchProgress','previousBatch','completedNativeTransitions',
-        'newEvidenceTask','investigation','investigationReturn','priorInvestigationContext',
-      ].includes(key)||/^(?:batchFacts|batchToolSource|newFacts)\d+$/u.test(key)){
-        historicalInputs[key]=inheritedInputs[key];delete inheritedInputs[key];
-      }
-      const inputs={...(investigator.afterAppliedRevision?{
-          question:prior.inputs.question??{source:'literal',value:'Complete the current user-target roster and coherent strategy using the returned facts.'},
-          draft:{source:'evidence',id:`draft:r${state.draftRevision}:summary`,pointer:''},
-          requirements:{source:'literal',value:await assessReadiness(state)},
-        }:inheritedInputs),
-        priorInvestigationContext:{source:'literal',value:{version:1,ownerWorkId:prior.id,
-          originalInputRef:prior.inputRef??null,inputs:historicalInputs,currentFailure:false,
-          instruction:'Historical return context only. The original failure remains true about that earlier attempt; it is not the current result or an instruction to repeat that inquiry.'}},
-        priorAuthorDecision:{source:'evidence',id:`role:${prior.id}`,pointer:'',scopeUsage:'historical_reference'},
-        investigationReturn:{source:'literal',value:{version:1,investigationWorkId:investigator.id,
-          previousAuthorWorkId:prior.id,acceptedConclusionWorkId:summaryIds[0],sourceReviewWorkId:summaryIds[1]??null,
-          originalQuestionsResolvedByHost:false,planApprovalGranted:false,
-          instruction:'Consume the returned conclusion AND its source/coverage review, then decide against the current draft. Preserve and explicitly classify the previous author decision questions; do not re-open the previous capability failure just because its historical record is present. A genuinely missing original predicate still requires a justified further inquiry. No automatic strategy selection or Plan approval.'}},
-        newEvidenceTask:{source:'literal',value:'Your requested investigation has returned. Use actual new evidence to revise army and Plan together, retain with a strategic reason, or identify a different necessary question. Do not repeat the original request as if it had not run. Unresolved questions are not resolved by the summary.'},
-        investigation:{source:'evidence',id:`role:${investigator.id}`,pointer:''}};
-      summaryIds.forEach((id,index)=>{inputs[`newFacts${index}`]={source:'evidence',id:`role:${id}`,pointer:''};});
-      await workflow.dispatch({type:'enqueue',work:[{id:nextId,role:'roster_workflow_strategy_decision',bindings:investigator.bindings,
-        draftRevision:state.draftRevision,strategyContinuationOf:prior.id,inputs}]});
+      const summaryIds=await investigationSummaries(investigator);
+      if(!summaryIds?.length)continue;
+      const next=createRosterInvestigationDecisionWorkV1({state,investigator,summaryIds,
+        readiness:investigator.afterAppliedRevision?await assessReadiness(state):undefined});
+      if(next)await workflow.dispatch({type:'enqueue',work:[next]});
     }
     const resolutionGroups=new Map();
     for(const work of state.work.filter(w=>w.resolutionGroupId&&w.draftRevision===state.draftRevision)){
@@ -954,7 +1101,8 @@ export async function createRosterDecisionWorkspaceRunV1({directory,workflowStor
     state=await workflow.inspect();
     const frontierReturns=await createRosterWorkflowFrontierReturnsV1({state,readArtifact:store.get});
     if(frontierReturns.length)await workflow.dispatch({type:'enqueue',work:frontierReturns});
-    if(state.work.some(w=>w.role==='roster_workflow_final_review'&&w.draftRevision===state.draftRevision))
+    if(state.work.some(w=>w.role==='roster_workflow_final_review'&&w.draftRevision===state.draftRevision
+      &&ROSTER_WORKFLOW_REVIEW_DOMAINS_V1.some(domain=>domain.id===w.reviewDomain)))
       await progressFinalReviews();
   }
   let turns=Promise.resolve();
@@ -963,21 +1111,154 @@ export async function createRosterDecisionWorkspaceRunV1({directory,workflowStor
     projectToolRepair:value=>tool.projectRepair(value),
     mutationProof:()=>laboratory.proveMutationZero(),
     inspect:workflowCore.inspect,
+    returnInterruptedReadToMethod:input=>workflow.dispatch({type:'return_interrupted_read_to_method',...input}),
+    async recoverInterruptedQueries({ownership}={}){
+      if(ownership?.kind!=='product_single_writer_lease'||ownership.held!==true)
+        throw Error('ROSTER_WORKFLOW_READ_ONLY_QUERY_RECOVERY_OWNERSHIP_REQUIRED');
+      const current=await workflow.inspect(),queued=[];
+      for(const work of current.work){
+        const op=work.operationState,pending=op?.pending;
+        if(work.role!=='roster_workflow_tool'||work.status!=='needs_repair'
+          ||work.failure?.code!=='DISPATCH_OUTCOME_UNKNOWN'||!pending||op.retryInterruptedQuery||op.completedRef
+          ||op.interruptedQueryAttempts?.some(row=>row.originalPending.requestRef===pending.requestRef)
+          ||!isRosterReadOnlyObservationV1(work.inputs.request?.value?.operation))continue;
+        await workflow.dispatch({type:'recover_read_only_query',workId:work.id,requestRef:pending.requestRef,ownership,
+          reason:'Product owns the exclusive writer lease after interrupted owner termination. Retry only this exact frozen read query once; restore saved results, retain original pending/failures/counters, no paid request or room action replay.'});
+        queued.push(work.id);
+      }
+      return {queued,providerCalls:0,nativeCalls:0};
+    },
     readArtifact:store.get,
+    async refreshBuilderRejectionDiagnostics({workId,request}){
+      return refreshRosterBuilderConstraintDiagnosticsV1({state:await workflow.inspect(),workId,request,readArtifact:store.get,
+        evaluateCandidate:candidate=>builderPort.evaluateRosterCandidate(candidate),
+        publishEvidence:e=>workflow.dispatch({type:'publish_evidence',...e})});
+    },
     publishEvidence:e=>workflow.dispatch({type:'publish_evidence',...e}),
     publishPlan:plan=>publishRosterWorkflowPlanBlocksV1(workflow,{plan,bindings:scope}),
     enqueue:work=>workflow.dispatch({type:'enqueue',work}),
     supersedeExperiment:input=>workflow.dispatch({type:'supersede_experiment_goal',...input}),
     closeOptionalComparison:input=>workflow.dispatch({type:'close_optional_comparison',...input}),
     resumeRoleCorrection:input=>workflow.dispatch({type:'resume_role_correction',...input}),
+    recheckInventoryClaims:input=>workflow.dispatch({type:'recheck_inventory_claims',...input}),
+    reinterpretInventoryClaims:input=>workflow.dispatch({type:'reinterpret_inventory_claims',...input}),
     async handoffRepeatedInspection(input){
       const current=await workflow.inspect();
       return workflow.dispatch({...input,type:'handoff_repeated_inspection',requirements:await assessReadiness(current)});
     },
+    correctDecisionAssignment:input=>workflow.dispatch({...input,type:'correct_decision_assignment'}),
     handoffStrategyAuthor:input=>workflow.dispatch({type:'handoff_strategy_author',...input}),
     revalidateRoleReply:input=>workflow.dispatch({type:'revalidate_role_reply',...input}),
+    reattachReturnedProviderReply:input=>workflow.dispatch({...input,type:'reattach_returned_provider_reply'}),
+    reattachOfflineRoleReply:input=>workflow.dispatch({...input,type:'reattach_offline_role_reply'}),
+    async reconsiderUnstartedReviewResolution({workId,expectedResultRef,reason}){
+      const current=await workflow.inspect(),source=current.work.find(w=>w.id===workId);
+      const graph=createRosterWorkflowGraphV1(current),goal=current.work.find(w=>w.id===source?.experimentGoalId);
+      const reject=()=>{throw Error('ROSTER_REVIEW_INQUIRY_HANDOFF_INVALID');};
+      if(!reason?.trim()||source?.role!=='roster_workflow_experiment_planner'||source.status!=='evidence_ready'
+        ||source.resultRef!==expectedResultRef||!goal?.resolutionGroupId||goal.draftRevision!==current.draftRevision
+        ||current.work.some(w=>w.status==='running'||w.operationState?.pending))reject();
+      const groupId=goal.resolutionGroupId,id=groupId+':decision';
+      const roots=current.work.filter(w=>w.resolutionGroupId===groupId&&w.draftRevision===current.draftRevision);
+      const existing=current.work.find(w=>w.id===id);
+      if(existing){
+        const retained=existing.inputs.reviewMethodHandoff?.value;
+        if(existing.reviewResolutionOwnerVersion!==1||retained?.sourceWorkId!==workId
+          ||retained.sourceResultRef!==expectedResultRef)reject();
+      }else{
+        if(!graph.isFresh(source.id)||roots.some(w=>!graph.isFresh(w.id)||!w.resultRef
+          ||!Array.isArray(w.inputs.reviewIssues?.value)||!w.inputs.reviewIssues.value.length))reject();
+        const result=await store.get(source.resultRef);
+        if(result.value?.experimentConclusion||!result.value?.workOrders?.length||result.value.failedWorkOrders?.length)reject();
+        const children=graph.descendants(source.id,{kinds:['execution','repair','choice','continuation']}).filter(w=>w.id!==source.id);
+        if(!children.length||children.some(w=>!['ready','waiting_dependency'].includes(w.status)
+          ||w.resultRef||w.inputRef||w.operationState||w.attempt))reject();
+        const groups=roots.map(w=>({domain:w.reviewDomain,reviewId:w.inputs.reviewIssues.value[0].workId,
+          reviewRound:w.reviewRound,issues:structuredClone(w.inputs.reviewIssues.value)}));
+        const job=createRosterWorkflowReviewOwnerV1({state:current,groupId,groups,readiness:await assessReadiness(current)});
+        job.reviewResolutionGoalIds=roots.map(w=>w.id);
+        job.inputs.wholeDraft=projectRosterWorkflowAuthorDraftInputV1(await store.get(current.draftRef));
+        job.inputs.reviewMethodHandoff={source:'literal',value:{version:1,sourceWorkId:workId,sourceResultRef:expectedResultRef,
+          reason,unexecutedWorkIds:children.map(w=>w.id),methodExecuted:false,originalRecordsPreserved:true,
+          factsApproved:false,planApproved:false,historyReset:false,
+          instruction:'The old review bypassed the author inquiry authorization. Its unexecuted method is held, not refuted. Resolve the original review issues with the actual current draft and retained observations, using the ordinary author proof/capability contract for any next investigation. Do not infer game-rule impossibility or waive an unmeasured necessary premise.'}};
+        const latest=graph.latestExperimentOwners();
+        roots.forEach((root,i)=>{const owner=latest.find(w=>w.experimentGoalId===root.id&&w.status==='evidence_ready')??root;
+          job.inputs[`retainedMethod${i}`]={source:'evidence',id:`role:${owner.id}`,pointer:''};});
+        await workflow.dispatch({type:'enqueue',work:[job]});
+      }
+      const held=[];
+      for(const root of roots)held.push(await workflow.dispatch({type:'hold_experiment_for_strategy',
+        goalId:root.id,decisionId:id,reason}));
+      return {workId:id,held,providerCalls:0,nativeCalls:0,factsApproved:false,planApproved:false};
+    },
+    async reconsiderUnstartedToolRepair({workId,expectedResultRef,reason}){
+      const current=await workflow.inspect(),id=workId+':repair-policy-owner:v1';
+      const existing=current.work.find(w=>w.id===id);
+      if(existing){
+        const source=existing.inputs.repairContractReconsideration?.value;
+        if(source?.sourceWorkId!==workId||source.sourceResultRef!==expectedResultRef
+          ||!reason?.trim())throw Error('ROSTER_TOOL_REPAIR_RECONSIDERATION_INVALID');
+        return workflow.dispatch({type:'hold_experiment_for_strategy',
+          goalId:existing.investigationFrontierOf,decisionId:id,reason});
+      }
+      const proof=await projectRosterUnstartedToolRepairReconsiderationV1({
+        state:current,workId,expectedResultRef,readArtifact:store.get});
+      if(!proof||!reason?.trim())throw Error('ROSTER_TOOL_REPAIR_RECONSIDERATION_INVALID');
+      const owner=current.work.find(w=>w.id===workId),result=await store.get(owner.resultRef);
+      const job=createRosterExperimentOwnerContinuationV1({state:current,owner,result,summaryIds:[],
+        draft:await store.get(current.draftRef),requirements:await assessReadiness(current),
+        returnReason:'conflicting_tool_repair_instruction',unexecutedMethodReturn:{...proof,reason}});
+      if(!job)throw Error('ROSTER_TOOL_REPAIR_RECONSIDERATION_INVALID');
+      job.id=id;
+      await workflow.dispatch({type:'enqueue',work:[job]});
+      return workflow.dispatch({type:'hold_experiment_for_strategy',
+        goalId:job.investigationFrontierOf,decisionId:id,reason});
+    },
+    recoverCompletedTemporalInvariant:input=>workflow.dispatch({type:'recover_completed_temporal_invariant',...input}),
+    reconcileObservedUnissuedRequest:input=>workflow.dispatch({type:'reconcile_observed_unissued_request',...input}),
     retryProviderDispatch:input=>workflow.dispatch({type:'retry_provider_dispatch',...input}),
+    retryUnrecordedRejectedRequest:input=>workflow.dispatch({type:'retry_unrecorded_rejected_request',...input}),
     reflowProviderContext:input=>workflow.dispatch({type:'reflow_provider_context',...input}),
+    reprepareIncompleteOutput:input=>workflow.dispatch({type:'reprepare_incomplete_output',...input}),
+    async reconsiderUnstartedMethodContract(input){
+      return reconsiderRosterMethodContractV1({workflow,store,descriptor:tool.descriptor(),
+        ...input,requirements:await assessReadiness(await workflow.inspect())});
+    },
+    async reconsiderPriorInitialRetention({cycleId,authorWorkId,expectedAuthorResultRef,expectedDraftRevision,reason}){
+      const current=await workflow.inspect(),author=current.work.find(w=>w.id===authorWorkId);
+      const reject=()=>{throw Error('ROSTER_INITIAL_RETENTION_RECONSIDERATION_INVALID');};
+      if(!reason||current.draftRevision!==expectedDraftRevision||author?.role!=='roster_workflow_strategy_decision'
+        ||author.resultRef!==expectedAuthorResultRef||author.inputs?.initialComparisonQuestion?.value?.cycleId!==cycleId
+        ||!isDeepStrictEqual(author.bindings,current.scope)||current.work.some(w=>w.status==='running'))reject();
+      const inputs=await projectRosterComparisonProgressInputsV1({state:current,cycleId,readArtifact:store.get});
+      if(!inputs.initialRetentionProgress||isDeepStrictEqual(author.inputs.initialRetentionProgress,inputs.initialRetentionProgress))reject();
+      const purpose=current.work.findLast(w=>w.strategyComparisonDesignCycleId===cycleId
+        &&w.comparisonRedesignOf===author.id&&w.comparisonRedesignResultRef===author.resultRef&&w.resultRef
+        &&Object.entries(w.bindings).every(([k,v])=>current.scope[k]===v));
+      const goal=current.work.find(w=>w.id===purpose?.id+':study'&&w.experimentGoalId===w.id);
+      if(!purpose||!goal)reject();
+      const next=createRosterRetentionProgressOwnerInputV1({state:current,cycleId,author,inputs});
+      if(goal.investigationHandoff){if(goal.investigationHandoff.decisionId!==next.id)reject();
+        return {...goal.investigationHandoff,alreadyHeld:true,planApproved:false};}
+      const owns=createRosterWorkflowOwnershipIndexV1(current),pending=current.work.filter(w=>w.operationState?.pending);
+      if(pending.some(w=>owns(w.id)?.goalId!==goal.id))reject();
+      const parkFailedProviderRequests=pending.map(w=>({workId:w.id,requestRef:w.operationState.pending.requestRef,
+        requestId:w.failure?.providerDispatch?.requestId,contextHash:w.operationState.pending.contextHash}));
+      if(!current.work.some(w=>w.id===next.id)){
+        const draft=await store.get(current.draftRef);
+        await workflow.dispatch({type:'enqueue',work:[{id:next.id,role:'roster_workflow_strategy_decision',
+          bindings:current.scope,draftRevision:current.draftRevision,investigationFrontierOf:goal.id,
+          inputs:{...draftFactInputs(current),...next.inputs,
+            wholeDraft:projectRosterWorkflowAuthorDraftInputV1(draft),
+            draft:{source:'evidence',id:'draft:r'+current.draftRevision+':summary',pointer:''},
+            requirements:{source:'literal',value:await assessReadiness(current)},
+            comparisonPurpose:{source:'evidence',id:'role:'+purpose.id,pointer:''},
+            revisionReviewContext:{source:'literal',value:await projectRosterWorkflowRevisionReviewV1({draft,draftRef:current.draftRef})},
+            question:roleQuestionInput(next.question,next.inputs)}}]});
+      }
+      return workflow.dispatch({type:'hold_experiment_for_strategy',goalId:goal.id,decisionId:next.id,reason,parkFailedProviderRequests});
+    },
     async reconsiderUnstartedInvestigationCapabilities({goalId,expectedSourceReplyRef,expectedDraftRevision,reason,requiredDeliveryVersion=1}){
       // Explicit post-repair continuation, NOT an automatic migration/retry.
       // A published descriptor or its current-source navigation did not reach
@@ -1061,7 +1342,10 @@ export async function createRosterDecisionWorkspaceRunV1({directory,workflowStor
     },
     async reconcileProviderFailure({workId,event}){
       const current=await workflow.inspect(),work=current.work.find(w=>w.id===workId);
-      const reply=rosterWorkflowCompletedOutputFailureV1(event,work?.operationState?.pending?.contextHash);
+      const last=work?.operationState?.calls?.at(-1);
+      const contextHash=work?.operationState?.pending?.contextHash
+        ??(last?.reconciled===true&&work.operationState.correction?.originalReplyRef===last.replyRef?last.receipt?.contextHash:null);
+      const reply=rosterWorkflowCompletedOutputFailureV1(event,contextHash);
       if(!reply)throw Error('ROSTER_WORKFLOW_COMPLETED_OUTPUT_RECORD_REQUIRED');
       return workflow.dispatch({type:'reconcile_provider_reply',workId,reply,
         reason:'Reconcile the exact saved completed Provider failure; preserve raw text and usage, no request replay'});
@@ -1070,6 +1354,13 @@ export async function createRosterDecisionWorkspaceRunV1({directory,workflowStor
       const current=await workflow.inspect();
       if(current.draftRef)return store.get(current.draftRef);
       const draft=createRosterWorkflowDraftV1(input);
+      if(draft.mode==='fixed'){
+        // The first Plan author needs the same Native inventory it will defend in Teach.
+        const verdict=builderPort.evaluateRosterCandidate(draft.candidateInput);
+        if(verdict.status!=='legal'||verdict.candidateHash!==hash(draft.candidateInput))
+          throw Object.assign(Error('ROSTER_WORKFLOW_FIXED_ARMY_AUDIT_INVALID'),{code:'ROSTER_WORKFLOW_FIXED_ARMY_AUDIT_INVALID'});
+        draft.builderVerdictRef=await store.put(verdict);
+      }
       const context=await createDraftContext(draft);
       await workflow.dispatch({type:'commit_draft',expectedRevision:null,draft,scope:context.scope});
       scope=context.scope;laboratory=context.laboratory;tool=createTool();
@@ -1084,9 +1375,7 @@ export async function createRosterDecisionWorkspaceRunV1({directory,workflowStor
     },
     async conditionalExperiences(query=''){
       const state=await workflow.inspect();
-      const observations=await queryRosterConditionalExperienceObservationsV1({state,store,query});
-      const conclusions=await queryRosterConditionalConclusionsV1({state,store,query});
-      return {...observations,conclusions:conclusions.entries};
+      return queryRosterConditionalExperienceSnapshotV1({state,store,query,blindOpponent});
     },
     async archiveConditionalConclusion(){return archiveRosterConditionalConclusionV1({workflow,store});},
     async experimentOutcomes(){
@@ -1096,17 +1385,53 @@ export async function createRosterDecisionWorkspaceRunV1({directory,workflowStor
         sourceReviewRound:owner.experimentReviewRound??0,...await assessRosterExperimentConclusionV1({state:current,owner,store})})));
     },
     async readiness(){return assessReadiness(await workflow.inspect());},
+    async requestBuilderFactSourceRecheck(request){
+      const projected=await createRosterBuilderFactSourceRecheckV1({state:await workflow.inspect(),request,readArtifact:store.get});
+      if(projected.jobs.length)await workflow.dispatch({type:'enqueue',work:projected.jobs});
+      return {reviewId:projected.reviewId,claimReviewId:projected.claimReviewId,scheduled:projected.jobs.map(w=>w.id)};
+    },
     async requestFinalReviews(){
+      // The queued scope and the later dispatched role must see the same
+      // descriptor boundary; publishing only in advance invalidated reuse.
+      await prepareToolContracts();
       const evidenceLineage=await prepareDecisionEvidenceDirectory();
       const current=await workflow.inspect(),readiness=await assessReadiness(current);
       const assignments=createRosterWorkflowReviewAssignmentsV1({state:current,readiness,evidenceLineage,
         revisionReviewContext:await revisionReviewContext(current)});
-      const fresh=assignments.filter(job=>!current.work.some(w=>w.id===job.id));
-      if(fresh.length)await workflow.dispatch({type:'enqueue',work:fresh});
-      return {scheduled:fresh.map(w=>w.id),readiness};
+      const {reused,invalidated}=await selectReusableRosterReviewsV1({state:current,readiness,
+        assignments:expandRosterAtomicReviewJobsV1(assignments),readArtifact:store.get,
+        readDependencies:workflowCore.readDependencies});
+      const fresh=assignments.filter(job=>!current.work.some(w=>w.id===job.id)
+        &&!reused.some(r=>r.appliesToWorkId===job.id));
+      if(fresh.length)await workflow.dispatch({type:'enqueue',work:expandRosterAtomicReviewJobsV1(fresh)});
+      await workflow.dispatch({type:'reconcile_review_dependency_reuse',reused,
+      consideredWorkIds:expandRosterAtomicReviewJobsV1(assignments).map(work=>work.id)});
+      return {scheduled:fresh.map(w=>w.id),reused:reused.map(({value,...origin})=>origin),reviewReuseInvalidations:invalidated,readiness};
+    },
+    async requestComparisonDecisionValueReview({cycleId,authorWorkId,purposeWorkId=null}){
+      const current=await workflow.inspect(),draft=await store.get(current.draftRef);
+      const cycle=await assessRosterProductHypothesisCycleV1({state:current,draft,readArtifact:store.get});
+      const purpose=purposeWorkId?current.work.find(w=>w.id===purposeWorkId):null;
+      const source=purpose?purpose.inputs?.redesignContract?.value?.source
+        :await resolveRosterComparisonDesignRequestV1({state:current,cycle,readArtifact:store.get,authorWorkId});
+      if(cycle.id!==cycleId||!source||source.authorWorkId!==authorWorkId
+        ||purpose&&(purpose.id!==cycle.comparisonPurposeWorkId||purpose.strategyComparisonDesignCycleId!==cycleId))
+        throw Error('ROSTER_COMPARISON_VALUE_EXACT_OWNER_REQUIRED');
+      const actualAuthor=current.work.find(w=>w.id===source.authorWorkId);
+      const actualResult=actualAuthor?.resultRef?await store.get(actualAuthor.resultRef):null;
+      if(actualAuthor?.resultRef!==source.authorResultRef
+        ||!isDeepStrictEqual(actualResult?.value?.comparisonDesignHandoff?.request,source.request))
+        throw Error('ROSTER_COMPARISON_VALUE_EXACT_PROPOSAL_REQUIRED');
+      const existing=await assessRosterComparisonValueReviewV1({state:current,draft,source,readArtifact:store.get});
+      if(existing.status!=='required')return {scheduled:[],decisionValueStatus:existing.status};
+      const work=createRosterComparisonValueReviewWorkV1({state:current,draft,source,authorValue:actualResult.value,
+        catalogue:rosterToolCapabilityCatalogueV1(tool.descriptor()),taskInputs:boundTaskInputs(current),reviewWindow:existing.reviewWindow,
+        factSlots:await restoreRosterSelectedFactSlotsV1({packet:await projectRosterDecisionFactSlotsV1({state:current,readArtifact:store.get}),
+          boundFacts:actualResult.value.comparisonDesignHandoff.boundFacts,state:current,readArtifact:store.get})});
+      await workflow.dispatch({type:'enqueue',work:[work]});return {scheduled:[work.id]};
     },
     async requestStrategicComparisonDesign({id,cycleId,teacherWorkId,designRevision=1,reviewWorkId=null,previousPurposeWorkId=null,
-      contractRepairWorkId=null,authorWorkId=null}){
+      contractRepairWorkId=null,authorWorkId=null,participantDiagnostic=null}){
       const current=await workflow.inspect(),teacher=current.work.find(w=>w.id===teacherWorkId);
       if(!teacher?.resultRef)throw Error('ROSTER_COMPARISON_ACTUAL_TEACH_REQUIRED');
       if(current.work.some(w=>w.id===id))return {scheduled:[]};
@@ -1123,34 +1448,82 @@ export async function createRosterDecisionWorkspaceRunV1({directory,workflowStor
         ||redesign.purposeWorkId!==previousPurposeWorkId||redesign.designRevision!==designRevision
         ||cycle.teacherWorkId!==teacherWorkId||id!==cycleId+':purpose:v'+designRevision))
         throw Error('ROSTER_COMPARISON_EXACT_AUTHOR_REDESIGN_REQUIRED');
+      const previousPurpose=previousPurposeWorkId?current.work.find(w=>w.id===previousPurposeWorkId):null;
+      const valueSource=redesign??previousPurpose?.inputs?.redesignContract?.value?.source;
+      if(!valueSource)throw Error('ROSTER_COMPARISON_STRATEGIC_OWNER_REQUIRED_BEFORE_DESIGN');
+      const valueApproval=requireRosterComparisonValueApprovalV1(await assessRosterComparisonValueReviewV1({
+        state:current,draft:await store.get(current.draftRef),source:valueSource,readArtifact:store.get}));
+      const comparisonCapabilities=rosterToolCapabilityCatalogueV1(tool.descriptor());
+      const previousDesignValue=previousPurpose?.resultRef
+        ?rosterComparisonPurposeFromProposalV1(await store.get(previousPurpose.resultRef)):null;
+      const previousDecisionErrors=previousDesignValue?rosterComparisonDecisionTestErrorsV1(previousDesignValue,
+        {catalogue:comparisonCapabilities,requireCapabilities:true}):[];
+      const currentDesignContext=previousDesignValue?rosterComparisonGroundingV1({purpose:previousDesignValue,
+        designResultRef:previousPurpose.resultRef,catalogue:comparisonCapabilities,
+        ownerRequest:previousPurpose.inputs?.redesignContract?.value?.source?.request??null,
+        draft:current.draftRef?await store.get(current.draftRef):null}):null;
+      // Feedback/contract repair must retain the owner's delegated choice.
+      // Otherwise each redesign can silently choose another Teach alternative.
+      const inheritedOwnerInputs=!redesign&&previousPurpose?.inputs.redesignContract?{
+        redesignContract:structuredClone(previousPurpose.inputs.redesignContract),
+        authorRedesignRequest:structuredClone(previousPurpose.inputs.authorRedesignRequest)}:{};
+      if(inheritedOwnerInputs.redesignContract&&previousPurpose.strategyComparisonDesignCycleId!==cycleId)
+        throw Error('ROSTER_COMPARISON_OWNER_SCOPE_MISMATCH');
+      const ownerDirected=Boolean(redesign||inheritedOwnerInputs.redesignContract);
+      if(participantDiagnostic){
+        const actualCycle=await assessRosterProductHypothesisCycleV1({state:current,draft:await store.get(current.draftRef),readArtifact:store.get});
+        if(contractRepairWorkId||authorWorkId||reviewWorkId||actualCycle.id!==cycleId
+          ||actualCycle.comparisonPurposeWorkId!==previousPurposeWorkId
+          ||actualCycle.comparisonParticipantCheck?.status!=='mismatch'
+          ||!isDeepStrictEqual(actualCycle.comparisonParticipantCheck,participantDiagnostic)
+          ||designRevision!==actualCycle.comparisonDesignRevision+1||id!==cycleId+':purpose:v'+designRevision
+          ||actualCycle.comparisonDesignRevision>=3&&!actualCycle.comparisonParticipantContractRepair)
+          throw Error('ROSTER_COMPARISON_EXACT_PARTICIPANT_REPAIR_REQUIRED');
+      }
       await workflow.dispatch({type:'enqueue',work:[{id,role:'roster_workflow_local_teach',
         // Purpose belongs to the factual context and starting intent. Plan-only
         // prose repairs must not cancel its read-only design midway; the owner
         // later reads CURRENT Plan before adopting/testing this proposal.
         bindings:Object.fromEntries(Object.entries(current.scope).filter(([key])=>key!=='plan')),
-        strategyComparisonDesignCycleId:cycleId,designRevision,
+        strategyComparisonDesignCycleId:cycleId,designRevision,participantContractVersion:3,
+        ...(participantDiagnostic?{participantContractRepairOf:previousPurposeWorkId}:{}),
         ...(contractRepair?{comparisonDesignContractRepairOf:contractRepairWorkId}:{}),
         ...(redesign?{comparisonRedesignOf:authorWorkId,comparisonRedesignResultRef:redesign.authorResultRef}:{}),
-        inputs:{...boundTaskInputs(current),
-          comparisonCapabilities:{source:'literal',value:rosterToolCapabilityCatalogueV1(tool.descriptor())},
+        inputs:{...boundTaskInputs(current),...inheritedOwnerInputs,
+          comparisonCapabilities:{source:'literal',value:comparisonCapabilities},
+          ...(currentDesignContext&&!valueApproval?{currentDesignContext:{source:'literal',value:currentDesignContext}}:{}),
+          ...(valueApproval?{decisionValueApproval:{source:'literal',value:valueApproval},
+            approvedDecisionReview:{source:'evidence',id:'role:'+valueApproval.reviewId,pointer:'',scopeUsage:'historical_reference'}}:{}),
+          ...(previousDecisionErrors.length?{previousDesign:{source:'evidence',id:'role:'+previousPurposeWorkId,pointer:'',scopeUsage:'historical_reference'},
+            currentDesignContractDiagnostic:{source:'literal',value:{
+            sourceDesignResultRef:previousPurpose.resultRef,errors:previousDecisionErrors,
+            previousApprovalAppliesToCurrentContract:false,originalDesignUnchanged:true,
+            instruction:'The saved proposal fails the CURRENT deterministic decision contract. Older semantic approval cannot override these errors. Re-author the same delegated strategic question using the current schema and real source capabilities; do not just copy fields or assume a winner. The host has not rewritten the old rationale, direction, cost or outcome.'}}}:{}),
+          ...(participantDiagnostic?{participantDesignDiagnostic:{source:'literal',value:structuredClone(participantDiagnostic)},
+            previousDesign:{source:'evidence',id:'role:'+previousPurposeWorkId,pointer:'',scopeUsage:'historical_reference'},
+            designCorrectionOwnership:{source:'literal',value:{version:1,
+              instruction:'The actual source check contradicts the old model preflight. Explicitly choose a source-compatible experiment, or report why the required scene cannot be constructed. Correct the whole question/conditions as well as typed selectors; do not keep old unit counts/speeds/ability assumptions after changing unit kind. This is design authoring, not permission to alter the frozen enemy, approve an old result or repeat its measurements. Preserve the original strategic trade-off and explain why the revised test can discriminate it.'}}}:{}),
           ...(contractRepair?{contractRepair:{source:'literal',value:contractRepair},
             previousDesign:{source:'evidence',id:'role:'+contractRepairWorkId,pointer:'',scopeUsage:'historical_reference'}}:{}),
           ...(reviewWorkId?{designFeedback:{source:'evidence',id:'role:'+reviewWorkId,pointer:''},
             previousDesign:{source:'evidence',id:'role:'+previousPurposeWorkId,pointer:'',scopeUsage:'historical_reference'}}:{}),
           ...(redesign?{authorRedesignRequest:{source:'evidence',id:'role:'+authorWorkId,pointer:'',scopeUsage:'historical_reference'},
-            previousDesign:{source:'evidence',id:'role:'+previousPurposeWorkId,pointer:'',scopeUsage:'historical_reference'},
+            ...(previousPurposeWorkId?{previousDesign:{source:'evidence',id:'role:'+previousPurposeWorkId,pointer:'',scopeUsage:'historical_reference'}}:{}),
             redesignContract:{source:'literal',value:{version:1,source:redesign,approvalGranted:false,
               instruction:'The strategic author requested a scope/arms change through the explicit control operation. Evaluate that request against original Teach, original purpose and its actual evidence. Propose a complete decision-relevant replacement purpose; explain retained/changed conditions and why it still answers the strategic choice. The author response is not a Rules fact or a measured outcome. Do not turn an unmeasured old arm into a refuted arm, force a tactical choice, or copy a contradictory arithmetic interpretation. The replacement still needs the SAME independent design preflight, actual scoped comparison, source review and adoption. Old purpose/results/costs remain immutable and unapproved.'}}}:{}),
           comparisonDesignGoal:{source:'literal',value:{version:2,
+          ...(ownerDirected?{delegatedDecisionInstruction:'The owner has selected the decision to investigate in redesignContract. Stay with that decision across corrections; do not pick another original Teach alternative merely because it is easier to measure. First verify the owner premises against source rules. If the premise is false or the alternatives are not real competing choices, return comparisonDesignReturn with the precise defect and required owner correction. Innate availability does not prevent a use/positioning/resource decision, but is not a purchasable-upgrade decision. You may propose a better operationalization of the SAME choice; a different strategic choice must return to the owner before any experiment. This is not permission to invent a measurable effect.'}:{}),
           contextInstruction:'frozenTaskAuthority is the actual selected task, not a scenario option in the library. currentArmyConfiguration is the exact committed unit/upgrade/card selection, not historical Plan intent. Explicitly relate BOTH experimental arms to that configuration; if using old or modified configurations, label them counterfactual and explain the decision relevance. Do not claim an already adopted option is absent. Match sources before selecting measurements. A rejected preflight returns to YOU to correct the design/premises, not to a method role to prove a false setup. Preserve useful alternatives and sources; this is not permission to change the frozen mission.',
           instruction:'Form ONE falsifiable, decision-relevant experiment purpose BEFORE methods execute. Start with the original Teach alternatives. State an EXPECTED benefit (direction and metric, not invented numbers), what the test is for, the causal steps through benefit realization, observable endpoint, meaningful difference and how support/refutation changes the roster or Plan. Reject invalid prerequisites as invalid experiments, not zero gain. Choose the smallest fixed scenario answering the choice, not a whole match or global superiority proof. Do not replace the strategic question with a payment/legality check. This is a proposal, not an outcome or Rules truth.'}},
-          question:{source:'literal',value:'选择一个重要、当前工具可验证的取舍，形成实验目的和预期收益；不执行实验、不判哪个已经更好。若从原Teach重定范围，说明为什么以及仍服务哪个决策。'},
+          question:{source:'literal',value:ownerDirected
+            ?'针对战略作者已委派的同一个取舍设计有决策价值的实验，不重新从历史Teach挑另一个问题。先查证前提；若原取舍不成立，明确退回原作者纠正，不擅自换题。声明假设、机制、指标及各结果对应的实际选择，不执行实验、不预判赢家。'
+            :'选择一个重要、当前工具可验证的取舍，形成实验目的和预期收益；不执行实验、不判哪个已经更好。若从原Teach重定范围，说明为什么以及仍服务哪个决策。'},
           originalTeach:{source:'evidence',id:'role:'+teacherWorkId,pointer:'',scopeUsage:'historical_reference'},
           startingDraft:{source:'evidence',id:`draft:r${current.draftRevision}:summary`,pointer:'',scopeUsage:'historical_reference'},
           startingIntent:{source:'evidence',id:`draft:r${current.draftRevision}:plan:publicSummaryText`,pointer:'',scopeUsage:'historical_reference'}}}]});
       return {scheduled:[id]};
     },
-    async requestStrategicComparisonDesignReview({id,cycleId,purposeWorkId,purposeResultRef,designReviewRound=1,contractRepair,prerequisiteReturn}){
+    async requestStrategicComparisonDesignReview({id,cycleId,purposeWorkId,purposeResultRef,designReviewRound=1,contractRepair,prerequisiteReturn,planContextRecheck}){
       const current=await workflow.inspect();
       if(current.work.some(work=>work.id===id))return {scheduled:[]};
       let verifiedRepair;
@@ -1176,10 +1549,35 @@ export async function createRosterDecisionWorkspaceRunV1({directory,workflowStor
           ||current.work.some(work=>work.comparisonPreflightContractRepairOf===previous.id))
           throw Error('ROSTER_COMPARISON_EXACT_PREFLIGHT_REPAIR_REQUIRED');
       }
+      const purposeWork=current.work.find(w=>w.id===purposeWorkId);
+      const purpose=rosterComparisonPurposeFromProposalV1(await store.get(purposeResultRef));
+      const catalogue=rosterComparisonCapabilityCatalogueV1(purposeWork);
+      const valueSource=purposeWork?.inputs?.redesignContract?.value?.source;
+      const valueApproval=valueSource?requireRosterComparisonValueApprovalV1(await assessRosterComparisonValueReviewV1({
+        state:current,draft:await store.get(current.draftRef),source:valueSource,readArtifact:store.get})):null;
+      const decisionContract=rosterComparisonDecisionContractV1({purpose,designResultRef:purposeResultRef,catalogue});
+      const grounding=rosterComparisonGroundingV1({purpose,designResultRef:purposeResultRef,catalogue,
+        ownerRequest:purposeWork?.inputs?.redesignContract?.value?.source?.request??null,
+        draft:current.draftRef?await store.get(current.draftRef):null,valueApproval});
+      let verifiedContext;
+      if(planContextRecheck){
+        const previous=await currentRosterComparisonPreflightV1({state:current,work:purposeWork,readArtifact:store.get});
+        const assessment=await assessRosterComparisonDecisionPreflightV1({state:current,work:purposeWork,preflight:previous,readArtifact:store.get});
+        verifiedContext=rosterComparisonPlanContextRecheckV1({work:purposeWork,preflight:previous,assessment});
+        if(contractRepair||prerequisiteReturn||!verifiedContext||id!==verifiedContext.id
+          ||!isDeepStrictEqual(verifiedContext,planContextRecheck))throw Error('ROSTER_COMPARISON_EXACT_PLAN_CONTEXT_REQUIRED');
+      }
       await workflow.dispatch({type:'enqueue',work:[createRosterComparisonPreflightWorkV1({current,id,cycleId,
         purposeWorkId,purposeResultRef,designReviewRound,toolDescriptor:tool.descriptor(),contractRepair:verifiedRepair,
-        prerequisiteReturn:verifiedPrerequisite})]});
+        prerequisiteReturn:verifiedPrerequisite,planContextRecheck:verifiedContext,decisionContract,grounding})]});
       return {scheduled:[id]};
+    },
+    async requestInitialRetentionReview({cycleId,authorWorkId}){
+      const current=await workflow.inspect(),draft=await store.get(current.draftRef);
+      const work=await createRosterInitialRetentionReviewV1({state:current,draft,cycleId,authorWorkId,readArtifact:store.get});
+      if(!work)return {scheduled:[]};
+      await workflow.dispatch({type:'enqueue',work:[work]});
+      return {scheduled:[work.id]};
     },
     async requestComparisonClosureReview({cycleId,authorWorkId}){
       const current=await workflow.inspect();
@@ -1192,7 +1590,7 @@ export async function createRosterDecisionWorkspaceRunV1({directory,workflowStor
       await workflow.dispatch({type:'enqueue',work:[{id:request.reviewId,role:'roster_workflow_final_review',
         bindings:current.scope,draftRevision:current.draftRevision,comparisonClosureOf:authorWorkId,
         comparisonClosureCycleId:cycleId,comparisonClosureResultRef:request.authorResultRef,
-        comparisonPurposeResultRef:purpose.resultRef,comparisonClosureContractVersion:1,
+        comparisonPurposeResultRef:purpose.resultRef,comparisonClosureContractVersion:1,comparisonClosureFactPolicyVersion:1,
         inputs:{review:{source:'literal',value:{domainId:'comparison_closure',requirementClassificationVersion:1,
           obligations:structuredClone(ROSTER_COMPARISON_CLOSURE_OBLIGATIONS_V1),
           instruction:'Review only the proposed decision to END an optional comparison. Do not demand the declined experiment simply because it was once scheduled. Conversely, adopted unsupported facts cannot be excused as optional. Read actual sources and current Plan; name the exact dependency when essential evidence is missing. Other global questions remain pending. No claim of a completed measurement or improved win rate.'}},
@@ -1215,9 +1613,14 @@ export async function createRosterDecisionWorkspaceRunV1({directory,workflowStor
       const outcome=await store.get(ownerOutcomeRef),originalDecision=owner.resultRef?await store.get(owner.resultRef):null;
       const decision=outcome.decision??originalDecision?.value?.decisions?.[0]??{};
       const evidenceLineage=await prepareDecisionEvidenceDirectory();
+      const preflight=await currentRosterComparisonPreflightV1({state:current,work:purposeWork,readArtifact:store.get});
+      const decisionPreflight=await assessRosterComparisonDecisionPreflightV1({state:current,work:purposeWork,preflight,readArtifact:store.get});
+      if(decisionPreflight.status!=='accepted')throw Object.assign(Error('ROSTER_COMPARISON_DECISION_PREFLIGHT_REQUIRED'),{detail:decisionPreflight});
       const inputs={review:{source:'literal',value:{domainId:'strategy_comparison',requirementClassificationVersion:1,
         obligations:structuredClone(ROSTER_STRATEGIC_COMPARISON_OBLIGATIONS_V1),
-        instruction:'Independent comparison review ONLY, not global Plan/source housekeeping. Identify the actual choice, alternative, scenario/control conditions, benefit/cost and counterplay; read the measured/tool sources supporting the claimed difference. Verify the experiment observes the mechanism AFTER it can affect the result. Payment/legality alone is not benefit; identical scenes without the changed effect cannot test that effect; a failed prerequisite is not a zero benefit. Judge whether the decision follows the observations, including a justified retain/refutation or a legitimate rejection/re-scope of an irrelevant hypothesis. Do not demand global optimality or a played match. Future opponent choices stay conditional. A missing measurement for the specific comparison stays necessary; mere optional labeling or longer prose cannot close it. A sufficiently grounded conditional comparison can pass without proving higher whole-game win rate.'}},
+        instruction:ROSTER_COMPARISON_DECISION_REVIEW_INSTRUCTION_V1}},
+        comparisonDecisionContract:{source:'literal',value:structuredClone(decisionPreflight.contract)},
+        designPreflight:{source:'evidence',id:'role:'+preflight.id,pointer:'',scopeUsage:'historical_reference'},
         draft:{source:'evidence',id:`draft:r${current.draftRevision}:summary`,pointer:''},
         intent:{source:'evidence',id:`draft:r${current.draftRevision}:plan:publicSummaryText`,pointer:''},
         challenge:{source:'evidence',id:'role:'+teacherWorkId,pointer:'',scopeUsage:'historical_reference'},
@@ -1248,8 +1651,10 @@ export async function createRosterDecisionWorkspaceRunV1({directory,workflowStor
     async requestDecision({id,question,inputs={}}){
       const task=roleQuestionInput(question,inputs);
       const current=await workflow.inspect();if(!current.draftRef)throw Error('ROSTER_WORKFLOW_DRAFT_REQUIRED');
+      const wholeDraft=projectRosterWorkflowAuthorDraftInputV1(await store.get(current.draftRef));
+      if(inputs.wholeDraft&&!isDeepStrictEqual(inputs.wholeDraft,wholeDraft))throw Error('ROSTER_WORKFLOW_DRAFT_INPUT_CONFLICT');
       return workflow.dispatch({type:'enqueue',work:[{id,role:'roster_workflow_strategy_decision',bindings:scope,draftRevision:current.draftRevision,
-        inputs:{...draftFactInputs(current),...inputs,requirements:{source:'literal',value:await assessReadiness(current)},
+        inputs:{...draftFactInputs(current),...inputs,wholeDraft,requirements:{source:'literal',value:await assessReadiness(current)},
           question:task,draft:{source:'evidence',id:`draft:r${current.draftRevision}:summary`,pointer:''}}}]});
     },
     async requestTeach({id,question,inputs={}}){
@@ -1278,6 +1683,9 @@ export async function createRosterDecisionWorkspaceRunV1({directory,workflowStor
       return route;
     },
     async prepareContext(){
+      // Before ANY saved author result can be applied, quarantine obsolete
+      // calculations and hand their exact corrected queries back to the author.
+      await workflow.dispatch({type:'reconcile_calculation_results'});
       const current=await workflow.inspect();
       // A saved commit may precede its derived discovery publication. Complete
       // that idempotent projection before new role inputs, without replaying the
@@ -1286,6 +1694,9 @@ export async function createRosterDecisionWorkspaceRunV1({directory,workflowStor
       const namespace=current.draftRevision===null?'discovery':`discovery:r${current.draftRevision}`;
       const draft=current.draftRef?await store.get(current.draftRef):null;
       const verdict=draft?.builderVerdictRef?await store.get(draft.builderVerdictRef):null;
+      const readiness=await assessReadiness(current);
+      if(!readiness.generationReady)await prepareRosterResourceOptionsV1({draft,state:current,verdict,
+        amounts:readiness.mechanicalFacts.resourceAllocation?.vespene?.amounts,builderPort,resources,store,dispatch:workflow.dispatch});
       const spent=verdict?.summary?.mineralSpent;
       const needsBudgetFacts=draft?.mode==='editable'&&draft.candidateInput.units.length>0
         &&Number.isSafeInteger(spent)&&spent<draft.candidateInput.mineralBudget;
@@ -1293,13 +1704,13 @@ export async function createRosterDecisionWorkspaceRunV1({directory,workflowStor
       if(budgetPrefix&&!current.work.some(w=>w.id===`${budgetPrefix}:budget`)){
         const factualScope=Object.fromEntries(['army','rules','source'].map(key=>[key,current.scope[key]]));
         const work=compileRosterWorkflowExperimentV1({scope:factualScope,namespace:budgetPrefix,order:{orderId:'current-budget-discovery-v2',
-          purpose:'Expose one current Rules-audited budget-neighbour page using versioned shallow-family coverage; no strategy selected.',
+          purpose:'Expose one current Rules-audited budget-neighbour page using the current bounded combination policy; no strategy selected.',
           experimentScope:{kind:'rules_resource_check',decisionQuestion:'What constructive Builder-audited alternatives does the new finite search expose for this exact current partial candidate?',
             decisionImpact:'Provide current legal intermediate choices to the model-owned roster/Plan construction. Final target still required; no exhaustive search or global optimum claimed.',
             participantUnitIds:[],scenarioDescription:'Read-only Builder query on the current frozen candidate, not a hypothetical game or draft mutation.',
-            stopPredicate:'Return one breadth_first_v2 budget page; do not select an army or automatically continue pagination.',collectScenarioExperience:false,hypothesisTest:null},
+            stopPredicate:'Return one current versioned budget page; do not select an army or automatically continue pagination.',collectScenarioExperience:false,hypothesisTest:null},
           scenarioAssumptions:[],stopAndReturnToModelWhen:'The one budget page is returned or the capability has a concrete failure.',
-          steps:[{stepId:'budget',operation:'builder_branches',argumentsJson:JSON.stringify({generationPolicy:'breadth_first_v3',startOffset:0,maximumEvaluations:24,maximumMutationDepth:5}),
+          steps:[{stepId:'budget',operation:'builder_branches',argumentsJson:JSON.stringify({generationPolicy:ROSTER_BUDGET_CURRENT_GENERATION_POLICY,startOffset:0,maximumEvaluations:24,maximumMutationDepth:5}),
             bindings:[],guards:[],publicReason:'Expose current legal intermediate alternatives; the model retains the choice and complete Builder remains authoritative.'}]}});
         await workflow.dispatch({type:'enqueue',work});
       }
@@ -1338,8 +1749,21 @@ export async function createRosterDecisionWorkspaceRunV1({directory,workflowStor
         &&purpose.status==='evidence_ready'&&preflight?.status==='evidence_ready'
         &&preflight.strategyComparisonDesignReviewCycleId===purpose.strategyComparisonDesignCycleId
         &&preflight.comparisonPurposeResultRef===purpose.resultRef&&id===purpose.id+':study');
+      if(purpose?.strategyComparisonDesignCycleId&&!frozenComparison)
+        throw Error('ROSTER_COMPARISON_EXACT_PREFLIGHT_REQUIRED');
+      let decisionPreflight;
+      if(frozenComparison){
+        decisionPreflight=await assessRosterComparisonDecisionPreflightV1({state:current,work:purpose,preflight,readArtifact:store.get});
+        if(decisionPreflight.status!=='accepted')throw Object.assign(Error('ROSTER_COMPARISON_DECISION_PREFLIGHT_REQUIRED'),{detail:decisionPreflight});
+        const checks=(await store.get(preflight.resultRef)).value?.checks??[];
+        if(!await rosterComparisonArmyBaselineCheckedV1({work:preflight,checks,readArtifact:store.get,armyHash:current.scope.army}))
+          throw Error('ROSTER_COMPARISON_ARMY_BASELINE_REQUIRED');
+        const checked=await assessRosterComparisonParticipantPreflightV1({state:current,work:purpose,readArtifact:store.get});
+        if(checked?.status!=='matched')throw Object.assign(Error('ROSTER_COMPARISON_PARTICIPANT_PREFLIGHT_REQUIRED'),{detail:checked});
+      }
       const bindings=frozenComparison||checkedPrerequisite?Object.fromEntries(Object.entries(scope).filter(([key])=>key!=='plan')):scope;
       const experimentInputs=structuredClone(inputs);
+      if(decisionPreflight)experimentInputs.comparisonDecisionContract={source:'literal',value:structuredClone(decisionPreflight.contract)};
       if(frozenComparison&&experimentInputs.draft?.source==='evidence')
         experimentInputs.draft.scopeUsage='historical_reference';
       return workflow.dispatch({type:'enqueue',work:[{id,role:'roster_workflow_experiment_planner',bindings,
@@ -1391,20 +1815,52 @@ export async function createRosterDecisionWorkspaceRunV1({directory,workflowStor
     },
     advance({concurrency=2,priorityComparisonPurposeWorkId=null}={}){
       const next=turns.then(async()=>{
-        await synchronize();const before=await workflow.inspect();
+        assertRosterWorkflowNoDeclaredBlockersV1(await projectRosterWorkflowDeclaredBlockersV1({state:await workflow.inspect(),readArtifact:store.get}));
+        await synchronize();
+        const before=await workflow.inspect();
+        if(shouldStopReadQuery?.()===true)return {ran:[],state:before,pausedBeforeDispatch:true};
+        assertRosterWorkflowNoDeclaredBlockersV1(await projectRosterWorkflowDeclaredBlockersV1({state:before,readArtifact:store.get}));
         const graph=createRosterWorkflowGraphV1(before);
         for(const work of before.work.filter(w=>graph.canContinue(w.id)))
           await workflow.dispatch({type:'continue_work',workId:work.id});
         const current=await workflow.inspect(),decision=current.work.find(w=>w.role==='roster_workflow_strategy_decision'&&w.status==='ready');
         const priority=selectRosterPurposePriorityV1({state:current,purposeWorkId:priorityComparisonPurposeWorkId});
         const recordRecovery=await rosterPlanRecordRecoveryV1({state:current,readArtifact:store.get});
+        const dispatchHolds=new Set(await blockedRosterComparisonWorkIdsV1({state:current,readArtifact:store.get}));
+        const {mission,snapshot}=selectRosterCurrentDiscoveryReceiptsV1(current);
+        if(!mission||!snapshot){
+          // The first product challenge can overlap unrelated queries. Its
+          // own scoring and current deployment supply must already be readable.
+          // A previously issued/recovered request keeps its retained inputs.
+          for(const work of current.work)if(work.status==='ready'&&work.role==='roster_workflow_local_teach'
+            &&work.id.startsWith('product:strategy-hypothesis:')&&/:teach(?:$|:plan-r\d+$)/u.test(work.id)
+            &&!work.operationState?.calls?.length&&!work.operationState?.pending&&!work.operationState?.revalidateReplyRef)
+            dispatchHolds.add(work.id);
+        }
+        // A private audit answers the author's exact candidate question. A
+        // legal under-budget comparison arm is not permission to enumerate
+        // replacements. Explicit builder_branches orders still use the normal
+        // authorized tool path; prior receipts remain readable as history.
+        // Finish an already-authorized local saved-reply recovery before buying
+        // an unrelated decision. This never grants recovery or changes a reply.
+        const savedReplyRecovery=current.work.find(w=>graph.canRun(w.id)
+          &&w.operationState?.revalidateReplyRef&&!dispatchHolds.has(w.id));
+        const chosen=recordRecovery?[recordRecovery.work?.id??recordRecovery.rootId]
+          :savedReplyRecovery?[savedReplyRecovery.id]
+          :priority.length?priority:decision?[decision.id]:null;
         // Draft commits cannot race a factual query or another decision.
-        const ran=await workflow.dispatch({type:'run_ready',concurrency,
-          ...(recordRecovery?{workIds:[recordRecovery.work?.id??recordRecovery.rootId]}:
-            priority.length?{workIds:priority}:decision?{workIds:[decision.id]}:{})});
-        await synchronize();return {ran,state:await workflowCore.inspect()};
+        let workIds=dispatchHolds.size?(chosen??current.work.map(w=>w.id)).filter(id=>!dispatchHolds.has(id)):chosen;
+        // Priority is not exclusivity: a held comparison must not starve
+        // independent ready work. The outer product consumes the SAME holds.
+        if(workIds?.length===0&&!recordRecovery)workIds=current.work
+          .filter(w=>graph.canRun(w.id)&&!dispatchHolds.has(w.id)).map(w=>w.id);
+        if(workIds?.length===0)return {ran:[],state:current,blockedWorkIds:[...dispatchHolds]};
+        const ran=await workflow.dispatch({type:'run_ready',concurrency,...(workIds?{workIds}:{})});
+        await synchronize();return {ran,state:await workflowCore.inspect(),
+          ...(dispatchHolds.size?{blockedWorkIds:[...dispatchHolds]}:{})};
       });
       turns=next.catch(()=>{});return next;
     },
   };
 }
+import {projectRosterUnissuedReviewOwnerMergeV1} from '../roster-strategist/roster-review-owner-v1.mjs';

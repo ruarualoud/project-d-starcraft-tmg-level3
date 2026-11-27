@@ -1,5 +1,6 @@
 import { hashStarcraftTmgContract } from "../authoritative-engine/referee-crypto-v1.mjs";
 import { verifyOfficialGameplayDataBundleV1 } from "./official-gameplay-data-bundle-v1.mjs";
+import { verifyOfficialMatchGameplayDataBundleV2 } from './official-match-gameplay-data-bundle-v2.mjs';
 
 export const OFFICIAL_MISSION_SETUP_BINDING_SCHEMA =
   "starcraft_tmg_official_mission_setup_binding_v1";
@@ -52,8 +53,17 @@ function markerAffinityByNumber(seatColorAssignment) {
 }
 
 export function createOfficialMissionSetupBindingV1(input = {}) {
+  verifyOfficialGameplayDataBundleV1(input.gameplayDataBundle);
+  return createBinding(input, OFFICIAL_MISSION_SETUP_BINDING_SCHEMA);
+}
+
+export function createOfficialMissionSetupBindingV2(input = {}) {
+  verifyOfficialMatchGameplayDataBundleV2(input.gameplayDataBundle);
+  return createBinding(input, 'starcraft_tmg_official_mission_setup_binding_v2');
+}
+
+function createBinding(input, schema) {
   const gameplayDataBundle = input.gameplayDataBundle;
-  verifyOfficialGameplayDataBundleV1(gameplayDataBundle);
   const seatColorAssignment = {
     player1: String(input.seatColorAssignment?.player1 || "").trim().toLowerCase(),
     player2: String(input.seatColorAssignment?.player2 || "").trim().toLowerCase(),
@@ -64,7 +74,7 @@ export function createOfficialMissionSetupBindingV1(input = {}) {
   }
   const affinity = markerAffinityByNumber(seatColorAssignment);
   const bindingBody = {
-    schema: OFFICIAL_MISSION_SETUP_BINDING_SCHEMA,
+    schema,
     sourceSnapshotHash: gameplayDataBundle.sourceSnapshotHash,
     normalizedDatasetHash: gameplayDataBundle.normalizedDatasetHash,
     gameplayDataBundleHash: gameplayDataBundle.gameplayDataBundleHash,
@@ -116,6 +126,19 @@ export function verifyOfficialMissionSetupBindingV1(binding, gameplayDataBundle)
   if (hashStarcraftTmgContract(expectedAffinity)
       !== hashStarcraftTmgContract(binding.markerAffinityByNumber)) {
     fail("official_mission_setup_affinity_map_invalid");
+  }
+  return true;
+}
+
+export function verifyOfficialMissionSetupBindingV2(binding, gameplayDataBundle) {
+  const expected = createOfficialMissionSetupBindingV2({ gameplayDataBundle,
+    missionDraftReceiptHash: binding?.missionDraftReceiptHash,
+    deploymentDraftReceiptHash: binding?.deploymentDraftReceiptHash,
+    seatColorAssignment: binding?.seatColorAssignment });
+  if (binding?.schema !== 'starcraft_tmg_official_mission_setup_binding_v2'
+    || binding.missionSetupBindingHash !== hashStarcraftTmgContract(body(binding))
+    || binding.missionSetupBindingHash !== expected.missionSetupBindingHash) {
+    fail('official_mission_setup_v2_binding_invalid');
   }
   return true;
 }

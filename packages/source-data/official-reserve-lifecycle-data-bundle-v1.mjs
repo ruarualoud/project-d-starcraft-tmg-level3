@@ -7,6 +7,9 @@ import {
 } from "./official-development-tranche-source-lock-v1.mjs";
 import { verifyOfficialGameplayDataBundleV1 } from
   "./official-gameplay-data-bundle-v1.mjs";
+import { verifyOfficialMatchGameplayDataBundleV2 } from './official-match-gameplay-data-bundle-v2.mjs';
+import { verifyOfficialMissionEffectCatalogueV1, getOfficialMissionEffectIrV1 } from './official-mission-effect-ir-v1.mjs';
+import { assertOfficialReleaseSourceV2 } from './official-release-context-v2.mjs';
 
 export const OFFICIAL_RESERVE_LIFECYCLE_DATA_BUNDLE_SCHEMA =
   "starcraft_tmg_official_reserve_lifecycle_data_bundle_v1";
@@ -206,6 +209,12 @@ export function createOfficialReserveLifecycleDataBundleV1(input = {}) {
 }
 
 export function verifyOfficialReserveLifecycleDataBundleV1(bundle) {
+  if (bundle?.schema === 'starcraft_tmg_official_reserve_return_data_bundle_v3') {
+    return verifyOfficialReserveReturnDataBundleV3(bundle);
+  }
+  if (bundle?.schema === 'starcraft_tmg_official_reserve_lifecycle_data_bundle_v2') {
+    return verifyOfficialReserveLifecycleDataBundleV2(bundle);
+  }
   if (!object(bundle)
     || bundle.schema !== OFFICIAL_RESERVE_LIFECYCLE_DATA_BUNDLE_SCHEMA
     || bundle.sourceLockHash !== OFFICIAL_DEVELOPMENT_TRANCHE_SOURCE_LOCK_HASH
@@ -248,6 +257,119 @@ export function verifyOfficialReserveLifecycleDataBundleV1(bundle) {
       || !/^[a-f0-9]{64}$/u.test(entry.candidateSequenceHash)
     ))) {
     fail("RESERVE_LIFECYCLE_RULE_CLAUSE_DENOMINATOR_INVALID");
+  }
+  return true;
+}
+
+const returnClauses = RULE_CLAUSES.filter(row => row.section === '8.5.5');
+const returnStatements = [
+  'The Unit is not Destroyed', 'Current Supply', 'Available Supply',
+  'The Unit keeps all the equipment', 'Damage', 'remains with the Unit',
+  'buffs, debuffs, or mission effects', 'none of them function',
+  'Tokens and Markers', 'STAY IN PLAY', 'will remain', 'Activated',
+];
+function verifyReturnText(text) {
+  if (typeof text !== 'string' || returnStatements.some(fragment => !text.includes(fragment))) {
+    fail('RESERVE_RETURN_CURRENT_RULE_SOURCE_UNSUPPORTED');
+  }
+}
+
+// Return-to-reserves has no mission pacing dependency. It consumes the actual
+// current 8.5.5 paragraph while reusing the independently reviewed Core atoms.
+export function createOfficialReserveReturnDataBundleV3({ context } = {}) {
+  assertOfficialReleaseSourceV2(context, context || {});
+  const recordKey = 'rules_sections:iuUyObNTQ2M8xK4IUqzC';
+  const record = context.dataset.recordsByKey[recordKey];
+  const section = record?.payload.items.find(row => row.title === '8.5 Movement Phase Actions');
+  const entry = section?.subItems?.find(row => row.title === '8.5.5 Deploy');
+  const raw = entry?.content?.filter(row => row.type === 'text').map(row => row.value).join('\n');
+  const text = String(raw || '').split('<b>UNITS RETURNED TO RESERVES</b>')[1]
+    ?.replace(/<[^>]*>/gu, ' ').replace(/\s+/gu, ' ').trim();
+  verifyReturnText(text);
+  const body = {
+    schema: 'starcraft_tmg_official_reserve_return_data_bundle_v3', version: '3.0.0',
+    sourceBinding: structuredClone(context.resources.unitCharacteristics.sourceBinding),
+    sourceSnapshotHash: context.snapshot.snapshotHash, normalizedDatasetHash: context.dataset.datasetHash,
+    source: { recordKey, sourceRecordHash: record.sourceRecordHash, payloadHash: record.payloadHash,
+      section: '8.5.5', text, textHash: hashStarcraftTmgContract(text) },
+    ruleClauses: returnClauses, ruleClauseIndexHash: hashStarcraftTmgContract(returnClauses),
+    scope: 'current_release_return_to_reserves_only',
+    artifactOwnership: { tokenOwnerField: 'createdByPieceId', tokenIdField: 'tokenId',
+      effectMarkerOwnerField: 'leftOnBattlefieldByPieceId', effectMarkerIdField: 'id' },
+    sourceRefreshPerformed: false, productionRoomEligible: false, trainingTruth: false,
+  };
+  const bundle = freezeDeep({ ...body, bundleHash: hashStarcraftTmgContract(body) });
+  verifyOfficialReserveReturnDataBundleV3(bundle);
+  return bundle;
+}
+export function verifyOfficialReserveReturnDataBundleV3(bundle) {
+  if (bundle?.schema !== 'starcraft_tmg_official_reserve_return_data_bundle_v3'
+    || bundle.version !== '3.0.0' || bundle.scope !== 'current_release_return_to_reserves_only'
+    || bundle.sourceBinding?.sourceSnapshotHash !== bundle.sourceSnapshotHash
+    || bundle.sourceBinding?.normalizedDatasetHash !== bundle.normalizedDatasetHash
+    || bundle.source?.recordKey !== 'rules_sections:iuUyObNTQ2M8xK4IUqzC'
+    || bundle.source.section !== '8.5.5' || bundle.source.textHash !== hashStarcraftTmgContract(bundle.source.text)
+    || hashStarcraftTmgContract(bundle.ruleClauses) !== hashStarcraftTmgContract(returnClauses)
+    || bundle.ruleClauseIndexHash !== hashStarcraftTmgContract(returnClauses)
+    || JSON.stringify(bundle.artifactOwnership) !== JSON.stringify({ tokenOwnerField: 'createdByPieceId', tokenIdField: 'tokenId',
+      effectMarkerOwnerField: 'leftOnBattlefieldByPieceId', effectMarkerIdField: 'id' })
+    || bundle.sourceRefreshPerformed !== false || bundle.productionRoomEligible !== false || bundle.trainingTruth !== false
+    || bundle.bundleHash !== hashStarcraftTmgContract(without(bundle, ['bundleHash']))) {
+    fail('RESERVE_RETURN_CURRENT_BUNDLE_INVALID');
+  }
+  verifyReturnText(bundle.source.text);
+  return true;
+}
+
+// The Core clauses are independently frozen. Mission pacing and scoring identity
+// come from the selected, source-compiled mission rather than the old Hold profile.
+export function createOfficialReserveLifecycleDataBundleV2({ gameplayDataBundle } = {}) {
+  verifyOfficialMatchGameplayDataBundleV2(gameplayDataBundle);
+  const mission = gameplayDataBundle.missionScoringProfile;
+  const body = {
+    schema: 'starcraft_tmg_official_reserve_lifecycle_data_bundle_v2',
+    sourceSnapshotHash: gameplayDataBundle.sourceSnapshotHash,
+    normalizedDatasetHash: gameplayDataBundle.normalizedDatasetHash,
+    coreRulebookHash: OFFICIAL_RESERVE_LIFECYCLE_CORE_RULEBOOK_HASH,
+    ruleClauses: RULE_CLAUSES,
+    ruleClauseIndexHash: hashStarcraftTmgContract(RULE_CLAUSES),
+    missionEffectCatalogue: gameplayDataBundle.missionEffectCatalogue,
+    missionRecordKey: mission.recordKey,
+    mission: { missionId: mission.missionId, gameLengthRounds: mission.gameLengthRounds,
+      destroyedEnemySupplyVpPerSupply: mission.destroyedEnemySupplyVpPerSupply,
+      missionScoringProfileHash: mission.missionScoringProfileHash },
+    missionScoringProfile: mission,
+    productionRoomEligible: false, trainingTruth: false,
+  };
+  const bundle = freezeDeep({ ...body, bundleHash: hashStarcraftTmgContract(body) });
+  verifyOfficialReserveLifecycleDataBundleV2(bundle);
+  return bundle;
+}
+
+export function verifyOfficialReserveLifecycleDataBundleV2(bundle) {
+  if (bundle?.schema !== 'starcraft_tmg_official_reserve_lifecycle_data_bundle_v2'
+    || bundle.bundleHash !== hashStarcraftTmgContract(without(bundle, ['bundleHash']))
+    || bundle.coreRulebookHash !== OFFICIAL_RESERVE_LIFECYCLE_CORE_RULEBOOK_HASH
+    || hashStarcraftTmgContract(bundle.ruleClauses) !== hashStarcraftTmgContract(RULE_CLAUSES)
+    || bundle.ruleClauseIndexHash !== hashStarcraftTmgContract(RULE_CLAUSES)
+    || bundle.productionRoomEligible !== false || bundle.trainingTruth !== false) {
+    fail('RESERVE_LIFECYCLE_V2_INVALID');
+  }
+  verifyOfficialMissionEffectCatalogueV1(bundle.missionEffectCatalogue);
+  const effect = getOfficialMissionEffectIrV1(bundle.missionEffectCatalogue, bundle.missionRecordKey);
+  const profile = bundle.missionScoringProfile;
+  if (bundle.sourceSnapshotHash !== bundle.missionEffectCatalogue.sourceSnapshotHash
+    || bundle.normalizedDatasetHash !== bundle.missionEffectCatalogue.normalizedDatasetHash
+    || profile.missionEffectIrHash !== effect.missionEffectIrHash
+    || profile.recordKey !== bundle.missionRecordKey || profile.missionId !== effect.missionRef.missionId
+    || profile.sourceRecordHash !== effect.missionRef.sourceRecordHash || profile.payloadHash !== effect.missionRef.payloadHash
+    || profile.gameLengthRounds !== effect.pacing.gameLengthRounds
+    || profile.missionScoringProfileHash !== hashStarcraftTmgContract(without(profile, ['missionScoringProfileHash']))
+    || bundle.mission.missionId !== effect.missionRef.missionId
+    || bundle.mission.gameLengthRounds !== effect.pacing.gameLengthRounds
+    || bundle.mission.destroyedEnemySupplyVpPerSupply !== profile.destroyedEnemySupplyVpPerSupply
+    || bundle.mission.missionScoringProfileHash !== profile.missionScoringProfileHash) {
+    fail('RESERVE_LIFECYCLE_V2_MISSION_MISMATCH');
   }
   return true;
 }

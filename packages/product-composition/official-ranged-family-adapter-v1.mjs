@@ -180,6 +180,9 @@ export function createOfficialRangedFamilySourceBundleV1(input = {}) {
 }
 
 export function verifyOfficialRangedFamilySourceBundleV1(bundle) {
+  if (bundle?.schema === 'starcraft_tmg_official_ranged_family_source_bundle_v2') {
+    return verifyOfficialRangedFamilySourceBundleV2(bundle);
+  }
   if (!object(bundle)
     || bundle.schema !== OFFICIAL_RANGED_FAMILY_BUNDLE_SCHEMA
     || bundle.semanticVersion !== OFFICIAL_RANGED_FAMILY_ADAPTER_VERSION
@@ -198,6 +201,63 @@ export function verifyOfficialRangedFamilySourceBundleV1(bundle) {
     || bundle.sourceRefreshPerformed !== false || bundle.trainingTruth !== false
     || bundle.bundleHash !== hashStarcraftTmgContract(without(bundle, ["bundleHash"]))) {
     fail("RANGED_FAMILY_SOURCE_BUNDLE_INVALID");
+  }
+  return true;
+}
+
+// Candidate releases explicitly compile their selected definitions. The old
+// thirty-definition denominator remains the V1 source contract.
+export function createOfficialRangedFamilySourceBundleV2({ catalogue, definitionIds, attackProfileCatalogue }) {
+  verifyOfficialAbilityEffectIrCatalogueV1(catalogue);
+  if (!Array.isArray(definitionIds) || !definitionIds.length
+    || new Set(definitionIds).size !== definitionIds.length) fail('RANGED_FAMILY_SUBSET_REQUIRED');
+  const definitions = definitionIds.map(id => catalogue.definitions.find(row => row.definitionId === id));
+  if (definitions.some(row => !row)) fail('RANGED_FAMILY_SUBSET_DEFINITION_MISSING');
+  if (definitions.some(row => row.activationKind === 'weapon')) {
+    verifyOfficialAttackProfileCatalogueV1(attackProfileCatalogue);
+  }
+  const routes = definitions.map(row => {
+    const profileKey = `${row.recordKey}::${row.phase}::${row.definitionName}`;
+    const template = row.activationKind === 'weapon'
+      && attackProfileCatalogue?.templateProfiles?.find(profile => profile.profileKey === profileKey);
+    if (!template) return compileRoute(row, attackProfileCatalogue);
+    if (template.sourceTextHash !== hashStarcraftTmgContract(row.sourceText)) {
+      fail('RANGED_FAMILY_TEMPLATE_SOURCE_PROFILE_MISMATCH', profileKey);
+    }
+    return baseRoute(row, { effectKind: 'template_weapon', actionKind: 'authoritative_action',
+      profileKey, sourceProfileHash: template.profileHash, weaponEffects: clone(template.effects),
+      templateWeapon: clone(template.templateWeapon) });
+  })
+    .sort((a, b) => a.definitionId.localeCompare(b.definitionId));
+  const bundle = seal({ schema: 'starcraft_tmg_official_ranged_family_source_bundle_v2', semanticVersion: '2.0.0',
+    sourceCatalogueHash: catalogue.catalogueHash, sourceSnapshotHash: catalogue.sourceSnapshotHash,
+    normalizedDatasetHash: catalogue.normalizedDatasetHash, dataVersions: { ...catalogue.dataVersions },
+    routeCount: routes.length, routes, definitionIds: routes.map(row => row.definitionId),
+    coveredSourceFeatureHashes: routes.map(row => row.sourceFeatureHash).sort(),
+    attackProfileCatalogueHash: attackProfileCatalogue?.catalogueHash || null,
+    pointDefenseTiming: 'mandatory_passive_removal_before_hit_roll',
+    compilerScope: 'explicit_definition_subset', fullMatchCoverage: false,
+    exactSourcePatternsRequired: true, arbitraryProseExecutionClaimed: false,
+    sourceRefreshPerformed: false, trainingTruth: false }, 'bundleHash');
+  verifyOfficialRangedFamilySourceBundleV2(bundle);
+  return bundle;
+}
+
+function verifyOfficialRangedFamilySourceBundleV2(bundle) {
+  const routes = bundle.routes;
+  if (!object(bundle) || bundle.semanticVersion !== '2.0.0' || !Array.isArray(routes) || !routes.length
+    || bundle.routeCount !== routes.length || new Set(bundle.definitionIds || []).size !== routes.length
+    || !isDeepStrictEqual(bundle.definitionIds, routes.map(row => row.definitionId))
+    || !isDeepStrictEqual(bundle.coveredSourceFeatureHashes, routes.map(row => row.sourceFeatureHash).sort())
+    || new Set(routes.map(row => row.sourceFeatureHash)).size !== routes.length
+    || routes.some(row => row.routeHash !== hashStarcraftTmgContract(without(row, ['routeHash']))
+      || row.exactSourcePatternCompiled !== true || row.arbitraryProseExecutionClaimed !== false)
+    || bundle.pointDefenseTiming !== 'mandatory_passive_removal_before_hit_roll'
+    || bundle.compilerScope !== 'explicit_definition_subset' || bundle.fullMatchCoverage !== false
+    || bundle.exactSourcePatternsRequired !== true || bundle.arbitraryProseExecutionClaimed !== false
+    || bundle.sourceRefreshPerformed !== false || bundle.trainingTruth !== false
+    || bundle.bundleHash !== hashStarcraftTmgContract(without(bundle, ['bundleHash']))) {
+    fail('RANGED_FAMILY_SUBSET_BUNDLE_INVALID');
   }
   return true;
 }
@@ -398,7 +458,43 @@ function query(bundle, state, request = {}) {
     sourceRefreshPerformed: false, trainingTruth: false }, "queryReceiptHash");
 }
 
+// These modifiers are consumed by their owning attacks or abilities.
+export function createOfficialRangedModifierComponentAdapterV1(bundle, { includePointDefense = false } = {}) {
+  verifyOfficialRangedFamilySourceBundleV1(bundle);
+  if (bundle.schema !== 'starcraft_tmg_official_ranged_family_source_bundle_v2'
+    || bundle.routes.some(route => !['grenades_frag', 'medpack_model_bonus', 'long_range_override'].includes(route.effectKind)
+      && !(route.effectKind === 'optical_flare_range' && route.definitionId === 'unit:medic/a-13-flash-grenade-launcher-any-phase@1'
+        && route.abilityScope === 'Optical Flare' && route.rangeMilliInches === 16000)
+      && !(includePointDefense && route.effectKind === 'point_defense_laser'))) {
+    fail('RANGED_MODIFIER_EXPLICIT_SOURCE_REQUIRED');
+  }
+  const adapterId = 'official-ranged-modifier-component-adapter-v1';
+  const adapterVersion = '1.0.0';
+  const definitionBindings = bundle.routes.map(route => ({
+    sourceFeatureHash: route.sourceFeatureHash, adapterId, adapterVersion, capability: 'automatic_consumer',
+  }));
+  return freezeDeep({ definitionBindings, descriptor: {
+    adapterId, adapterVersion, adapterKind: 'exact_runtime',
+    coveredDefinitionCount: bundle.routeCount, coveredSourceFeatureHashes: [...bundle.coveredSourceFeatureHashes],
+    supportedOperations: ['legal_space', 'query'], sourceBundleHash: bundle.bundleHash,
+    rulesAuthority: true, trainingTruth: false,
+  },
+  legalSpace() {
+    return { candidates: [], parameterDomains: [], trainingTruth: false };
+  },
+  query(state, request = {}) {
+    if (state.officialRangedFamilySourceBundle?.bundleHash !== bundle.bundleHash
+      || !['definition_routes', 'ranged_family_projection'].includes(request.queryKind || request.kind)) {
+      fail('RANGED_MODIFIER_QUERY_BINDING_INVALID');
+    }
+    return query(bundle, state, request);
+  } });
+}
+
 export function createOfficialRangedFamilyAdapterV1(bundle) {
+  if (bundle?.schema !== OFFICIAL_RANGED_FAMILY_BUNDLE_SCHEMA) {
+    fail('RANGED_FAMILY_LEGACY_ADAPTER_SOURCE_REQUIRED');
+  }
   verifyOfficialRangedFamilySourceBundleV1(bundle);
   const descriptor = freezeDeep({
     adapterId: OFFICIAL_RANGED_FAMILY_ADAPTER_ID,

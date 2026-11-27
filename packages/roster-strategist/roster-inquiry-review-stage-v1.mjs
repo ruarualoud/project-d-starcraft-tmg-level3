@@ -1,20 +1,42 @@
 import {isDeepStrictEqual} from 'node:util';
-import {rosterWorkflowAcceptanceStageV1} from './roster-review-data-questions-v1.mjs';
+import {projectRosterWorkflowFactInquiryV1} from './roster-workflow-fact-inquiry-v1.mjs';
+import {rosterWorkflowAcceptanceStageV1,rosterScopedInquiryReviewErrorsV1} from './roster-review-data-questions-v1.mjs';
 import {deliveredRosterAuthorizedInquiryV1} from './roster-inquiry-premise-boundary-v1.mjs';
 import {hashStarcraftTmgContract as hash} from '../authoritative-engine/referee-crypto-v1.mjs';
-export const ROSTER_INQUIRY_REVIEW_STAGE_VERSION_V1=2;
+// v5 adds exact saved-continuation predicates to the existing coverage contract.
+export const ROSTER_INQUIRY_REVIEW_STAGE_VERSION_V1=5;
 export function rosterInquiryReviewStageRequiredV1(work){
   return work?.role==='roster_workflow_final_review'
     &&Boolean(rosterWorkflowAcceptanceStageV1(work)?.authorizedInquiry);
 }
 // Inspect what was actually sent. A version bump alone is not a reason to
 // repurchase a passing judgment. Retain its immutable reply and billing.
-export async function rosterInquiryReviewStageMismatchV1({review,readArtifact}){
-  if(!rosterInquiryReviewStageRequiredV1(review)||review.status!=='evidence_ready'||!review.resultRef)return null;
+export async function rosterInquiryReviewStageMismatchV1({review,readArtifact,state,owner}){
+  let effective=review,recoveredContinuation=false;
+  if(state&&owner){
+    const projection=await projectRosterWorkflowFactInquiryV1({work:owner,state,readArtifact});
+    if(projection?.question?.value?.authorizationScope==='saved_continuation_predicates'){
+      effective={...review,inputs:{...review.inputs,question:projection.question}};
+      recoveredContinuation=true;
+    }
+  }
+  if(!rosterInquiryReviewStageRequiredV1(effective)||review.status!=='evidence_ready'||!review.resultRef)return null;
   const call=review.operationState?.calls?.at(-1);if(!call?.requestRef)return null;
   const request=await readArtifact(call.requestRef);
   const delivered=request.promptNodes?.find(n=>n.kind==='acceptance_stage_contract');
-  const expected=rosterWorkflowAcceptanceStageV1(review);
+  const expected=rosterWorkflowAcceptanceStageV1(effective);
+  // Revisit only an actual saved scope violation under the old request, never
+  // every old pass. Valid atomic source checks remain reusable.
+  if((delivered?.predicateOwnership?.version??0)<2){
+    const checks=(await readArtifact(review.resultRef)).value?.checks??[];
+    const unassignedPredicateErrors=rosterScopedInquiryReviewErrorsV1({inputs:effective.inputs,checks})
+      .filter(error=>error.code==='inquiry_review_unassigned_blocker');
+    if(unassignedPredicateErrors.length)return {workId:review.id,requestRef:call.requestRef,
+      originalInputRef:review.inputRef??null,missingInquiryStage:true,unassignedPredicateErrors,
+      deliveredStage:delivered?.stage??null,expectedStage:expected.stage,
+      authorizationScope:expected.authorizedInquiry.authorizationScope};
+    if(recoveredContinuation)return null; // A correct prior judgment is not repurchased for a new label.
+  }
   if(delivered?.stage===expected.stage&&delivered.currentAuthorizedMeasurementsRequired===true
     &&isDeepStrictEqual(deliveredRosterAuthorizedInquiryV1(request,delivered),expected.authorizedInquiry)){
     const inputs=request.promptNodes?.find(n=>n.kind==='workflow_role_assignment')?.inputs;

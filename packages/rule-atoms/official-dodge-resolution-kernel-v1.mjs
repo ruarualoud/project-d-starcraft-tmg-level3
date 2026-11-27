@@ -138,24 +138,35 @@ function verifyPlan(plan) {
   return true;
 }
 
-function resolveDodge(plan) {
-  verifyPlan(plan);
-  const requestedTransferDice = plan.transferRequests.reduce(
+export function resolveOfficialDodgeTransferCountsV1({ armourPoolDice, reduction, transferRequests }) {
+  armourPoolDice = nonNegativeInteger(armourPoolDice, 'DODGE_ARMOUR_POOL_INVALID');
+  reduction = nonNegativeInteger(reduction, 'DODGE_REDUCTION_INVALID');
+  transferRequests = verifyTransferRequests(transferRequests);
+  const requestedTransferDice = transferRequests.reduce(
     (total, request) => total + request.requestedDice,
     0,
   );
   const transferDiceBeforeDodge = Math.min(
-    plan.armourPoolDice,
+    armourPoolDice,
     requestedTransferDice,
   );
   const dodgeReductionApplied = Math.min(
     transferDiceBeforeDodge,
-    plan.targetDodge.reduction,
+    reduction,
   );
   const transferredDamagePoolDice = Math.max(
     0,
     transferDiceBeforeDodge - dodgeReductionApplied,
   );
+  return { requestedTransferDice, transferDiceBeforeDodge, dodgeReductionApplied,
+    transferredDamagePoolDice, remainingArmourPoolDice: armourPoolDice - transferredDamagePoolDice };
+}
+
+function resolveDodge(plan) {
+  verifyPlan(plan);
+  const { requestedTransferDice, transferDiceBeforeDodge, dodgeReductionApplied, transferredDamagePoolDice }
+    = resolveOfficialDodgeTransferCountsV1({ armourPoolDice: plan.armourPoolDice,
+      reduction: plan.targetDodge.reduction, transferRequests: plan.transferRequests });
   const body = {
     schema: RECEIPT_SCHEMA,
     kernelId: OFFICIAL_DODGE_RESOLUTION_KERNEL_ID,

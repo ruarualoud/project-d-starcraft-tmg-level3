@@ -4,7 +4,7 @@
 import {isDeepStrictEqual} from 'node:util';
 import {projectRosterWorkflowStateReferenceV1 as stateReference} from './roster-workflow-state-reference-v1.mjs';
 import {rosterMeasurementAssessmentScopeV1 as assessmentScope} from './roster-measurement-assessment-scope-v1.mjs';
-export const ROSTER_MEASUREMENT_SCENE_DELIVERY_VERSION_V1=4;
+export const ROSTER_MEASUREMENT_SCENE_DELIVERY_VERSION_V1=5;
 const copy=structuredClone,unwrap=v=>v?.kind&&v.value?v.value:v;
 const sameIds=(a,b)=>isDeepStrictEqual([...new Set(a)].sort(),[...new Set(b)].sort());
 // A candidate laboratory handle is not part of Native world content. An exact
@@ -14,6 +14,37 @@ const sameIds=(a,b)=>isDeepStrictEqual([...new Set(a)].sort(),[...new Set(b)].so
 const sameMeasuredState=(a,b)=>a?.schema===b?.schema
   &&typeof a?.sourceStateHash==='string'&&a.sourceStateHash===b?.sourceStateHash
   &&typeof a?.stateHash==='string'&&a.stateHash===b?.stateHash;
+// Both public producers use the same Native scene projector. candidate_context
+// embeds its receipt; do not silently omit that entire production path or
+// flatten/rewrite the original artifact. Keep its exact source pointer.
+function savedProjection(body){
+  const candidate=body?.operation==='candidate_context';
+  if(!candidate&&body?.operation!=='project_scene'||body.status!=='completed'
+    ||body.receipt?.resultStatus!=='ok')return null;
+  const receipt=candidate?body.receipt.sceneProjectionReceipt:body.receipt;
+  const proof=receipt?.sceneProjection,target=stateReference(body);
+  if(receipt?.resultStatus!=='ok'||proof?.schema!=='pregame_scene_projection_v1'||!target
+    ||body.stateRef&&!isDeepStrictEqual(body.stateRef,target))return null;
+  let reference,targetParent,pointer;
+  if(candidate){
+    const lab=body.receipt.laboratory;
+    if(lab?.sourceStateHash!==receipt.sourceStateHash||lab.builderBundleHash!==receipt.builderBundleHash
+      ||lab.rulesRuntimeHash!==receipt.rulesRuntimeHash||proof.targetRulesRuntimeHash!==lab.rulesRuntimeHash)return null;
+    reference=body.submittedArguments?.comparisonScene?.referenceStateRef;
+    targetParent={schema:target.schema,contextRef:body.receipt.contextRef,
+      sourceStateHash:lab.sourceStateHash,stateHash:lab.sourceStateHash};
+    pointer='/receipt/sceneProjectionReceipt/sceneProjection';
+  }else{
+    reference=body.submittedArguments?.referenceStateRef;targetParent=body.submittedArguments?.stateRef;
+    pointer='/receipt/sceneProjection';
+  }
+  if(!reference||!targetParent||proof.referenceSourceStateHash!==reference.sourceStateHash
+    ||proof.referenceStateHash!==reference.stateHash||proof.targetSourceStateHash!==target.sourceStateHash
+    ||receipt.sourceStateHash!==target.sourceStateHash||receipt.branchStateHash!==target.stateHash
+    ||proof.targetSourceStateHash!==targetParent.sourceStateHash||proof.targetParentStateHash!==targetParent.stateHash
+    ||receipt.parentStateHash!==targetParent.stateHash||target.contextRef!==targetParent.contextRef)return null;
+  return {receipt,proof,target,reference,pointer};
+}
 // Array order is not weapon identity. Keep original source pointers and do
 // only arithmetic; a matched row is not a controlled-causality judgment.
 function rowDifferences(reference,target){
@@ -89,15 +120,8 @@ export async function projectRosterMeasurementSceneInputsV1({sources,measurement
   }
   const relations=[],inputs={},delivered=new Map(),differences=[];
   for(const {row:source,e}of sources.values()){
-    const body=await get(e.artifactRef),receipt=body?.receipt,proof=receipt?.sceneProjection;
-    if(body?.operation!=='project_scene'||body.status!=='completed'||receipt?.resultStatus!=='ok'
-      ||proof?.schema!=='pregame_scene_projection_v1')continue;
-    const reference=body.submittedArguments?.referenceStateRef,targetParent=body.submittedArguments?.stateRef;
-    const target=stateReference(body);
-    if(!reference||!targetParent||!target
-      ||proof.referenceSourceStateHash!==reference.sourceStateHash||proof.referenceStateHash!==reference.stateHash
-      ||proof.targetSourceStateHash!==target.sourceStateHash||proof.targetSourceStateHash!==targetParent.sourceStateHash
-      ||proof.targetParentStateHash!==targetParent.stateHash||target.contextRef!==targetParent.contextRef)continue;
+    const projection=savedProjection(await get(e.artifactRef));if(!projection)continue;
+    const {receipt,proof,reference,target,pointer}=projection;
     for(const left of measured)for(const right of measured){
       if(!sameMeasuredState(left.ref,reference)||!sameMeasuredState(right.ref,target)
         ||!sameIds(left.row.subjectUnitIds,right.row.subjectUnitIds)||!sameIds(left.row.targetIds,right.row.targetIds)
@@ -106,15 +130,22 @@ export async function projectRosterMeasurementSceneInputsV1({sources,measurement
         ||left.body.receipt.builderBundleHash!==receipt.builderBundleHash
         ||right.body.receipt.builderBundleHash!==receipt.builderBundleHash)continue;
       const participants=[...new Set([...left.row.subjectUnitIds,...left.row.targetIds])].sort();
-      const exact=proof.terrainPreserved===true&&participants.length>0
+      // terrainPreserved means the target's ORIGINAL terrain was unchanged.
+      // Copying reference terrain intentionally makes that false, but provides
+      // a distinct Native observation. Do not mislabel it as incompatible.
+      const terrainRelationship=proof.terrainPreserved===true?'target_terrain_preserved'
+        :proof.terrainTransfer?.policy==='copy_reference'
+          &&typeof proof.boardHash==='string'&&proof.terrainTransfer.referenceBoardHash===proof.boardHash
+          ?'reference_terrain_copied':'not_established';
+      const exact=terrainRelationship!=='not_established'&&participants.length>0
         &&participants.every(id=>proof.exactUnits?.includes(id)
           &&proof.materializedSpec?.placements?.some(p=>p.pieceId===id&&p.modelPositions?.length))
         &&!(proof.adaptedUnits??[]).some(u=>participants.includes(u.unitId));
-      const sourceRef={evidenceNumber:source.evidenceNumber,sourceEvidenceId:e.id,artifactRef:e.artifactRef,pointer:'/receipt/sceneProjection'};
+      const sourceRef={evidenceNumber:source.evidenceNumber,sourceEvidenceId:e.id,artifactRef:e.artifactRef,pointer};
       relations.push({referenceMeasurement:left.row.evidenceNumber,targetMeasurement:right.row.evidenceNumber,
         referenceStateRef:copy(reference),targetStateRef:copy(target),participantUnitIds:participants,source:sourceRef,
         geometryStatus:exact?'exact_participants_preserved':'projection_requires_inspection',
-        terrainPreserved:proof.terrainPreserved===true,phase:proof.phase,activeSideKey:proof.activeSideKey});
+        terrainPreserved:proof.terrainPreserved===true,terrainRelationship,phase:proof.phase,activeSideKey:proof.activeSideKey});
       if(!differences.some(p=>p.referenceMeasurement===left.row.evidenceNumber&&p.targetMeasurement===right.row.evidenceNumber)){
         const difference=rowDifferences(left,right);if(difference)differences.push(difference);
       }

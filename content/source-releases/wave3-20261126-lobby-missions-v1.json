@@ -1,0 +1,458 @@
+{
+  "schema": "starcraft_tmg_official_wave3_mission_source_v1",
+  "semanticVersion": "1.0.0",
+  "releaseId": "wave3-human-match-three-deployments-v1",
+  "normalizedDatasetHash": "718057e86ac4f93a72c06b8e4d8f4d851ba33ee04c9dddea33e966eda9fe6685",
+  "sourceSnapshotHash": "4412c17faaebaff04b117d1ddc666d1cdd939eca420a22f861c7c944f1179c8c",
+  "sourceCoverage": "four_new_missions_two_gather_variants_and_three_deployment_references",
+  "missions": [
+    {
+      "family": "artefact_hunt",
+      "profile": {
+        "schema": "starcraft_tmg_official_mission_draft_profile_v1",
+        "recordKey": "faction_cards:mission_artefact_hunt",
+        "missionId": "mission_artefact_hunt",
+        "name": "Artefact Hunt",
+        "engagementScale": "Standard",
+        "sourceScale": "Standard Engagement",
+        "startingSupply": 6,
+        "supplyEscalationPerRound": 2,
+        "gameLengthRounds": 5,
+        "missionParameters": "All Mission Markers are Activated.",
+        "scoringConditions": "Score VPs equal to Enemy Supply destroyed this Round.\n\n End of Round 5: \nGain 4 VP for each Friendly Unit that CLAIM Mission Marker and it is Wholly Within Friendly Zone of Influence.\n\nGain 2 VP for each Mission Marker associated with your colour that is not currently CLAIM by an Enemy Unit.",
+        "additionalConditions": "Scoring Phase: From the Start of the Second Round, if a Unit is Within 3\" of a Controlled Mission Marker that is Neutral or associated with the Opponent colour, that Unit may CLAIM it.\n\nCLAIM: Place the Mission Marker on the Unit Card.\nA Unit carrying a Mission Marker must DROP it if:\n- It has its Current Supply Value reduced.\n- Before It resolves a PLACE effect.\n- It is Engaged with Enemies having a greater combined Current Supply Value.\n- It is Destroyed, removed from the battlefield, or returned to Reserves.\nWhen a Unit DROP a Mission Marker, the Opponent places the Mission Marker Within 2\" of the Unit or its last model removed.\nUnit may CLAIM only one Mission Marker at a time.",
+        "sourceRecordHash": "bc83e13692db41f2300f5237128b223f9a43bfe4a39b1bd1b402d08e234e2a0e",
+        "payloadHash": "c64ec3ab905c8b518a355b8b383e4341ff472e83c53e6a502a37af6de60089da",
+        "fieldContract": {
+          "victoryAndPacingDefined": true,
+          "startingSupplyDefined": true,
+          "escalationDefined": true,
+          "gameLengthDefined": true,
+          "missionParametersDefined": true,
+          "scoringConditionsDefined": true,
+          "additionalConditionsDefined": true,
+          "arbitraryEffectExecutionClaimedByThisSlice": false
+        },
+        "rulesTruth": "official_current_mission_card_draft_profile",
+        "trainingTruth": false,
+        "profileHash": "2114f403139536fa56c7a6b5844e6708f7872fc2ccf7be3a0e944fe761beaba2"
+      },
+      "rules": {
+        "setup": {
+          "allMarkersActivated": true
+        },
+        "destroyedSupplyScoring": {
+          "startsRound": 1,
+          "vpPerSupply": 1
+        },
+        "terminal": {
+          "roundLimit": 5,
+          "immediateLeadThresholdVp": null
+        },
+        "claim": {
+          "phase": "scoring",
+          "startsRound": 2,
+          "rangeMilliInches": 3000,
+          "markerController": "actor_side",
+          "permittedAffinities": [
+            "neutral",
+            "opponent"
+          ],
+          "maxCarriedPerUnit": 1
+        },
+        "drop": {
+          "triggers": [
+            "current_supply_reduced",
+            "place",
+            "engaged_with_greater_combined_enemy_current_supply",
+            "destroyed",
+            "removed_from_battlefield",
+            "returned_to_reserves"
+          ],
+          "placeTiming": "before_resolving_place",
+          "placementOwner": "opponent",
+          "placementRangeMilliInches": 2000,
+          "placementReference": "unit_or_last_model_removed"
+        },
+        "finalScoring": {
+          "round": 5,
+          "carrierWhollyWithinFriendlyInfluenceVp": 4,
+          "ownMarkerNotClaimedByEnemyVp": 2
+        }
+      }
+    },
+    {
+      "family": "artefact_hunt",
+      "profile": {
+        "schema": "starcraft_tmg_official_mission_draft_profile_v1",
+        "recordKey": "faction_cards:mission_artefact_hunt__skirmish_",
+        "missionId": "mission_artefact_hunt__skirmish_",
+        "name": "Artefact Hunt\n(Skirmish)",
+        "engagementScale": "Skirmish",
+        "sourceScale": "Skirmish Level",
+        "startingSupply": 3,
+        "supplyEscalationPerRound": 1,
+        "gameLengthRounds": 5,
+        "missionParameters": "All Mission Markers are Activated.",
+        "scoringConditions": "Score VPs equal to Enemy Supply destroyed this Round.\n\n End of Round 5: \nGain 3 VP for each Friendly Unit that CLAIM Mission Marker and it is Wholly Within Friendly Zone of Influence.\n\nGain 1 VP for each Mission Marker associated with your colour that is not currently CLAIM by an Enemy Unit.",
+        "additionalConditions": "Scoring Phase: From the Start of the Second Round, if a Unit is Within 3\" of a Controlled Mission Marker that is Neutral or associated with the Opponent colour, that Unit may CLAIM it.\n\nCLAIM: Place the Mission Marker on the Unit Card.\nA Unit carrying a Mission Marker must DROP it if:\n- It resolves a PLACE effect.\n- It has its Current Supply Value reduced.\n- It is Engaged with Enemies having a greater combined Current Supply Value.\n- It is Destroyed, removed from the battlefield, or returned to Reserves.\nWhen a Unit DROP a Mission Marker, the Opponent places the Mission Marker Within 2\" of the Unit or its last model removed.\nUnit may CLAIM only one Mission Marker.",
+        "sourceRecordHash": "82fe7b383a84f4a4a32293c4f0bd7f5d2b8daae2c8c39ce59c5f62e0ccc5f782",
+        "payloadHash": "01159850c4983f63db1bfbf28cb10f29825bc3d6da007c93189f4eb1e59dbccd",
+        "fieldContract": {
+          "victoryAndPacingDefined": true,
+          "startingSupplyDefined": true,
+          "escalationDefined": true,
+          "gameLengthDefined": true,
+          "missionParametersDefined": true,
+          "scoringConditionsDefined": true,
+          "additionalConditionsDefined": true,
+          "arbitraryEffectExecutionClaimedByThisSlice": false
+        },
+        "rulesTruth": "official_current_mission_card_draft_profile",
+        "trainingTruth": false,
+        "profileHash": "13638487bf13e96ca89eefb2df203d1c601d79803ced8f01cc46cfba328eb3e0"
+      },
+      "rules": {
+        "setup": {
+          "allMarkersActivated": true
+        },
+        "destroyedSupplyScoring": {
+          "startsRound": 1,
+          "vpPerSupply": 1
+        },
+        "terminal": {
+          "roundLimit": 5,
+          "immediateLeadThresholdVp": null
+        },
+        "claim": {
+          "phase": "scoring",
+          "startsRound": 2,
+          "rangeMilliInches": 3000,
+          "markerController": "actor_side",
+          "permittedAffinities": [
+            "neutral",
+            "opponent"
+          ],
+          "maxCarriedPerUnit": 1
+        },
+        "drop": {
+          "triggers": [
+            "current_supply_reduced",
+            "place",
+            "engaged_with_greater_combined_enemy_current_supply",
+            "destroyed",
+            "removed_from_battlefield",
+            "returned_to_reserves"
+          ],
+          "placeTiming": "on_resolving_place",
+          "placementOwner": "opponent",
+          "placementRangeMilliInches": 2000,
+          "placementReference": "unit_or_last_model_removed"
+        },
+        "finalScoring": {
+          "round": 5,
+          "carrierWhollyWithinFriendlyInfluenceVp": 3,
+          "ownMarkerNotClaimedByEnemyVp": 1
+        }
+      }
+    },
+    {
+      "family": "fire_in_the_sky",
+      "profile": {
+        "schema": "starcraft_tmg_official_mission_draft_profile_v1",
+        "recordKey": "faction_cards:mission_fire_in_the_sky",
+        "missionId": "mission_fire_in_the_sky",
+        "name": "Fire in the Sky",
+        "engagementScale": "Standard",
+        "sourceScale": "Standard Engagement",
+        "startingSupply": 5,
+        "supplyEscalationPerRound": 3,
+        "gameLengthRounds": 5,
+        "missionParameters": "All Mission Markers are Activated.\nDuring battlefield setup, place a D6 next to each Mission Marker to track its Sabotage Level. Set the starting Sabotage Level of each Mission Marker to 1.",
+        "scoringConditions": "Score VPs equal to Enemy Supply destroyed this Round.\n\nFrom the Start of the Second Round: Gain VP for each Controlled Mission Marker that is Neutral or associated with the Opponent colour. The VP gained is equal to the Sabotage Level on the marker.\nSabotage Level 3 = 3 VP\nSabotage Level 2 = 2 VP\nSabotage Level 1 = 1 VP",
+        "additionalConditions": "Assault Phase: If an Unengaged Unit is Within 3\" of a Controlled Mission Marker, this unit may perform Sabotage Action instead of a standard action.\nSabotage Action: Decrease or Increase that Mission Marker's Sabotage Level by 1 (to a minimum of 1 or maximum of 3).\n\nSpecial Winning Conditions: The game ends immediately if a Player leads by 10+ VPs.",
+        "sourceRecordHash": "62928656b887e1deede2cbeff236e3f85e2c744716ebca08d349ebb918ce462e",
+        "payloadHash": "cc90e221dc0747ef0edad2610ce637e55b723e07676843eb828e2b0d0b0ad44c",
+        "fieldContract": {
+          "victoryAndPacingDefined": true,
+          "startingSupplyDefined": true,
+          "escalationDefined": true,
+          "gameLengthDefined": true,
+          "missionParametersDefined": true,
+          "scoringConditionsDefined": true,
+          "additionalConditionsDefined": true,
+          "arbitraryEffectExecutionClaimedByThisSlice": false
+        },
+        "rulesTruth": "official_current_mission_card_draft_profile",
+        "trainingTruth": false,
+        "profileHash": "9e63fdf1862e467469f3c3a0656fe25777cb651c4416e4ebe6469ee1938ca095"
+      },
+      "rules": {
+        "setup": {
+          "allMarkersActivated": true,
+          "initialSabotageLevel": 1
+        },
+        "destroyedSupplyScoring": {
+          "startsRound": 1,
+          "vpPerSupply": 1
+        },
+        "terminal": {
+          "roundLimit": 5,
+          "immediateLeadThresholdVp": 10
+        },
+        "sabotage": {
+          "phase": "assault",
+          "replacesStandardAction": true,
+          "requiresUnengaged": true,
+          "rangeMilliInches": 3000,
+          "markerController": "actor_side",
+          "permittedLevelDeltas": [
+            -1,
+            1
+          ],
+          "minimumLevel": 1,
+          "maximumLevel": 3
+        },
+        "markerScoring": {
+          "startsRound": 2,
+          "permittedAffinities": [
+            "neutral",
+            "opponent"
+          ],
+          "markerController": "scoring_side",
+          "vpPerSabotageLevel": 1
+        }
+      }
+    },
+    {
+      "family": "fire_in_the_sky",
+      "profile": {
+        "schema": "starcraft_tmg_official_mission_draft_profile_v1",
+        "recordKey": "faction_cards:mission_fire_in_the_sky__skirmish_",
+        "missionId": "mission_fire_in_the_sky__skirmish_",
+        "name": "Fire in the Sky\n(Skirmish)",
+        "engagementScale": "Skirmish",
+        "sourceScale": "Skirmish Level",
+        "startingSupply": 3,
+        "supplyEscalationPerRound": 2,
+        "gameLengthRounds": 5,
+        "missionParameters": "All Mission Markers are Activated.\nDuring battlefield setup, place a D6 next to each Mission Marker to track its Sabotage Level. Set the starting Sabotage Level of each Mission Marker to 1.",
+        "scoringConditions": "Score VPs equal to Enemy Supply destroyed this Round.\n\nFrom the Start of the Second Round: Gain VP for each Controlled Mission Marker that is Neutral or associated with the Opponent colour. The VP gained is equal to the Sabotage Level on the marker.\nSabotage Level 3 = 3 VP\nSabotage Level 2 = 2 VP\nSabotage Level 1 = 1 VP",
+        "additionalConditions": "Assault Phase: If an Unengaged Unit is Within 3\" of a Controlled Mission Marker, this unit may perform Sabotage Action instead of a standard action.\nSabotage Action: Decrease or Increase that Mission Marker's Sabotage Level by 1 (to a minimum of 1 or maximum of 3).\n\nSpecial Winning Conditions: The game ends immediately if a Player leads by 8+ VPs.",
+        "sourceRecordHash": "08c838ca2eab9461f0cc87be3d50662d9d54fe814f0fbe6c09db16a94fe28071",
+        "payloadHash": "a5303891d53432c026c1f9bd7735c838955a1a735d73c38065a23e5ebc4c31c6",
+        "fieldContract": {
+          "victoryAndPacingDefined": true,
+          "startingSupplyDefined": true,
+          "escalationDefined": true,
+          "gameLengthDefined": true,
+          "missionParametersDefined": true,
+          "scoringConditionsDefined": true,
+          "additionalConditionsDefined": true,
+          "arbitraryEffectExecutionClaimedByThisSlice": false
+        },
+        "rulesTruth": "official_current_mission_card_draft_profile",
+        "trainingTruth": false,
+        "profileHash": "b822e658cdedb33b546bb43628e361454e703c54db218648c4e6f77ec9c2596e"
+      },
+      "rules": {
+        "setup": {
+          "allMarkersActivated": true,
+          "initialSabotageLevel": 1
+        },
+        "destroyedSupplyScoring": {
+          "startsRound": 1,
+          "vpPerSupply": 1
+        },
+        "terminal": {
+          "roundLimit": 5,
+          "immediateLeadThresholdVp": 8
+        },
+        "sabotage": {
+          "phase": "assault",
+          "replacesStandardAction": true,
+          "requiresUnengaged": true,
+          "rangeMilliInches": 3000,
+          "markerController": "actor_side",
+          "permittedLevelDeltas": [
+            -1,
+            1
+          ],
+          "minimumLevel": 1,
+          "maximumLevel": 3
+        },
+        "markerScoring": {
+          "startsRound": 2,
+          "permittedAffinities": [
+            "neutral",
+            "opponent"
+          ],
+          "markerController": "scoring_side",
+          "vpPerSabotageLevel": 1
+        }
+      }
+    },
+    {
+      "family": "gather_the_resources",
+      "profile": {
+        "schema": "starcraft_tmg_official_mission_draft_profile_v1",
+        "recordKey": "faction_cards:mission_gather_the_resources",
+        "missionId": "mission_gather_the_resources",
+        "name": "Gather the Resources",
+        "engagementScale": "Standard",
+        "sourceScale": "Standard Engagement",
+        "startingSupply": 6,
+        "supplyEscalationPerRound": 2,
+        "gameLengthRounds": 5,
+        "missionParameters": "All Mission Markers are Activated.",
+        "scoringConditions": "Score VPs equal to Enemy Supply destroyed this Round.\n\nFrom the Start of the Second Round:\nGain 2 VPs for each Controlled Mission Marker associated with the Opponent colour.",
+        "additionalConditions": "Assault Phase: If an Unengaged Unit is Within 3\" of a Controlled Neutral Mission Marker or associated with the Opponent, this unit may perform the Gather Action instead of a standard action.\nGather Action:\nGain 1 VP.\n\nSpecial Winning Conditions: The game ends immediately if a Player leads by 10+ VPs.",
+        "sourceRecordHash": "d76edb7e75e1fcd751a211988c1f9f44641cfafcaea41b757c31e06de08a2ddf",
+        "payloadHash": "c8c1d88335e19fca9a4e81ae7206169288b99a7f041239103e42de325808d002",
+        "fieldContract": {
+          "victoryAndPacingDefined": true,
+          "startingSupplyDefined": true,
+          "escalationDefined": true,
+          "gameLengthDefined": true,
+          "missionParametersDefined": true,
+          "scoringConditionsDefined": true,
+          "additionalConditionsDefined": true,
+          "arbitraryEffectExecutionClaimedByThisSlice": false
+        },
+        "rulesTruth": "official_current_mission_card_draft_profile",
+        "trainingTruth": false,
+        "profileHash": "684c7018f281ec89efee6f7e14ffc94c0a1603448d7dd3ea5762fe124322e544"
+      },
+      "rules": {
+        "setup": {
+          "allMarkersActivated": true
+        },
+        "destroyedSupplyScoring": {
+          "startsRound": 1,
+          "vpPerSupply": 1
+        },
+        "terminal": {
+          "roundLimit": 5,
+          "immediateLeadThresholdVp": 10
+        },
+        "gather": {
+          "phase": "assault",
+          "replacesStandardAction": true,
+          "requiresUnengaged": true,
+          "rangeMilliInches": 3000,
+          "markerController": "actor_side",
+          "permittedAffinities": [
+            "neutral",
+            "opponent"
+          ],
+          "awardVp": 1
+        },
+        "markerScoring": {
+          "startsRound": 2,
+          "permittedAffinities": [
+            "opponent"
+          ],
+          "markerController": "scoring_side",
+          "vpPerMarker": 2
+        }
+      }
+    },
+    {
+      "family": "gather_the_resources",
+      "profile": {
+        "schema": "starcraft_tmg_official_mission_draft_profile_v1",
+        "recordKey": "faction_cards:mission_gather_the_resources__skirmish_",
+        "missionId": "mission_gather_the_resources__skirmish_",
+        "name": "Gather the Resources (Skirmish)",
+        "engagementScale": "Skirmish",
+        "sourceScale": "Skirmish Level",
+        "startingSupply": 3,
+        "supplyEscalationPerRound": 1,
+        "gameLengthRounds": 5,
+        "missionParameters": "All Mission Markers are Activated.",
+        "scoringConditions": "Score VPs equal to Enemy Supply destroyed this Round.\n\nFrom the Start of the Second Round:\nGain 2 VPs for each Controlled Mission Marker associated with the Opponent colour.",
+        "additionalConditions": "Assault Phase: If an Unengaged Unit is Within 3\" of a Controlled Neutral Mission Marker or associated with the Opponent, this unit may perform the Gather Action instead of a standard action.\nGather Action:\nGain 1 VP.\n\nSpecial Winning Conditions: The game ends immediately if a Player leads by 8+ VPs.",
+        "sourceRecordHash": "ba9fca62222788d1ebe40db4ca553ede131e646d760bd9d1c8e83644b9607ec6",
+        "payloadHash": "602a63007ba45b47b42b164bfdcd770898f750be632e1c605e6fde9dccb104e7",
+        "fieldContract": {
+          "victoryAndPacingDefined": true,
+          "startingSupplyDefined": true,
+          "escalationDefined": true,
+          "gameLengthDefined": true,
+          "missionParametersDefined": true,
+          "scoringConditionsDefined": true,
+          "additionalConditionsDefined": true,
+          "arbitraryEffectExecutionClaimedByThisSlice": false
+        },
+        "rulesTruth": "official_current_mission_card_draft_profile",
+        "trainingTruth": false,
+        "profileHash": "84e47f63e77f5e926c8ed338df5033026c679881b529c1164152adb78a4a7b61"
+      },
+      "rules": {
+        "setup": {
+          "allMarkersActivated": true
+        },
+        "destroyedSupplyScoring": {
+          "startsRound": 1,
+          "vpPerSupply": 1
+        },
+        "terminal": {
+          "roundLimit": 5,
+          "immediateLeadThresholdVp": 8
+        },
+        "gather": {
+          "phase": "assault",
+          "replacesStandardAction": true,
+          "requiresUnengaged": true,
+          "rangeMilliInches": 3000,
+          "markerController": "actor_side",
+          "permittedAffinities": [
+            "neutral",
+            "opponent"
+          ],
+          "awardVp": 1
+        },
+        "markerScoring": {
+          "startsRound": 2,
+          "permittedAffinities": [
+            "opponent"
+          ],
+          "markerController": "scoring_side",
+          "vpPerMarker": 2
+        }
+      }
+    }
+  ],
+  "deploymentSources": [
+    {
+      "recordKey": "faction_cards:EyCV5SmTPXTrpqS6iy3e",
+      "name": "POWER LINES",
+      "engagementScale": "Skirmish",
+      "frontReference": "https://firebasestorage.googleapis.com/v0/b/starcrafttmgbeta.firebasestorage.app/o/deployments%2F1791551540971_Power_lines.jpg?alt=media&token=098c8634-d5e5-47b6-bcd1-0b52bb691b0d",
+      "sourceRecordHash": "7982b1bb0e5b89a44cf56105b383e54a6e866a5be144f3a1428c158bb7d1a4b9",
+      "payloadHash": "987e83f5fac76bc1ed5d328cbf50e43acba23795ffdee4dc6550721f23e06ccc",
+      "geometryStatus": "unbound"
+    },
+    {
+      "recordKey": "faction_cards:f1fL4RiJ2zPOF4BeDlgl",
+      "name": "MEETING ENGAGMENT",
+      "engagementScale": "Standard",
+      "frontReference": "https://firebasestorage.googleapis.com/v0/b/starcrafttmgbeta.firebasestorage.app/o/deployments%2F1793302593371_Meeting_Engagment.jpg?alt=media&token=3f6e93e2-4347-4ead-a091-a92c5808722f",
+      "sourceRecordHash": "be1d8b7cfd6cbedefd37894bd7d09ee6de4e6b185d470e8af31c3b986fbea313",
+      "payloadHash": "35f75afa3a5eeae1648444cb67748fa022efe6a7d613d99afa751135dd140cae",
+      "geometryStatus": "unbound"
+    },
+    {
+      "recordKey": "faction_cards:gWudxJ1dMPAF8vP6UghB",
+      "name": "ONE BRIDGE TOO CLOSE",
+      "engagementScale": "Standard",
+      "frontReference": "https://firebasestorage.googleapis.com/v0/b/starcrafttmgbeta.firebasestorage.app/o/deployments%2F1791551420892_One_bridge_too_close.jpg?alt=media&token=5117df3e-1927-4737-844e-465dc9da85c1",
+      "sourceRecordHash": "c8b0784fdabd4e234b109280f75c29969dd3d501c4b506388658b4eab4b095d8",
+      "payloadHash": "edf4d7448b74ebb1d4e5491a3c5e8527893117a9ac94ea39f616a8195b5df184",
+      "geometryStatus": "unbound"
+    }
+  ],
+  "productMatchBindingEligible": false,
+  "trainingTruth": false,
+  "bundleHash": "1a5df3d101864eb7428d7408c9e1dab783bf26d3cea8d1d94ee7e3981dabf56d"
+}

@@ -1,0 +1,381 @@
+[
+  {
+    "source": "queen",
+    "roomId": "wave3-creep-displacement-v222-queen",
+    "revision": 0,
+    "domain": {
+      "domainId": "sc-domain-1eaa77458de4506ca7edcc70f3d35de3a6efd7830faca60fe3359008e494a31b",
+      "parameterKind": "official_selected_roster_spatial_path_v1",
+      "actionType": "move",
+      "pieceId": "player2-queen",
+      "parameterSchema": {
+        "tokenDisplacements": {
+          "type": "array",
+          "optional": true,
+          "requiredWhen": "actual_leading_model_overlaps_source_token",
+          "controller": "moving_leading_model_controller",
+          "items": {
+            "type": "object",
+            "required": [
+              "tokenId",
+              "coordinate"
+            ],
+            "tokenId": {
+              "type": "current_source_token_handle"
+            },
+            "coordinate": {
+              "coordinateUnit": "milli-inch",
+              "required": [
+                "xMilliInches",
+                "yMilliInches"
+              ]
+            }
+          }
+        }
+      },
+      "constraints": {
+        "modelProfiles": [
+          {
+            "modelId": "player2-queen-model-1",
+            "baseShape": "round",
+            "baseWidthMilliInches": 3150,
+            "baseDepthMilliInches": 3150,
+            "startPoint": {
+              "xMilliInches": 25000,
+              "yMilliInches": 6000
+            },
+            "startElevation": "ground",
+            "supportTerrainIds": []
+          }
+        ],
+        "maxDistanceMilliInches": 7000
+      }
+    },
+    "pieces": [
+      {
+        "id": "player2-queen",
+        "name": "Queen",
+        "sideKey": "player2",
+        "unitId": "queen",
+        "isOnField": true,
+        "models": [
+          {
+            "id": "player2-queen-model-1",
+            "xInches": 25,
+            "yInches": 6,
+            "baseShape": "round",
+            "baseWidthInches": 3.15,
+            "baseDepthInches": 3.15,
+            "isOnField": true
+          }
+        ]
+      }
+    ],
+    "tokens": [
+      {
+        "tokenId": "asset:1:creep_token_place:1",
+        "tokenKind": "creep_tumor",
+        "coordinate": {
+          "x": 16,
+          "y": 4
+        },
+        "baseShape": "round",
+        "baseDiameterMm": 28
+      },
+      {
+        "tokenId": "asset:1:creep-tumor:2",
+        "tokenKind": "creep_tumor",
+        "coordinate": {
+          "x": 27.126,
+          "y": 6
+        },
+        "baseShape": "round",
+        "baseDiameterMm": 28
+      }
+    ],
+    "expected": {
+      "leadingModelId": "player2-queen-model-1",
+      "path": [
+        {
+          "xMilliInches": 26600,
+          "yMilliInches": 6800
+        }
+      ],
+      "placements": [],
+      "tokenDisplacements": [
+        {
+          "tokenId": "asset:1:creep-tumor:2",
+          "coordinate": {
+            "xMilliInches": 28726,
+            "yMilliInches": 6800
+          }
+        }
+      ]
+    },
+    "events": [
+      {
+        "type": "unit_move_resolved"
+      },
+      {
+        "type": "battlefield_token_displaced",
+        "tokenId": "asset:1:creep-tumor:2",
+        "coordinate": {
+          "xMilliInches": 28726,
+          "yMilliInches": 6800
+        }
+      }
+    ]
+  },
+  {
+    "source": "hatchery",
+    "roomId": "wave3-creep-displacement-v222-hatchery",
+    "revision": 1,
+    "domain": {
+      "domainId": "sc-domain-1a8cd9364709d9fa7d8b236d8675efcba2053acd1ba5ff5747efd52a5b601d7f",
+      "parameterKind": "official_selected_roster_spatial_path_v1",
+      "actionType": "move",
+      "pieceId": "player1-goliath-1",
+      "parameterSchema": {
+        "tokenDisplacements": {
+          "type": "array",
+          "optional": true,
+          "requiredWhen": "actual_leading_model_overlaps_source_token",
+          "controller": "moving_leading_model_controller",
+          "items": {
+            "type": "object",
+            "required": [
+              "tokenId",
+              "coordinate"
+            ],
+            "tokenId": {
+              "type": "current_source_token_handle"
+            },
+            "coordinate": {
+              "coordinateUnit": "milli-inch",
+              "required": [
+                "xMilliInches",
+                "yMilliInches"
+              ]
+            }
+          }
+        }
+      },
+      "constraints": {
+        "modelProfiles": [
+          {
+            "modelId": "player1-goliath-1-model-1",
+            "baseShape": "round",
+            "baseWidthMilliInches": 3150,
+            "baseDepthMilliInches": 3150,
+            "startPoint": {
+              "xMilliInches": 20000,
+              "yMilliInches": 4000
+            },
+            "startElevation": "ground",
+            "supportTerrainIds": []
+          }
+        ],
+        "maxDistanceMilliInches": 7000
+      }
+    },
+    "pieces": [
+      {
+        "id": "player1-goliath-1",
+        "name": "Goliath",
+        "sideKey": "player1",
+        "unitId": "goliath",
+        "isOnField": true,
+        "models": [
+          {
+            "id": "player1-goliath-1-model-1",
+            "xInches": 20,
+            "yInches": 4,
+            "baseShape": "round",
+            "baseWidthInches": 3.15,
+            "baseDepthInches": 3.15,
+            "isOnField": true
+          }
+        ]
+      }
+    ],
+    "tokens": [
+      {
+        "tokenId": "asset:1:creep_token_place:1",
+        "tokenKind": "creep_tumor",
+        "coordinate": {
+          "x": 16,
+          "y": 4
+        },
+        "baseShape": "round",
+        "baseDiameterMm": 28
+      }
+    ],
+    "expected": {
+      "leadingModelId": "player1-goliath-1-model-1",
+      "path": [
+        {
+          "xMilliInches": 17900,
+          "yMilliInches": 4000
+        }
+      ],
+      "placements": [],
+      "tokenDisplacements": [
+        {
+          "tokenId": "asset:1:creep_token_place:1",
+          "coordinate": {
+            "xMilliInches": 20026,
+            "yMilliInches": 4000
+          }
+        }
+      ]
+    },
+    "events": [
+      {
+        "type": "unit_move_resolved"
+      },
+      {
+        "type": "battlefield_token_displaced",
+        "tokenId": "asset:1:creep_token_place:1",
+        "coordinate": {
+          "xMilliInches": 20026,
+          "yMilliInches": 4000
+        }
+      },
+      {
+        "type": "creep_tumor_removed",
+        "tokenId": "asset:1:creep_token_place:1"
+      }
+    ]
+  },
+  {
+    "source": "overlord",
+    "roomId": "wave3-creep-displacement-v222-overlord",
+    "revision": 0,
+    "domain": {
+      "domainId": "sc-domain-34f8a2ccb3911fbc26e6fa638ed0b8b13c86e93527ef7d54bcf3e84e5f9d8761",
+      "parameterKind": "official_selected_roster_spatial_path_v1",
+      "actionType": "run",
+      "pieceId": "player1-goliath-1",
+      "parameterSchema": {
+        "tokenDisplacements": {
+          "type": "array",
+          "optional": true,
+          "requiredWhen": "actual_leading_model_overlaps_source_token",
+          "controller": "moving_leading_model_controller",
+          "items": {
+            "type": "object",
+            "required": [
+              "tokenId",
+              "coordinate"
+            ],
+            "tokenId": {
+              "type": "current_source_token_handle"
+            },
+            "coordinate": {
+              "coordinateUnit": "milli-inch",
+              "required": [
+                "xMilliInches",
+                "yMilliInches"
+              ]
+            }
+          }
+        }
+      },
+      "constraints": {
+        "modelProfiles": [
+          {
+            "modelId": "player1-goliath-1-model-1",
+            "baseShape": "round",
+            "baseWidthMilliInches": 3150,
+            "baseDepthMilliInches": 3150,
+            "startPoint": {
+              "xMilliInches": 22500,
+              "yMilliInches": 3400
+            },
+            "startElevation": "ground",
+            "supportTerrainIds": []
+          }
+        ],
+        "maxDistanceMilliInches": 7000
+      }
+    },
+    "pieces": [
+      {
+        "id": "player1-goliath-1",
+        "name": "Goliath",
+        "sideKey": "player1",
+        "unitId": "goliath",
+        "isOnField": true,
+        "models": [
+          {
+            "id": "player1-goliath-1-model-1",
+            "xInches": 22.5,
+            "yInches": 3.4,
+            "baseShape": "round",
+            "baseWidthInches": 3.15,
+            "baseDepthInches": 3.15,
+            "isOnField": true
+          }
+        ]
+      }
+    ],
+    "tokens": [
+      {
+        "tokenId": "asset:1:creep_token_place:1",
+        "tokenKind": "creep_tumor",
+        "coordinate": {
+          "x": 16,
+          "y": 4
+        },
+        "baseShape": "round",
+        "baseDiameterMm": 28
+      },
+      {
+        "tokenId": "asset:1:creep_token_place:2",
+        "tokenKind": "creep_tumor",
+        "coordinate": {
+          "x": 25,
+          "y": 2.1
+        },
+        "baseShape": "round",
+        "baseDiameterMm": 28
+      }
+    ],
+    "expected": {
+      "leadingModelId": "player1-goliath-1-model-1",
+      "path": [
+        {
+          "xMilliInches": 23600,
+          "yMilliInches": 2800
+        }
+      ],
+      "placements": [],
+      "tokenDisplacements": [
+        {
+          "tokenId": "asset:1:creep_token_place:2",
+          "coordinate": {
+            "xMilliInches": 25726,
+            "yMilliInches": 2800
+          }
+        }
+      ]
+    },
+    "events": [
+      {
+        "type": "unit_run_resolved"
+      },
+      {
+        "type": "battlefield_token_displaced",
+        "tokenId": "asset:1:creep_token_place:2",
+        "coordinate": {
+          "xMilliInches": 25726,
+          "yMilliInches": 2800
+        }
+      },
+      {
+        "type": "creep_tumor_removed",
+        "tokenId": "asset:1:creep_token_place:2"
+      }
+    ]
+  }
+]

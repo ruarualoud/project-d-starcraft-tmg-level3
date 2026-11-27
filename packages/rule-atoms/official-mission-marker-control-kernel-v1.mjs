@@ -1,4 +1,7 @@
 import { hashStarcraftTmgContract } from "../authoritative-engine/referee-crypto-v1.mjs";
+import { projectOfficialTerrainForSightV1 } from './official-terrain-sight-projection-v1.mjs';
+import { canOfficialUnitControlOrContestV1 } from './official-decoy-rules-v1.mjs';
+import { isOfficialSourceBoundStructureV1 } from './official-structure-rules-v1.mjs';
 import {
   createOwnedOfficialCombatProfileBundleV1,
   getOfficialCombatProfileV1,
@@ -13,6 +16,8 @@ import { projectOfficialContextualSupplyValueV1 } from
   "./official-contextual-supply-projection-v1.mjs";
 import {
   createOfficialPhysicalFootprintV1,
+  createOfficialModelBaseFootprintV1,
+  isOfficialProfileBoundOutlineV1,
   evaluateOfficialPhysicalFootprintRelationV1,
   isOfficialPhysicalFootprintInsideBoardV1,
 } from "./official-model-base-geometry-rules-kernel-v1.mjs";
@@ -296,7 +301,11 @@ function normalizeUnits(state, bundle, width, height, options = {}) {
       fail("MISSION_MARKER_MODEL_COUNT_MISMATCH", id);
     }
     const combatTag = String(piece.combatTag || "").trim().toLowerCase();
-    const prohibitedStatus = combatTag === "flying"
+    const prohibitedStatus = isOfficialSourceBoundStructureV1(state, piece)
+      ? 'structure'
+      : !canOfficialUnitControlOrContestV1(state, piece)
+      ? 'decoy'
+      : combatTag === "flying"
       ? "flying"
       : statusNames(piece).includes("burrowed")
         ? "burrowed"
@@ -333,7 +342,9 @@ function normalizeUnits(state, bundle, width, height, options = {}) {
             : model.supportTerrainIds.length !== 0)) {
           fail("MISSION_MARKER_MODEL_SUPPORT_SCOPE_UNSUPPORTED", modelId);
         }
-        const footprint = modelFootprint(model, modelId, options);
+        const footprint = options.terrainAware && isOfficialProfileBoundOutlineV1(model.baseShape)
+          ? createOfficialModelBaseFootprintV1({piece, model, dataBundle: state.officialModelBaseGeometryDataBundle})
+          : modelFootprint(model, modelId, options);
         if (!isOfficialPhysicalFootprintInsideBoardV1({
           footprint,
           widthMilliInches: width,
@@ -467,44 +478,9 @@ function terrainAsOrdinaryForControl(state) {
   // consumers read units and markers without mutating or returning them;
   // borrow those facts instead of copying the full Rules state per loss choice.
   // Terrain entries retain their existing owned copies and complete validation.
-  const projected = { ...state, board: { ...state.board } };
-  const grassTerrainIds = [];
-  projected.board.terrain = (state.board?.terrain || []).map((terrain) => {
-    if (terrain.isRemoved === true || terrain.terrainKind === "ordinary") {
-      return clone(terrain);
-    }
-    // As in special-terrain LOS, movement kind does not replace the terrain's
-    // Size, agreed footprint or sight openings. Project only this LOS view;
-    // the authoritative board still owns impassability and ramp access.
-    if (!["grass", "impassable", "ramp"].includes(terrain.terrainKind)) {
-      fail("MISSION_MARKER_TERRAIN_KIND_UNSUPPORTED", String(terrain.id || ""));
-    }
-    if (terrain.terrainKind === "grass") grassTerrainIds.push(terrain.id);
-    const body = {
-      schema: terrain.schema,
-      id: terrain.id,
-      terrainKind: "ordinary",
-      size: terrain.size,
-      footprint: clone(terrain.footprint),
-      standableHorizontalSurface: terrain.standableHorizontalSurface === true,
-      setupAgreement: clone(terrain.setupAgreement),
-      rulesTruth: "official_core_terrain_setup_agreement",
-      trainingTruth: false,
-    };
-    return {
-      ...body,
-      terrainHash: hashStarcraftTmgContract(body),
-      terrainId: terrain.id,
-      elevation: terrain.elevation,
-      heightTier: terrain.heightTier,
-      elevationSurface: terrain.elevationSurface,
-      impassable: terrain.impassable === true,
-      openings: clone(terrain.openings || []),
-      accessPoints: clone(terrain.accessPoints || []),
-      isRemoved: false,
-    };
-  });
-  return { projected, grassTerrainIds: grassTerrainIds.sort() };
+  const { terrain, grassTerrainIds } = projectOfficialTerrainForSightV1(state, 'MISSION_MARKER_TERRAIN_KIND_UNSUPPORTED');
+  const projected = { ...state, board: { ...state.board, terrain } };
+  return { projected, grassTerrainIds };
 }
 
 function terrainAwareSightQueries(adaptedState, marker, unit,
@@ -688,8 +664,9 @@ function resolveMissionMarkerControlV2(input, owned = null, inspection = false) 
     rulesRuntimeHash,
     officialCombatProfileBundleHash: bundle.bundleHash,
     terrainLosDataBundleHash: dataBundle.bundleHash,
-    geometryScope:
-      "round_and_rotated_rectangle_base_all_current_standard_terrain_exact_marker_control_v2",
+    geometryScope: units.some(unit => unit.models.some(model => isOfficialProfileBoundOutlineV1(model.footprint.shape)))
+      ? "profile_bound_outline_and_standard_bases_terrain_exact_marker_control_v2"
+      : "round_and_rotated_rectangle_base_all_current_standard_terrain_exact_marker_control_v2",
     markerDiameterMillimeters: MARKER_DIAMETER_MILLIMETERS,
     markerRadiusMilliInches: MARKER_RADIUS_MILLI_INCHES,
     contestRangeMilliInches: CONTEST_RANGE_MILLI_INCHES,

@@ -9,10 +9,11 @@ export function normalizeSingleJsonFenceV1(text) {
   const match = wrappedJson.exec(text);
   return { text: match ? match[1] : text, changed: !!match };
 }
-// The observed model defect is a missing final OUTER object delimiter.
-// Never repair inner commas, strings, numbers, keys or missing array members.
-// The entire original document is preserved as a byte-for-byte prefix.
-function normalizeLegacyDocument(value) {
+// Recover an unambiguously missing OUTER container suffix, never inner
+// commas, strings, numbers, keys or missing array members. The unfenced body
+// remains a byte-for-byte prefix. Schema and obligation checks still follow:
+// a parsable prefix alone does not prove the answer is complete or correct.
+function normalizeLegacyDocument(value, {allowOuterContainerSuffix = false} = {}) {
   const fenced = normalizeSingleJsonFenceV1(value);
   const text = fenced.text;
   const base = { text, kind: fenced.changed ? "single_json_fence" : "none" };
@@ -31,10 +32,23 @@ function normalizeLegacyDocument(value) {
       if (stack.pop() !== (char === "}" ? "{" : "[")) return base;
     }
   }
-  if (quoted || stack.length !== 1 || stack[0] !== "{") return base;
+  if (quoted || !stack.length || stack[0] !== "{") return base;
+  // The existing single outer-object case is unchanged. For nested suffixes
+  // require an already completed child container, not a partial scalar/value
+  // or dangling comma. No search/reordering or model/role knowledge is used.
+  if (stack.length > 1 && (!allowOuterContainerSuffix || !/[}\]]\s*$/u.test(text))) return base;
+  const suffix = [...stack].reverse().map(open => open === '{' ? '}' : ']').join('');
+  const completed = text + suffix;
   try {
-    JSON.parse(text + "}");
-    return { text: text + "}", kind: fenced.changed ? "single_json_fence_and_outer_object_close" : "outer_object_close" };
+    JSON.parse(completed);
+    if (stack.length === 1) return { text: completed,
+      kind: fenced.changed ? "single_json_fence_and_outer_object_close" : "outer_object_close" };
+    return {text:completed,kind:'outer_container_suffix_v1',evidence:{
+      schemaVersion:'provider_json_outer_container_suffix_v1',
+      originalTextHash:hash(value),bodyTextHash:hash(text),normalizedTextHash:hash(completed),
+      removedSingleJsonFence:fenced.changed,insertedUtf16Offset:text.length,
+      insertedSuffix:suffix,bodyPrefixUnchanged:true,scalarContentUnchanged:true,
+      schemaValidated:false,semanticApprovalGranted:false}};
   } catch { return base; }
 }
 function normalizeSingleUnescapedQuote(text) {
@@ -191,8 +205,10 @@ function recoverSingleMissingContainerClose(text) {
     insertedUtf16Offset:recovered.offset,parseErrorUtf16Offset:offset,
     searchStartUtf16Offset:start,searchEndUtf16Offset:end,scalarContentUnchanged:true}};
 }
-export function normalizeProviderJsonDocumentV1(value) {
-  const legacy = normalizeLegacyDocument(value);
+export function normalizeProviderJsonDocumentV1(value, {allowOuterContainerSuffix = false} = {}) {
+  // Explicit opt-in only from an adapter that established completion. Generic
+  // tool arguments, incomplete streams and legacy callers keep prior behavior.
+  const legacy = normalizeLegacyDocument(value, {allowOuterContainerSuffix});
   try { JSON.parse(legacy.text); return legacy; } catch {}
   const text = normalizeSingleJsonFenceV1(value).text;
   if (typeof text !== 'string' || !text.trimStart().startsWith('{') || !text.trimEnd().endsWith('}')) return legacy;

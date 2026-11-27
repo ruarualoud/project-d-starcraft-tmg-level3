@@ -3,7 +3,7 @@
 // that judgment. This never decides whether an experimental claim is true.
 import {createRosterWorkflowGraphV1} from './roster-workflow-graph-v1.mjs';
 import {rosterComparisonValidityContractV1} from './roster-comparison-purpose-v1.mjs';
-import {ROSTER_SOURCE_REVIEW_PRESENTATION_VERSION_V1 as presentationVersion} from './roster-source-review-presentation-v1.mjs';
+import {ROSTER_SOURCE_REVIEW_PRESENTATION_VERSION_V1 as presentationVersion,rosterLinkedSourceReviewPresentationGapV1} from './roster-source-review-presentation-v1.mjs';
 import {ROSTER_REVIEW_OBLIGATION_DELIVERY_VERSION_V1 as obligationDeliveryVersion,
   missingRosterReviewObligationFieldsV1} from './roster-role-communication-v1.mjs';
 import {ROSTER_REVIEW_PROOF_CITATION_VERSION_V1 as proofCitationVersion,rosterSavedReviewProofErrorsV1} from './roster-review-proof-context-v1.mjs';
@@ -16,7 +16,7 @@ import {rosterSourceConditionDeliveryGapV1} from './roster-experiment-source-rep
 import {rosterSavedMeasurementScopeGapV1} from './roster-measurement-assessment-scope-v1.mjs';
 
 export function rosterSourceReviewNeedsContractCheckV1(review){
-  return review.experimentSourceReviewOf&&['ready','needs_model_choice','evidence_ready'].includes(review.status)
+  return review.experimentSourceReviewOf&&['ready','waiting_dependency','needs_model_choice','evidence_ready'].includes(review.status)
     &&review.sourceFidelityMode==='atomic_claims_v1'
     &&((review.comparisonValidityContractVersion??0)<4||(review.sourceReviewPresentationVersion??0)<presentationVersion
       ||(review.reviewObligationDeliveryVersion??0)<obligationDeliveryVersion
@@ -45,6 +45,18 @@ export function rosterSourceReviewCompletedRevisionV1({state,review}){
     &&Object.entries(work.bindings??{}).every(([key,value])=>state.scope[key]===value))??null;
 }
 
+const isUnfinishedMethod=result=>result?.value?.experimentConclusion===null
+  &&Array.isArray(result.value.workOrders)&&result.value.workOrders.length>0;
+// An emitted work-order list is not a completed factual answer. This exception
+// is confined to a proved local-scope violation, before any committed strategy
+// or in-flight descendant; all other legacy ownership remains conservative.
+export async function rosterSourceReviewRevisionBlocksRepairV1({state,review,inquiryMismatch,readArtifact}){
+  const completed=rosterSourceReviewCompletedRevisionV1({state,review});
+  if(!completed)return false;
+  if(!inquiryMismatch?.unassignedPredicateErrors?.length)return true;
+  return !isUnfinishedMethod(await readArtifact(completed.resultRef));
+}
+
 // Repair only a proven erroneous migration whose parent has not yet issued.
 // The immutable retirement receipt supplies status/ref/attempt; no model
 // answer, cost, checkpoint counter, army or Plan is rewritten or replayed.
@@ -69,6 +81,8 @@ export async function projectRosterSourceReviewLineageRestorationV1({state,revie
     &&report.retiredRootIds.includes(work.id)&&work.experimentReviewOf===report.ownerId
     &&work.inputs?.sourceReview?.id===`role:${report.reviewId}`);
   if(!completed)return null;
+  if(report.staleRequests?.some(r=>r.unassignedPredicateErrors?.length)
+    &&isUnfinishedMethod(await readArtifact(completed.saved.resultRef)))return null;
   // materialClaimReviewIds includes reused old passes. The enqueue receipt,
   // not that dependency list, identifies exactly which new jobs to retire.
   const enqueue=state.events.find(e=>e.type==='work_enqueued'&&e.workIds.includes(review.id));
@@ -82,16 +96,40 @@ export async function projectRosterSourceReviewLineageRestorationV1({state,revie
 }
 
 export async function projectRosterSourceReviewRepairHandoffV1({state,owner,review,failedClaimReviewIds,readArtifact}){
-  const inquiryMismatch=await rosterInquiryReviewStageMismatchV1({review,readArtifact});
+  // Inspect the ACTUAL paid request, not a verdict preference or version alone.
+  // This applies only to a linked-execution assertion whose independent role
+  // still received an unfocused parent/old-verdict context.
+  if(review.sourceFidelityMode==='atomic_claims_v1'&&(review.sourceReviewPresentationVersion??0)<presentationVersion){
+    const staleRequests=[];
+    for(const id of review.materialClaimReviewIds??[]){
+      const work=state.work.find(w=>w.id===id),call=work?.operationState?.calls?.at(-1);
+      if(work?.status!=='evidence_ready'||!call?.requestRef||work.operationState.pending)continue;
+      const request=await readArtifact(call.requestRef);
+      if(rosterLinkedSourceReviewPresentationGapV1(request))staleRequests.push({workId:id,requestRef:call.requestRef,
+        originalInputRef:work.inputRef,missingSourcePresentation:true,linkedExecutionRoleContextGap:true});
+    }
+    if(staleRequests.length&&!rosterSourceReviewCompletedRevisionV1({state,review})){
+      const {roots,members}=rosterSourceReviewRepairMembersV1({state,review});
+      if(![owner,review,...members].some(w=>w.status==='running'||w.operationState?.pending))
+        return {version:1,reviewId:review.id,ownerId:owner.id,retiredRootIds:roots.map(w=>w.id),staleRequests,
+          currentSourcePresentationVersion:presentationVersion,
+          reason:'This atomic source judgment received linked execution facts together with broader parent material and a prior verdict template. Reassess the same assertion with its own role scope and exact sources; no verdict, new experiment or strategic choice is prescribed.',
+          nativeReplay:false,factsApproved:false,historyReset:false};
+    }
+  }
+
+  const inquiryMismatch=await rosterInquiryReviewStageMismatchV1({review,readArtifact,state,owner});
   if(inquiryMismatch){
-    if(rosterSourceReviewCompletedRevisionV1({state,review}))return null;
+    if(await rosterSourceReviewRevisionBlocksRepairV1({state,review,inquiryMismatch,readArtifact}))return null;
     const {roots,members}=rosterSourceReviewRepairMembersV1({state,review,includeCoverageConsumers:true});
     // Never undo a committed strategic decision or replace an in-flight call.
     if(roots.some(w=>w.role==='roster_workflow_strategy_decision'&&w.status==='evidence_ready')
       ||[owner,review,...members].some(w=>w.status==='running'||w.operationState?.pending))return null;
     return {version:1,reviewId:review.id,ownerId:owner.id,retiredRootIds:roots.map(w=>w.id),
       staleRequests:[inquiryMismatch],currentInquiryStageVersion:inquiryStageVersion,
-      reason:inquiryMismatch.missingIndependentCoverage
+      reason:inquiryMismatch.unassignedPredicateErrors?.length
+        ?'The actual saved local coverage reply introduced unassigned blocking predicates after answering the authorized query. Reconcile only that coverage against the unchanged original question and saved observations. Keep every concern explicit; do not choose a verdict, delete genuine missing evidence, repurchase passed source checks or replay Native. Only its unfinished delegated method branch is retired.'
+        :inquiryMismatch.missingIndependentCoverage
         ?'The saved comparative coverage request mixed the author answer and passed sentence-review prose into its question-alignment input. Reassess original question versus actual configurations/measurements independently; retain all valid source checks and retire only uncommitted consumers of this judgment. No verdict is preselected.'
         :'The saved coverage request used a different acceptance stage than its explicit authorized inquiry. Reassess coverage only; retain valid atomic checks and retire uncommitted consumers of that judgment.',
       nativeReplay:false,factsApproved:false,historyReset:false};
@@ -177,6 +215,6 @@ export async function projectRosterSourceReviewRepairHandoffV1({state,owner,revi
 
 export function rosterOrderRepairContextV1(work){
   return Object.fromEntries(Object.entries(work.inputs??{}).filter(([key])=>
-    ['question','comparisonPurpose','sourceReview','sourceRepairStage','rejectedConclusion','strategyResolution','nativeChoiceTemplate','choiceContext'].includes(key)
+    ['question','decision','builderCandidateAuthority','comparisonPurpose','comparisonDecisionContract','sourceReview','sourceRepairStage','rejectedConclusion','strategyResolution','nativeChoiceTemplate','choiceContext'].includes(key)
     ||/^(?:failedSourceClaim|observedSource)\d+$/.test(key)).map(([key,value])=>[key,structuredClone(value)]));
 }

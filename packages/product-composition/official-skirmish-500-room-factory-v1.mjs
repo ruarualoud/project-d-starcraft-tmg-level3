@@ -1,3 +1,7 @@
+import { assertOfficialReleaseSourceV2 } from '../source-data/official-release-context-v2.mjs';
+import { requireOfficialReleaseRoomAbilityRuntimeV2 } from './official-release-room-ability-admission-v2.mjs';
+import { inspectOfficialReleaseRoomRosterCoverageV2, prepareOfficialReleaseRoomNativeActionsV2,
+  officialReleaseRosterIncrementOptionsV2 } from './official-release-room-native-actions-v2.mjs';
 import { isDeepStrictEqual } from "node:util";
 import { projectCompetitiveMapRoomFreezeSummaryV1 } from
   "../client-domain/competitive-map-admission-contract-v1.mjs";
@@ -30,7 +34,7 @@ import {
 } from "../rule-atoms/official-roster-disclosure-rules-kernel-v1.mjs";
 import { createOfficialSupplyLossLedgerV1 } from
   "../rule-atoms/official-supply-loss-ledger-v1.mjs";
-import { createOfficialAttackProfileCatalogueV1 } from
+import { createOfficialAttackProfileCatalogueV1, createOfficialAttackProfileCatalogueV3 } from
   "../source-data/official-attack-profile-catalogue-v1.mjs";
 import { createOfficialAttackProfileCatalogueV2 } from
   "../source-data/official-attack-profile-catalogue-v2.mjs";
@@ -48,22 +52,28 @@ import { createOfficialCardBuildPaymentDataBundleV1 } from
   "../source-data/official-card-build-payment-data-bundle-v1.mjs";
 import { createOfficialDeploymentGeometryDataBundleV1 } from
   "../source-data/official-deployment-geometry-data-bundle-v1.mjs";
+import { prepareOfficialCurrentProductFirstRoundV1 } from "./official-first-round-setup-v1.mjs";
+import { OFFICIAL_WAVE3_GATHER_SKIRMISH_KEY, OFFICIAL_WAVE3_FIRE_SKIRMISH_KEY, OFFICIAL_WAVE3_ARTEFACT_SKIRMISH_KEY,
+  bindOfficialWave3GatherDraftProfileV1, bindOfficialWave3FireDraftProfilesV1, bindOfficialWave3ArtefactDraftProfilesV1 }
+  from "../source-data/official-wave3-mission-source-v1.mjs";
+import { selectOfficialWave3RoomMissionSourceContextV1, verifyOfficialWave3RoomMissionBindingV1 }
+  from "./official-wave3-room-mission-binding-v1.mjs";
 import { createOfficialMatchGameplayDataBundleV2 } from
   "../source-data/official-match-gameplay-data-bundle-v2.mjs";
 import { createOfficialMissionDeploymentDraftDataBundleV1 } from
   "../source-data/official-mission-deployment-draft-data-bundle-v1.mjs";
-import { createOfficialModelBaseGeometryDataBundleV1 } from
+import { createOfficialModelBaseGeometryDataBundleV1, getOfficialReleaseModelBaseGeometryBundleV2 } from
   "../source-data/official-model-base-geometry-data-bundle-v1.mjs";
-import { createOfficialRosterDisclosureDataBundleV1 } from
+import { createOfficialRoomRosterDisclosureDataBundleV1 } from
   "../source-data/official-roster-disclosure-data-bundle-v1.mjs";
 import { createOfficialRespawnMorphDataBundleV1,
   verifyOfficialRespawnMorphDataBundleV1 } from
   "../source-data/official-respawn-morph-data-bundle-v1.mjs";
 import { createOfficialSummonDataBundleV1, verifyOfficialSummonDataBundleV1 } from
   "../source-data/official-summon-data-bundle-v1.mjs";
-import { createOfficialTerrainLosDataBundleV1 } from
+import { createOfficialTerrainLosDataBundleV1, createOfficialTerrainLosDataBundleV2 } from
   "../source-data/official-terrain-los-data-bundle-v1.mjs";
-import { createOfficialUnitCardSupplyDataBundleV1 } from
+import { createOfficialUnitCardSupplyDataBundleV1, getOfficialReleaseUnitCardSupplyDataBundleV2 } from
   "../source-data/official-unit-card-supply-data-bundle-v1.mjs";
 import { STARCRAFT_TMG_FORMAL_500_ROSTER_RECIPES_V1 } from
   "./formal-experiment-run-manifest-v1.mjs";
@@ -394,7 +404,34 @@ function projectionEvidence(state) {
 }
 
 export function createOfficialSkirmish500RoomInitialStateAuthorityV1(input = {}) {
+  return buildOfficialSkirmish500Room(input);
+}
+
+export function prepareOfficialSkirmish500ReleaseOpeningV2(input = {}) {
+  if (!input.releaseContext) fail('SKIRMISH_500_RELEASE_OPENING_SOURCE_REQUIRED');
+  return buildOfficialSkirmish500Room(input, opening => prepareOfficialReleaseRoomNativeActionsV2({
+    ...opening, ...officialReleaseRosterIncrementOptionsV2(input.releaseMatchVersion),
+  }));
+}
+
+export function inspectOfficialSkirmish500ReleaseOpeningCoverageV2(input = {}) {
+  if (!input.releaseContext) fail("SKIRMISH_500_RELEASE_OPENING_SOURCE_REQUIRED");
+  return buildOfficialSkirmish500Room(input, opening => inspectOfficialReleaseRoomRosterCoverageV2({
+    ...opening, releaseMatchVersion: input.releaseMatchVersion,
+  }));
+}
+
+function buildOfficialSkirmish500Room(input, prepareReleaseOpening) {
+  if (input.prepareFirstRound !== undefined && typeof input.prepareFirstRound !== "boolean") {
+    fail("SKIRMISH_FIRST_ROUND_PREPARATION_INVALID");
+  }
+  if (input.currentProductGameplayBinding !== undefined
+    && typeof input.currentProductGameplayBinding !== 'boolean') {
+    fail('SKIRMISH_CURRENT_PRODUCT_GAMEPLAY_BINDING_REQUIRED');
+  }
   const { dataset, snapshot } = input;
+  const releaseManifest = input.releaseContext
+    ? assertOfficialReleaseSourceV2(input.releaseContext, { dataset, snapshot }) : null;
   if (!object(dataset) || !object(snapshot)) {
     fail("SKIRMISH_500_ROOM_SOURCE_INPUT_REQUIRED");
   }
@@ -402,11 +439,14 @@ export function createOfficialSkirmish500RoomInitialStateAuthorityV1(input = {})
   if (!isDeepStrictEqual(Object.keys(recipes).sort(), [...SIDE_KEYS])) {
     fail("SKIRMISH_500_ROOM_TWO_SIDE_RECIPES_REQUIRED");
   }
-  const rosterBundle = createOfficialRosterDisclosureDataBundleV1({ dataset });
+  const rosterBundle = createOfficialRoomRosterDisclosureDataBundleV1({
+    dataset, snapshot, releaseContext: input.releaseContext,
+  });
   const compositionBundle = rosterBundle.unitCompositionUpgradeDataBundle;
   const audits = Object.fromEntries(SIDE_KEYS.map((sideKey) => [sideKey,
     buildOfficialRoomArmyAuditV1(compositionBundle, sideKey, recipes[sideKey], {
       scaleId: "Skirmish", mineralBudget: 500, dataset,
+      ...(rosterBundle.sourceBinding ? { releaseContext: input.releaseContext } : {}),
     })]));
   const players = Object.fromEntries(SIDE_KEYS.map((sideKey) => [sideKey, {
     sideKey, playerId: sideKey,
@@ -448,14 +488,30 @@ export function createOfficialSkirmish500RoomInitialStateAuthorityV1(input = {})
       playerId: entry.playerId, closedListsAgreed: entry.closedListsAgreed,
     })),
   });
-  const draftBundle = createOfficialMissionDeploymentDraftDataBundleV1({ dataset });
+  const missionRecordKey = String(input.missionRecordKey || MISSION_RECORD_KEY);
+  const fireInTheSky = missionRecordKey === OFFICIAL_WAVE3_FIRE_SKIRMISH_KEY;
+  const artefactHunt = missionRecordKey === OFFICIAL_WAVE3_ARTEFACT_SKIRMISH_KEY;
+  const wave3MissionSourceContext = selectOfficialWave3RoomMissionSourceContextV1(input,
+    fireInTheSky || artefactHunt || missionRecordKey === OFFICIAL_WAVE3_GATHER_SKIRMISH_KEY);
+  if (wave3MissionSourceContext
+    ? !fireInTheSky && !artefactHunt && missionRecordKey !== OFFICIAL_WAVE3_GATHER_SKIRMISH_KEY
+    : missionRecordKey !== MISSION_RECORD_KEY) {
+    fail("SKIRMISH_500_ROOM_GAMEPLAY_BUNDLE_MISSION_UNSUPPORTED", missionRecordKey);
+  }
+  const baseDraftBundle = createOfficialMissionDeploymentDraftDataBundleV1({
+    dataset, snapshot, releaseContext: input.releaseContext,
+  });
+  const bindWave3Draft = artefactHunt ? bindOfficialWave3ArtefactDraftProfilesV1
+    : fireInTheSky ? bindOfficialWave3FireDraftProfilesV1 : bindOfficialWave3GatherDraftProfileV1;
+  const draftBundle = wave3MissionSourceContext
+    ? bindWave3Draft(baseDraftBundle, wave3MissionSourceContext) : baseDraftBundle;
   // An explicit frozen Skirmish deployment must survive the product route;
   // omitted input keeps the historical CHAR PLAINS state byte-identical.
   const deploymentRecordKey = String(input.deploymentRecordKey || DEPLOYMENT_RECORD_KEY);
   const draft = completeOfficialRoomDraftV1(
-    draftBundle, MISSION_RECORD_KEY, deploymentRecordKey, "Skirmish");
+    draftBundle, missionRecordKey, deploymentRecordKey, "Skirmish");
   const geometryBundle = createOfficialDeploymentGeometryDataBundleV1({
-    dataset, missionDeploymentDraftDataBundle: draftBundle,
+    dataset, snapshot, releaseContext: input.releaseContext, missionDeploymentDraftDataBundle: draftBundle,
   });
   const geometryBinding = createOfficialDeploymentGeometryBindingV1({
     deploymentGeometryDataBundle: geometryBundle,
@@ -463,7 +519,8 @@ export function createOfficialSkirmish500RoomInitialStateAuthorityV1(input = {})
     missionDeploymentDraftState: draft,
   });
   const terrainBundle = createOfficialBalancedTerrainRulesDataBundleV1({
-    dataset, deploymentGeometryDataBundle: geometryBundle,
+    dataset, snapshot, releaseContext: input.releaseContext, deploymentGeometryDataBundle: geometryBundle,
+    unitRecordKeys: SIDE_KEYS.flatMap(sideKey => recipes[sideKey].units.map(unit => unit.recordKey)),
   });
   // Ticket 24 / Slice 254-R8-12: opt-in semantic-map terrain route, mirroring
   // the R8-11 Standard factory wiring. When the caller pins a registered
@@ -474,6 +531,12 @@ export function createOfficialSkirmish500RoomInitialStateAuthorityV1(input = {})
   // category-specific to generic premade arrangements and no such route is
   // introduced for Skirmish. With no `mapConfiguration` the default path
   // below is byte-identical.
+  const modelGeometryBundle = rosterBundle.sourceBinding
+    ? getOfficialReleaseModelBaseGeometryBundleV2(input.releaseContext)
+    : createOfficialModelBaseGeometryDataBundleV1({ dataset });
+  const terrainLosDataBundle = rosterBundle.sourceBinding
+    ? createOfficialTerrainLosDataBundleV2({ context: input.releaseContext })
+    : createOfficialTerrainLosDataBundleV1({ dataset });
   const requestedMapConfiguration = object(input.mapConfiguration)
     ? clone(input.mapConfiguration) : null;
   const mapConfiguration = requestedMapConfiguration
@@ -541,7 +604,7 @@ export function createOfficialSkirmish500RoomInitialStateAuthorityV1(input = {})
         compilation: competitiveMapCompilation,
         roomId,
         semanticTerrain,
-        dataset,
+        dataset, modelGeometryBundle, terrainLosDataBundle,
         participantIds: [...SIDE_KEYS],
         deploymentGeometryBinding: geometryBinding,
         deploymentGeometryDataBundle: geometryBundle,
@@ -612,27 +675,30 @@ export function createOfficialSkirmish500RoomInitialStateAuthorityV1(input = {})
   )).map((entry) => entry.recordKey).sort((left, right) => left.localeCompare(right));
   const gameplayBundle = createOfficialMatchGameplayDataBundleV2({
     snapshot, dataset, missionDeploymentDraftDataBundle: draftBundle,
-    missionRecordKey: MISSION_RECORD_KEY, unitRecordKeys,
+    missionRecordKey, unitRecordKeys, wave3MissionSourceContext,
+    includeWave3FireInSky: fireInTheSky, includeWave3ArtefactHunt: artefactHunt,
   });
   const missionSetupBinding = createMissionSetupBinding(gameplayBundle, draft);
-  const attackProfileCatalogue = createOfficialAttackProfileCatalogueV1({
-    snapshot, dataset, recordKeys: unitRecordKeys,
-  });
+  const attackProfileCatalogue = rosterBundle.sourceBinding
+    ? createOfficialAttackProfileCatalogueV3({ context: input.releaseContext, recordKeys: unitRecordKeys })
+    : createOfficialAttackProfileCatalogueV1({ snapshot, dataset, recordKeys: unitRecordKeys });
   const attackProfileCatalogueV2 = createOfficialAttackProfileCatalogueV2({
     previousCatalogue: attackProfileCatalogue,
   });
-  const modelGeometryBundle = createOfficialModelBaseGeometryDataBundleV1({ dataset });
-  const terrainLosDataBundle = createOfficialTerrainLosDataBundleV1({ dataset });
   const terrainElevationAgreement = createOfficialTerrainElevationAgreementV1({
     supportRelations: [],
   });
-  const unitSupplyBundle = createOfficialUnitCardSupplyDataBundleV1({ dataset });
-  const cardBuildPaymentDataBundle = createOfficialCardBuildPaymentDataBundleV1({ dataset });
-  const summonDataBundle = createOfficialSummonDataBundleV1({ dataset });
-  const respawnMorphDataBundle = createOfficialRespawnMorphDataBundleV1({ dataset });
+  const unitSupplyBundle = rosterBundle.sourceBinding
+    ? getOfficialReleaseUnitCardSupplyDataBundleV2(input.releaseContext)
+    : createOfficialUnitCardSupplyDataBundleV1({ dataset });
+  const cardBuildPaymentDataBundle = rosterBundle.sourceBinding
+    ? compositionBundle.armyResourceBudgetDataBundle.factionArmyEligibilityDataBundle.cardDataBundle
+    : createOfficialCardBuildPaymentDataBundleV1({ dataset });
+  const summonDataBundle = createOfficialSummonDataBundleV1({ dataset, snapshot, releaseContext: input.releaseContext });
+  const respawnMorphDataBundle = createOfficialRespawnMorphDataBundleV1({ dataset, snapshot, releaseContext: input.releaseContext });
   const battlefieldTokenMarkerRulesDataBundle =
     createOfficialBattlefieldTokenMarkerRulesDataBundleV1({
-      dataset, deploymentGeometryDataBundle: geometryBundle,
+      dataset, snapshot, releaseContext: input.releaseContext, deploymentGeometryDataBundle: geometryBundle,
     });
   const battlefieldTokenMarkerRegistry = createOfficialBattlefieldTokenMarkerRegistryV1({
     battlefieldTokenMarkerRulesDataBundle,
@@ -679,6 +745,8 @@ export function createOfficialSkirmish500RoomInitialStateAuthorityV1(input = {})
     officialMissionMarkerPlacement: terrainArtifacts.missionMarkerPlacement,
     officialMissionSetupBinding: missionSetupBinding,
     officialGameplayDataBundle: gameplayBundle,
+    ...(input.currentProductGameplayBinding === true
+      ? { officialCurrentProductGameplayDataBundle: gameplayBundle } : {}),
     officialCombatProfileBundle: gameplayBundle.combatProfileBundle,
     officialAttackProfileCatalogue: attackProfileCatalogue,
     officialAttackProfileCatalogueV2: attackProfileCatalogueV2,
@@ -779,19 +847,28 @@ export function createOfficialSkirmish500RoomInitialStateAuthorityV1(input = {})
     eligibleForTraining: false, trainingTruth: false,
   };
   const missionRuntime = createOfficialMissionRuntimeV2({
-    missionEffectCatalogue: gameplayBundle.missionEffectCatalogue,
+    missionEffectCatalogue: gameplayBundle.missionEffectCatalogue, wave3MissionSourceContext,
+    artefactHuntMissionRecordKey: artefactHunt ? missionRecordKey : null,
   });
   state.officialMissionRuntimeDescriptor = missionRuntime.descriptor;
   state.supplyLossLedger = createOfficialSupplyLossLedgerV1({
     round: 1, rulesRuntimeHash: missionRuntime.descriptor.runtimeHash,
   });
   state = clone(missionRuntime.initialize({
-    state, missionRecordKey: MISSION_RECORD_KEY,
+    state, missionRecordKey,
     markerAffinityByNumber: draft.draftBinding.markerAffinityByNumber,
   }).state);
   state.officialActionRouteCatalogue = createOfficialStandardActionRouteCatalogueV1({
     dataset, state,
   });
+  if (rosterBundle.sourceBinding) {
+    if (prepareReleaseOpening) {
+      return prepareReleaseOpening({ context: input.releaseContext,
+        state: { ...state, officialMissionEffectCatalogue: gameplayBundle.missionEffectCatalogue } });
+    }
+    requireOfficialReleaseRoomAbilityRuntimeV2({ context: input.releaseContext, state });
+  }
+  if (prepareReleaseOpening) fail('SKIRMISH_500_RELEASE_OPENING_SOURCE_REQUIRED');
   const selectedRosterSpatialRuntime =
     createOfficialSelectedRosterSpatialActionRuntimeV1(state);
   state.officialSelectedRosterSpatialRuntimeDescriptor =
@@ -1060,6 +1137,7 @@ export function createOfficialSkirmish500RoomInitialStateAuthorityV1(input = {})
     });
   state.officialMissionEffectCatalogue = gameplayBundle.missionEffectCatalogue;
   state.officialMissionRuntimeDescriptor = missionRuntime.descriptor;
+  if (input.prepareFirstRound === true) state = prepareOfficialCurrentProductFirstRoundV1(state);
   const viewerProjectionEvidence = projectionEvidence(state);
   const dependencies = {
     sourceSnapshot: { artifactId: "official-development-tranche-command-center-snapshot",
@@ -1075,13 +1153,16 @@ export function createOfficialSkirmish500RoomInitialStateAuthorityV1(input = {})
           competitiveMapRoomFreeze,
         } : {}) } },
   };
+  const missionSetupSlug = artefactHunt ? "artefact-hunt"
+    : fireInTheSky ? "fire-in-the-sky" : draftBundle.wave3Gather ? "gather" : "hold";
   const body = {
     schema: OFFICIAL_SKIRMISH_500_ROOM_FACTORY_SCHEMA,
     version: OFFICIAL_SKIRMISH_500_ROOM_FACTORY_VERSION,
+    ...(releaseManifest ? { releaseId: releaseManifest.releaseId, releaseManifestHash: releaseManifest.manifestHash } : {}),
     source: "server_factory",
     setupId: String(input.setupId || (deploymentRecordKey === DEPLOYMENT_RECORD_KEY
-      ? "official-skirmish-500-hold-char-plains-v1"
-      : `official-skirmish-500-hold-${draft.selectedDeployment.profile.name
+      ? `official-skirmish-500-${missionSetupSlug}-char-plains-v1`
+      : `official-skirmish-500-${missionSetupSlug}-${draft.selectedDeployment.profile.name
         .toLowerCase().replace(/[^a-z0-9]+/gu, "-")}-v1`)),
     state, dataVersion: versionFor(dataset), dependencies,
     serverSeatPlan: clone(input.serverSeatPlan || [
@@ -1101,7 +1182,10 @@ export function createOfficialSkirmish500RoomInitialStateAuthorityV1(input = {})
       rosterHashBySide: Object.fromEntries(SIDE_KEYS.map((sideKey) => [
         sideKey, registry.rostersByPlayer[sideKey].rosterHash,
       ])),
-      selectedMissionRecordKey: MISSION_RECORD_KEY,
+      selectedMissionRecordKey: missionRecordKey,
+      ...(draftBundle.wave3Gather ? { wave3Gather: draftBundle.wave3Gather } : {}),
+      ...(draftBundle.wave3FireInSky ? { wave3FireInSky: draftBundle.wave3FireInSky } : {}),
+      ...(draftBundle.wave3ArtefactHunt ? { wave3ArtefactHunt: draftBundle.wave3ArtefactHunt } : {}),
       selectedDeploymentRecordKey: deploymentRecordKey,
       battlefield: clone(geometryBinding.battlefield),
       balancedTerrainCertificateHash: terrainArtifacts.certificate.certificateHash,
@@ -1115,6 +1199,7 @@ export function createOfficialSkirmish500RoomInitialStateAuthorityV1(input = {})
           competitiveMapRoomFreeze?.roomFreezeHash || null,
       } : {}),
       allArmyListUnitsBeginInReserves: true,
+      ...(input.prepareFirstRound === true ? { firstRoundPrepared: true } : {}),
       initialReserveReceiptHash: reserveReceipt.resultHash,
       missionRuntimeHash: missionRuntime.descriptor.runtimeHash,
       missionEffectCatalogueHash: gameplayBundle.missionEffectCatalogue.catalogueHash,
@@ -1212,6 +1297,9 @@ export function verifyOfficialSkirmish500RoomInitialStateAuthorityV1(authority) 
       === true
     : state?.officialBalancedTerrainSetupCertificate?.balancedTerrainCertified
       === true;
+  const expectedMissionRecordKey = evidence?.wave3ArtefactHunt ? OFFICIAL_WAVE3_ARTEFACT_SKIRMISH_KEY
+    : evidence?.wave3FireInSky ? OFFICIAL_WAVE3_FIRE_SKIRMISH_KEY
+    : evidence?.wave3Gather ? OFFICIAL_WAVE3_GATHER_SKIRMISH_KEY : MISSION_RECORD_KEY;
   if (!object(authority)
     || authority.schema !== OFFICIAL_SKIRMISH_500_ROOM_FACTORY_SCHEMA
     || authority.version !== OFFICIAL_SKIRMISH_500_ROOM_FACTORY_VERSION
@@ -1219,7 +1307,7 @@ export function verifyOfficialSkirmish500RoomInitialStateAuthorityV1(authority) 
     || authority.receiptHash !== hashStarcraftTmgContract(
       without(authority, ["receiptHash"]))
     || state?.engagementScale !== "Skirmish"
-    || state?.mission?.recordKey !== MISSION_RECORD_KEY
+    || state?.mission?.recordKey !== expectedMissionRecordKey
     || state?.selectedDeployment?.profile?.engagementScale !== "Skirmish"
     || state?.selectedDeployment?.profile?.recordKey
       !== state?.officialDeploymentGeometryBinding?.deploymentRecordKey
@@ -1301,6 +1389,14 @@ export function verifyOfficialSkirmish500RoomInitialStateAuthorityV1(authority) 
     || evidence?.currentProductAbilityPendingCount !== 0
     || authority.trainingTruth !== false) {
     fail("SKIRMISH_500_ROOM_INITIAL_STATE_AUTHORITY_INVALID");
+  }
+  if (evidence.firstRoundPrepared === true && (state.phase !== "start_of_round"
+    || state.stage !== "mission_start_of_round" || state.round !== 1
+    || state.activeSideKey !== state.firstPlayerSideKey)) {
+    fail("SKIRMISH_500_ROOM_FIRST_ROUND_BINDING_INVALID");
+  }
+  if (evidence.wave3Gather || evidence.wave3FireInSky || evidence.wave3ArtefactHunt) {
+    verifyOfficialWave3RoomMissionBindingV1(state, evidence, expectedMissionRecordKey);
   }
   if (evidence.competitiveMapSeedId) {
     if (state.officialCompetitiveMapRoomFreeze?.seedId

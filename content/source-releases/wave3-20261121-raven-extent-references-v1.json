@@ -1,0 +1,299 @@
+{
+  "schema": "starcraft_tmg_model_base_geometry_references_v1",
+  "version": "1.0.0",
+  "sourceDatasetHash": "718057e86ac4f93a72c06b8e4d8f4d851ba33ee04c9dddea33e966eda9fe6685",
+  "sourceSnapshotHash": "4412c17faaebaff04b117d1ddc666d1cdd939eca420a22f861c7c944f1179c8c",
+  "sourceFiles": {
+    "protoss_w3": {
+      "ref": "build/ticket-28-wave3-assessment-20261112/protoss-w3.pdf",
+      "url": "https://starcraft-tmg.com/files/downloads/StarCraft-Protoss-P2P-W3-Card-Sheets-A4_EN.pdf",
+      "byteHash": "c5ef1d1e2c953a8c5c376464dff46a51878d8e5ae0c3e8260684afbf1dd5f0aa",
+      "byteLength": 1300130,
+      "sourceFileVersion": "September 2026 v1.0",
+      "field": "printed_base_footprint"
+    },
+    "protoss_w2": {
+      "ref": "build/ticket-28-wave3-source-candidate-20261112-v1/raw/StarCraft-Protoss-P2P-W2-Card-Sheets-A4_EN.pdf",
+      "url": "https://starcraft-tmg.com/files/downloads/StarCraft-Protoss-P2P-W2-Card-Sheets-A4_EN.pdf",
+      "byteHash": "09f6b940a7582719f1527574e22047529e3629d078e479e3baf06c552c99f7fe",
+      "byteLength": 1369925,
+      "sourceFileVersion": "September 2026 v1.0",
+      "field": "printed_base_footprint"
+    },
+    "terran_w2": {
+      "ref": "build/ticket-28-wave3-source-candidate-20261112-v1/raw/StarCraft-Terran-P2P-W2-Card-Sheets-A4_EN.pdf",
+      "url": "https://starcraft-tmg.com/files/downloads/StarCraft-Terran-P2P-W2-Card-Sheets-A4_EN.pdf",
+      "byteHash": "63126ddbe922457f21a903ce186a6257aa5f20a932ba35f484f759b2ac62608e",
+      "byteLength": 741118,
+      "sourceFileVersion": "September 2026 v1.0",
+      "field": "printed_base_footprint"
+    },
+    "terran_w3": {
+      "ref": "build/ticket-28-wave3-source-candidate-20261112-v1/raw/StarCraft-Terran-P2P-W3-Card-Sheets-A4_EN.pdf",
+      "url": "https://starcraft-tmg.com/files/downloads/StarCraft-Terran-P2P-W3-Card-Sheets-A4_EN.pdf",
+      "byteHash": "9632f91cdf1b152aca4d7b27aaf54655fe48e10138c73338393b8a62ce1cd154",
+      "byteLength": 1412913,
+      "sourceFileVersion": "September 2026 v1.0",
+      "field": "printed_base_footprint"
+    },
+    "zerg_w2": {
+      "ref": "build/ticket-28-wave3-source-candidate-20261112-v1/raw/StarCraft-Zerg-P2P-W2-Card-Sheets-A4_EN.pdf",
+      "url": "https://starcraft-tmg.com/files/downloads/StarCraft-Zerg-P2P-W2-Card-Sheets-A4_EN.pdf",
+      "byteHash": "b62e9bba04cb54df2a77c36378fc8113f10acf528ae2f8b1ad884a81c0f75045",
+      "byteLength": 598888,
+      "sourceFileVersion": "September 2026 v1.0",
+      "field": "printed_base_footprint"
+    },
+    "zerg_w3": {
+      "ref": "build/ticket-28-wave3-source-candidate-20261112-v1/raw/StarCraft-Zerg-P2P-W3-Card-Sheets-A4_EN.pdf",
+      "url": "https://starcraft-tmg.com/files/downloads/StarCraft-Zerg-P2P-W3-Card-Sheets-A4_EN.pdf",
+      "byteHash": "ebc05eeea6456538b57e3b417bb1defc87159bd560fed81e0342e6119e85d6eb",
+      "byteLength": 1079741,
+      "sourceFileVersion": "September 2026 v1.0",
+      "field": "printed_base_footprint"
+    }
+  },
+  "visualReviewRef": "build/ticket-28-wave3-geometry-20261112-v1/catalogue/base-reference-contact.png",
+  "profiles": [
+    {
+      "recordKey": "army_units:auto_turret",
+      "unitName": "Auto-Turret",
+      "baseShape": "round",
+      "baseWidthMillimetres": 40,
+      "baseDepthMillimetres": 40,
+      "printedBase": "Ø 40MM",
+      "sourceId": "terran_w3",
+      "pdfPage": 7,
+      "visuallyReviewed": true
+    },
+    {
+      "recordKey": "army_units:bile_launcher",
+      "unitName": "Bile Launcher",
+      "baseShape": "round",
+      "baseWidthMillimetres": 100,
+      "baseDepthMillimetres": 100,
+      "printedBase": "Ø 100MM",
+      "sourceId": "zerg_w3",
+      "pdfPage": 4,
+      "visuallyReviewed": true
+    },
+    {
+      "recordKey": "army_units:defiler",
+      "unitName": "Defiler",
+      "baseShape": "round",
+      "baseWidthMillimetres": 80,
+      "baseDepthMillimetres": 80,
+      "printedBase": "Ø 80MM",
+      "sourceId": "zerg_w3",
+      "pdfPage": 2,
+      "visuallyReviewed": true
+    },
+    {
+      "recordKey": "army_units:high_templar",
+      "unitName": "High Templar",
+      "baseShape": "round",
+      "baseWidthMillimetres": 40,
+      "baseDepthMillimetres": 40,
+      "printedBase": "Ø 40MM",
+      "sourceId": "protoss_w3",
+      "pdfPage": 3,
+      "visuallyReviewed": true
+    },
+    {
+      "recordKey": "army_units:holo_decoy",
+      "unitName": "Holo Decoy",
+      "baseShape": "round",
+      "baseWidthMillimetres": 32,
+      "baseDepthMillimetres": 32,
+      "printedBase": "Ø 32MM",
+      "sourceId": "terran_w3",
+      "pdfPage": 3,
+      "visuallyReviewed": true
+    },
+    {
+      "recordKey": "army_units:immortal",
+      "unitName": "Immortal",
+      "baseShape": "round",
+      "baseWidthMillimetres": 100,
+      "baseDepthMillimetres": 100,
+      "printedBase": "Ø 100MM",
+      "sourceId": "protoss_w2",
+      "pdfPage": 1,
+      "visuallyReviewed": true
+    },
+    {
+      "recordKey": "army_units:nerazim_watchers__adept_",
+      "unitName": "Nerazim Watchers (Adept)",
+      "baseShape": "round",
+      "baseWidthMillimetres": 40,
+      "baseDepthMillimetres": 40,
+      "printedBase": "Ø 40MM",
+      "sourceId": "protoss_w2",
+      "pdfPage": 3,
+      "visuallyReviewed": true
+    },
+    {
+      "recordKey": "army_units:nova_assault_mode",
+      "unitName": "Nova Assault Mode",
+      "baseShape": "round",
+      "baseWidthMillimetres": 40,
+      "baseDepthMillimetres": 40,
+      "printedBase": "Ø 40MM",
+      "sourceId": "terran_w3",
+      "pdfPage": 2,
+      "visuallyReviewed": true
+    },
+    {
+      "recordKey": "army_units:nova_stealth_mode",
+      "unitName": "Nova Stealth Mode",
+      "baseShape": "round",
+      "baseWidthMillimetres": 40,
+      "baseDepthMillimetres": 40,
+      "printedBase": "Ø 40MM",
+      "sourceId": "terran_w3",
+      "pdfPage": 1,
+      "visuallyReviewed": true
+    },
+    {
+      "recordKey": "army_units:ravager",
+      "unitName": "Ravager",
+      "baseShape": "round",
+      "baseWidthMillimetres": 80,
+      "baseDepthMillimetres": 80,
+      "printedBase": "Ø 80MM",
+      "sourceId": "zerg_w2",
+      "pdfPage": 1,
+      "visuallyReviewed": true
+    },
+    {
+      "recordKey": "army_units:sabotage_drone",
+      "unitName": "Sabotage Drone",
+      "baseShape": "round",
+      "baseWidthMillimetres": 40,
+      "baseDepthMillimetres": 40,
+      "printedBase": "Ø 40MM",
+      "sourceId": "terran_w3",
+      "pdfPage": 4,
+      "visuallyReviewed": true
+    },
+    {
+      "recordKey": "army_units:siege_tank",
+      "unitName": "Siege Tank",
+      "baseShape": "round",
+      "baseWidthMillimetres": 150,
+      "baseDepthMillimetres": 150,
+      "printedBase": "Ø 150MM",
+      "sourceId": "terran_w2",
+      "pdfPage": 1,
+      "visuallyReviewed": true
+    },
+    {
+      "recordKey": "army_units:spec_ops_marauder__marauder_",
+      "unitName": "Spec Ops Marauder (Marauder)",
+      "baseShape": "round",
+      "baseWidthMillimetres": 50,
+      "baseDepthMillimetres": 50,
+      "printedBase": "Ø 50MM",
+      "sourceId": "terran_w3",
+      "pdfPage": 5,
+      "visuallyReviewed": true
+    },
+    {
+      "recordKey": "army_units:tassadar",
+      "unitName": "Tassadar",
+      "baseShape": "round",
+      "baseWidthMillimetres": 40,
+      "baseDepthMillimetres": 40,
+      "printedBase": "Ø 40MM",
+      "sourceId": "protoss_w3",
+      "pdfPage": 1,
+      "visuallyReviewed": true
+    },
+    {
+      "recordKey": "army_units:twilight_templar__high_templar_",
+      "unitName": "Twilight Templar (High Templar)",
+      "baseShape": "round",
+      "baseWidthMillimetres": 40,
+      "baseDepthMillimetres": 40,
+      "printedBase": "Ø 40MM",
+      "sourceId": "protoss_w3",
+      "pdfPage": 2,
+      "visuallyReviewed": true
+    },
+    {
+      "recordKey": "army_units:vileling__zergling_",
+      "unitName": "Vileling (Zergling)",
+      "baseShape": "round",
+      "baseWidthMillimetres": 32,
+      "baseDepthMillimetres": 32,
+      "printedBase": "Ø 32MM",
+      "sourceId": "zerg_w3",
+      "pdfPage": 3,
+      "visuallyReviewed": true
+    },
+    {
+      "recordKey": "army_units:zagara",
+      "unitName": "Zagara",
+      "baseShape": "round",
+      "baseWidthMillimetres": 100,
+      "baseDepthMillimetres": 100,
+      "printedBase": "Ø 100MM",
+      "sourceId": "zerg_w3",
+      "pdfPage": 1,
+      "visuallyReviewed": true
+    },
+    {
+      "recordKey": "army_units:zeratul",
+      "unitName": "Zeratul",
+      "baseShape": "round",
+      "baseWidthMillimetres": 40,
+      "baseDepthMillimetres": 40,
+      "printedBase": "Ø 40MM",
+      "sourceId": "protoss_w2",
+      "pdfPage": 2,
+      "visuallyReviewed": true
+    }
+  ],
+  "missingProfiles": [
+    {
+      "recordKey": "army_units:raven",
+      "unitName": "Raven",
+      "reason": "FLIGHT_STAND_EXACT_OUTLINE_UNSPECIFIED",
+      "sourceRefs": [
+        {
+          "sourceId": "terran_w3",
+          "pdfPage": 6,
+          "printedBase": "FLIGHT STAND"
+        },
+        {
+          "ref": "build/ticket-28-wave3-source-candidate-20261112-v1/raw/StarCraft-Terran-Raven_EN.pdf",
+          "byteHash": "1444373de1db0180388a19accc6643532a72e8ccd0883b0179e09ce2a5653cfd",
+          "pdfPage": 2,
+          "note": "base 40mm listed in shared kit; Auto-Turret final assembly page specifies 40mm. Raven flight stand footprint not dimensioned."
+        },
+        {
+          "ref": "build/ticket-28-terran-wave3-20261117-v1/raven-detection-railguns/official-geometry-lookup-20261117/wave3-bases-official-news.json",
+          "byteHash": "c5fe1cf4b776d445a392c0a9b09f81c137f018913dcf87c9609f18741044a5cb",
+          "byteLength": 53268,
+          "documentName": "projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/system_changelogs/uCBa37ipCfRcBLkdfyId",
+          "updateTime": "2026-10-09T13:32:30.735186Z"
+        }
+      ],
+      "required": "Exact bottom-of-flight-stand outline, including the cross arm widths under core 2.3.",
+      "confirmedExtent": {
+        "footprintKind": "cross",
+        "widthMillimetres": 100,
+        "depthMillimetres": 100,
+        "printedBase": "Raven Cross 100x100mm",
+        "sourceContentHash": "c5fe1cf4b776d445a392c0a9b09f81c137f018913dcf87c9609f18741044a5cb"
+      }
+    }
+  ],
+  "policy": {
+    "freezeDuringDevelopment": true,
+    "unprovenDimensionsAllowed": false,
+    "armyBuilderIdentityAndStatsAuthority": true,
+    "pdfAuthorityScope": "physical_geometry_not_army_statistics"
+  },
+  "manifestHash": "91334332b6c6fb9594b43b850ae155fa24964c881dd74afef27b3aca46d87f33"
+}

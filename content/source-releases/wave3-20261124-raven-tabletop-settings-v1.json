@@ -1,0 +1,155 @@
+{
+  "revision": "wave3-raven-tabletop-assembly-estimate-v1",
+  "raven": {
+    "widthMm": 100,
+    "depthMm": 100,
+    "horizontalArmDepthMm": null,
+    "verticalArmWidthMm": null,
+    "sourceUrls": [
+      "https://firestore.googleapis.com/v1/projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/system_changelogs/uCBa37ipCfRcBLkdfyId",
+      "https://www.reddit.com/r/StarCraftTMG/comments/1x2btav/the_raven_stand_looks_unsafe/",
+      "fixture://user-provided-raven-assembly-step28-dimension-estimates"
+    ],
+    "measurement": {
+      "shape": "measured_contour",
+      "kind": "annotated_assembly_estimate",
+      "ref": "content/source-releases/wave3-20261124-raven-assembly/source.json",
+      "sha256": "87747dd5ee07a4d6dc1526f66ad02ca69ad17c871efab54498a6e4f54f1debd9"
+    },
+    "localVerticesMilliInches": [
+      {
+        "xMilliInches": -1968,
+        "yMilliInches": -39
+      },
+      {
+        "xMilliInches": -1476,
+        "yMilliInches": -79
+      },
+      {
+        "xMilliInches": -984,
+        "yMilliInches": -108
+      },
+      {
+        "xMilliInches": -187,
+        "yMilliInches": -187
+      },
+      {
+        "xMilliInches": -108,
+        "yMilliInches": -984
+      },
+      {
+        "xMilliInches": -79,
+        "yMilliInches": -1476
+      },
+      {
+        "xMilliInches": -39,
+        "yMilliInches": -1968
+      },
+      {
+        "xMilliInches": 39,
+        "yMilliInches": -1968
+      },
+      {
+        "xMilliInches": 79,
+        "yMilliInches": -1476
+      },
+      {
+        "xMilliInches": 108,
+        "yMilliInches": -984
+      },
+      {
+        "xMilliInches": 187,
+        "yMilliInches": -187
+      },
+      {
+        "xMilliInches": 984,
+        "yMilliInches": -108
+      },
+      {
+        "xMilliInches": 1476,
+        "yMilliInches": -79
+      },
+      {
+        "xMilliInches": 1969,
+        "yMilliInches": -39
+      },
+      {
+        "xMilliInches": 1969,
+        "yMilliInches": 39
+      },
+      {
+        "xMilliInches": 1476,
+        "yMilliInches": 79
+      },
+      {
+        "xMilliInches": 984,
+        "yMilliInches": 108
+      },
+      {
+        "xMilliInches": 187,
+        "yMilliInches": 187
+      },
+      {
+        "xMilliInches": 108,
+        "yMilliInches": 984
+      },
+      {
+        "xMilliInches": 79,
+        "yMilliInches": 1476
+      },
+      {
+        "xMilliInches": 39,
+        "yMilliInches": 1969
+      },
+      {
+        "xMilliInches": -39,
+        "yMilliInches": 1969
+      },
+      {
+        "xMilliInches": -79,
+        "yMilliInches": 1476
+      },
+      {
+        "xMilliInches": -108,
+        "yMilliInches": 984
+      },
+      {
+        "xMilliInches": -187,
+        "yMilliInches": 187
+      },
+      {
+        "xMilliInches": -984,
+        "yMilliInches": 108
+      },
+      {
+        "xMilliInches": -1476,
+        "yMilliInches": 79
+      },
+      {
+        "xMilliInches": -1968,
+        "yMilliInches": 39
+      }
+    ]
+  },
+  "stormMarker": {
+    "diameterMm": 32,
+    "sourceUrls": [
+      "https://firestore.googleapis.com/v1/projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/system_changelogs/uCBa37ipCfRcBLkdfyId"
+    ],
+    "measurementKind": "official_published_dimension",
+    "evidenceRef": "build/ticket-28-terran-wave3-20261117-v1/raven-detection-railguns/official-geometry-lookup-20261117/wave3-bases-official-news.json",
+    "evidenceSha256": "c5fe1cf4b776d445a392c0a9b09f81c137f018913dcf87c9609f18741044a5cb"
+  },
+  "stormBlast": {
+    "selected": "community_5inch",
+    "diametersMm": {
+      "community_5inch": 127,
+      "community_120mm": 120
+    },
+    "sourceUrls": [
+      "https://firestore.googleapis.com/v1/projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/system_changelogs/uCBa37ipCfRcBLkdfyId",
+      "https://www.reddit.com/r/StarCraftTMG/comments/1y26o4g/psionic_storm_template_size/",
+      "https://www.reddit.com/r/StarCraftTMG/comments/1xzvcl1/template_sizes/"
+    ]
+  }
+}

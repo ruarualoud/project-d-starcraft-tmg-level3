@@ -8,12 +8,17 @@ import { verifyOfficialTerrainLosDataBundleV1 } from
   "../source-data/official-terrain-los-data-bundle-v1.mjs";
 import {
   createOfficialPhysicalFootprintV1,
+  createOfficialModelBaseFootprintV1,
+  readOfficialCrossArmDimensionsV1,
+  isOfficialProfileBoundOutlineV1,
   evaluateOfficialPhysicalFootprintRelationV1,
 } from "./official-model-base-geometry-rules-kernel-v1.mjs";
 import { resolveConvexFootprintRectangleTraceV1 } from
   "./convex-footprint-rectangle-trace-v1.mjs";
 import { createNativeAssessmentPrefixDigestV1 } from
   "./native-assessment-prefix-digest-v1.mjs";
+import { verifyOfficialBattlefieldTokenV1 } from './official-battlefield-token-marker-rules-kernel-v1.mjs';
+import { createOfficialDisplacementTokenFootprintV1 } from './official-token-displacement-geometry-v1.mjs';
 
 export const OFFICIAL_TERRAIN_LOS_RULES_KERNEL_SCHEMA =
   "starcraft_tmg_official_terrain_los_rules_kernel_v1";
@@ -247,6 +252,16 @@ function verifyTerrain(raw) {
     terrainHash: raw.terrainHash };
 }
 
+export function readOfficialCompoundRampSightV1(raw) {
+  if (raw?.rangedSightProjection !== "signed_compound_ramp_v1") return null;
+  const terrain = verifyTerrain(raw);
+  if (terrain.terrainKind !== "ramp" || !terrain.footprintCells?.length
+    || terrain.size !== 1 || !terrain.standableHorizontalSurface) {
+    fail("TERRAIN_LOS_RAMP_PROFILE_INVALID", terrain.terrainId);
+  }
+  return terrain;
+}
+
 export function createOfficialTerrainPieceV1(input = {}) {
   const footprint = rectangle(input.footprint,
     "TERRAIN_LOS_TERRAIN_FOOTPRINT_INVALID", String(input.id || ""));
@@ -283,46 +298,53 @@ export function createOfficialTerrainPieceV1(input = {}) {
   return result;
 }
 
-function officialProfile(piece, dataBundle) {
+function officialProfile(piece, dataBundle, measuredContour) {
   verifyOfficialTerrainLosDataBundleV1(dataBundle);
   const profile = dataBundle.profiles.find((entry) => (
     entry.recordKey === piece?.officialUnitRecordKey
   ));
   if (!profile || piece.sourceRecordHash !== profile.sourceRecordHash
     || piece.officialPayloadHash !== profile.payloadHash
-    || profile.printedSize === null) {
+    || (profile.printedSize === null && !(measuredContour && profile.combatTags.includes("flying")))) {
     fail("TERRAIN_LOS_OFFICIAL_UNIT_PROFILE_INVALID", String(piece?.id || ""));
   }
   return profile;
 }
-function physicalModel(piece, modelId, dataBundle) {
+function physicalModel(piece, modelId, dataBundle, state) {
   if (!activePiece(piece)) fail("TERRAIN_LOS_UNIT_INVALID", String(piece?.id || ""));
   const model = (piece.models || []).find((entry) => entry.id === modelId && activeModel(entry));
-  const profile = officialProfile(piece, dataBundle);
+  const shape = String(model?.baseShape || "round").toLowerCase();
+  const measuredContour = shape === "measured_contour";
+  const profile = officialProfile(piece, dataBundle, measuredContour);
   const width = milli(model?.baseWidthInches, "TERRAIN_LOS_MODEL_BASE_INVALID", modelId);
   const depth = milli(model?.baseDepthInches ?? model?.baseWidthInches,
     "TERRAIN_LOS_MODEL_BASE_INVALID", modelId);
-  const shape = String(model?.baseShape || "round").toLowerCase();
-  if (!model || !["round", "rectangle"].includes(shape)
+  if (!model || !(["round", "rectangle"].includes(shape) || isOfficialProfileBoundOutlineV1(shape))
     || width <= 0 || depth <= 0 || (shape === "round" && Math.abs(width - depth) > TOLERANCE)) {
     fail("TERRAIN_LOS_MODEL_BASE_INVALID", modelId);
   }
   const supportTerrainIds = [...new Set((model.supportTerrainIds || []).map(String))].sort();
   const center = { xMilliInches: milli(model.xInches),
     yMilliInches: milli(model.yInches) };
-  const footprint = createOfficialPhysicalFootprintV1({
+  const footprint = measuredContour ? createOfficialModelBaseFootprintV1({
+    piece, model, dataBundle: state?.officialModelBaseGeometryDataBundle, position: center,
+  }) : createOfficialPhysicalFootprintV1({
     objectId: model.id,
     kind: "model_base",
     shape,
     center,
     widthMilliInches: width,
     depthMilliInches: depth,
+    ...(shape === "orthogonal_cross" ? readOfficialCrossArmDimensionsV1(model) : {}),
     rotationDegrees: model.baseRotationDegrees || 0,
   });
+  const sweepRadiusMilliInches = measuredContour
+    ? Math.ceil(Math.max(...footprint.localVerticesMilliInches.map(vertex =>
+      Math.hypot(vertex.xMilliInches, vertex.yMilliInches))))
+    : shape === "round" ? Math.round(width / 2) : Math.ceil(Math.hypot(width / 2, depth / 2));
   return { unitId: piece.id, modelId: model.id, sideKey: piece.sideKey,
     center, footprint, baseShape: shape,
-    sweepRadiusMilliInches: shape === "round" ? Math.round(width / 2)
-      : Math.ceil(Math.hypot(width / 2, depth / 2)),
+    sweepRadiusMilliInches,
     printedSize: profile.printedSize,
     elevation: String(model.elevation || "ground").toLowerCase(), supportTerrainIds,
     officialRecordKey: profile.recordKey };
@@ -352,6 +374,8 @@ function terrainPhysicalFootprint(terrain) {
   });
 }
 function baseEdgeToTerrain(model, terrain) {
+  if (terrain.footprintCells) return Math.min(...terrain.footprintCells.map(footprint =>
+    baseEdgeToTerrain(model, { terrainId: terrain.terrainId, footprint })));
   return evaluateOfficialPhysicalFootprintRelationV1({
     left: model.footprint,
     right: terrainPhysicalFootprint(terrain),
@@ -612,7 +636,7 @@ function agreedOpeningClearsBarrier(opening, proof, left, right, terrain) {
 
 export function evaluateOfficialLeadingModelTerrainV1(input = {}) {
   const state = input.state; const piece = input.actor;
-  const model = physicalModel(piece, input.leadingModelId, input.dataBundle);
+  const model = physicalModel(piece, input.leadingModelId, input.dataBundle, input.state);
   const points = (input.path || []).map((entry) => point(entry));
   if (points.length < 2 || points.length > 64
     || distance(points[0], model.center) > TOLERANCE) {
@@ -639,6 +663,13 @@ export function evaluateOfficialLeadingModelTerrainV1(input = {}) {
       center: endpoint,
       widthMilliInches: model.footprint.widthMilliInches,
       depthMilliInches: model.footprint.depthMilliInches,
+      ...(model.baseShape === "orthogonal_cross" ? {
+        horizontalArmDepthMilliInches: model.footprint.horizontalArmDepthMilliInches,
+        verticalArmWidthMilliInches: model.footprint.verticalArmWidthMilliInches,
+      } : {}),
+      ...(model.baseShape === "measured_contour" ? {
+        localVerticesMilliInches: model.footprint.localVerticesMilliInches,
+      } : {}),
       rotationDegrees: model.footprint.rotationDegrees,
     });
     const endpointOverlaps = evaluateOfficialPhysicalFootprintRelationV1({
@@ -715,7 +746,10 @@ function prepareTerrainLineOfSight(state, options = {}) {
   const terrain = (state.board?.terrain || []).filter((entry) => (
     entry?.isRemoved !== true && !excludedTerrainIds.has(entry.id)
   ))
-    .map(verifyTerrain);
+    .map(raw => {
+      const ramp = readOfficialCompoundRampSightV1(raw);
+      return ramp ? { ...ramp, terrainKind: "ordinary" } : verifyTerrain(raw);
+    });
   if (terrain.some((entry) => ["grass", "impassable", "ramp"].includes(entry.terrainKind))) {
     fail("TERRAIN_LOS_DEFERRED_TERRAIN_KIND", terrain.find((entry) => (
       ["grass", "impassable", "ramp"].includes(entry.terrainKind)
@@ -750,6 +784,59 @@ function preparedTerrainProximity(model, bounds, terrain, context) {
   const near = withinOneInchOfTerrain(model, bounds, terrain);
   entries.set(terrain, near);
   return near;
+}
+
+function rectangleSightEvidence(entry, attacker, target, pairBounds, topDownSurfaceExcluded) {
+  const outsideAllBaseConnectingSegments = entry.footprint.minXMilliInches
+    > pairBounds.maxX + TOLERANCE
+    || entry.footprint.maxXMilliInches < pairBounds.minX - TOLERANCE
+    || entry.footprint.minYMilliInches > pairBounds.maxY + TOLERANCE
+    || entry.footprint.maxYMilliInches < pairBounds.minY - TOLERANCE;
+  let rawBarrierProof = topDownSurfaceExcluded
+    || outsideAllBaseConnectingSegments ? null
+    : completeBarrier(attacker, target, entry);
+  let visibilityWitness = topDownSurfaceExcluded
+    ? "supported_horizontal_surface_excluded"
+    : outsideAllBaseConnectingSegments ? "center_to_center_clear"
+    : rawBarrierProof ? null : directVisibilityWitness(attacker, target, entry);
+  if (entry.size >= 1 && !rawBarrierProof && !visibilityWitness
+    && !entry.openings.some((opening) => opening.lineOfSightOpenAgreed)) {
+    // Preserve all previously certified proofs/witnesses and their receipt
+    // hashes. Only replace the old unsupported closed-rectangle branch;
+    // agreed apertures still require their own existing opening proof.
+    const trace = resolveConvexFootprintRectangleTraceV1(
+      attacker.footprint, target.footprint, entry.footprint);
+    if (trace.kind === "blocked") {
+      rawBarrierProof = "convex_rectangle_separates_complete_physical_base_footprints";
+    } else if (trace.kind === "clear") {
+      visibilityWitness = "convex_separating_line_physical_base_witness";
+    }
+  }
+  if (entry.size >= 1 && !rawBarrierProof && !visibilityWitness) {
+    fail("TERRAIN_LOS_UNSUPPORTED_RECTANGULAR_TRACE", entry.terrainId);
+  }
+  const openSightOpeningIds = rawBarrierProof ? entry.openings.filter((opening) => (
+    agreedOpeningClearsBarrier(opening, rawBarrierProof, attacker, target, entry)
+  )).map((opening) => opening.openingId).sort() : [];
+  const barrierProof = openSightOpeningIds.length > 0 ? null : rawBarrierProof;
+  return { rawBarrierProof, visibilityWitness, openSightOpeningIds, barrierProof };
+}
+
+function terrainSightEvidence(entry, attacker, target, pairBounds, excluded) {
+  if (!entry.footprintCells) return rectangleSightEvidence(entry, attacker, target, pairBounds, excluded);
+  // Apply the existing special-terrain sight-cell rule to each agreed section.
+  // The combat/elevation assessment still belongs to the single terrain piece.
+  const cellTraces = entry.footprintCells.map(footprint =>
+    rectangleSightEvidence({ ...entry, footprint }, attacker, target, pairBounds, excluded));
+  const blocking = cellTraces.find(trace => trace.barrierProof);
+  const cleared = cellTraces.find(trace => trace.rawBarrierProof);
+  return {
+    rawBarrierProof: blocking?.rawBarrierProof ?? cleared?.rawBarrierProof ?? null,
+    barrierProof: blocking?.barrierProof ?? null,
+    visibilityWitness: blocking ? null : "agreed_ramp_sight_cells_clear",
+    openSightOpeningIds: [...new Set(cellTraces.flatMap(trace => trace.openSightOpeningIds))].sort(),
+    cellTraces,
+  };
 }
 
 function evaluateTerrainLineOfSight(state, attacker, target, options = {},
@@ -797,38 +884,8 @@ function evaluateTerrainLineOfSight(state, attacker, target, options = {},
     const elevationDeadZoneBlocks = highToGround && !closeQuarters;
     const topDownSurfaceExcluded = entry.standableHorizontalSurface
       && (attackerSupported || targetSupported);
-    const outsideAllBaseConnectingSegments = entry.footprint.minXMilliInches
-      > pairBounds.maxX + TOLERANCE
-      || entry.footprint.maxXMilliInches < pairBounds.minX - TOLERANCE
-      || entry.footprint.minYMilliInches > pairBounds.maxY + TOLERANCE
-      || entry.footprint.maxYMilliInches < pairBounds.minY - TOLERANCE;
-    let rawBarrierProof = topDownSurfaceExcluded
-      || outsideAllBaseConnectingSegments ? null
-      : completeBarrier(attacker, target, entry);
-    let visibilityWitness = topDownSurfaceExcluded
-      ? "supported_horizontal_surface_excluded"
-      : outsideAllBaseConnectingSegments ? "center_to_center_clear"
-      : rawBarrierProof ? null : directVisibilityWitness(attacker, target, entry);
-    if (entry.size >= 1 && !rawBarrierProof && !visibilityWitness
-      && !entry.openings.some((opening) => opening.lineOfSightOpenAgreed)) {
-      // Preserve all previously certified proofs/witnesses and their receipt
-      // hashes. Only replace the old unsupported closed-rectangle branch;
-      // agreed apertures still require their own existing opening proof.
-      const trace = resolveConvexFootprintRectangleTraceV1(
-        attacker.footprint, target.footprint, entry.footprint);
-      if (trace.kind === "blocked") {
-        rawBarrierProof = "convex_rectangle_separates_complete_physical_base_footprints";
-      } else if (trace.kind === "clear") {
-        visibilityWitness = "convex_separating_line_physical_base_witness";
-      }
-    }
-    if (entry.size >= 1 && !rawBarrierProof && !visibilityWitness) {
-      fail("TERRAIN_LOS_UNSUPPORTED_RECTANGULAR_TRACE", entry.terrainId);
-    }
-    const openSightOpeningIds = rawBarrierProof ? entry.openings.filter((opening) => (
-      agreedOpeningClearsBarrier(opening, rawBarrierProof, attacker, target, entry)
-    )).map((opening) => opening.openingId).sort() : [];
-    const barrierProof = openSightOpeningIds.length > 0 ? null : rawBarrierProof;
+    const { rawBarrierProof, visibilityWitness, openSightOpeningIds, barrierProof, cellTraces }
+      = terrainSightEvidence(entry, attacker, target, pairBounds, topDownSurfaceExcluded);
     const blockingTerrainTrace = entry.size >= 1 && Boolean(barrierProof);
     if (blockingTerrainTrace
       && (attacker.supportTerrainIds.length > 0 || target.supportTerrainIds.length > 0)) {
@@ -838,16 +895,17 @@ function evaluateTerrainLineOfSight(state, attacker, target, options = {},
       ? attacker.effectiveSize : attacker.printedSize;
     const targetSize = Number.isSafeInteger(target.effectiveSize)
       ? target.effectiveSize : target.printedSize;
-    const fullCoverBlocks = blockingTerrainTrace
+    const fullCoverBlocks = blockingTerrainTrace && attackerSize !== null && targetSize !== null
       && entry.size >= attackerSize && entry.size >= targetSize;
-    const attackerDirectCover = blockingTerrainTrace && attackerNear
+    const attackerDirectCover = blockingTerrainTrace && attackerNear && attackerSize !== null
       && entry.size >= attackerSize;
-    const targetDirectCover = blockingTerrainTrace && targetNear
+    const targetDirectCover = blockingTerrainTrace && targetNear && targetSize !== null
       && entry.size >= targetSize;
     const directCoverBlocks = !closeQuarters
       && (attackerDirectCover || targetDirectCover);
     const assessment = { terrainId: entry.terrainId, terrainSize: entry.size,
       blockingTerrain: entry.size >= 1, rawBarrierProof, visibilityWitness,
+      ...(cellTraces ? { cellTraces } : {}),
       topDownSurfaceExcluded, openSightOpeningIds,
       defaultAperturesBlockLineOfSight: entry.openings.some((opening) => (
         !opening.lineOfSightOpenAgreed
@@ -880,11 +938,40 @@ function evaluateTerrainLineOfSight(state, attacker, target, options = {},
   return sealNativeTerrainLineOfSightResult(body, context);
 }
 
+// The elevated adapter owns support/Size validation. This endpoint preserves
+// the same trace algorithm while giving the virtual Target Point its exact
+// zero footprint; no synthetic unit is inserted in state.
+export function evaluateOfficialTerrainLineOfSightToTargetPointV1(input = {}) {
+  const attacker = physicalModel(input.attacker, input.attackerModelId, input.dataBundle, input.state);
+  const footprint = input.targetPointFootprint;
+  const { footprintHash, ...body } = footprint || {};
+  if (body.kind !== 'template_target_point' || body.radiusMilliInches !== 0
+    || footprintHash !== hashStarcraftTmgContract(body)) fail('TERRAIN_LOS_TARGET_POINT_INVALID');
+  const target = { unitId: footprint.objectId, modelId: footprint.objectId, sideKey: null,
+    center: footprint.center, footprint, printedSize: 0, effectiveSize: 0,
+    elevation: 'ground', supportTerrainIds: [] };
+  return evaluateTerrainLineOfSight(input.state, attacker, target);
+}
+
 export function evaluateOfficialTerrainLineOfSightV1(input = {}) {
   const state = input.state;
-  const attacker = physicalModel(input.attacker, input.attackerModelId, input.dataBundle);
-  const target = physicalModel(input.target, input.targetModelId, input.dataBundle);
+  const attacker = physicalModel(input.attacker, input.attackerModelId, input.dataBundle, state);
+  const target = physicalModel(input.target, input.targetModelId, input.dataBundle, state);
   return evaluateTerrainLineOfSight(state, attacker, target);
+}
+
+// The elevated Token consumer supplies the support/effective-size assessment.
+// This entry shares the same complete physical-base trace as model targets.
+export function evaluateOfficialTerrainLineOfSightToTokenV1(input = {}) {
+  const attacker = physicalModel(input.attacker, input.attackerModelId, input.dataBundle, input.state);
+  const token = input.token;
+  verifyOfficialBattlefieldTokenV1(token, input.registry);
+  const footprint = createOfficialDisplacementTokenFootprintV1(token);
+  const target = { unitId: token.tokenId, modelId: token.tokenId, sideKey: null,
+    center: footprint.center, footprint, baseShape: footprint.shape,
+    printedSize: token.terrainSize, effectiveSize: token.terrainSize,
+    elevation: 'ground', supportTerrainIds: [] };
+  return evaluateTerrainLineOfSight(input.state, attacker, target);
 }
 
 // The prepared terrain never escapes this synchronous batch. It is not
@@ -896,7 +983,7 @@ function prepareTerrainLineOfSightBatch(input, preparedContext = null) {
   const context = preparedContext || prepareTerrainLineOfSight(input.state);
   const modelsByPiece = new WeakMap();
   const modelFor = (piece, modelId) => {
-    if (!object(piece)) return physicalModel(piece, modelId, input.dataBundle);
+    if (!object(piece)) return physicalModel(piece, modelId, input.dataBundle, input.state);
     // Key by the actual piece object, not its public id: distinct/corrupt input
     // objects must still be checked even when they claim the same identity.
     let models = modelsByPiece.get(piece);
@@ -905,7 +992,7 @@ function prepareTerrainLineOfSightBatch(input, preparedContext = null) {
       modelsByPiece.set(piece, models);
     }
     if (models.has(modelId)) return models.get(modelId);
-    const model = physicalModel(piece, modelId, input.dataBundle);
+    const model = physicalModel(piece, modelId, input.dataBundle, input.state);
     models.set(modelId, model);
     return model;
   };
@@ -1016,7 +1103,7 @@ export function createOfficialTerrainLineOfSightBatchV1(input = {}) {
 
 export function evaluateOfficialTerrainLineOfSightToMissionMarkerV1(input = {}) {
   const state = input.state;
-  const attacker = physicalModel(input.attacker, input.attackerModelId, input.dataBundle);
+  const attacker = physicalModel(input.attacker, input.attackerModelId, input.dataBundle, input.state);
   const attackerEffectiveSize = Number(input.attackerEffectiveSize);
   if (!Number.isSafeInteger(attackerEffectiveSize)
     || attackerEffectiveSize < attacker.printedSize) {
@@ -1055,7 +1142,7 @@ function evaluateTerrainLineOfSightToMissionMarkerBatch(input, projectResult, ow
     }
     let entry = models.get(modelId);
     if (!entry) {
-      entry = { physical: physicalModel(piece, modelId, input.dataBundle), sizes: new Map() };
+      entry = { physical: physicalModel(piece, modelId, input.dataBundle, state), sizes: new Map() };
       models.set(modelId, entry);
     }
     const size = Number(effectiveSize);

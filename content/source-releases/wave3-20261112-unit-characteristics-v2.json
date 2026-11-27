@@ -1,0 +1,5905 @@
+{
+  "schema": "starcraft_tmg_official_unit_card_supply_data_bundle_v2",
+  "version": "2.0.0",
+  "sourceBinding": {
+    "releaseId": "wave3-u83-c84-r50-geometry-v1",
+    "sourceSnapshotHash": "4412c17faaebaff04b117d1ddc666d1cdd939eca420a22f861c7c944f1179c8c",
+    "normalizedDatasetHash": "718057e86ac4f93a72c06b8e4d8f4d851ba33ee04c9dddea33e966eda9fe6685"
+  },
+  "sourceLockHash": "e001b54ee2789bb184b6770c2004153213ae92e378bbb758ff69174b3cb13573",
+  "sourceSnapshotHash": "4412c17faaebaff04b117d1ddc666d1cdd939eca420a22f861c7c944f1179c8c",
+  "normalizedDatasetHash": "718057e86ac4f93a72c06b8e4d8f4d851ba33ee04c9dddea33e966eda9fe6685",
+  "coreRulebookHash": "27639c562e6db9777dd9ba984d0c9f9b581841ec30166848e021f893cd00ea54",
+  "officialRulesVersion": "50",
+  "officialUnitsVersion": "83",
+  "officialCardsVersion": "84",
+  "ruleSectionRecords": [
+    {
+      "recordKey": "rules_sections:u3zNStKpd5XegMjmJfMS",
+      "title": "PART 5: CARDS AND CHARACTERISTICS",
+      "sourceRecordHash": "026a4a9b0f3c0bae10a76ee28e48655cbf117cc01e304c57d7dfc2f5522f1175",
+      "payloadHash": "bd1eb44d676bac9a2a2643122f3af1fb90625c29e905aef56b9417f5733f86c5",
+      "authorityDisposition": "official_rule_prose_review_required",
+      "sourceVersion": "50"
+    },
+    {
+      "recordKey": "rules_sections:xLLTUyQm53B1KXj59oLs",
+      "title": "PART 6: THE SUPPLY SYSTEM",
+      "sourceRecordHash": "357eed9e3532c589c5e309959a5edda349debe1a4042bb5257b87fa0b75bcc3c",
+      "payloadHash": "cd86ffb67aa66cbba21d07f0c7a9a578d487a2770bac50f1d1c7d6122dbdff26",
+      "authorityDisposition": "official_rule_prose_review_required",
+      "sourceVersion": "50"
+    },
+    {
+      "recordKey": "rules_sections:FuahgilWtc8nccVSp2Vv",
+      "title": "PART 11: KEYWORD GLOSSARY AND DEFINITIONS",
+      "sourceRecordHash": "985e79f70c48caf1b1085e620e92be23f5b4468ffe07fdc5f84cb01a28fa59b7",
+      "payloadHash": "4a6aa9e55e3b4197666b0f4fed633269dc42327af16f5b5a5422b7533d7d8973",
+      "authorityDisposition": "official_rule_prose_review_required",
+      "sourceVersion": "50"
+    }
+  ],
+  "ruleClauses": [
+    {
+      "clauseId": "core:11:supply-value-current-model-count",
+      "section": "11",
+      "printedPage": 92,
+      "sourceTextHash": "1e6bb560d2d9aa22f163dc24952775f8bc5daf46e7be57f09c1f370cd84adffb"
+    },
+    {
+      "clauseId": "core:11:supply-value-rule-uses",
+      "section": "11",
+      "printedPage": 92,
+      "sourceTextHash": "9c0fca624301a1df0d910a8934fdb340541eb6c9bcf2d96064520acce91455d7"
+    },
+    {
+      "clauseId": "core:11:supply-value-starting-slots",
+      "section": "11",
+      "printedPage": 92,
+      "sourceTextHash": "8b66711f31d3ab05508ff68d5905ad9ce859239949f7168fe787f6bf87c40620"
+    },
+    {
+      "clauseId": "core:5.1:phase-boxes",
+      "section": "5.1",
+      "printedPage": 40,
+      "sourceTextHash": "27f5fa4774453447872477955e0b5c15890509a6844b152e28610050c2949c40"
+    },
+    {
+      "clauseId": "core:5.1:speed-null-value",
+      "section": "5.1",
+      "printedPage": 40,
+      "sourceTextHash": "b97636af6f920f8d204f1ab26113a35752a3527e414b5be9a961a4fd74563be2"
+    },
+    {
+      "clauseId": "core:5.1:supply-profile",
+      "section": "5.1",
+      "printedPage": 40,
+      "sourceTextHash": "30ff87d99c01cd6553073c5644f81a16871bdabd8f15dcd92a2fb408823890e1"
+    },
+    {
+      "clauseId": "core:5.2:base-diameter",
+      "section": "5.2",
+      "printedPage": 41,
+      "sourceTextHash": "af19286086357f2bf662c3fd105b924a3e01509534b95e88921f15e41c3390bd"
+    },
+    {
+      "clauseId": "core:5.2:combat-range",
+      "section": "5.2",
+      "printedPage": 41,
+      "sourceTextHash": "c81ea70872d621383cf7f1fc1b9ca415c9487cf432cdbafa2086353aadaa28f9"
+    },
+    {
+      "clauseId": "core:5.2:upgrade-side",
+      "section": "5.2",
+      "printedPage": 41,
+      "sourceTextHash": "4180cde50d504fee54c0e9400c5a3eaab95df1371dcd35d5316a09ac16a0eb6b"
+    },
+    {
+      "clauseId": "core:6.1:supply-profile",
+      "section": "6.1",
+      "printedPage": 46,
+      "sourceTextHash": "24b17513f1e9532e9b09fc602dd8a3ae868afb8b7b86d6f1a699bc59dc6667c5"
+    },
+    {
+      "clauseId": "core:5.2:army-slot",
+      "section": "5.2",
+      "printedPage": 41,
+      "sourceTextHash": "b350ba5f3054dd451120efb89eef6c893a49eb7a3db17e27693b634c33274934"
+    },
+    {
+      "clauseId": "core:5.1:faction-tag",
+      "section": "5.1",
+      "printedPage": 40,
+      "sourceTextHash": "dbf4b5d9217b7b88522339d82b3dba9409465e1a0b26eda85f107afce573912e"
+    }
+  ],
+  "ruleClauseIndexHash": "29c9892a7a41cfaf2fa2ca0cb2ca20c268d78e23f398c34fd305627d268f1097",
+  "unitProfiles": [
+    {
+      "schema": "starcraft_tmg_official_unit_card_supply_profile_v2",
+      "recordKey": "army_units:adept",
+      "sourceRecordHash": "e17a52a8c4b31e989190b95e60bf793d6da7fcc7b77b8b9421fc4620ccf7b431",
+      "payloadHash": "587133eef84b6620f9e4c61b95e865655b89f12fad2b67b22fcfd03eb9fb8fc6",
+      "unitId": "adept",
+      "unitName": "Adept",
+      "factionTag": "Protoss",
+      "armySlotType": "Core",
+      "sourceUnitType": "Core",
+      "fieldableDuringArmyBuilding": true,
+      "speed": {
+        "printedValue": "5/8",
+        "kind": "split",
+        "multiModelInches": 5,
+        "singleModelInches": 8,
+        "canMoveOrBeRepositioned": true
+      },
+      "supplyProfile": [
+        {
+          "tier": 1,
+          "printedModelCount": "1 - 2",
+          "applicable": true,
+          "minimumModels": 1,
+          "maximumModels": 2,
+          "supply": 0
+        },
+        {
+          "tier": 2,
+          "printedModelCount": "3 - 4",
+          "applicable": true,
+          "minimumModels": 3,
+          "maximumModels": 4,
+          "supply": 1
+        },
+        {
+          "tier": 3,
+          "printedModelCount": "-",
+          "applicable": false,
+          "minimumModels": null,
+          "maximumModels": null,
+          "supply": 0
+        }
+      ],
+      "compositions": [
+        {
+          "kind": "small",
+          "startingModels": 4,
+          "startingSupply": 1,
+          "pointsCost": 160
+        }
+      ],
+      "phaseBoxes": [
+        {
+          "phase": "Any Phase",
+          "definitionCount": 1,
+          "definitionNames": [
+            "Psionic Presence"
+          ],
+          "definitionsHash": "203e3d5cd8a4317e26a0f5d5f3ba02ebd6c7eb3b80bf14df6ea2b60322eaae33"
+        },
+        {
+          "phase": "Movement Phase",
+          "definitionCount": 1,
+          "definitionNames": [
+            "Psionic Transfer"
+          ],
+          "definitionsHash": "4ab5aed03a00b4460df1bbde228a1f77a3fe49f44244e10d8120fe5e8d4b9185"
+        },
+        {
+          "phase": "Assault Phase",
+          "definitionCount": 3,
+          "definitionNames": [
+            "Glaive Cannon",
+            "Resonating Glaives",
+            "Guidance"
+          ],
+          "definitionsHash": "9aac19ec3152c7b9fd2fe90c9d6776882cb45fbb3bca027c052e858cf90bb2b6"
+        },
+        {
+          "phase": "Combat Phase",
+          "definitionCount": 2,
+          "definitionNames": [
+            "Glaive Strike",
+            "Strike"
+          ],
+          "definitionsHash": "5ba468b5ebf3a73c461a7fac6b86da58dbb53fa28e55127fa46d068bb375d316"
+        }
+      ],
+      "combatRange": {
+        "printedValue": "3",
+        "inches": 3
+      },
+      "base": {
+        "shape": "round",
+        "widthMillimetres": 40,
+        "depthMillimetres": 40,
+        "printedBase": "Ø 40MM",
+        "p2pSourceId": "protoss_p2p",
+        "p2pSourceContentHash": "4e8547b2df8d545df3d0ebb7d7821521a888dc0437d6f4dde21d82145337a212"
+      },
+      "geometryStatus": {
+        "status": "source_bound"
+      },
+      "upgradeSide": {
+        "present": true,
+        "definitionCount": 7,
+        "definitionsHash": "d46d64e02bdd029e3cb29fa0737d44cb690b357bb91e09542441beb2b700de8f"
+      },
+      "rulesOwnedLayoutFields": [
+        "faction_tag",
+        "army_slot",
+        "phase_boxes",
+        "speed",
+        "supply_profile",
+        "base",
+        "combat_range",
+        "upgrade_side"
+      ],
+      "trainingTruth": false,
+      "profileHash": "412b48095ecc5b5ce1b8da04a4bb45559e7c13a319774ae2300759ef419287f5"
+    },
+    {
+      "schema": "starcraft_tmg_official_unit_card_supply_profile_v2",
+      "recordKey": "army_units:artanis",
+      "sourceRecordHash": "40176eeecd7936a20d0a333666515a2972186d1f7a285fbd241fe039bb8450df",
+      "payloadHash": "75cad844983ae0ca7a7947ad24c7d46ba0ca04a6b4f7ff5d22db7d549eae2325",
+      "unitId": "artanis",
+      "unitName": "Artanis",
+      "factionTag": "Protoss",
+      "armySlotType": "Hero",
+      "sourceUnitType": "Hero",
+      "fieldableDuringArmyBuilding": true,
+      "speed": {
+        "printedValue": "7",
+        "kind": "single",
+        "multiModelInches": 7,
+        "singleModelInches": 7,
+        "canMoveOrBeRepositioned": true
+      },
+      "supplyProfile": [
+        {
+          "tier": 1,
+          "printedModelCount": "-",
+          "applicable": false,
+          "minimumModels": null,
+          "maximumModels": null,
+          "supply": 0
+        },
+        {
+          "tier": 2,
+          "printedModelCount": "1 - 1",
+          "applicable": true,
+          "minimumModels": 1,
+          "maximumModels": 1,
+          "supply": 1
+        },
+        {
+          "tier": 3,
+          "printedModelCount": "-",
+          "applicable": false,
+          "minimumModels": null,
+          "maximumModels": null,
+          "supply": 0
+        }
+      ],
+      "compositions": [
+        {
+          "kind": "small",
+          "startingModels": 1,
+          "startingSupply": 1,
+          "pointsCost": 270
+        }
+      ],
+      "phaseBoxes": [
+        {
+          "phase": "Any Phase",
+          "definitionCount": 1,
+          "definitionNames": [
+            "Commander"
+          ],
+          "definitionsHash": "89ccca397f284422b3d230a087a05445075dd8f8f46394b76ae21d7761764fbf"
+        },
+        {
+          "phase": "Movement Phase",
+          "definitionCount": 1,
+          "definitionNames": [
+            "Phase Prism"
+          ],
+          "definitionsHash": "07505d79753790aff2f776dd1163cb1984bb914406b48821a0cbadf10f723df4"
+        },
+        {
+          "phase": "Assault Phase",
+          "definitionCount": 3,
+          "definitionNames": [
+            "Hierarch’s Stand",
+            "Lightning Dash",
+            "Devastating Charge"
+          ],
+          "definitionsHash": "4d26ed392916f15982b572ec67294d13e278a6ca521708737d07e6fcc237b525"
+        },
+        {
+          "phase": "Combat Phase",
+          "definitionCount": 2,
+          "definitionNames": [
+            "Twilight Blades Strike",
+            "Twilight Blades Sweep"
+          ],
+          "definitionsHash": "a3550d53207336f13dd5c214dd3381220667951083f4fb53e84bd964ca3a552f"
+        }
+      ],
+      "combatRange": {
+        "printedValue": "1",
+        "inches": 1
+      },
+      "base": {
+        "shape": "round",
+        "widthMillimetres": 40,
+        "depthMillimetres": 40,
+        "printedBase": "Ø 40MM",
+        "p2pSourceId": "protoss_p2p",
+        "p2pSourceContentHash": "4e8547b2df8d545df3d0ebb7d7821521a888dc0437d6f4dde21d82145337a212"
+      },
+      "geometryStatus": {
+        "status": "source_bound"
+      },
+      "upgradeSide": {
+        "present": true,
+        "definitionCount": 7,
+        "definitionsHash": "abacf8fabb2b80d464646625844894aa90ee95e2d2adde9e4a616a679883009d"
+      },
+      "rulesOwnedLayoutFields": [
+        "faction_tag",
+        "army_slot",
+        "phase_boxes",
+        "speed",
+        "supply_profile",
+        "base",
+        "combat_range",
+        "upgrade_side"
+      ],
+      "trainingTruth": false,
+      "profileHash": "8fce6f79c3682f31ed80ca6563ccf4d1351a087cb4640bbd3bbb41613ca68c52"
+    },
+    {
+      "schema": "starcraft_tmg_official_unit_card_supply_profile_v2",
+      "recordKey": "army_units:auto_turret",
+      "sourceRecordHash": "92ca23dbf7ea8d5673bbbc0a15d153faaef123aecfa40779baeee6dd726c2d5a",
+      "payloadHash": "cf20dd26caecb180529786eb41092188ea247b93ae269361fff0c779e7e236b4",
+      "unitId": "auto_turret",
+      "unitName": "Auto-Turret",
+      "factionTag": "Terran",
+      "armySlotType": null,
+      "sourceUnitType": "Other",
+      "fieldableDuringArmyBuilding": false,
+      "speed": {
+        "printedValue": "-",
+        "kind": "null",
+        "multiModelInches": null,
+        "singleModelInches": null,
+        "canMoveOrBeRepositioned": false
+      },
+      "supplyProfile": [
+        {
+          "tier": 1,
+          "printedModelCount": "-",
+          "applicable": false,
+          "minimumModels": null,
+          "maximumModels": null,
+          "supply": 0
+        },
+        {
+          "tier": 2,
+          "printedModelCount": "1 - 1",
+          "applicable": true,
+          "minimumModels": 1,
+          "maximumModels": 1,
+          "supply": 0
+        },
+        {
+          "tier": 3,
+          "printedModelCount": "-",
+          "applicable": false,
+          "minimumModels": null,
+          "maximumModels": null,
+          "supply": 0
+        }
+      ],
+      "compositions": [
+        {
+          "kind": "small",
+          "startingModels": 1,
+          "startingSupply": 0,
+          "pointsCost": 0
+        }
+      ],
+      "phaseBoxes": [
+        {
+          "phase": "Any Phase",
+          "definitionCount": 2,
+          "definitionNames": [
+            "Timed Life",
+            "Structure"
+          ],
+          "definitionsHash": "48468751e1989c573e97d3c412505df75856bc017d58f4c1fda9719f68d29047"
+        },
+        {
+          "phase": "Movement Phase",
+          "definitionCount": 0,
+          "definitionNames": [],
+          "definitionsHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        {
+          "phase": "Assault Phase",
+          "definitionCount": 2,
+          "definitionNames": [
+            "Gauss Cannon",
+            "Overwatch"
+          ],
+          "definitionsHash": "8deeeafba5e8461872bd55215a07896e4e13ae014106d6b0646b93712fec013b"
+        },
+        {
+          "phase": "Combat Phase",
+          "definitionCount": 0,
+          "definitionNames": [],
+          "definitionsHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        }
+      ],
+      "combatRange": {
+        "printedValue": "3",
+        "inches": 3
+      },
+      "base": {
+        "shape": "round",
+        "widthMillimetres": 40,
+        "depthMillimetres": 40,
+        "printedBase": "Ø 40MM",
+        "p2pSourceId": "terran_w3",
+        "p2pSourceContentHash": "9632f91cdf1b152aca4d7b27aaf54655fe48e10138c73338393b8a62ce1cd154"
+      },
+      "geometryStatus": {
+        "status": "source_bound"
+      },
+      "upgradeSide": {
+        "present": true,
+        "definitionCount": 4,
+        "definitionsHash": "506d82c46cc02c67e608b974af2e1ae17e9c1f9e2ec574ccbc2f273ef108951b"
+      },
+      "rulesOwnedLayoutFields": [
+        "faction_tag",
+        "army_slot",
+        "phase_boxes",
+        "speed",
+        "supply_profile",
+        "base",
+        "combat_range",
+        "upgrade_side"
+      ],
+      "trainingTruth": false,
+      "profileHash": "fd46a3888eda37e2a257cab5587bfdb4a324f34c9a3fb1d85ed40c0d65ae5e62"
+    },
+    {
+      "schema": "starcraft_tmg_official_unit_card_supply_profile_v2",
+      "recordKey": "army_units:bile_launcher",
+      "sourceRecordHash": "b7d2cd52bb018700f8a1421731fb5ef52179118f9f48f164285351f6aad0bdc8",
+      "payloadHash": "0500ec3df44a14df74de7f35dce149bbdc076bcd243aefc438d09f75312ea8b2",
+      "unitId": "bile_launcher",
+      "unitName": "Bile Launcher",
+      "factionTag": "Zerg",
+      "armySlotType": "Support",
+      "sourceUnitType": "Support",
+      "fieldableDuringArmyBuilding": true,
+      "speed": {
+        "printedValue": "-",
+        "kind": "null",
+        "multiModelInches": null,
+        "singleModelInches": null,
+        "canMoveOrBeRepositioned": false
+      },
+      "supplyProfile": [
+        {
+          "tier": 1,
+          "printedModelCount": "-",
+          "applicable": false,
+          "minimumModels": null,
+          "maximumModels": null,
+          "supply": 0
+        },
+        {
+          "tier": 2,
+          "printedModelCount": "1 - 1",
+          "applicable": true,
+          "minimumModels": 1,
+          "maximumModels": 1,
+          "supply": 1
+        },
+        {
+          "tier": 3,
+          "printedModelCount": "-",
+          "applicable": false,
+          "minimumModels": null,
+          "maximumModels": null,
+          "supply": 0
+        }
+      ],
+      "compositions": [
+        {
+          "kind": "small",
+          "startingModels": 1,
+          "startingSupply": 1,
+          "pointsCost": 150
+        }
+      ],
+      "phaseBoxes": [
+        {
+          "phase": "Any Phase",
+          "definitionCount": 3,
+          "definitionNames": [
+            "Biological Structure",
+            "Source of Creep",
+            "Detection"
+          ],
+          "definitionsHash": "d9c8ff2c6973b3e9b59b12c615fdee893506af300a274a560628f1a831ea3396"
+        },
+        {
+          "phase": "Movement Phase",
+          "definitionCount": 2,
+          "definitionNames": [
+            "Burrow Ambush",
+            "Bombard"
+          ],
+          "definitionsHash": "a57ff700740432a1707ad1e1919487c0d9a9a327a932724c469671bf44f51973"
+        },
+        {
+          "phase": "Assault Phase",
+          "definitionCount": 2,
+          "definitionNames": [
+            "Indomitable",
+            "Bile Bomb"
+          ],
+          "definitionsHash": "849898f4db33aa6d149c0c06463788b809440a2193fb22348c08a287cba00d44"
+        },
+        {
+          "phase": "Combat Phase",
+          "definitionCount": 0,
+          "definitionNames": [],
+          "definitionsHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        }
+      ],
+      "combatRange": {
+        "printedValue": "5",
+        "inches": 5
+      },
+      "base": {
+        "shape": "round",
+        "widthMillimetres": 100,
+        "depthMillimetres": 100,
+        "printedBase": "Ø 100MM",
+        "p2pSourceId": "zerg_w3",
+        "p2pSourceContentHash": "ebc05eeea6456538b57e3b417bb1defc87159bd560fed81e0342e6119e85d6eb"
+      },
+      "geometryStatus": {
+        "status": "source_bound"
+      },
+      "upgradeSide": {
+        "present": true,
+        "definitionCount": 7,
+        "definitionsHash": "07ba6b8488cd48ff6889ae2813bb10e8efede081c309e5c0c4ec869b94cf87b5"
+      },
+      "rulesOwnedLayoutFields": [
+        "faction_tag",
+        "army_slot",
+        "phase_boxes",
+        "speed",
+        "supply_profile",
+        "base",
+        "combat_range",
+        "upgrade_side"
+      ],
+      "trainingTruth": false,
+      "profileHash": "9b473ead79e9c83f7c96382644daa63ec19d3c1d3c47fbe07b7600464057e3ab"
+    },
+    {
+      "schema": "starcraft_tmg_official_unit_card_supply_profile_v2",
+      "recordKey": "army_units:corpser__roach_",
+      "sourceRecordHash": "99187cec6bf55738ad6114fbdc4c2a5fa44ca76d020732300d1c6552e0c61ea9",
+      "payloadHash": "b1cdd9fa6911f48853e4c7dbec14046c11dfcb6634c5d0bf7e1dbb4031187e53",
+      "unitId": "corpser__roach_",
+      "unitName": "Corpser (Roach)",
+      "factionTag": "Zerg",
+      "armySlotType": "Core",
+      "sourceUnitType": "Core",
+      "fieldableDuringArmyBuilding": true,
+      "speed": {
+        "printedValue": "4/7",
+        "kind": "split",
+        "multiModelInches": 4,
+        "singleModelInches": 7,
+        "canMoveOrBeRepositioned": true
+      },
+      "supplyProfile": [
+        {
+          "tier": 1,
+          "printedModelCount": "1 - 1",
+          "applicable": true,
+          "minimumModels": 1,
+          "maximumModels": 1,
+          "supply": 0
+        },
+        {
+          "tier": 2,
+          "printedModelCount": "2 - 3",
+          "applicable": true,
+          "minimumModels": 2,
+          "maximumModels": 3,
+          "supply": 1
+        },
+        {
+          "tier": 3,
+          "printedModelCount": "-",
+          "applicable": false,
+          "minimumModels": null,
+          "maximumModels": null,
+          "supply": 0
+        }
+      ],
+      "compositions": [
+        {
+          "kind": "small",
+          "startingModels": 3,
+          "startingSupply": 1,
+          "pointsCost": 220
+        }
+      ],
+      "phaseBoxes": [
+        {
+          "phase": "Any Phase",
+          "definitionCount": 2,
+          "definitionNames": [
+            "Burrow",
+            "Tunneling Claws"
+          ],
+          "definitionsHash": "4173ce6cbf567ed4c34e85a6b1697bb3188fd827ab36edf81de93f874aad377f"
+        },
+        {
+          "phase": "Movement Phase",
+          "definitionCount": 3,
+          "definitionNames": [
+            "Roachling Infestation",
+            "Burrow Ambush",
+            "Glial Reconstitution"
+          ],
+          "definitionsHash": "e2151e04627fb628b00d5fc6d383b815876fd58bb4ea676dd0c5c5dd4a8d4419"
+        },
+        {
+          "phase": "Assault Phase",
+          "definitionCount": 4,
+          "definitionNames": [
+            "Acid Saliva",
+            "Regeneration",
+            "Hydriodic Bile",
+            "Devastating Charge"
+          ],
+          "definitionsHash": "710f303cfbf2515098964ee3dd75a16178b9d4abc596f66d34d199cd90e4b07f"
+        },
+        {
+          "phase": "Combat Phase",
+          "definitionCount": 1,
+          "definitionNames": [
+            "Claws"
+          ],
+          "definitionsHash": "0c303c3bd07bf6cfe434783469cc6e2417f6f4477d1d0668446e1abfe0243cdd"
+        }
+      ],
+      "combatRange": {
+        "printedValue": "1",
+        "inches": 1
+      },
+      "base": {
+        "shape": "round",
+        "widthMillimetres": 50,
+        "depthMillimetres": 50,
+        "printedBase": "Ø 50MM",
+        "p2pSourceId": "zerg_p2p",
+        "p2pSourceContentHash": "6810f46ee422ac5d8f3cc169c3eda3ccb9551f01ab71a1f7e4ac8c266817b364"
+      },
+      "geometryStatus": {
+        "status": "source_bound"
+      },
+      "upgradeSide": {
+        "present": true,
+        "definitionCount": 10,
+        "definitionsHash": "b0a35b4c6a4c6868906d95e6a3b990060f6fab462b0afba54c316bc50d3f8ab7"
+      },
+      "rulesOwnedLayoutFields": [
+        "faction_tag",
+        "army_slot",
+        "phase_boxes",
+        "speed",
+        "supply_profile",
+        "base",
+        "combat_range",
+        "upgrade_side"
+      ],
+      "trainingTruth": false,
+      "profileHash": "481aff6acda0013981b8c8e55df081ced98077f6109143e68d3cd87ebb9ae536"
+    },
+    {
+      "schema": "starcraft_tmg_official_unit_card_supply_profile_v2",
+      "recordKey": "army_units:defiler",
+      "sourceRecordHash": "4a31693409c8d3d8a647ee91943277fc2bc84e7ff6e811f39b54ea83873ddb7c",
+      "payloadHash": "d61341180186819bdc920ee3670f5221bc74f5f2271dc88b0ae44ece8e163d31",
+      "unitId": "defiler",
+      "unitName": "Defiler",
+      "factionTag": "Zerg",
+      "armySlotType": "Support",
+      "sourceUnitType": "Support",
+      "fieldableDuringArmyBuilding": true,
+      "speed": {
+        "printedValue": "7",
+        "kind": "single",
+        "multiModelInches": 7,
+        "singleModelInches": 7,
+        "canMoveOrBeRepositioned": true
+      },
+      "supplyProfile": [
+        {
+          "tier": 1,
+          "printedModelCount": "-",
+          "applicable": false,
+          "minimumModels": null,
+          "maximumModels": null,
+          "supply": 0
+        },
+        {
+          "tier": 2,
+          "printedModelCount": "1 - 1",
+          "applicable": true,
+          "minimumModels": 1,
+          "maximumModels": 1,
+          "supply": 1
+        },
+        {
+          "tier": 3,
+          "printedModelCount": "-",
+          "applicable": false,
+          "minimumModels": null,
+          "maximumModels": null,
+          "supply": 0
+        }
+      ],
+      "compositions": [
+        {
+          "kind": "small",
+          "startingModels": 1,
+          "startingSupply": 1,
+          "pointsCost": 130
+        }
+      ],
+      "phaseBoxes": [
+        {
+          "phase": "Any Phase",
+          "definitionCount": 1,
+          "definitionNames": [
+            "Consume"
+          ],
+          "definitionsHash": "23518e395364871b56f1a4d760bbc10af6e4d0f31334f10eb4893a6c4bc23cae"
+        },
+        {
+          "phase": "Movement Phase",
+          "definitionCount": 2,
+          "definitionNames": [
+            "Gestate Dark Swarm",
+            "Burrow Ambush"
+          ],
+          "definitionsHash": "30bcf2062b1ffa5a89ef84c4477aa126788966b81f74f495e94ced201429be0b"
+        },
+        {
+          "phase": "Assault Phase",
+          "definitionCount": 3,
+          "definitionNames": [
+            "Dark Swarm",
+            "Plague",
+            "Devastating Charge"
+          ],
+          "definitionsHash": "30db1bcac7cda4c2a1997eb66ee9f9061309c6a50802d537d6249103ad4d92f3"
+        },
+        {
+          "phase": "Combat Phase",
+          "definitionCount": 2,
+          "definitionNames": [
+            "Claws",
+            "Cancerous Bite"
+          ],
+          "definitionsHash": "b569a80f14eba0924f7ee41cd84869a200c7c0c1b6d45584796703bc33f0b20c"
+        }
+      ],
+      "combatRange": {
+        "printedValue": "2",
+        "inches": 2
+      },
+      "base": {
+        "shape": "round",
+        "widthMillimetres": 80,
+        "depthMillimetres": 80,
+        "printedBase": "Ø 80MM",
+        "p2pSourceId": "zerg_w3",
+        "p2pSourceContentHash": "ebc05eeea6456538b57e3b417bb1defc87159bd560fed81e0342e6119e85d6eb"
+      },
+      "geometryStatus": {
+        "status": "source_bound"
+      },
+      "upgradeSide": {
+        "present": true,
+        "definitionCount": 8,
+        "definitionsHash": "3757d35cc1e9acfb02a92b17d125200d3b588d39059ed6c13224ffc73c0951f7"
+      },
+      "rulesOwnedLayoutFields": [
+        "faction_tag",
+        "army_slot",
+        "phase_boxes",
+        "speed",
+        "supply_profile",
+        "base",
+        "combat_range",
+        "upgrade_side"
+      ],
+      "trainingTruth": false,
+      "profileHash": "020c94137e90fddfe361c91844c58be47264edea158fa79d645078b2d082a5e8"
+    },
+    {
+      "schema": "starcraft_tmg_official_unit_card_supply_profile_v2",
+      "recordKey": "army_units:goliath",
+      "sourceRecordHash": "3284a8c430a3e5925df9dced1af47817b5500cf85e0ae1b293de437a8a27dad9",
+      "payloadHash": "5984c7f157dc34477032cd03da9f1a2afea261343c19eec3a3b789b072bda518",
+      "unitId": "goliath",
+      "unitName": "Goliath",
+      "factionTag": "Terran",
+      "armySlotType": "Elite",
+      "sourceUnitType": "Elite",
+      "fieldableDuringArmyBuilding": true,
+      "speed": {
+        "printedValue": "7",
+        "kind": "single",
+        "multiModelInches": 7,
+        "singleModelInches": 7,
+        "canMoveOrBeRepositioned": true
+      },
+      "supplyProfile": [
+        {
+          "tier": 1,
+          "printedModelCount": "-",
+          "applicable": false,
+          "minimumModels": null,
+          "maximumModels": null,
+          "supply": 0
+        },
+        {
+          "tier": 2,
+          "printedModelCount": "1 - 1",
+          "applicable": true,
+          "minimumModels": 1,
+          "maximumModels": 1,
+          "supply": 2
+        },
+        {
+          "tier": 3,
+          "printedModelCount": "-",
+          "applicable": false,
+          "minimumModels": null,
+          "maximumModels": null,
+          "supply": 0
+        }
+      ],
+      "compositions": [
+        {
+          "kind": "small",
+          "startingModels": 1,
+          "startingSupply": 2,
+          "pointsCost": 180
+        }
+      ],
+      "phaseBoxes": [
+        {
+          "phase": "Any Phase",
+          "definitionCount": 1,
+          "definitionNames": [
+            "Ares-Class Targeting System"
+          ],
+          "definitionsHash": "ceeb16ec255ca3013ad8cfb5b676e159697420428de6284158954ca948280f69"
+        },
+        {
+          "phase": "Movement Phase",
+          "definitionCount": 1,
+          "definitionNames": [
+            "Target Lock"
+          ],
+          "definitionsHash": "18185dcbfe88cb1d18b30423d23e53790070118d62f2a582a418343adc2b0d0c"
+        },
+        {
+          "phase": "Assault Phase",
+          "definitionCount": 7,
+          "definitionNames": [
+            "Indomitable",
+            "Autocannon",
+            "Underbelly Machine Gun",
+            "Hellfire Missiles",
+            "Scatter Missiles",
+            "Haywire Missiles",
+            "Devastating Charge"
+          ],
+          "definitionsHash": "67d284d32390776f299e02c2347521a9854160ccb6ea5a19de5252be97a08786"
+        },
+        {
+          "phase": "Combat Phase",
+          "definitionCount": 1,
+          "definitionNames": [
+            "Stomp"
+          ],
+          "definitionsHash": "880b767936224edb69178e23d4e72bedb5013346eb85ce42613fac4a420f08f9"
+        }
+      ],
+      "combatRange": {
+        "printedValue": "5",
+        "inches": 5
+      },
+      "base": {
+        "shape": "round",
+        "widthMillimetres": 80,
+        "depthMillimetres": 80,
+        "printedBase": "Ø 80MM",
+        "p2pSourceId": "terran_p2p",
+        "p2pSourceContentHash": "afa3f229db61444d0673dea35e31772530a4c39dadaa0e281ba1bae0d271109c"
+      },
+      "geometryStatus": {
+        "status": "source_bound"
+      },
+      "upgradeSide": {
+        "present": true,
+        "definitionCount": 10,
+        "definitionsHash": "b52411c85b7b72bd925e37eeed3cd4bd19b13ae7307942e19e35dad4d50322e9"
+      },
+      "rulesOwnedLayoutFields": [
+        "faction_tag",
+        "army_slot",
+        "phase_boxes",
+        "speed",
+        "supply_profile",
+        "base",
+        "combat_range",
+        "upgrade_side"
+      ],
+      "trainingTruth": false,
+      "profileHash": "bc0c0def65ac06126bb49daf589c01372ca195bb6c2b9515d1791a83463bb380"
+    },
+    {
+      "schema": "starcraft_tmg_official_unit_card_supply_profile_v2",
+      "recordKey": "army_units:high_templar",
+      "sourceRecordHash": "d71f1185838f3b1979767aeabd2b631b51f036e5714ceca2b6d7bd709ad56d29",
+      "payloadHash": "b8995f45f3188d72e89e7b83b704af56fe2f7b4a407903540d9ebe9de09289e5",
+      "unitId": "high_templar",
+      "unitName": "High Templar",
+      "factionTag": "Protoss",
+      "armySlotType": "Support",
+      "sourceUnitType": "Support",
+      "fieldableDuringArmyBuilding": true,
+      "speed": {
+        "printedValue": "4/7",
+        "kind": "split",
+        "multiModelInches": 4,
+        "singleModelInches": 7,
+        "canMoveOrBeRepositioned": true
+      },
+      "supplyProfile": [
+        {
+          "tier": 1,
+          "printedModelCount": "1 - 1",
+          "applicable": true,
+          "minimumModels": 1,
+          "maximumModels": 1,
+          "supply": 0
+        },
+        {
+          "tier": 2,
+          "printedModelCount": "2 - 2",
+          "applicable": true,
+          "minimumModels": 2,
+          "maximumModels": 2,
+          "supply": 1
+        },
+        {
+          "tier": 3,
+          "printedModelCount": "3 - 4",
+          "applicable": true,
+          "minimumModels": 3,
+          "maximumModels": 4,
+          "supply": 2
+        }
+      ],
+      "compositions": [
+        {
+          "kind": "small",
+          "startingModels": 2,
+          "startingSupply": 1,
+          "pointsCost": 130
+        },
+        {
+          "kind": "large",
+          "startingModels": 4,
+          "startingSupply": 2,
+          "pointsCost": 200
+        }
+      ],
+      "phaseBoxes": [
+        {
+          "phase": "Any Phase",
+          "definitionCount": 1,
+          "definitionNames": [
+            "Our Minds as One"
+          ],
+          "definitionsHash": "26bec711c1ad6c0db2c5eb7341ff05f284b5b2bdeb210e411d12890a535e4548"
+        },
+        {
+          "phase": "Movement Phase",
+          "definitionCount": 3,
+          "definitionNames": [
+            "Psionic Storm",
+            "Farsight",
+            "Feedback"
+          ],
+          "definitionsHash": "fd85efeb8eb1f696dd9389687ac3d52c5b67f4bbd6196e217264ee2c6c4895d6"
+        },
+        {
+          "phase": "Assault Phase",
+          "definitionCount": 1,
+          "definitionNames": [
+            "Psi Blast"
+          ],
+          "definitionsHash": "b89e352ec1251e932a6e74fd8f024f3641aeb102e45f1e6824496af7881d45e0"
+        },
+        {
+          "phase": "Combat Phase",
+          "definitionCount": 1,
+          "definitionNames": [
+            "Strike"
+          ],
+          "definitionsHash": "36a98524a4ecb86e766c5927f172356cee2bb3a66be4928c23b0fcb5b2003804"
+        }
+      ],
+      "combatRange": {
+        "printedValue": "4",
+        "inches": 4
+      },
+      "base": {
+        "shape": "round",
+        "widthMillimetres": 40,
+        "depthMillimetres": 40,
+        "printedBase": "Ø 40MM",
+        "p2pSourceId": "protoss_w3",
+        "p2pSourceContentHash": "c5ef1d1e2c953a8c5c376464dff46a51878d8e5ae0c3e8260684afbf1dd5f0aa"
+      },
+      "geometryStatus": {
+        "status": "source_bound"
+      },
+      "upgradeSide": {
+        "present": true,
+        "definitionCount": 6,
+        "definitionsHash": "694df2282974f2db4293f33f2e12bb9481560e342f5b6e6b0b43e827af6063d8"
+      },
+      "rulesOwnedLayoutFields": [
+        "faction_tag",
+        "army_slot",
+        "phase_boxes",
+        "speed",
+        "supply_profile",
+        "base",
+        "combat_range",
+        "upgrade_side"
+      ],
+      "trainingTruth": false,
+      "profileHash": "d3262b2c1f8d415c5bb0931ab43fa0ee0f3f2404da1f43d83d7254e5f0cbc80c"
+    },
+    {
+      "schema": "starcraft_tmg_official_unit_card_supply_profile_v2",
+      "recordKey": "army_units:holo_decoy",
+      "sourceRecordHash": "f7cacc3cfbf8060d3c3703266a4085f0355f541665fb16693807c4d8d460b12c",
+      "payloadHash": "519a89cd6da3b1aa30fb51759ffabd35e9c0a203fcc467f000ab4d82e93652cc",
+      "unitId": "holo_decoy",
+      "unitName": "Holo Decoy",
+      "factionTag": "Terran",
+      "armySlotType": null,
+      "sourceUnitType": "Other",
+      "fieldableDuringArmyBuilding": false,
+      "speed": {
+        "printedValue": "7",
+        "kind": "single",
+        "multiModelInches": 7,
+        "singleModelInches": 7,
+        "canMoveOrBeRepositioned": true
+      },
+      "supplyProfile": [
+        {
+          "tier": 1,
+          "printedModelCount": "-",
+          "applicable": false,
+          "minimumModels": null,
+          "maximumModels": null,
+          "supply": 0
+        },
+        {
+          "tier": 2,
+          "printedModelCount": "1-1",
+          "applicable": true,
+          "minimumModels": 1,
+          "maximumModels": 1,
+          "supply": 0
+        },
+        {
+          "tier": 3,
+          "printedModelCount": "-",
+          "applicable": false,
+          "minimumModels": null,
+          "maximumModels": null,
+          "supply": 0
+        }
+      ],
+      "compositions": [
+        {
+          "kind": "small",
+          "startingModels": 1,
+          "startingSupply": 0,
+          "pointsCost": 0
+        }
+      ],
+      "phaseBoxes": [
+        {
+          "phase": "Any Phase",
+          "definitionCount": 4,
+          "definitionNames": [
+            "Lethal Hologram",
+            "Timed Life",
+            "Decoy",
+            "Surprise!"
+          ],
+          "definitionsHash": "8b150dc6122e4be78f073221fec01bb4caace6a3ec8fdaa68416286a79fa134f"
+        },
+        {
+          "phase": "Movement Phase",
+          "definitionCount": 0,
+          "definitionNames": [],
+          "definitionsHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        {
+          "phase": "Assault Phase",
+          "definitionCount": 0,
+          "definitionNames": [],
+          "definitionsHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        {
+          "phase": "Combat Phase",
+          "definitionCount": 0,
+          "definitionNames": [],
+          "definitionsHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        }
+      ],
+      "combatRange": {
+        "printedValue": "-",
+        "inches": null
+      },
+      "base": {
+        "shape": "round",
+        "widthMillimetres": 32,
+        "depthMillimetres": 32,
+        "printedBase": "Ø 32MM",
+        "p2pSourceId": "terran_w3",
+        "p2pSourceContentHash": "9632f91cdf1b152aca4d7b27aaf54655fe48e10138c73338393b8a62ce1cd154"
+      },
+      "geometryStatus": {
+        "status": "source_bound"
+      },
+      "upgradeSide": {
+        "present": true,
+        "definitionCount": 4,
+        "definitionsHash": "8b150dc6122e4be78f073221fec01bb4caace6a3ec8fdaa68416286a79fa134f"
+      },
+      "rulesOwnedLayoutFields": [
+        "faction_tag",
+        "army_slot",
+        "phase_boxes",
+        "speed",
+        "supply_profile",
+        "base",
+        "combat_range",
+        "upgrade_side"
+      ],
+      "trainingTruth": false,
+      "profileHash": "4917d888018eb52e20b669aca4291bdd29a4760f904b032b1c42901d2910f16c"
+    },
+    {
+      "schema": "starcraft_tmg_official_unit_card_supply_profile_v2",
+      "recordKey": "army_units:hydralisk",
+      "sourceRecordHash": "9803bc91e7c8ca7c2e108e5f2e0b3134a6357904aa8070c5ffc6f59e35937680",
+      "payloadHash": "6da875d545cd93b75122b6b082ad1497ecfefcf47a65fcb5822636776c7cce26",
+      "unitId": "hydralisk",
+      "unitName": "Hydralisk",
+      "factionTag": "Zerg",
+      "armySlotType": "Elite",
+      "sourceUnitType": "Elite",
+      "fieldableDuringArmyBuilding": true,
+      "speed": {
+        "printedValue": "4/8",
+        "kind": "split",
+        "multiModelInches": 4,
+        "singleModelInches": 8,
+        "canMoveOrBeRepositioned": true
+      },
+      "supplyProfile": [
+        {
+          "tier": 1,
+          "printedModelCount": "1 - 1",
+          "applicable": true,
+          "minimumModels": 1,
+          "maximumModels": 1,
+          "supply": 1
+        },
+        {
+          "tier": 2,
+          "printedModelCount": "2 - 2",
+          "applicable": true,
+          "minimumModels": 2,
+          "maximumModels": 2,
+          "supply": 2
+        },
+        {
+          "tier": 3,
+          "printedModelCount": "3 - 4",
+          "applicable": true,
+          "minimumModels": 3,
+          "maximumModels": 4,
+          "supply": 3
+        }
+      ],
+      "compositions": [
+        {
+          "kind": "small",
+          "startingModels": 2,
+          "startingSupply": 2,
+          "pointsCost": 140
+        },
+        {
+          "kind": "large",
+          "startingModels": 4,
+          "startingSupply": 3,
+          "pointsCost": 260
+        }
+      ],
+      "phaseBoxes": [
+        {
+          "phase": "Any Phase",
+          "definitionCount": 3,
+          "definitionNames": [
+            "Squadron",
+            "Ancillary Carapace",
+            "Lurking"
+          ],
+          "definitionsHash": "d7abd6bc5ade33b890acd67f873188336c8802a2b33647bfd8d0dd36da8b8c7d"
+        },
+        {
+          "phase": "Movement Phase",
+          "definitionCount": 1,
+          "definitionNames": [
+            "Burrow Ambush"
+          ],
+          "definitionsHash": "d3d7c12243e120980016813d09464160441305591d5a3f2859c08d324774e5d7"
+        },
+        {
+          "phase": "Assault Phase",
+          "definitionCount": 3,
+          "definitionNames": [
+            "Needle Spines",
+            "Lunge",
+            "Grooved Spines"
+          ],
+          "definitionsHash": "033c38e9d0bbab7c9ea250bc7df3822f6f5354946c80b189b1df08a85e3566ca"
+        },
+        {
+          "phase": "Combat Phase",
+          "definitionCount": 1,
+          "definitionNames": [
+            "Scythe"
+          ],
+          "definitionsHash": "b879f93a9fd4e018eead12e21192f954d49e58b14d6fa5c2e83917526431ba1a"
+        }
+      ],
+      "combatRange": {
+        "printedValue": "5",
+        "inches": 5
+      },
+      "base": {
+        "shape": "rectangle",
+        "widthMillimetres": 40,
+        "depthMillimetres": 100,
+        "printedBase": "40×100MM",
+        "p2pSourceId": "zerg_p2p",
+        "p2pSourceContentHash": "6810f46ee422ac5d8f3cc169c3eda3ccb9551f01ab71a1f7e4ac8c266817b364"
+      },
+      "geometryStatus": {
+        "status": "source_bound"
+      },
+      "upgradeSide": {
+        "present": true,
+        "definitionCount": 8,
+        "definitionsHash": "fef330cdf18bd6f08d91414aee0ea0352ef311197762d5f11b5ebb0f8336958e"
+      },
+      "rulesOwnedLayoutFields": [
+        "faction_tag",
+        "army_slot",
+        "phase_boxes",
+        "speed",
+        "supply_profile",
+        "base",
+        "combat_range",
+        "upgrade_side"
+      ],
+      "trainingTruth": false,
+      "profileHash": "ce63abbd38f86ebe1215b8989c771d660513ba41e0df3f1b4e2f429255f36dbf"
+    },
+    {
+      "schema": "starcraft_tmg_official_unit_card_supply_profile_v2",
+      "recordKey": "army_units:immortal",
+      "sourceRecordHash": "940a1e3e874b9c69d09823a2a833ff22bff6baac538df16aa60bff1adb1f1a92",
+      "payloadHash": "ece87fbd83a1a5f995963734dbde2c4d9cf6b799742f1cf48ef58a9b273ef5f5",
+      "unitId": "immortal",
+      "unitName": "Immortal",
+      "factionTag": "Protoss",
+      "armySlotType": "Elite",
+      "sourceUnitType": "Elite",
+      "fieldableDuringArmyBuilding": true,
+      "speed": {
+        "printedValue": "7",
+        "kind": "single",
+        "multiModelInches": 7,
+        "singleModelInches": 7,
+        "canMoveOrBeRepositioned": true
+      },
+      "supplyProfile": [
+        {
+          "tier": 1,
+          "printedModelCount": "-",
+          "applicable": false,
+          "minimumModels": null,
+          "maximumModels": null,
+          "supply": 0
+        },
+        {
+          "tier": 2,
+          "printedModelCount": "1 - 1",
+          "applicable": true,
+          "minimumModels": 1,
+          "maximumModels": 1,
+          "supply": 2
+        },
+        {
+          "tier": 3,
+          "printedModelCount": "-",
+          "applicable": false,
+          "minimumModels": null,
+          "maximumModels": null,
+          "supply": 0
+        }
+      ],
+      "compositions": [
+        {
+          "kind": "small",
+          "startingModels": 1,
+          "startingSupply": 2,
+          "pointsCost": 280
+        }
+      ],
+      "phaseBoxes": [
+        {
+          "phase": "Any Phase",
+          "definitionCount": 2,
+          "definitionNames": [
+            "Shield Overcharge",
+            "Improved Barrier"
+          ],
+          "definitionsHash": "021021a08d4e5772566eff1ee9da802691481e32a4202d632c52060016525134"
+        },
+        {
+          "phase": "Movement Phase",
+          "definitionCount": 0,
+          "definitionNames": [],
+          "definitionsHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        {
+          "phase": "Assault Phase",
+          "definitionCount": 8,
+          "definitionNames": [
+            "Left Photon Disruptor",
+            "Right Photon Disruptor",
+            "Left Phase Disruptor",
+            "Right Phase Disruptor",
+            "Fury Unyielding",
+            "For the Ancients",
+            "Indomitable",
+            "Devastating Charge"
+          ],
+          "definitionsHash": "e938e0a8f9b1841d6273c3cd2358f2b49c3da501e8ecf199fbf5dabc70b8fae6"
+        },
+        {
+          "phase": "Combat Phase",
+          "definitionCount": 1,
+          "definitionNames": [
+            "Stomp"
+          ],
+          "definitionsHash": "fb216c5e2b69a0c92d055ed4258169b918b8eafa376cd70c6aa702677b116631"
+        }
+      ],
+      "combatRange": {
+        "printedValue": "4",
+        "inches": 4
+      },
+      "base": {
+        "shape": "round",
+        "widthMillimetres": 100,
+        "depthMillimetres": 100,
+        "printedBase": "Ø 100MM",
+        "p2pSourceId": "protoss_w2",
+        "p2pSourceContentHash": "09f6b940a7582719f1527574e22047529e3629d078e479e3baf06c552c99f7fe"
+      },
+      "geometryStatus": {
+        "status": "source_bound"
+      },
+      "upgradeSide": {
+        "present": true,
+        "definitionCount": 11,
+        "definitionsHash": "5049858d096058b2a58c34a607a40f43fb5cac276238122af0a021e93d6180a5"
+      },
+      "rulesOwnedLayoutFields": [
+        "faction_tag",
+        "army_slot",
+        "phase_boxes",
+        "speed",
+        "supply_profile",
+        "base",
+        "combat_range",
+        "upgrade_side"
+      ],
+      "trainingTruth": false,
+      "profileHash": "78b933975179552211ef9fc2a4df1cbd13799f4b96b1a8937710bc559e0debf3"
+    },
+    {
+      "schema": "starcraft_tmg_official_unit_card_supply_profile_v2",
+      "recordKey": "army_units:jim_raynor",
+      "sourceRecordHash": "7ebb93e74361e2a6d90a42aa46b812d67e122d3c83a85bf40ee765a99f55cdaf",
+      "payloadHash": "3f6e5817706c4ecb431036f778ca2ac8d9db46fcf6a023835cf099917762c065",
+      "unitId": "jim_raynor",
+      "unitName": "Jim Raynor",
+      "factionTag": "Terran",
+      "armySlotType": "Hero",
+      "sourceUnitType": "Hero",
+      "fieldableDuringArmyBuilding": true,
+      "speed": {
+        "printedValue": "7",
+        "kind": "single",
+        "multiModelInches": 7,
+        "singleModelInches": 7,
+        "canMoveOrBeRepositioned": true
+      },
+      "supplyProfile": [
+        {
+          "tier": 1,
+          "printedModelCount": "-",
+          "applicable": false,
+          "minimumModels": null,
+          "maximumModels": null,
+          "supply": 0
+        },
+        {
+          "tier": 2,
+          "printedModelCount": "1 - 1",
+          "applicable": true,
+          "minimumModels": 1,
+          "maximumModels": 1,
+          "supply": 1
+        },
+        {
+          "tier": 3,
+          "printedModelCount": "-",
+          "applicable": false,
+          "minimumModels": null,
+          "maximumModels": null,
+          "supply": 0
+        }
+      ],
+      "compositions": [
+        {
+          "kind": "small",
+          "startingModels": 1,
+          "startingSupply": 1,
+          "pointsCost": 280
+        }
+      ],
+      "phaseBoxes": [
+        {
+          "phase": "Any Phase",
+          "definitionCount": 2,
+          "definitionNames": [
+            "Commander",
+            "Freedom Fighters"
+          ],
+          "definitionsHash": "0468d16f7117872f39424a5f8dd04ffdcbe7a6c91ddfbe2bbd40a494bceae0b0"
+        },
+        {
+          "phase": "Movement Phase",
+          "definitionCount": 1,
+          "definitionNames": [
+            "Orders"
+          ],
+          "definitionsHash": "fb8989dedb70f45e60281d1763ab5d3ed76922cb097a3deaa158e449b3419174"
+        },
+        {
+          "phase": "Assault Phase",
+          "definitionCount": 3,
+          "definitionNames": [
+            "Commando Rifle",
+            "C-14 Rifle",
+            "“Justice” Revolver"
+          ],
+          "definitionsHash": "5c56d444b461a1e7890aa59432ee789a772e3783876709f71fd7311b1d5581e8"
+        },
+        {
+          "phase": "Combat Phase",
+          "definitionCount": 1,
+          "definitionNames": [
+            "Bayonet"
+          ],
+          "definitionsHash": "181f156937a4f3a13bf2d6f4e508a78168c8d2f5df4af5b3c3c15827ba0ad1a1"
+        }
+      ],
+      "combatRange": {
+        "printedValue": "4",
+        "inches": 4
+      },
+      "base": {
+        "shape": "round",
+        "widthMillimetres": 40,
+        "depthMillimetres": 40,
+        "printedBase": "Ø 40MM",
+        "p2pSourceId": "terran_p2p",
+        "p2pSourceContentHash": "afa3f229db61444d0673dea35e31772530a4c39dadaa0e281ba1bae0d271109c"
+      },
+      "geometryStatus": {
+        "status": "source_bound"
+      },
+      "upgradeSide": {
+        "present": true,
+        "definitionCount": 7,
+        "definitionsHash": "c3ab360af82e7f30ed1abb434093e0a77e5553f0d738b2e76fcb86e44ac703b1"
+      },
+      "rulesOwnedLayoutFields": [
+        "faction_tag",
+        "army_slot",
+        "phase_boxes",
+        "speed",
+        "supply_profile",
+        "base",
+        "combat_range",
+        "upgrade_side"
+      ],
+      "trainingTruth": false,
+      "profileHash": "a8833234425e44dbae0f5c8aef2d4604ce6b7965299b1db6c91ad16f5fe33cd6"
+    },
+    {
+      "schema": "starcraft_tmg_official_unit_card_supply_profile_v2",
+      "recordKey": "army_units:kerrigan",
+      "sourceRecordHash": "9555e809c6f8f6a764a6469ba8911fa76224f4fc4147e637a9146f8f9de7c7b0",
+      "payloadHash": "58903583a0e4b4a99603e4ea8d1455d8b76c62b464685e4762dc61647992fe69",
+      "unitId": "kerrigan",
+      "unitName": "Kerrigan",
+      "factionTag": "Zerg",
+      "armySlotType": "Hero",
+      "sourceUnitType": "Hero",
+      "fieldableDuringArmyBuilding": true,
+      "speed": {
+        "printedValue": "7",
+        "kind": "single",
+        "multiModelInches": 7,
+        "singleModelInches": 7,
+        "canMoveOrBeRepositioned": true
+      },
+      "supplyProfile": [
+        {
+          "tier": 1,
+          "printedModelCount": "-",
+          "applicable": false,
+          "minimumModels": null,
+          "maximumModels": null,
+          "supply": 0
+        },
+        {
+          "tier": 2,
+          "printedModelCount": "1 - 1",
+          "applicable": true,
+          "minimumModels": 1,
+          "maximumModels": 1,
+          "supply": 1
+        },
+        {
+          "tier": 3,
+          "printedModelCount": "-",
+          "applicable": false,
+          "minimumModels": null,
+          "maximumModels": null,
+          "supply": 0
+        }
+      ],
+      "compositions": [
+        {
+          "kind": "small",
+          "startingModels": 1,
+          "startingSupply": 1,
+          "pointsCost": 250
+        }
+      ],
+      "phaseBoxes": [
+        {
+          "phase": "Any Phase",
+          "definitionCount": 1,
+          "definitionNames": [
+            "Commander"
+          ],
+          "definitionsHash": "89ccca397f284422b3d230a087a05445075dd8f8f46394b76ae21d7761764fbf"
+        },
+        {
+          "phase": "Movement Phase",
+          "definitionCount": 2,
+          "definitionNames": [
+            "Crushing Grip",
+            "Mutating Carapace"
+          ],
+          "definitionsHash": "ab32a14af9828e70f61a257dfcd8768a89e4b207ea8234dd7451988720bcb03b"
+        },
+        {
+          "phase": "Assault Phase",
+          "definitionCount": 3,
+          "definitionNames": [
+            "Energy Blast",
+            "Leaping Strike",
+            "Devastating Charge"
+          ],
+          "definitionsHash": "0b135cd1ff1ad603ca4edaeae85221701c6c70e9c6b43ac3d460796f79668391"
+        },
+        {
+          "phase": "Combat Phase",
+          "definitionCount": 1,
+          "definitionNames": [
+            "Blades"
+          ],
+          "definitionsHash": "2fcd7cd7a5acc65fb8626f44e5cac288bb43072649f65df9672c6dfc8fc4f045"
+        }
+      ],
+      "combatRange": {
+        "printedValue": "2",
+        "inches": 2
+      },
+      "base": {
+        "shape": "round",
+        "widthMillimetres": 40,
+        "depthMillimetres": 40,
+        "printedBase": "Ø 40MM",
+        "p2pSourceId": "zerg_p2p",
+        "p2pSourceContentHash": "6810f46ee422ac5d8f3cc169c3eda3ccb9551f01ab71a1f7e4ac8c266817b364"
+      },
+      "geometryStatus": {
+        "status": "source_bound"
+      },
+      "upgradeSide": {
+        "present": true,
+        "definitionCount": 7,
+        "definitionsHash": "3c40b5eb34225ba377408f1a4fc5040f831bf10363dec5150ea2820fa1440696"
+      },
+      "rulesOwnedLayoutFields": [
+        "faction_tag",
+        "army_slot",
+        "phase_boxes",
+        "speed",
+        "supply_profile",
+        "base",
+        "combat_range",
+        "upgrade_side"
+      ],
+      "trainingTruth": false,
+      "profileHash": "7c30fcddd2356f7933b305694a2968226fa2c2cfa9404c5aa65d7c33c8728027"
+    },
+    {
+      "schema": "starcraft_tmg_official_unit_card_supply_profile_v2",
+      "recordKey": "army_units:kerrigan_swarm_raptor__zergling_",
+      "sourceRecordHash": "c72d5ba03f901c1e8a9b7154c7ba9d3477a76f3d23805b743a2cba4923deb11c",
+      "payloadHash": "5b2c2a97e443c3889d1c1b3243421ddfa4afe1affd8f23f3e20b6fa4a1aa62cf",
+      "unitId": "kerrigan_swarm_raptor__zergling_",
+      "unitName": "Kerrigan Swarm Raptor (Zergling)",
+      "factionTag": "Zerg",
+      "armySlotType": "Elite",
+      "sourceUnitType": "Elite",
+      "fieldableDuringArmyBuilding": true,
+      "speed": {
+        "printedValue": "5/9",
+        "kind": "split",
+        "multiModelInches": 5,
+        "singleModelInches": 9,
+        "canMoveOrBeRepositioned": true
+      },
+      "supplyProfile": [
+        {
+          "tier": 1,
+          "printedModelCount": "1 - 3",
+          "applicable": true,
+          "minimumModels": 1,
+          "maximumModels": 3,
+          "supply": 0
+        },
+        {
+          "tier": 2,
+          "printedModelCount": "4 - 6",
+          "applicable": true,
+          "minimumModels": 4,
+          "maximumModels": 6,
+          "supply": 1
+        },
+        {
+          "tier": 3,
+          "printedModelCount": "-",
+          "applicable": false,
+          "minimumModels": null,
+          "maximumModels": null,
+          "supply": 0
+        }
+      ],
+      "compositions": [
+        {
+          "kind": "small",
+          "startingModels": 6,
+          "startingSupply": 1,
+          "pointsCost": 230
+        }
+      ],
+      "phaseBoxes": [
+        {
+          "phase": "Any Phase",
+          "definitionCount": 2,
+          "definitionNames": [
+            "Squadron",
+            "Raptor Strain"
+          ],
+          "definitionsHash": "32ec2b464089bebd579149d553dd838015da083e458a97e71392f024cf5446ea"
+        },
+        {
+          "phase": "Movement Phase",
+          "definitionCount": 0,
+          "definitionNames": [],
+          "definitionsHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        {
+          "phase": "Assault Phase",
+          "definitionCount": 3,
+          "definitionNames": [
+            "Leap",
+            "Adrenal Overload",
+            "Devastating Charge"
+          ],
+          "definitionsHash": "e0ed0d6bb0fda656b94cbdc533c946e12fde3d420d980fb6a681d60918c08c29"
+        },
+        {
+          "phase": "Combat Phase",
+          "definitionCount": 1,
+          "definitionNames": [
+            "Claws"
+          ],
+          "definitionsHash": "de6de94528be07d55043cb9d38f648aef1942ebc3197f2610552ca5b1d33b122"
+        }
+      ],
+      "combatRange": {
+        "printedValue": "1",
+        "inches": 1
+      },
+      "base": {
+        "shape": "round",
+        "widthMillimetres": 32,
+        "depthMillimetres": 32,
+        "printedBase": "Ø 32MM",
+        "p2pSourceId": "zerg_p2p",
+        "p2pSourceContentHash": "6810f46ee422ac5d8f3cc169c3eda3ccb9551f01ab71a1f7e4ac8c266817b364"
+      },
+      "geometryStatus": {
+        "status": "source_bound"
+      },
+      "upgradeSide": {
+        "present": true,
+        "definitionCount": 6,
+        "definitionsHash": "d479d335c032c91d278f421ceea01015ae03819765a45c3bdb187a3fc4c54767"
+      },
+      "rulesOwnedLayoutFields": [
+        "faction_tag",
+        "army_slot",
+        "phase_boxes",
+        "speed",
+        "supply_profile",
+        "base",
+        "combat_range",
+        "upgrade_side"
+      ],
+      "trainingTruth": false,
+      "profileHash": "e5a0625d3cbb12d18b2274a18734073c65ebbd671a186a13efd8dd470b1e08ac"
+    },
+    {
+      "schema": "starcraft_tmg_official_unit_card_supply_profile_v2",
+      "recordKey": "army_units:marauder",
+      "sourceRecordHash": "f08a3908ca02cc6ecf5f168280079b3442edd1f99189f2dc89fe534e73cba6ee",
+      "payloadHash": "ea1aa6b4e542adafb20637b1ac5727f92e43501d4109150e88e3531fe190c823",
+      "unitId": "marauder",
+      "unitName": "Marauder",
+      "factionTag": "Terran",
+      "armySlotType": "Core",
+      "sourceUnitType": "Core",
+      "fieldableDuringArmyBuilding": true,
+      "speed": {
+        "printedValue": "4/7",
+        "kind": "split",
+        "multiModelInches": 4,
+        "singleModelInches": 7,
+        "canMoveOrBeRepositioned": true
+      },
+      "supplyProfile": [
+        {
+          "tier": 1,
+          "printedModelCount": "1 - 1",
+          "applicable": true,
+          "minimumModels": 1,
+          "maximumModels": 1,
+          "supply": 0
+        },
+        {
+          "tier": 2,
+          "printedModelCount": "2 - 2",
+          "applicable": true,
+          "minimumModels": 2,
+          "maximumModels": 2,
+          "supply": 1
+        },
+        {
+          "tier": 3,
+          "printedModelCount": "3 - 4",
+          "applicable": true,
+          "minimumModels": 3,
+          "maximumModels": 4,
+          "supply": 2
+        }
+      ],
+      "compositions": [
+        {
+          "kind": "small",
+          "startingModels": 2,
+          "startingSupply": 1,
+          "pointsCost": 160
+        },
+        {
+          "kind": "large",
+          "startingModels": 4,
+          "startingSupply": 2,
+          "pointsCost": 290
+        }
+      ],
+      "phaseBoxes": [
+        {
+          "phase": "Any Phase",
+          "definitionCount": 2,
+          "definitionNames": [
+            "Veteran of Tarsonis",
+            "Kinetic Foam"
+          ],
+          "definitionsHash": "d80d1ac4c3ca497901603bf61e407747885af0a11b6bbe639565b35bbc887886"
+        },
+        {
+          "phase": "Movement Phase",
+          "definitionCount": 1,
+          "definitionNames": [
+            "Stimpack"
+          ],
+          "definitionsHash": "efd378f863bb230f65b22018565a0babc9ce78ed1d05953baf888b8dd68bcb24"
+        },
+        {
+          "phase": "Assault Phase",
+          "definitionCount": 3,
+          "definitionNames": [
+            "Quad K12",
+            "Concussive Shells",
+            "Laser Targeting Systems"
+          ],
+          "definitionsHash": "6c5f88cdcab97c73f3f3c40584eb90231ec0811d8e95cdb048110382f324edfa"
+        },
+        {
+          "phase": "Combat Phase",
+          "definitionCount": 1,
+          "definitionNames": [
+            "Strike"
+          ],
+          "definitionsHash": "89f50e19477e666099ca84907bf29c417991610f590551ca0d37af142ea0b177"
+        }
+      ],
+      "combatRange": {
+        "printedValue": "5",
+        "inches": 5
+      },
+      "base": {
+        "shape": "round",
+        "widthMillimetres": 50,
+        "depthMillimetres": 50,
+        "printedBase": "Ø 50MM",
+        "p2pSourceId": "terran_p2p",
+        "p2pSourceContentHash": "afa3f229db61444d0673dea35e31772530a4c39dadaa0e281ba1bae0d271109c"
+      },
+      "geometryStatus": {
+        "status": "source_bound"
+      },
+      "upgradeSide": {
+        "present": true,
+        "definitionCount": 7,
+        "definitionsHash": "ea57133c7d2c4c004edd6baa32da59668aa904da10a6e8576a3d60e8565046b5"
+      },
+      "rulesOwnedLayoutFields": [
+        "faction_tag",
+        "army_slot",
+        "phase_boxes",
+        "speed",
+        "supply_profile",
+        "base",
+        "combat_range",
+        "upgrade_side"
+      ],
+      "trainingTruth": false,
+      "profileHash": "c6716d2517b3760792396ff182b3ddf3af313c4d3776055e4d877671aa8b877a"
+    },
+    {
+      "schema": "starcraft_tmg_official_unit_card_supply_profile_v2",
+      "recordKey": "army_units:marine",
+      "sourceRecordHash": "ced0fdbd3b7c847e87980bcd1af6aa2ba4d8325cf39aca25131698bc06c331aa",
+      "payloadHash": "c615595f9b21f08bdd25b6f2b50a3d96d38177b98e5544572d086bee46a2c87b",
+      "unitId": "marine",
+      "unitName": "Marine",
+      "factionTag": "Terran",
+      "armySlotType": "Core",
+      "sourceUnitType": "Core",
+      "fieldableDuringArmyBuilding": true,
+      "speed": {
+        "printedValue": "4/7",
+        "kind": "split",
+        "multiModelInches": 4,
+        "singleModelInches": 7,
+        "canMoveOrBeRepositioned": true
+      },
+      "supplyProfile": [
+        {
+          "tier": 1,
+          "printedModelCount": "1 - 3",
+          "applicable": true,
+          "minimumModels": 1,
+          "maximumModels": 3,
+          "supply": 0
+        },
+        {
+          "tier": 2,
+          "printedModelCount": "4 - 6",
+          "applicable": true,
+          "minimumModels": 4,
+          "maximumModels": 6,
+          "supply": 1
+        },
+        {
+          "tier": 3,
+          "printedModelCount": "7 - 9",
+          "applicable": true,
+          "minimumModels": 7,
+          "maximumModels": 9,
+          "supply": 2
+        }
+      ],
+      "compositions": [
+        {
+          "kind": "small",
+          "startingModels": 6,
+          "startingSupply": 1,
+          "pointsCost": 170
+        },
+        {
+          "kind": "large",
+          "startingModels": 9,
+          "startingSupply": 2,
+          "pointsCost": 220
+        }
+      ],
+      "phaseBoxes": [
+        {
+          "phase": "Any Phase",
+          "definitionCount": 0,
+          "definitionNames": [],
+          "definitionsHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        {
+          "phase": "Movement Phase",
+          "definitionCount": 2,
+          "definitionNames": [
+            "Stimpack",
+            "Combat Shield"
+          ],
+          "definitionsHash": "839dcc82e0fccabf697bd910e2efd6d976023af70d474e491903eec7c7c148d7"
+        },
+        {
+          "phase": "Assault Phase",
+          "definitionCount": 5,
+          "definitionNames": [
+            "C-14 rifle",
+            "AGG-12",
+            "Rocket Launcher",
+            "Slugthrower",
+            "Grenades - Frag"
+          ],
+          "definitionsHash": "fe8132d2a4bd7ea566d22cc98b3e038a4f64a108cf81f5667122e5af9dca7987"
+        },
+        {
+          "phase": "Combat Phase",
+          "definitionCount": 2,
+          "definitionNames": [
+            "Strike",
+            "Bayonet"
+          ],
+          "definitionsHash": "1277610d48b7fd46c2de4a59ebeedace3801f180b79b7c7422bd4dd6912ad83c"
+        }
+      ],
+      "combatRange": {
+        "printedValue": "4",
+        "inches": 4
+      },
+      "base": {
+        "shape": "round",
+        "widthMillimetres": 32,
+        "depthMillimetres": 32,
+        "printedBase": "Ø 32MM",
+        "p2pSourceId": "terran_p2p",
+        "p2pSourceContentHash": "afa3f229db61444d0673dea35e31772530a4c39dadaa0e281ba1bae0d271109c"
+      },
+      "geometryStatus": {
+        "status": "source_bound"
+      },
+      "upgradeSide": {
+        "present": true,
+        "definitionCount": 9,
+        "definitionsHash": "04f628fec45f18b177994d01c5f9b6520f0bc50960f4f4d3bd8619f9e1561868"
+      },
+      "rulesOwnedLayoutFields": [
+        "faction_tag",
+        "army_slot",
+        "phase_boxes",
+        "speed",
+        "supply_profile",
+        "base",
+        "combat_range",
+        "upgrade_side"
+      ],
+      "trainingTruth": false,
+      "profileHash": "1f250850902142ce6c8227c009c1db03f663c13286809b96c971085da8120d4e"
+    },
+    {
+      "schema": "starcraft_tmg_official_unit_card_supply_profile_v2",
+      "recordKey": "army_units:medic",
+      "sourceRecordHash": "f695baada89edd02b6f7672438aff75817e54851356dfb76680744c1db809852",
+      "payloadHash": "c25d62a7add008b2ffef818e713a3ea21e6842d8a1a8bd2901f74808d9a5e977",
+      "unitId": "medic",
+      "unitName": "Medic",
+      "factionTag": "Terran",
+      "armySlotType": "Support",
+      "sourceUnitType": "Support",
+      "fieldableDuringArmyBuilding": true,
+      "speed": {
+        "printedValue": "4/7",
+        "kind": "split",
+        "multiModelInches": 4,
+        "singleModelInches": 7,
+        "canMoveOrBeRepositioned": true
+      },
+      "supplyProfile": [
+        {
+          "tier": 1,
+          "printedModelCount": "1 - 1",
+          "applicable": true,
+          "minimumModels": 1,
+          "maximumModels": 1,
+          "supply": 0
+        },
+        {
+          "tier": 2,
+          "printedModelCount": "2 - 3",
+          "applicable": true,
+          "minimumModels": 2,
+          "maximumModels": 3,
+          "supply": 1
+        },
+        {
+          "tier": 3,
+          "printedModelCount": "-",
+          "applicable": false,
+          "minimumModels": null,
+          "maximumModels": null,
+          "supply": 0
+        }
+      ],
+      "compositions": [
+        {
+          "kind": "small",
+          "startingModels": 3,
+          "startingSupply": 1,
+          "pointsCost": 120
+        }
+      ],
+      "phaseBoxes": [
+        {
+          "phase": "Any Phase",
+          "definitionCount": 5,
+          "definitionNames": [
+            "Life Support",
+            "Advanced Medic Facilities",
+            "Restoration",
+            "A-13 Flash Grenade Launcher",
+            "Stabilizer Medpacks"
+          ],
+          "definitionsHash": "e51d9668be954144346b4127f4595431350020921f0dfe9cf9c8d3fd75ab01fc"
+        },
+        {
+          "phase": "Movement Phase",
+          "definitionCount": 2,
+          "definitionNames": [
+            "Medpack",
+            "Optical Flare"
+          ],
+          "definitionsHash": "30123a574b29af6ec1da048270007308f93d089bfeff471e9ff1765966ea166d"
+        },
+        {
+          "phase": "Assault Phase",
+          "definitionCount": 0,
+          "definitionNames": [],
+          "definitionsHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        {
+          "phase": "Combat Phase",
+          "definitionCount": 1,
+          "definitionNames": [
+            "Strike"
+          ],
+          "definitionsHash": "f8018ed6ba83e02781fb1a9569231a144f8138148ecfffbdfc0b3b01a5b040f5"
+        }
+      ],
+      "combatRange": {
+        "printedValue": "-",
+        "inches": null
+      },
+      "base": {
+        "shape": "round",
+        "widthMillimetres": 32,
+        "depthMillimetres": 32,
+        "printedBase": "Ø 32MM",
+        "p2pSourceId": "terran_p2p",
+        "p2pSourceContentHash": "afa3f229db61444d0673dea35e31772530a4c39dadaa0e281ba1bae0d271109c"
+      },
+      "geometryStatus": {
+        "status": "source_bound"
+      },
+      "upgradeSide": {
+        "present": true,
+        "definitionCount": 8,
+        "definitionsHash": "0c6338e7ef549c71c817ece827dec95d560a72430a13730ba5bd020289d27911"
+      },
+      "rulesOwnedLayoutFields": [
+        "faction_tag",
+        "army_slot",
+        "phase_boxes",
+        "speed",
+        "supply_profile",
+        "base",
+        "combat_range",
+        "upgrade_side"
+      ],
+      "trainingTruth": false,
+      "profileHash": "695a7d84ce3a20e78078352ee8efc2fdbd5f91274d59ea85ec414f676665c7ae"
+    },
+    {
+      "schema": "starcraft_tmg_official_unit_card_supply_profile_v2",
+      "recordKey": "army_units:nerazim_watchers__adept_",
+      "sourceRecordHash": "2c6e60f4902a61d9e511389c4116ea5458faafe6861a1bd08ab9d22ddda3a924",
+      "payloadHash": "beb547d7a25de1f96ecc92cc7ee78324b946ffce9b74492adab6160f619e8b2f",
+      "unitId": "nerazim_watchers__adept_",
+      "unitName": "Nerazim Watchers (Adept)",
+      "factionTag": "Protoss",
+      "armySlotType": "Core",
+      "sourceUnitType": "Core",
+      "fieldableDuringArmyBuilding": true,
+      "speed": {
+        "printedValue": "5/8",
+        "kind": "split",
+        "multiModelInches": 5,
+        "singleModelInches": 8,
+        "canMoveOrBeRepositioned": true
+      },
+      "supplyProfile": [
+        {
+          "tier": 1,
+          "printedModelCount": "1 - 2",
+          "applicable": true,
+          "minimumModels": 1,
+          "maximumModels": 2,
+          "supply": 0
+        },
+        {
+          "tier": 2,
+          "printedModelCount": "3 - 4",
+          "applicable": true,
+          "minimumModels": 3,
+          "maximumModels": 4,
+          "supply": 1
+        },
+        {
+          "tier": 3,
+          "printedModelCount": "-",
+          "applicable": false,
+          "minimumModels": null,
+          "maximumModels": null,
+          "supply": 0
+        }
+      ],
+      "compositions": [
+        {
+          "kind": "small",
+          "startingModels": 4,
+          "startingSupply": 1,
+          "pointsCost": 210
+        }
+      ],
+      "phaseBoxes": [
+        {
+          "phase": "Any Phase",
+          "definitionCount": 2,
+          "definitionNames": [
+            "Path of Shadows",
+            "Nerazim Farsight"
+          ],
+          "definitionsHash": "f661dac4cc551b1536737e7fcf5588c18fc9fefd901b9f045785ac0345210e8f"
+        },
+        {
+          "phase": "Movement Phase",
+          "definitionCount": 1,
+          "definitionNames": [
+            "Psionic Transfer"
+          ],
+          "definitionsHash": "e3c654505bbb9b6ee85160afc3c38f656b251972463c9fb4ede7b1cc888e4adb"
+        },
+        {
+          "phase": "Assault Phase",
+          "definitionCount": 1,
+          "definitionNames": [
+            "Glaive Cannon"
+          ],
+          "definitionsHash": "659eac056ef001bfae53fe473d3bf5449e5ead208e1648fbb210e4f135f6c6d8"
+        },
+        {
+          "phase": "Combat Phase",
+          "definitionCount": 1,
+          "definitionNames": [
+            "Strike"
+          ],
+          "definitionsHash": "f8018ed6ba83e02781fb1a9569231a144f8138148ecfffbdfc0b3b01a5b040f5"
+        }
+      ],
+      "combatRange": {
+        "printedValue": "5",
+        "inches": 5
+      },
+      "base": {
+        "shape": "round",
+        "widthMillimetres": 40,
+        "depthMillimetres": 40,
+        "printedBase": "Ø 40MM",
+        "p2pSourceId": "protoss_w2",
+        "p2pSourceContentHash": "09f6b940a7582719f1527574e22047529e3629d078e479e3baf06c552c99f7fe"
+      },
+      "geometryStatus": {
+        "status": "source_bound"
+      },
+      "upgradeSide": {
+        "present": true,
+        "definitionCount": 5,
+        "definitionsHash": "3135044c2157a297e7f0c6064e76e083583bad9cdff9874b8bd26a6699493479"
+      },
+      "rulesOwnedLayoutFields": [
+        "faction_tag",
+        "army_slot",
+        "phase_boxes",
+        "speed",
+        "supply_profile",
+        "base",
+        "combat_range",
+        "upgrade_side"
+      ],
+      "trainingTruth": false,
+      "profileHash": "55449bfdffe3ad39eeb0c5ce84746c80493a4b9708eb84a98c02180c69f6bbf7"
+    },
+    {
+      "schema": "starcraft_tmg_official_unit_card_supply_profile_v2",
+      "recordKey": "army_units:nova_assault_mode",
+      "sourceRecordHash": "853987b789d39084bce81c4fd188ec2eda5fa5eb0aca9b8f8f28342ae992aa8e",
+      "payloadHash": "bfd82337e27118315d26810ca9958f346326cb5ae1e8d9da2cf7f7a42ffefe86",
+      "unitId": "nova_assault_mode",
+      "unitName": "Nova Assault Mode",
+      "factionTag": "Terran",
+      "armySlotType": "Hero",
+      "sourceUnitType": "Hero",
+      "fieldableDuringArmyBuilding": true,
+      "speed": {
+        "printedValue": "7",
+        "kind": "single",
+        "multiModelInches": 7,
+        "singleModelInches": 7,
+        "canMoveOrBeRepositioned": true
+      },
+      "supplyProfile": [
+        {
+          "tier": 1,
+          "printedModelCount": "-",
+          "applicable": false,
+          "minimumModels": null,
+          "maximumModels": null,
+          "supply": 0
+        },
+        {
+          "tier": 2,
+          "printedModelCount": "1 - 1",
+          "applicable": true,
+          "minimumModels": 1,
+          "maximumModels": 1,
+          "supply": 1
+        },
+        {
+          "tier": 3,
+          "printedModelCount": "-",
+          "applicable": false,
+          "minimumModels": null,
+          "maximumModels": null,
+          "supply": 0
+        }
+      ],
+      "compositions": [
+        {
+          "kind": "small",
+          "startingModels": 1,
+          "startingSupply": 1,
+          "pointsCost": 260
+        }
+      ],
+      "phaseBoxes": [
+        {
+          "phase": "Any Phase",
+          "definitionCount": 2,
+          "definitionNames": [
+            "Battle Preparation",
+            "Ghost Visor"
+          ],
+          "definitionsHash": "8cf3e4b0a0e8ba265e0f7394ce206195e776132bfe7267063d8676ab2ec0e7bc"
+        },
+        {
+          "phase": "Movement Phase",
+          "definitionCount": 2,
+          "definitionNames": [
+            "Holo Decoy",
+            "Super Stimpack"
+          ],
+          "definitionsHash": "f70e1f5e701e403435c9bd278832878f7691e90fa96e7279ec9e394b3153346e"
+        },
+        {
+          "phase": "Assault Phase",
+          "definitionCount": 3,
+          "definitionNames": [
+            "Hellfire Shotgun",
+            "Phase Reactor Suit",
+            "Devastating Charge"
+          ],
+          "definitionsHash": "42a26bfe8010935539e538478dbb6d9f63532452e9f5819d7910a0015d44eec7"
+        },
+        {
+          "phase": "Combat Phase",
+          "definitionCount": 1,
+          "definitionNames": [
+            "Monomolecular Blade"
+          ],
+          "definitionsHash": "7935e1f3e163dbf1c4f430b54d5da6e95baa5e1d3e3625d442d0ac35ee22fa1f"
+        }
+      ],
+      "combatRange": {
+        "printedValue": "2",
+        "inches": 2
+      },
+      "base": {
+        "shape": "round",
+        "widthMillimetres": 40,
+        "depthMillimetres": 40,
+        "printedBase": "Ø 40MM",
+        "p2pSourceId": "terran_w3",
+        "p2pSourceContentHash": "9632f91cdf1b152aca4d7b27aaf54655fe48e10138c73338393b8a62ce1cd154"
+      },
+      "geometryStatus": {
+        "status": "source_bound"
+      },
+      "upgradeSide": {
+        "present": true,
+        "definitionCount": 8,
+        "definitionsHash": "b6601adc22e065495342a2f73a4e3518ed79a86eef4e6f86f504b8adcfc0dff2"
+      },
+      "rulesOwnedLayoutFields": [
+        "faction_tag",
+        "army_slot",
+        "phase_boxes",
+        "speed",
+        "supply_profile",
+        "base",
+        "combat_range",
+        "upgrade_side"
+      ],
+      "trainingTruth": false,
+      "profileHash": "485d524b11cd16b8422e4822739ec9a9d6249535d698a4bb67f7a84d8dce5b6e"
+    },
+    {
+      "schema": "starcraft_tmg_official_unit_card_supply_profile_v2",
+      "recordKey": "army_units:nova_stealth_mode",
+      "sourceRecordHash": "ed23c7ee0770d35e764085781ff374151014bd37bc3f309a5c3e40014cc2ceec",
+      "payloadHash": "a495361277530076371ba40c5e6af4bdb4faab7cbf8d3af1c792d80f87684e31",
+      "unitId": "nova_stealth_mode",
+      "unitName": "Nova Stealth Mode",
+      "factionTag": "Terran",
+      "armySlotType": "Hero",
+      "sourceUnitType": "Hero",
+      "fieldableDuringArmyBuilding": true,
+      "speed": {
+        "printedValue": "7",
+        "kind": "single",
+        "multiModelInches": 7,
+        "singleModelInches": 7,
+        "canMoveOrBeRepositioned": true
+      },
+      "supplyProfile": [
+        {
+          "tier": 1,
+          "printedModelCount": "-",
+          "applicable": false,
+          "minimumModels": null,
+          "maximumModels": null,
+          "supply": 0
+        },
+        {
+          "tier": 2,
+          "printedModelCount": "1 - 1",
+          "applicable": true,
+          "minimumModels": 1,
+          "maximumModels": 1,
+          "supply": 1
+        },
+        {
+          "tier": 3,
+          "printedModelCount": "-",
+          "applicable": false,
+          "minimumModels": null,
+          "maximumModels": null,
+          "supply": 0
+        }
+      ],
+      "compositions": [
+        {
+          "kind": "small",
+          "startingModels": 1,
+          "startingSupply": 1,
+          "pointsCost": 240
+        }
+      ],
+      "phaseBoxes": [
+        {
+          "phase": "Any Phase",
+          "definitionCount": 3,
+          "definitionNames": [
+            "Battle Preparation",
+            "Tactical Stealth Suit",
+            "Ghost Visor"
+          ],
+          "definitionsHash": "50a687529bb573734840590fbbe9a26a19128194baff4820ab3380eb6fbfa951"
+        },
+        {
+          "phase": "Movement Phase",
+          "definitionCount": 2,
+          "definitionNames": [
+            "Super Stimpack",
+            "Holo Decoy"
+          ],
+          "definitionsHash": "deafc75cc4e1be3358f18cb672661ac24e24e5d8621a1363a1f55fa8f88f2620"
+        },
+        {
+          "phase": "Assault Phase",
+          "definitionCount": 3,
+          "definitionNames": [
+            "C-20A Canister Rifle",
+            "Operational Efficiency",
+            "Head Shot"
+          ],
+          "definitionsHash": "53b7ed94f6b4d67964f0c2e56a0599f32f05a0be651fb7056e9053337d6e58c2"
+        },
+        {
+          "phase": "Combat Phase",
+          "definitionCount": 1,
+          "definitionNames": [
+            "Combat Knife"
+          ],
+          "definitionsHash": "c333e2517187a566f5053f74bf3307889efa0beb46e87f1d54a578697900958d"
+        }
+      ],
+      "combatRange": {
+        "printedValue": "5",
+        "inches": 5
+      },
+      "base": {
+        "shape": "round",
+        "widthMillimetres": 40,
+        "depthMillimetres": 40,
+        "printedBase": "Ø 40MM",
+        "p2pSourceId": "terran_w3",
+        "p2pSourceContentHash": "9632f91cdf1b152aca4d7b27aaf54655fe48e10138c73338393b8a62ce1cd154"
+      },
+      "geometryStatus": {
+        "status": "source_bound"
+      },
+      "upgradeSide": {
+        "present": true,
+        "definitionCount": 9,
+        "definitionsHash": "421b3570fb6c62573f201f1554295b114975752992a094488cbbd23e19d345a6"
+      },
+      "rulesOwnedLayoutFields": [
+        "faction_tag",
+        "army_slot",
+        "phase_boxes",
+        "speed",
+        "supply_profile",
+        "base",
+        "combat_range",
+        "upgrade_side"
+      ],
+      "trainingTruth": false,
+      "profileHash": "1fbfe35ee7dd6f95fb63f4c3e02e5e30dcc56fae962ce0b398dc847b3788e9f5"
+    },
+    {
+      "schema": "starcraft_tmg_official_unit_card_supply_profile_v2",
+      "recordKey": "army_units:omega_worm",
+      "sourceRecordHash": "349b6dc6e3fead1ec361f2bd687acf21880a1c4c03ef9afd7f8d89344def1d70",
+      "payloadHash": "0486fa81efbaeddee60a365bc051aa0a71957b3308c8e955bc689705bc50e812",
+      "unitId": "omega_worm",
+      "unitName": "Omega Worm",
+      "factionTag": "Zerg",
+      "armySlotType": null,
+      "sourceUnitType": "Other",
+      "fieldableDuringArmyBuilding": false,
+      "speed": {
+        "printedValue": "-",
+        "kind": "null",
+        "multiModelInches": null,
+        "singleModelInches": null,
+        "canMoveOrBeRepositioned": false
+      },
+      "supplyProfile": [
+        {
+          "tier": 1,
+          "printedModelCount": "-",
+          "applicable": false,
+          "minimumModels": null,
+          "maximumModels": null,
+          "supply": 0
+        },
+        {
+          "tier": 2,
+          "printedModelCount": "1 - 1",
+          "applicable": true,
+          "minimumModels": 1,
+          "maximumModels": 1,
+          "supply": 0
+        },
+        {
+          "tier": 3,
+          "printedModelCount": "-",
+          "applicable": false,
+          "minimumModels": null,
+          "maximumModels": null,
+          "supply": 0
+        }
+      ],
+      "compositions": [
+        {
+          "kind": "small",
+          "startingModels": 1,
+          "startingSupply": 0,
+          "pointsCost": 0
+        }
+      ],
+      "phaseBoxes": [
+        {
+          "phase": "Any Phase",
+          "definitionCount": 4,
+          "definitionNames": [
+            "Detection",
+            "Source of Creep",
+            "Structure",
+            "Omega Network"
+          ],
+          "definitionsHash": "2c84ce6d1f08e587fea252c68b577872a42374217b75af1104cbc3338eaeddbc"
+        },
+        {
+          "phase": "Movement Phase",
+          "definitionCount": 0,
+          "definitionNames": [],
+          "definitionsHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        {
+          "phase": "Assault Phase",
+          "definitionCount": 0,
+          "definitionNames": [],
+          "definitionsHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        {
+          "phase": "Combat Phase",
+          "definitionCount": 0,
+          "definitionNames": [],
+          "definitionsHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        }
+      ],
+      "combatRange": {
+        "printedValue": "-",
+        "inches": null
+      },
+      "base": {
+        "shape": "round",
+        "widthMillimetres": 80,
+        "depthMillimetres": 80,
+        "printedBase": "Ø 80MM",
+        "p2pSourceId": "zerg_p2p",
+        "p2pSourceContentHash": "6810f46ee422ac5d8f3cc169c3eda3ccb9551f01ab71a1f7e4ac8c266817b364"
+      },
+      "geometryStatus": {
+        "status": "source_bound"
+      },
+      "upgradeSide": {
+        "present": true,
+        "definitionCount": 4,
+        "definitionsHash": "2c84ce6d1f08e587fea252c68b577872a42374217b75af1104cbc3338eaeddbc"
+      },
+      "rulesOwnedLayoutFields": [
+        "faction_tag",
+        "army_slot",
+        "phase_boxes",
+        "speed",
+        "supply_profile",
+        "base",
+        "combat_range",
+        "upgrade_side"
+      ],
+      "trainingTruth": false,
+      "profileHash": "151226ac0e5609bd8c8f1b189711e57eec25aa6b9b2b51c5d81cb35a80808283"
+    },
+    {
+      "schema": "starcraft_tmg_official_unit_card_supply_profile_v2",
+      "recordKey": "army_units:point_defense_drone",
+      "sourceRecordHash": "e8c9a2fb937375b2c33c508c79f5253c7c465179aca2b28b97febc36f8d6c2dc",
+      "payloadHash": "d248d4d7fa6999a9c5c8eb001871c4256c1ee70e42bfbfaf67065ea011081ddf",
+      "unitId": "point_defense_drone",
+      "unitName": "Point Defense Drone",
+      "factionTag": "Terran",
+      "armySlotType": null,
+      "sourceUnitType": "Other",
+      "fieldableDuringArmyBuilding": false,
+      "speed": {
+        "printedValue": "-",
+        "kind": "null",
+        "multiModelInches": null,
+        "singleModelInches": null,
+        "canMoveOrBeRepositioned": false
+      },
+      "supplyProfile": [
+        {
+          "tier": 1,
+          "printedModelCount": "-",
+          "applicable": false,
+          "minimumModels": null,
+          "maximumModels": null,
+          "supply": 0
+        },
+        {
+          "tier": 2,
+          "printedModelCount": "1 - 1",
+          "applicable": true,
+          "minimumModels": 1,
+          "maximumModels": 1,
+          "supply": 0
+        },
+        {
+          "tier": 3,
+          "printedModelCount": "-",
+          "applicable": false,
+          "minimumModels": null,
+          "maximumModels": null,
+          "supply": 0
+        }
+      ],
+      "compositions": [
+        {
+          "kind": "small",
+          "startingModels": 1,
+          "startingSupply": 0,
+          "pointsCost": 0
+        }
+      ],
+      "phaseBoxes": [
+        {
+          "phase": "Any Phase",
+          "definitionCount": 3,
+          "definitionNames": [
+            "Point Defense Laser",
+            "Gliding",
+            "Structure"
+          ],
+          "definitionsHash": "69cde49c5f4eda44d1f7d4d3fb0c53a35f32c06de8f206334be3e3f7c3a72c2c"
+        },
+        {
+          "phase": "Movement Phase",
+          "definitionCount": 0,
+          "definitionNames": [],
+          "definitionsHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        {
+          "phase": "Assault Phase",
+          "definitionCount": 0,
+          "definitionNames": [],
+          "definitionsHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        {
+          "phase": "Combat Phase",
+          "definitionCount": 0,
+          "definitionNames": [],
+          "definitionsHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        }
+      ],
+      "combatRange": {
+        "printedValue": "-",
+        "inches": null
+      },
+      "base": {
+        "shape": "round",
+        "widthMillimetres": 32,
+        "depthMillimetres": 32,
+        "printedBase": "Ø 32MM",
+        "p2pSourceId": "terran_p2p",
+        "p2pSourceContentHash": "afa3f229db61444d0673dea35e31772530a4c39dadaa0e281ba1bae0d271109c"
+      },
+      "geometryStatus": {
+        "status": "source_bound"
+      },
+      "upgradeSide": {
+        "present": true,
+        "definitionCount": 3,
+        "definitionsHash": "69cde49c5f4eda44d1f7d4d3fb0c53a35f32c06de8f206334be3e3f7c3a72c2c"
+      },
+      "rulesOwnedLayoutFields": [
+        "faction_tag",
+        "army_slot",
+        "phase_boxes",
+        "speed",
+        "supply_profile",
+        "base",
+        "combat_range",
+        "upgrade_side"
+      ],
+      "trainingTruth": false,
+      "profileHash": "d8acc6acaa4ed0553fab68361a9eccc7d1e4c500fe693a1292f67458c27da486"
+    },
+    {
+      "schema": "starcraft_tmg_official_unit_card_supply_profile_v2",
+      "recordKey": "army_units:praetor_guard__zealot_",
+      "sourceRecordHash": "aaf0b7d625ba0b25fb70ebddf75673b84bb15bd7d7f8fab7012140f1fbd06797",
+      "payloadHash": "4f4723d03977f37824585144143533007e5f4bd47cc530e6b1dd314af70320ba",
+      "unitId": "praetor_guard__zealot_",
+      "unitName": "Praetor Guard (Zealot)",
+      "factionTag": "Protoss",
+      "armySlotType": "Elite",
+      "sourceUnitType": "Elite",
+      "fieldableDuringArmyBuilding": true,
+      "speed": {
+        "printedValue": "4/7",
+        "kind": "split",
+        "multiModelInches": 4,
+        "singleModelInches": 7,
+        "canMoveOrBeRepositioned": true
+      },
+      "supplyProfile": [
+        {
+          "tier": 1,
+          "printedModelCount": "1 - 1",
+          "applicable": true,
+          "minimumModels": 1,
+          "maximumModels": 1,
+          "supply": 1
+        },
+        {
+          "tier": 2,
+          "printedModelCount": "2 - 3",
+          "applicable": true,
+          "minimumModels": 2,
+          "maximumModels": 3,
+          "supply": 2
+        },
+        {
+          "tier": 3,
+          "printedModelCount": "-",
+          "applicable": false,
+          "minimumModels": null,
+          "maximumModels": null,
+          "supply": 0
+        }
+      ],
+      "compositions": [
+        {
+          "kind": "small",
+          "startingModels": 3,
+          "startingSupply": 2,
+          "pointsCost": 260
+        }
+      ],
+      "phaseBoxes": [
+        {
+          "phase": "Any Phase",
+          "definitionCount": 1,
+          "definitionNames": [
+            "Shield Overcharge"
+          ],
+          "definitionsHash": "efa5bcf0098dbb89d025d018e7bdca12c0a35c3edf6b72f00f7fad673594fa2b"
+        },
+        {
+          "phase": "Movement Phase",
+          "definitionCount": 1,
+          "definitionNames": [
+            "Leg Enhancements"
+          ],
+          "definitionsHash": "b25c2962b7ee7b7f23760c4047cf0eaaa69309ea4fb04d5c3a55c6d89ebb2dcd"
+        },
+        {
+          "phase": "Assault Phase",
+          "definitionCount": 2,
+          "definitionNames": [
+            "Charge",
+            "Devastating Charge"
+          ],
+          "definitionsHash": "fa5862609cb5a84d2f78968b5457de1f7bc8012a2f4136423957ec443813990d"
+        },
+        {
+          "phase": "Combat Phase",
+          "definitionCount": 3,
+          "definitionNames": [
+            "Psi Blades",
+            "Titan Killers",
+            "Precognition"
+          ],
+          "definitionsHash": "f6d1e170c9902d147ad0e116dc1f3c3ee06189ea63c104fed58f3dd5404dc7be"
+        }
+      ],
+      "combatRange": {
+        "printedValue": "1",
+        "inches": 1
+      },
+      "base": {
+        "shape": "round",
+        "widthMillimetres": 40,
+        "depthMillimetres": 40,
+        "printedBase": "Ø 40MM",
+        "p2pSourceId": "protoss_p2p",
+        "p2pSourceContentHash": "4e8547b2df8d545df3d0ebb7d7821521a888dc0437d6f4dde21d82145337a212"
+      },
+      "geometryStatus": {
+        "status": "source_bound"
+      },
+      "upgradeSide": {
+        "present": true,
+        "definitionCount": 7,
+        "definitionsHash": "908126efed5a895e14e95ba6d1c6eb52f43ff61bdb97d9e0923b2482b095ee0c"
+      },
+      "rulesOwnedLayoutFields": [
+        "faction_tag",
+        "army_slot",
+        "phase_boxes",
+        "speed",
+        "supply_profile",
+        "base",
+        "combat_range",
+        "upgrade_side"
+      ],
+      "trainingTruth": false,
+      "profileHash": "ee55a3e760afced65efafa4de3cb362b4b4f3d4e4a59482146eb6bee290d656f"
+    },
+    {
+      "schema": "starcraft_tmg_official_unit_card_supply_profile_v2",
+      "recordKey": "army_units:pylon",
+      "sourceRecordHash": "ffc2e86f75c3e54731691c04e477c3841c44ade1e44955a592359eb5a3dfa687",
+      "payloadHash": "d9ecc9f442fc675c1c2ad6ebb6695e4f9982502e9b2b144f9f760735764d7630",
+      "unitId": "pylon",
+      "unitName": "Pylon",
+      "factionTag": "Protoss",
+      "armySlotType": null,
+      "sourceUnitType": "Other",
+      "fieldableDuringArmyBuilding": false,
+      "speed": {
+        "printedValue": "-",
+        "kind": "null",
+        "multiModelInches": null,
+        "singleModelInches": null,
+        "canMoveOrBeRepositioned": false
+      },
+      "supplyProfile": [
+        {
+          "tier": 1,
+          "printedModelCount": "-",
+          "applicable": false,
+          "minimumModels": null,
+          "maximumModels": null,
+          "supply": 0
+        },
+        {
+          "tier": 2,
+          "printedModelCount": "1 - 1",
+          "applicable": true,
+          "minimumModels": 1,
+          "maximumModels": 1,
+          "supply": 0
+        },
+        {
+          "tier": 3,
+          "printedModelCount": "-",
+          "applicable": false,
+          "minimumModels": null,
+          "maximumModels": null,
+          "supply": 0
+        }
+      ],
+      "compositions": [
+        {
+          "kind": "small",
+          "startingModels": 1,
+          "startingSupply": 0,
+          "pointsCost": 0
+        }
+      ],
+      "phaseBoxes": [
+        {
+          "phase": "Any Phase",
+          "definitionCount": 2,
+          "definitionNames": [
+            "Structure",
+            "Khalai Ingenuity"
+          ],
+          "definitionsHash": "ee981661d1f62708678a5a09b8fa1224286f9150df64f7692668306fca213e97"
+        },
+        {
+          "phase": "Movement Phase",
+          "definitionCount": 1,
+          "definitionNames": [
+            "Warp Conduit"
+          ],
+          "definitionsHash": "633e265a18b0d5b7de5a758afce2300c3524f04323d3fa59a411f666c0c3a74b"
+        },
+        {
+          "phase": "Assault Phase",
+          "definitionCount": 0,
+          "definitionNames": [],
+          "definitionsHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        {
+          "phase": "Combat Phase",
+          "definitionCount": 0,
+          "definitionNames": [],
+          "definitionsHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        }
+      ],
+      "combatRange": {
+        "printedValue": "-",
+        "inches": null
+      },
+      "base": {
+        "shape": "round",
+        "widthMillimetres": 80,
+        "depthMillimetres": 80,
+        "printedBase": "Ø 80MM",
+        "p2pSourceId": "protoss_p2p",
+        "p2pSourceContentHash": "4e8547b2df8d545df3d0ebb7d7821521a888dc0437d6f4dde21d82145337a212"
+      },
+      "geometryStatus": {
+        "status": "source_bound"
+      },
+      "upgradeSide": {
+        "present": true,
+        "definitionCount": 3,
+        "definitionsHash": "6cfb88c4df8a1784f9d9caf8c0910c820b910d8140aaba8f2865ba2c1123edd2"
+      },
+      "rulesOwnedLayoutFields": [
+        "faction_tag",
+        "army_slot",
+        "phase_boxes",
+        "speed",
+        "supply_profile",
+        "base",
+        "combat_range",
+        "upgrade_side"
+      ],
+      "trainingTruth": false,
+      "profileHash": "e8c8d53d3cdadebb2486a3370cbc4d04b8b1c966b4e899cb1caa66fd0d9223ec"
+    },
+    {
+      "schema": "starcraft_tmg_official_unit_card_supply_profile_v2",
+      "recordKey": "army_units:queen",
+      "sourceRecordHash": "67d4658587990405d2ad969e1fad6d77e67f4c1f6552a3ffa216f859b3e19b18",
+      "payloadHash": "918c6954cee7eee015e03b61b1b360ad2c5ced73a58186a5d027b70eff65a31f",
+      "unitId": "queen",
+      "unitName": "Queen",
+      "factionTag": "Zerg",
+      "armySlotType": "Support",
+      "sourceUnitType": "Support",
+      "fieldableDuringArmyBuilding": true,
+      "speed": {
+        "printedValue": "4",
+        "kind": "single",
+        "multiModelInches": 4,
+        "singleModelInches": 4,
+        "canMoveOrBeRepositioned": true
+      },
+      "supplyProfile": [
+        {
+          "tier": 1,
+          "printedModelCount": "-",
+          "applicable": false,
+          "minimumModels": null,
+          "maximumModels": null,
+          "supply": 0
+        },
+        {
+          "tier": 2,
+          "printedModelCount": "1 - 1",
+          "applicable": true,
+          "minimumModels": 1,
+          "maximumModels": 1,
+          "supply": 1
+        },
+        {
+          "tier": 3,
+          "printedModelCount": "-",
+          "applicable": false,
+          "minimumModels": null,
+          "maximumModels": null,
+          "supply": 0
+        }
+      ],
+      "compositions": [
+        {
+          "kind": "small",
+          "startingModels": 1,
+          "startingSupply": 1,
+          "pointsCost": 140
+        }
+      ],
+      "phaseBoxes": [
+        {
+          "phase": "Any Phase",
+          "definitionCount": 5,
+          "definitionNames": [
+            "Spawn Creep Tumor",
+            "Transfusion",
+            "Restoration",
+            "Psionic Link",
+            "Creep Speed"
+          ],
+          "definitionsHash": "4cf6e00321b258d59afd19ec4246e9cc20405070021f81df84e9fe331e956650"
+        },
+        {
+          "phase": "Movement Phase",
+          "definitionCount": 1,
+          "definitionNames": [
+            "Domineering Presence"
+          ],
+          "definitionsHash": "63f01ba55d329bb9c6ed8cd41072b4365eeddefac8ef78c25e11e6955c9a2df9"
+        },
+        {
+          "phase": "Assault Phase",
+          "definitionCount": 3,
+          "definitionNames": [
+            "Talons",
+            "Acid spines",
+            "Devastating Charge"
+          ],
+          "definitionsHash": "2b98d1221df64cc51396474f60af72b2500dc034d9ceacabd9169d0ef4e9c398"
+        },
+        {
+          "phase": "Combat Phase",
+          "definitionCount": 1,
+          "definitionNames": [
+            "Talons"
+          ],
+          "definitionsHash": "c5eb49ebef776416ed9050993e30c943e0270f471a50aa4b93e81ce5f131fe78"
+        }
+      ],
+      "combatRange": {
+        "printedValue": "2",
+        "inches": 2
+      },
+      "base": {
+        "shape": "round",
+        "widthMillimetres": 80,
+        "depthMillimetres": 80,
+        "printedBase": "Ø 80MM",
+        "p2pSourceId": "zerg_p2p",
+        "p2pSourceContentHash": "6810f46ee422ac5d8f3cc169c3eda3ccb9551f01ab71a1f7e4ac8c266817b364"
+      },
+      "geometryStatus": {
+        "status": "source_bound"
+      },
+      "upgradeSide": {
+        "present": true,
+        "definitionCount": 10,
+        "definitionsHash": "5639f1a8439c91ce7cbfaae9d01af49e01a7eaabf06d1b5e6c08e5ec00e8b81d"
+      },
+      "rulesOwnedLayoutFields": [
+        "faction_tag",
+        "army_slot",
+        "phase_boxes",
+        "speed",
+        "supply_profile",
+        "base",
+        "combat_range",
+        "upgrade_side"
+      ],
+      "trainingTruth": false,
+      "profileHash": "0a479ffc563a2aeacda457e0ce63cb7a1adbf9492da9c27662f729269fa10b33"
+    },
+    {
+      "schema": "starcraft_tmg_official_unit_card_supply_profile_v2",
+      "recordKey": "army_units:raptor__zergling_",
+      "sourceRecordHash": "4ff8fe3cef5800813b3b123eacf1c64830ae3604b5215b800ca8d210215efab6",
+      "payloadHash": "15fed892490beffb78c730059c149096676281902437580c792ba72f6fb6b99d",
+      "unitId": "raptor__zergling_",
+      "unitName": "Raptor (Zergling)",
+      "factionTag": "Zerg",
+      "armySlotType": "Elite",
+      "sourceUnitType": "Elite",
+      "fieldableDuringArmyBuilding": true,
+      "speed": {
+        "printedValue": "5/9",
+        "kind": "split",
+        "multiModelInches": 5,
+        "singleModelInches": 9,
+        "canMoveOrBeRepositioned": true
+      },
+      "supplyProfile": [
+        {
+          "tier": 1,
+          "printedModelCount": "1 - 6",
+          "applicable": true,
+          "minimumModels": 1,
+          "maximumModels": 6,
+          "supply": 0
+        },
+        {
+          "tier": 2,
+          "printedModelCount": "7 - 12",
+          "applicable": true,
+          "minimumModels": 7,
+          "maximumModels": 12,
+          "supply": 1
+        },
+        {
+          "tier": 3,
+          "printedModelCount": "13 - 18",
+          "applicable": true,
+          "minimumModels": 13,
+          "maximumModels": 18,
+          "supply": 2
+        }
+      ],
+      "compositions": [
+        {
+          "kind": "small",
+          "startingModels": 12,
+          "startingSupply": 1,
+          "pointsCost": 210
+        },
+        {
+          "kind": "large",
+          "startingModels": 18,
+          "startingSupply": 2,
+          "pointsCost": 260
+        }
+      ],
+      "phaseBoxes": [
+        {
+          "phase": "Any Phase",
+          "definitionCount": 2,
+          "definitionNames": [
+            "Squadron",
+            "Raptor Strain"
+          ],
+          "definitionsHash": "32ec2b464089bebd579149d553dd838015da083e458a97e71392f024cf5446ea"
+        },
+        {
+          "phase": "Movement Phase",
+          "definitionCount": 1,
+          "definitionNames": [
+            "Burrow Ambush"
+          ],
+          "definitionsHash": "c875abc5a63400d59abde8292a63e862fbfc74412195679a9f93771f22a65e01"
+        },
+        {
+          "phase": "Assault Phase",
+          "definitionCount": 3,
+          "definitionNames": [
+            "Adrenal Overload",
+            "Metabolic Boost",
+            "Devastating Charge"
+          ],
+          "definitionsHash": "45a52f0bdb3ea0abd99a67d433aa2b9ee7ca4c32b31d6daccac7f9f836f12265"
+        },
+        {
+          "phase": "Combat Phase",
+          "definitionCount": 3,
+          "definitionNames": [
+            "Claws",
+            "Shredding Claws",
+            "Adrenal Glands"
+          ],
+          "definitionsHash": "eccf6d86932899146e4d2aed694c0e3d9a63376fed55e68df03e05f55fdae580"
+        }
+      ],
+      "combatRange": {
+        "printedValue": "1",
+        "inches": 1
+      },
+      "base": {
+        "shape": "round",
+        "widthMillimetres": 32,
+        "depthMillimetres": 32,
+        "printedBase": "Ø 32MM",
+        "p2pSourceId": "zerg_p2p",
+        "p2pSourceContentHash": "6810f46ee422ac5d8f3cc169c3eda3ccb9551f01ab71a1f7e4ac8c266817b364"
+      },
+      "geometryStatus": {
+        "status": "source_bound"
+      },
+      "upgradeSide": {
+        "present": true,
+        "definitionCount": 9,
+        "definitionsHash": "ef3f7da2ed0373a8a184cacfae6eca87d81097dcfc5ee958c6a2bedba00b08ed"
+      },
+      "rulesOwnedLayoutFields": [
+        "faction_tag",
+        "army_slot",
+        "phase_boxes",
+        "speed",
+        "supply_profile",
+        "base",
+        "combat_range",
+        "upgrade_side"
+      ],
+      "trainingTruth": false,
+      "profileHash": "2f9d00758cc7d1b96bac3713ed9cdbb8c15bfbfe6922509f31480f2d722cc5b4"
+    },
+    {
+      "schema": "starcraft_tmg_official_unit_card_supply_profile_v2",
+      "recordKey": "army_units:ravager",
+      "sourceRecordHash": "d5b2f67a2b7767dfa3d3849ccf0b2d45e70da1eb26027fe1519b149b9f318f58",
+      "payloadHash": "2a063a63dd3efa6dc29e2649d6f72afceb85864e87120c6dd3e5d93e2483dbc8",
+      "unitId": "ravager",
+      "unitName": "Ravager",
+      "factionTag": "Zerg",
+      "armySlotType": "Core",
+      "sourceUnitType": "Core",
+      "fieldableDuringArmyBuilding": true,
+      "speed": {
+        "printedValue": "4/8",
+        "kind": "split",
+        "multiModelInches": 4,
+        "singleModelInches": 8,
+        "canMoveOrBeRepositioned": true
+      },
+      "supplyProfile": [
+        {
+          "tier": 1,
+          "printedModelCount": "-",
+          "applicable": false,
+          "minimumModels": null,
+          "maximumModels": null,
+          "supply": 0
+        },
+        {
+          "tier": 2,
+          "printedModelCount": "1 - 1",
+          "applicable": true,
+          "minimumModels": 1,
+          "maximumModels": 1,
+          "supply": 1
+        },
+        {
+          "tier": 3,
+          "printedModelCount": "2 - 2",
+          "applicable": true,
+          "minimumModels": 2,
+          "maximumModels": 2,
+          "supply": 2
+        }
+      ],
+      "compositions": [
+        {
+          "kind": "small",
+          "startingModels": 1,
+          "startingSupply": 1,
+          "pointsCost": 160
+        },
+        {
+          "kind": "large",
+          "startingModels": 2,
+          "startingSupply": 2,
+          "pointsCost": 270
+        }
+      ],
+      "phaseBoxes": [
+        {
+          "phase": "Any Phase",
+          "definitionCount": 2,
+          "definitionNames": [
+            "Squadron",
+            "Bloated Bile Ducts"
+          ],
+          "definitionsHash": "cce157af41a560efa399c4e74a2622e41fcded196432a5f4008304fa2077f88e"
+        },
+        {
+          "phase": "Movement Phase",
+          "definitionCount": 3,
+          "definitionNames": [
+            "Corrosive Bile",
+            "Deep Tunnel",
+            "Burrow Ambush"
+          ],
+          "definitionsHash": "bb7a6f208a42eeab8d2f69e10138700e854a060ace90c805e8d8416b513c9936"
+        },
+        {
+          "phase": "Assault Phase",
+          "definitionCount": 3,
+          "definitionNames": [
+            "Plasma Discharge",
+            "Potent Bile",
+            "Devastating Charge"
+          ],
+          "definitionsHash": "802207f105cd5c531801fc7ee3fcf099430e5d1d873748481cf497610a0647db"
+        },
+        {
+          "phase": "Combat Phase",
+          "definitionCount": 1,
+          "definitionNames": [
+            "Claws"
+          ],
+          "definitionsHash": "be27cda1017a30c12beecbc0f40b3c8be95a5d7955e0df6a9c5fdbfcf7ea7251"
+        }
+      ],
+      "combatRange": {
+        "printedValue": "5",
+        "inches": 5
+      },
+      "base": {
+        "shape": "round",
+        "widthMillimetres": 80,
+        "depthMillimetres": 80,
+        "printedBase": "Ø 80MM",
+        "p2pSourceId": "zerg_w2",
+        "p2pSourceContentHash": "b62e9bba04cb54df2a77c36378fc8113f10acf528ae2f8b1ad884a81c0f75045"
+      },
+      "geometryStatus": {
+        "status": "source_bound"
+      },
+      "upgradeSide": {
+        "present": true,
+        "definitionCount": 9,
+        "definitionsHash": "721419d3c0b6e431cbed2b0790b687bd9761afee8576435f553d4e7bf18cdd71"
+      },
+      "rulesOwnedLayoutFields": [
+        "faction_tag",
+        "army_slot",
+        "phase_boxes",
+        "speed",
+        "supply_profile",
+        "base",
+        "combat_range",
+        "upgrade_side"
+      ],
+      "trainingTruth": false,
+      "profileHash": "ebdf94ca8cfd22e89f6dc74a7dcf33ca75299e25133f668fdc6104e99f80653f"
+    },
+    {
+      "schema": "starcraft_tmg_official_unit_card_supply_profile_v2",
+      "recordKey": "army_units:raven",
+      "sourceRecordHash": "5482593ea8e36d7dc7757e41607c8f879b57746b0f0d699ec27ac6519df823bb",
+      "payloadHash": "91c229018f013bbba1bc97ea0137b7b166e9b1359706bf732884dfb0e0a64504",
+      "unitId": "raven",
+      "unitName": "Raven",
+      "factionTag": "Terran",
+      "armySlotType": "Support",
+      "sourceUnitType": "Support",
+      "fieldableDuringArmyBuilding": true,
+      "speed": {
+        "printedValue": "7",
+        "kind": "single",
+        "multiModelInches": 7,
+        "singleModelInches": 7,
+        "canMoveOrBeRepositioned": true
+      },
+      "supplyProfile": [
+        {
+          "tier": 1,
+          "printedModelCount": "-",
+          "applicable": false,
+          "minimumModels": null,
+          "maximumModels": null,
+          "supply": 0
+        },
+        {
+          "tier": 2,
+          "printedModelCount": "1 - 1",
+          "applicable": true,
+          "minimumModels": 1,
+          "maximumModels": 1,
+          "supply": 1
+        },
+        {
+          "tier": 3,
+          "printedModelCount": "-",
+          "applicable": false,
+          "minimumModels": null,
+          "maximumModels": null,
+          "supply": 0
+        }
+      ],
+      "compositions": [
+        {
+          "kind": "small",
+          "startingModels": 1,
+          "startingSupply": 1,
+          "pointsCost": 170
+        }
+      ],
+      "phaseBoxes": [
+        {
+          "phase": "Any Phase",
+          "definitionCount": 2,
+          "definitionNames": [
+            "Detection",
+            "Corvid Reactor"
+          ],
+          "definitionsHash": "6fedbf169b0a553a3e408b3fb5fbd10afae100cd3fc7a6cc18ef8539cdc49941"
+        },
+        {
+          "phase": "Movement Phase",
+          "definitionCount": 4,
+          "definitionNames": [
+            "Internal Tech Module",
+            "Deploy Auto-Turret",
+            "Anti-Armour Missile",
+            "Seeker Missile"
+          ],
+          "definitionsHash": "686a2072bbcbd17574f1ce311d64fe4cb6071429640285fe82e53087ca2bff58"
+        },
+        {
+          "phase": "Assault Phase",
+          "definitionCount": 2,
+          "definitionNames": [
+            "Railguns",
+            "Explosive Shrapnel Shells"
+          ],
+          "definitionsHash": "3f894ddeff308c5272f234d279c989de93b685549fa2b2b79ae7bb1a5eceea7d"
+        },
+        {
+          "phase": "Combat Phase",
+          "definitionCount": 0,
+          "definitionNames": [],
+          "definitionsHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        }
+      ],
+      "combatRange": {
+        "printedValue": "4",
+        "inches": 4
+      },
+      "base": null,
+      "geometryStatus": {
+        "status": "source_missing",
+        "reason": "FLIGHT_STAND_PHYSICAL_FOOTPRINT_UNSPECIFIED",
+        "sourceRefs": [
+          {
+            "sourceId": "terran_w3",
+            "pdfPage": 6,
+            "printedBase": "FLIGHT STAND"
+          },
+          {
+            "ref": "build/ticket-28-wave3-source-candidate-20261112-v1/raw/StarCraft-Terran-Raven_EN.pdf",
+            "byteHash": "1444373de1db0180388a19accc6643532a72e8ccd0883b0179e09ce2a5653cfd",
+            "pdfPage": 2,
+            "note": "base 40mm listed in shared kit; Auto-Turret final assembly page specifies 40mm. Raven flight stand footprint not dimensioned."
+          }
+        ]
+      },
+      "upgradeSide": {
+        "present": true,
+        "definitionCount": 8,
+        "definitionsHash": "75fa3b071971bd1dfa9fd39842d31c7a116812bff456a720b7d2d6648a472abc"
+      },
+      "rulesOwnedLayoutFields": [
+        "faction_tag",
+        "army_slot",
+        "phase_boxes",
+        "speed",
+        "supply_profile",
+        "base",
+        "combat_range",
+        "upgrade_side"
+      ],
+      "trainingTruth": false,
+      "profileHash": "fb133b93240d7ac41539a1b5a930e1874a921074d4e7660de4e6f814ff6c83bd"
+    },
+    {
+      "schema": "starcraft_tmg_official_unit_card_supply_profile_v2",
+      "recordKey": "army_units:raynor_s_raider__marine_",
+      "sourceRecordHash": "f293e94be33773a11bb8a7ca535c1ae62e0780f646842fd02f4fef43b190486e",
+      "payloadHash": "efaf829f4c56914d171a071b27e6743f4a3abf94f00645b1b90abd5d37a289ec",
+      "unitId": "raynor_s_raider__marine_",
+      "unitName": "Raynor's Raider (Marine)",
+      "factionTag": "Terran",
+      "armySlotType": "Core",
+      "sourceUnitType": "Core",
+      "fieldableDuringArmyBuilding": true,
+      "speed": {
+        "printedValue": "4/7",
+        "kind": "split",
+        "multiModelInches": 4,
+        "singleModelInches": 7,
+        "canMoveOrBeRepositioned": true
+      },
+      "supplyProfile": [
+        {
+          "tier": 1,
+          "printedModelCount": "-",
+          "applicable": false,
+          "minimumModels": null,
+          "maximumModels": null,
+          "supply": 0
+        },
+        {
+          "tier": 2,
+          "printedModelCount": "1 - 6",
+          "applicable": true,
+          "minimumModels": 1,
+          "maximumModels": 6,
+          "supply": 1
+        },
+        {
+          "tier": 3,
+          "printedModelCount": "-",
+          "applicable": false,
+          "minimumModels": null,
+          "maximumModels": null,
+          "supply": 0
+        }
+      ],
+      "compositions": [
+        {
+          "kind": "small",
+          "startingModels": 6,
+          "startingSupply": 1,
+          "pointsCost": 230
+        }
+      ],
+      "phaseBoxes": [
+        {
+          "phase": "Any Phase",
+          "definitionCount": 0,
+          "definitionNames": [],
+          "definitionsHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        {
+          "phase": "Movement Phase",
+          "definitionCount": 3,
+          "definitionNames": [
+            "Stimpack",
+            "Raiders Roll!",
+            "Rapid Reinforcements"
+          ],
+          "definitionsHash": "9e3181626901225612ba3f54a46048bfee8b378c0717c1895df00fb095634d39"
+        },
+        {
+          "phase": "Assault Phase",
+          "definitionCount": 3,
+          "definitionNames": [
+            "C-14 rifle",
+            "Slugthrower",
+            "Grenades - Frag"
+          ],
+          "definitionsHash": "370ac2a39f30d132ea205b5af978693d392e8dcdae947a97bfa804a70702076d"
+        },
+        {
+          "phase": "Combat Phase",
+          "definitionCount": 1,
+          "definitionNames": [
+            "Bayonet"
+          ],
+          "definitionsHash": "b9e55d482064975497ce3c20655836bbe4c6846cf89ee232c4c194e701ab5162"
+        }
+      ],
+      "combatRange": {
+        "printedValue": "4",
+        "inches": 4
+      },
+      "base": {
+        "shape": "round",
+        "widthMillimetres": 32,
+        "depthMillimetres": 32,
+        "printedBase": "Ø 32MM",
+        "p2pSourceId": "terran_p2p",
+        "p2pSourceContentHash": "afa3f229db61444d0673dea35e31772530a4c39dadaa0e281ba1bae0d271109c"
+      },
+      "geometryStatus": {
+        "status": "source_bound"
+      },
+      "upgradeSide": {
+        "present": true,
+        "definitionCount": 7,
+        "definitionsHash": "c36795ef5c52722d9685dd765e1b3ec007a2f5c444b79d4c7f44c25dc11d78d9"
+      },
+      "rulesOwnedLayoutFields": [
+        "faction_tag",
+        "army_slot",
+        "phase_boxes",
+        "speed",
+        "supply_profile",
+        "base",
+        "combat_range",
+        "upgrade_side"
+      ],
+      "trainingTruth": false,
+      "profileHash": "f554de303e6de8e92b5dfdf648ddaa36a7bdda57f7fcde698670888a086058b8"
+    },
+    {
+      "schema": "starcraft_tmg_official_unit_card_supply_profile_v2",
+      "recordKey": "army_units:roach",
+      "sourceRecordHash": "e899d2a7b5f1a65f2c356d5c38badcae1632fdc64b05f4761b3191e4b07a6d0c",
+      "payloadHash": "c0cdf85c665fe0ed5c0dc7786c3449f471c7666d28a4605cf8c332b7a3f82941",
+      "unitId": "roach",
+      "unitName": "Roach",
+      "factionTag": "Zerg",
+      "armySlotType": "Core",
+      "sourceUnitType": "Core",
+      "fieldableDuringArmyBuilding": true,
+      "speed": {
+        "printedValue": "4/7",
+        "kind": "split",
+        "multiModelInches": 4,
+        "singleModelInches": 7,
+        "canMoveOrBeRepositioned": true
+      },
+      "supplyProfile": [
+        {
+          "tier": 1,
+          "printedModelCount": "1 - 1",
+          "applicable": true,
+          "minimumModels": 1,
+          "maximumModels": 1,
+          "supply": 0
+        },
+        {
+          "tier": 2,
+          "printedModelCount": "2 - 3",
+          "applicable": true,
+          "minimumModels": 2,
+          "maximumModels": 3,
+          "supply": 1
+        },
+        {
+          "tier": 3,
+          "printedModelCount": "-",
+          "applicable": false,
+          "minimumModels": null,
+          "maximumModels": null,
+          "supply": 0
+        }
+      ],
+      "compositions": [
+        {
+          "kind": "small",
+          "startingModels": 3,
+          "startingSupply": 1,
+          "pointsCost": 170
+        }
+      ],
+      "phaseBoxes": [
+        {
+          "phase": "Any Phase",
+          "definitionCount": 2,
+          "definitionNames": [
+            "Burrow",
+            "Tunneling Claws"
+          ],
+          "definitionsHash": "4173ce6cbf567ed4c34e85a6b1697bb3188fd827ab36edf81de93f874aad377f"
+        },
+        {
+          "phase": "Movement Phase",
+          "definitionCount": 2,
+          "definitionNames": [
+            "Burrow Ambush",
+            "Glial Reconstitution"
+          ],
+          "definitionsHash": "6d77895fadcfd5579944d23f34a68c62da26e0af8e61d342f2d9ba702f356163"
+        },
+        {
+          "phase": "Assault Phase",
+          "definitionCount": 4,
+          "definitionNames": [
+            "Acid Saliva",
+            "Regeneration",
+            "Hydriodic Bile",
+            "Devastating Charge"
+          ],
+          "definitionsHash": "387e0aa8ffeb08237ec8ccdae83b6154a80a296c7ac3452d53b4b4e594cdc159"
+        },
+        {
+          "phase": "Combat Phase",
+          "definitionCount": 1,
+          "definitionNames": [
+            "Claws"
+          ],
+          "definitionsHash": "c23a9ada54e3320d93cef9ec331898d7adb6d259188ef4813d3291b8c4d7cc90"
+        }
+      ],
+      "combatRange": {
+        "printedValue": "2",
+        "inches": 2
+      },
+      "base": {
+        "shape": "round",
+        "widthMillimetres": 50,
+        "depthMillimetres": 50,
+        "printedBase": "Ø 50MM",
+        "p2pSourceId": "zerg_p2p",
+        "p2pSourceContentHash": "6810f46ee422ac5d8f3cc169c3eda3ccb9551f01ab71a1f7e4ac8c266817b364"
+      },
+      "geometryStatus": {
+        "status": "source_bound"
+      },
+      "upgradeSide": {
+        "present": true,
+        "definitionCount": 9,
+        "definitionsHash": "278d2dafebf156c163cefb34e6f5f342826c2684e4aba9afe4e3cc6ad469d6ef"
+      },
+      "rulesOwnedLayoutFields": [
+        "faction_tag",
+        "army_slot",
+        "phase_boxes",
+        "speed",
+        "supply_profile",
+        "base",
+        "combat_range",
+        "upgrade_side"
+      ],
+      "trainingTruth": false,
+      "profileHash": "df9be2a0e68c63d2a06b32a66f00f9d57b03af4ef046766fa0a3df5dcb9e074d"
+    },
+    {
+      "schema": "starcraft_tmg_official_unit_card_supply_profile_v2",
+      "recordKey": "army_units:roachling",
+      "sourceRecordHash": "dad7c2a3e2d41c9b3548051528766315de0b3317f9c6c6dfb7a3c88adfa1aac6",
+      "payloadHash": "798f976c444281d665eebf4e2223a13f089a91e874a5c327f7bebfef1499a02f",
+      "unitId": "roachling",
+      "unitName": "Roachling",
+      "factionTag": "Zerg",
+      "armySlotType": null,
+      "sourceUnitType": "Other",
+      "fieldableDuringArmyBuilding": false,
+      "speed": {
+        "printedValue": "4/7",
+        "kind": "split",
+        "multiModelInches": 4,
+        "singleModelInches": 7,
+        "canMoveOrBeRepositioned": true
+      },
+      "supplyProfile": [
+        {
+          "tier": 1,
+          "printedModelCount": "-",
+          "applicable": false,
+          "minimumModels": null,
+          "maximumModels": null,
+          "supply": 0
+        },
+        {
+          "tier": 2,
+          "printedModelCount": "1 - 3",
+          "applicable": true,
+          "minimumModels": 1,
+          "maximumModels": 3,
+          "supply": 0
+        },
+        {
+          "tier": 3,
+          "printedModelCount": "-",
+          "applicable": false,
+          "minimumModels": null,
+          "maximumModels": null,
+          "supply": 0
+        }
+      ],
+      "compositions": [
+        {
+          "kind": "small",
+          "startingModels": 3,
+          "startingSupply": 0,
+          "pointsCost": 0
+        }
+      ],
+      "phaseBoxes": [
+        {
+          "phase": "Any Phase",
+          "definitionCount": 1,
+          "definitionNames": [
+            "Underdeveloped Claws"
+          ],
+          "definitionsHash": "c2ad035da325b5849eaa308e514e5386537ad5c956b43d543f2a5bdf490ca583"
+        },
+        {
+          "phase": "Movement Phase",
+          "definitionCount": 0,
+          "definitionNames": [],
+          "definitionsHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        {
+          "phase": "Assault Phase",
+          "definitionCount": 0,
+          "definitionNames": [],
+          "definitionsHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        {
+          "phase": "Combat Phase",
+          "definitionCount": 1,
+          "definitionNames": [
+            "Claws"
+          ],
+          "definitionsHash": "c23a9ada54e3320d93cef9ec331898d7adb6d259188ef4813d3291b8c4d7cc90"
+        }
+      ],
+      "combatRange": {
+        "printedValue": "1",
+        "inches": 1
+      },
+      "base": {
+        "shape": "round",
+        "widthMillimetres": 32,
+        "depthMillimetres": 32,
+        "printedBase": "Ø 32MM",
+        "p2pSourceId": "zerg_p2p",
+        "p2pSourceContentHash": "6810f46ee422ac5d8f3cc169c3eda3ccb9551f01ab71a1f7e4ac8c266817b364"
+      },
+      "geometryStatus": {
+        "status": "source_bound"
+      },
+      "upgradeSide": {
+        "present": true,
+        "definitionCount": 2,
+        "definitionsHash": "66a2f869b6e0b5e5404dff95997c22ff3b2a6113d23552addc4d4361d2458fed"
+      },
+      "rulesOwnedLayoutFields": [
+        "faction_tag",
+        "army_slot",
+        "phase_boxes",
+        "speed",
+        "supply_profile",
+        "base",
+        "combat_range",
+        "upgrade_side"
+      ],
+      "trainingTruth": false,
+      "profileHash": "a41f04bbe7b940ced9aadf1078788daaa5b9870f82faeae86f48db23fb1dd1c6"
+    },
+    {
+      "schema": "starcraft_tmg_official_unit_card_supply_profile_v2",
+      "recordKey": "army_units:sabotage_drone",
+      "sourceRecordHash": "dc0f4088847feea1afefc1866f790d7dea5cddc47922b1b185176a07625ff3cc",
+      "payloadHash": "09a68fdc2079dbc63b0fd560c9f7a3e267b137a2d1910a42be4f11bb0ff2f1c7",
+      "unitId": "sabotage_drone",
+      "unitName": "Sabotage Drone",
+      "factionTag": "Terran",
+      "armySlotType": null,
+      "sourceUnitType": "Other",
+      "fieldableDuringArmyBuilding": false,
+      "speed": {
+        "printedValue": "-",
+        "kind": "null",
+        "multiModelInches": null,
+        "singleModelInches": null,
+        "canMoveOrBeRepositioned": false
+      },
+      "supplyProfile": [
+        {
+          "tier": 1,
+          "printedModelCount": "-",
+          "applicable": false,
+          "minimumModels": null,
+          "maximumModels": null,
+          "supply": 0
+        },
+        {
+          "tier": 2,
+          "printedModelCount": "1-1",
+          "applicable": true,
+          "minimumModels": 1,
+          "maximumModels": 1,
+          "supply": 0
+        },
+        {
+          "tier": 3,
+          "printedModelCount": "-",
+          "applicable": false,
+          "minimumModels": null,
+          "maximumModels": null,
+          "supply": 0
+        }
+      ],
+      "compositions": [
+        {
+          "kind": "small",
+          "startingModels": 1,
+          "startingSupply": 0,
+          "pointsCost": 0
+        }
+      ],
+      "phaseBoxes": [
+        {
+          "phase": "Any Phase",
+          "definitionCount": 1,
+          "definitionNames": [
+            "Structure"
+          ],
+          "definitionsHash": "9604c0029df7643d642a27cf4947870976be2c157a3162dacbd1db757c0cee6e"
+        },
+        {
+          "phase": "Movement Phase",
+          "definitionCount": 0,
+          "definitionNames": [],
+          "definitionsHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        {
+          "phase": "Assault Phase",
+          "definitionCount": 1,
+          "definitionNames": [
+            "Have a Nice Day"
+          ],
+          "definitionsHash": "327cc9f7f94b5af2b21754b09b67a0d205d3e05ac6f2b5631b8d2d179d690446"
+        },
+        {
+          "phase": "Combat Phase",
+          "definitionCount": 0,
+          "definitionNames": [],
+          "definitionsHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        }
+      ],
+      "combatRange": {
+        "printedValue": "-",
+        "inches": null
+      },
+      "base": {
+        "shape": "round",
+        "widthMillimetres": 40,
+        "depthMillimetres": 40,
+        "printedBase": "Ø 40MM",
+        "p2pSourceId": "terran_w3",
+        "p2pSourceContentHash": "9632f91cdf1b152aca4d7b27aaf54655fe48e10138c73338393b8a62ce1cd154"
+      },
+      "geometryStatus": {
+        "status": "source_bound"
+      },
+      "upgradeSide": {
+        "present": true,
+        "definitionCount": 2,
+        "definitionsHash": "8cb9826729f92b327aa5e352c4656219c78270fca6db4672b01233ee6d1f04e3"
+      },
+      "rulesOwnedLayoutFields": [
+        "faction_tag",
+        "army_slot",
+        "phase_boxes",
+        "speed",
+        "supply_profile",
+        "base",
+        "combat_range",
+        "upgrade_side"
+      ],
+      "trainingTruth": false,
+      "profileHash": "b3fbc7116c1c9a99eb7f7f5fce36779331f8e930784039d0439440a6e47a634b"
+    },
+    {
+      "schema": "starcraft_tmg_official_unit_card_supply_profile_v2",
+      "recordKey": "army_units:sentry",
+      "sourceRecordHash": "53a8abb9f5d7ae92d0dc6c230dadf73bc21b17af955e69a80685c6374f000269",
+      "payloadHash": "924d1af5180ed4faf5fc3140fbc1b697cbe7f4ad44e6f7554f2bdf1c6c877435",
+      "unitId": "sentry",
+      "unitName": "Sentry",
+      "factionTag": "Protoss",
+      "armySlotType": "Support",
+      "sourceUnitType": "Support",
+      "fieldableDuringArmyBuilding": true,
+      "speed": {
+        "printedValue": "4/7",
+        "kind": "split",
+        "multiModelInches": 4,
+        "singleModelInches": 7,
+        "canMoveOrBeRepositioned": true
+      },
+      "supplyProfile": [
+        {
+          "tier": 1,
+          "printedModelCount": "1 - 1",
+          "applicable": true,
+          "minimumModels": 1,
+          "maximumModels": 1,
+          "supply": 0
+        },
+        {
+          "tier": 2,
+          "printedModelCount": "2 - 2",
+          "applicable": true,
+          "minimumModels": 2,
+          "maximumModels": 2,
+          "supply": 1
+        },
+        {
+          "tier": 3,
+          "printedModelCount": "-",
+          "applicable": false,
+          "minimumModels": null,
+          "maximumModels": null,
+          "supply": 0
+        }
+      ],
+      "compositions": [
+        {
+          "kind": "small",
+          "startingModels": 2,
+          "startingSupply": 1,
+          "pointsCost": 130
+        }
+      ],
+      "phaseBoxes": [
+        {
+          "phase": "Any Phase",
+          "definitionCount": 1,
+          "definitionNames": [
+            "Restoration"
+          ],
+          "definitionsHash": "e0ecc043bc89ddce2bfddfde4c6326e4d04d440c023477fa9e16e65f9ef9df25"
+        },
+        {
+          "phase": "Movement Phase",
+          "definitionCount": 3,
+          "definitionNames": [
+            "Force Field",
+            "Guardian Shield",
+            "Solid-Field Projectors"
+          ],
+          "definitionsHash": "4b7871c4560a45dc2c325518fc0bf628409434603ee8dc35ec1339b16472d667"
+        },
+        {
+          "phase": "Assault Phase",
+          "definitionCount": 2,
+          "definitionNames": [
+            "Disruption Beam",
+            "Hallucination"
+          ],
+          "definitionsHash": "65a6b87b6e7b122da641a1ab82bb5cc55e3b3a0c010b4c4c4f148c6f447958e6"
+        },
+        {
+          "phase": "Combat Phase",
+          "definitionCount": 1,
+          "definitionNames": [
+            "Beam"
+          ],
+          "definitionsHash": "4afdfc3fe3de68909cb12a00c3d910d3e99400b127ffa92601915a7c828089dc"
+        }
+      ],
+      "combatRange": {
+        "printedValue": "4",
+        "inches": 4
+      },
+      "base": {
+        "shape": "round",
+        "widthMillimetres": 50,
+        "depthMillimetres": 50,
+        "printedBase": "Ø 50MM",
+        "p2pSourceId": "protoss_p2p",
+        "p2pSourceContentHash": "4e8547b2df8d545df3d0ebb7d7821521a888dc0437d6f4dde21d82145337a212"
+      },
+      "geometryStatus": {
+        "status": "source_bound"
+      },
+      "upgradeSide": {
+        "present": true,
+        "definitionCount": 7,
+        "definitionsHash": "cf8da0c56da3de98b1f9247e506568f620f3cb6e7002fc389af74f6eda979899"
+      },
+      "rulesOwnedLayoutFields": [
+        "faction_tag",
+        "army_slot",
+        "phase_boxes",
+        "speed",
+        "supply_profile",
+        "base",
+        "combat_range",
+        "upgrade_side"
+      ],
+      "trainingTruth": false,
+      "profileHash": "8b7f295ff94ce56bc67bc8430882c7003347bc615b5b50df64cd3734b386313d"
+    },
+    {
+      "schema": "starcraft_tmg_official_unit_card_supply_profile_v2",
+      "recordKey": "army_units:siege_tank",
+      "sourceRecordHash": "89a0d3d97984b63d7cb3e81b0c3ddd2339a4176645f00249517b71100ddd7766",
+      "payloadHash": "f6c3e7b486b14df3cb3192ca65a5575cef45e04cbdc7b7f782b3623eceb5a0fd",
+      "unitId": "siege_tank",
+      "unitName": "Siege Tank",
+      "factionTag": "Terran",
+      "armySlotType": "Elite",
+      "sourceUnitType": "Elite",
+      "fieldableDuringArmyBuilding": true,
+      "speed": {
+        "printedValue": "7",
+        "kind": "single",
+        "multiModelInches": 7,
+        "singleModelInches": 7,
+        "canMoveOrBeRepositioned": true
+      },
+      "supplyProfile": [
+        {
+          "tier": 1,
+          "printedModelCount": "-",
+          "applicable": false,
+          "minimumModels": null,
+          "maximumModels": null,
+          "supply": 0
+        },
+        {
+          "tier": 2,
+          "printedModelCount": "1 - 1",
+          "applicable": true,
+          "minimumModels": 1,
+          "maximumModels": 1,
+          "supply": 2
+        },
+        {
+          "tier": 3,
+          "printedModelCount": "-",
+          "applicable": false,
+          "minimumModels": null,
+          "maximumModels": null,
+          "supply": 0
+        }
+      ],
+      "compositions": [
+        {
+          "kind": "small",
+          "startingModels": 1,
+          "startingSupply": 2,
+          "pointsCost": 220
+        }
+      ],
+      "phaseBoxes": [
+        {
+          "phase": "Any Phase",
+          "definitionCount": 2,
+          "definitionNames": [
+            "Large",
+            "Heavy Plating"
+          ],
+          "definitionsHash": "c993986467a24b7131b903581b92f88cc5deed8d7d608146b78b72d7b867882f"
+        },
+        {
+          "phase": "Movement Phase",
+          "definitionCount": 2,
+          "definitionNames": [
+            "Mode Transformation",
+            "Coordinated Strike"
+          ],
+          "definitionsHash": "5a8f08ec48b4ff1d4f5b7b9f6153193955b7ee552b438d6eb26dc23f2c188766"
+        },
+        {
+          "phase": "Assault Phase",
+          "definitionCount": 8,
+          "definitionNames": [
+            "Twin Cannon",
+            "Shock Cannon",
+            "Indomitable",
+            "Point Blank",
+            "Aftershock Rounds",
+            "Shaped Blast",
+            "Smart Shells",
+            "Devastating Charge"
+          ],
+          "definitionsHash": "a1114a07c0425df0fc589e827c9d97dcce64358a36b1e920005ddaef1a7d9766"
+        },
+        {
+          "phase": "Combat Phase",
+          "definitionCount": 1,
+          "definitionNames": [
+            "Rolling Over"
+          ],
+          "definitionsHash": "821404b937bd1972cd7f2156fe8e35e395b774b0577fa2a902e02bb78854fbd4"
+        }
+      ],
+      "combatRange": {
+        "printedValue": "5",
+        "inches": 5
+      },
+      "base": {
+        "shape": "round",
+        "widthMillimetres": 150,
+        "depthMillimetres": 150,
+        "printedBase": "Ø 150MM",
+        "p2pSourceId": "terran_w2",
+        "p2pSourceContentHash": "63126ddbe922457f21a903ce186a6257aa5f20a932ba35f484f759b2ac62608e"
+      },
+      "geometryStatus": {
+        "status": "source_bound"
+      },
+      "upgradeSide": {
+        "present": true,
+        "definitionCount": 13,
+        "definitionsHash": "5e743f2ac47109819f13d0a18216686267d79dec8f2ef7b342744ee1c0334d6c"
+      },
+      "rulesOwnedLayoutFields": [
+        "faction_tag",
+        "army_slot",
+        "phase_boxes",
+        "speed",
+        "supply_profile",
+        "base",
+        "combat_range",
+        "upgrade_side"
+      ],
+      "trainingTruth": false,
+      "profileHash": "569bd5653e3fd060434813ff698b9ee727d65731943ee61c614f95abc1f71553"
+    },
+    {
+      "schema": "starcraft_tmg_official_unit_card_supply_profile_v2",
+      "recordKey": "army_units:spec_ops_marauder__marauder_",
+      "sourceRecordHash": "4b57a66e3b3cc5d040d2f963fef8cdc8393c1a87ea763c9f0611a4c089c6a9c8",
+      "payloadHash": "a63453720c3dbd535659ca24a23da3d2cc0cbd4defb1b8b261da8c253142d91c",
+      "unitId": "spec_ops_marauder__marauder_",
+      "unitName": "Spec Ops Marauder (Marauder)",
+      "factionTag": "Terran",
+      "armySlotType": "Core",
+      "sourceUnitType": "Core",
+      "fieldableDuringArmyBuilding": true,
+      "speed": {
+        "printedValue": "4/7",
+        "kind": "split",
+        "multiModelInches": 4,
+        "singleModelInches": 7,
+        "canMoveOrBeRepositioned": true
+      },
+      "supplyProfile": [
+        {
+          "tier": 1,
+          "printedModelCount": "1 - 1",
+          "applicable": true,
+          "minimumModels": 1,
+          "maximumModels": 1,
+          "supply": 0
+        },
+        {
+          "tier": 2,
+          "printedModelCount": "2 - 2",
+          "applicable": true,
+          "minimumModels": 2,
+          "maximumModels": 2,
+          "supply": 1
+        },
+        {
+          "tier": 3,
+          "printedModelCount": "-",
+          "applicable": false,
+          "minimumModels": null,
+          "maximumModels": null,
+          "supply": 0
+        }
+      ],
+      "compositions": [
+        {
+          "kind": "small",
+          "startingModels": 2,
+          "startingSupply": 1,
+          "pointsCost": 230
+        }
+      ],
+      "phaseBoxes": [
+        {
+          "phase": "Any Phase",
+          "definitionCount": 1,
+          "definitionNames": [
+            "Spec Ops Armour"
+          ],
+          "definitionsHash": "06f96ef1ac686fd4188fea2e304046f81509677b88e59dbba1e096b008aaffe4"
+        },
+        {
+          "phase": "Movement Phase",
+          "definitionCount": 1,
+          "definitionNames": [
+            "Commando Stimpack"
+          ],
+          "definitionsHash": "632c09ec06bb8a79851cc2dbb3c71347183e83878e4f2f9b5132ef951eb46aa2"
+        },
+        {
+          "phase": "Assault Phase",
+          "definitionCount": 3,
+          "definitionNames": [
+            "Quad K12",
+            "Magrail Munitions",
+            "Suppression Shells"
+          ],
+          "definitionsHash": "a3874d12d045feb02c611c519ac6c6fe0ae9b57e604cfe68ad5e589c48536a2e"
+        },
+        {
+          "phase": "Combat Phase",
+          "definitionCount": 1,
+          "definitionNames": [
+            "Strike"
+          ],
+          "definitionsHash": "81abee798874cc58fc62b04027f68f907b9407036d664b09193eb27a73a783b7"
+        }
+      ],
+      "combatRange": {
+        "printedValue": "5",
+        "inches": 5
+      },
+      "base": {
+        "shape": "round",
+        "widthMillimetres": 50,
+        "depthMillimetres": 50,
+        "printedBase": "Ø 50MM",
+        "p2pSourceId": "terran_w3",
+        "p2pSourceContentHash": "9632f91cdf1b152aca4d7b27aaf54655fe48e10138c73338393b8a62ce1cd154"
+      },
+      "geometryStatus": {
+        "status": "source_bound"
+      },
+      "upgradeSide": {
+        "present": true,
+        "definitionCount": 6,
+        "definitionsHash": "6959d6c922c56fe00f5a6e7544695ce034edcb38c06fdf7dc18975e731cf1720"
+      },
+      "rulesOwnedLayoutFields": [
+        "faction_tag",
+        "army_slot",
+        "phase_boxes",
+        "speed",
+        "supply_profile",
+        "base",
+        "combat_range",
+        "upgrade_side"
+      ],
+      "trainingTruth": false,
+      "profileHash": "6f5ce84f0aa1aaa9fd7c38ecd413d7d3c0882b92942d9b50f0cc1ecbed0e0195"
+    },
+    {
+      "schema": "starcraft_tmg_official_unit_card_supply_profile_v2",
+      "recordKey": "army_units:stalker",
+      "sourceRecordHash": "ff33aa26920de222908d1b46b3ae18477a5a8d573b03f27deed6fc4a52af18a9",
+      "payloadHash": "ced34a9dc9731b09e53395f80434bc52be8c1fef0847c68c373617a17b85ff72",
+      "unitId": "stalker",
+      "unitName": "Stalker",
+      "factionTag": "Protoss",
+      "armySlotType": "Elite",
+      "sourceUnitType": "Elite",
+      "fieldableDuringArmyBuilding": true,
+      "speed": {
+        "printedValue": "4/8",
+        "kind": "split",
+        "multiModelInches": 4,
+        "singleModelInches": 8,
+        "canMoveOrBeRepositioned": true
+      },
+      "supplyProfile": [
+        {
+          "tier": 1,
+          "printedModelCount": "-",
+          "applicable": false,
+          "minimumModels": null,
+          "maximumModels": null,
+          "supply": 0
+        },
+        {
+          "tier": 2,
+          "printedModelCount": "1 - 1",
+          "applicable": true,
+          "minimumModels": 1,
+          "maximumModels": 1,
+          "supply": 1
+        },
+        {
+          "tier": 3,
+          "printedModelCount": "2 - 2",
+          "applicable": true,
+          "minimumModels": 2,
+          "maximumModels": 2,
+          "supply": 2
+        }
+      ],
+      "compositions": [
+        {
+          "kind": "small",
+          "startingModels": 1,
+          "startingSupply": 1,
+          "pointsCost": 160
+        },
+        {
+          "kind": "large",
+          "startingModels": 2,
+          "startingSupply": 2,
+          "pointsCost": 270
+        }
+      ],
+      "phaseBoxes": [
+        {
+          "phase": "Any Phase",
+          "definitionCount": 2,
+          "definitionNames": [
+            "Squadron",
+            "Path of Shadows"
+          ],
+          "definitionsHash": "4528e6ce8401c060390c6563e875dd2564c7d94a28b12a7014c4332f0cf6f637"
+        },
+        {
+          "phase": "Movement Phase",
+          "definitionCount": 1,
+          "definitionNames": [
+            "Blink"
+          ],
+          "definitionsHash": "aec616bd28702d4c2e07446e67f7fd1b2fa7befe7db5febd2df90c03d40f887f"
+        },
+        {
+          "phase": "Assault Phase",
+          "definitionCount": 2,
+          "definitionNames": [
+            "Fury of the Nerazim",
+            "Particle Disruptors"
+          ],
+          "definitionsHash": "fbbe326a200c2613f26a2474caac6e3e489b1564e189677d7a5810495bdebd8b"
+        },
+        {
+          "phase": "Combat Phase",
+          "definitionCount": 1,
+          "definitionNames": [
+            "Stomp"
+          ],
+          "definitionsHash": "58b09ef6a5451a35ca6512397018d3044206b397a418398c7c7414c89f520bea"
+        }
+      ],
+      "combatRange": {
+        "printedValue": "5",
+        "inches": 5
+      },
+      "base": {
+        "shape": "round",
+        "widthMillimetres": 80,
+        "depthMillimetres": 80,
+        "printedBase": "Ø 80MM",
+        "p2pSourceId": "protoss_p2p",
+        "p2pSourceContentHash": "4e8547b2df8d545df3d0ebb7d7821521a888dc0437d6f4dde21d82145337a212"
+      },
+      "geometryStatus": {
+        "status": "source_bound"
+      },
+      "upgradeSide": {
+        "present": true,
+        "definitionCount": 6,
+        "definitionsHash": "239fc4b1b839389c54bf866a3e0e244b49ded042b822bdaa9bf1fcfd8b2456dd"
+      },
+      "rulesOwnedLayoutFields": [
+        "faction_tag",
+        "army_slot",
+        "phase_boxes",
+        "speed",
+        "supply_profile",
+        "base",
+        "combat_range",
+        "upgrade_side"
+      ],
+      "trainingTruth": false,
+      "profileHash": "3074d3a199b5526180274350cc1a6f278221d081ef974772fe72cc6756791fcf"
+    },
+    {
+      "schema": "starcraft_tmg_official_unit_card_supply_profile_v2",
+      "recordKey": "army_units:swarmling__zergling_",
+      "sourceRecordHash": "3d7278b9d22d313a4946f5bd92e6d5ab6a5f4cf35af7a1d001ab7bdd552b5a9a",
+      "payloadHash": "8fd68ef8cf1a8a7950eba4d90e5104dcab52befedb75566ad804f60b6efdcf79",
+      "unitId": "swarmling__zergling_",
+      "unitName": "Swarmling (Zergling)",
+      "factionTag": "Zerg",
+      "armySlotType": "Core",
+      "sourceUnitType": "Core",
+      "fieldableDuringArmyBuilding": true,
+      "speed": {
+        "printedValue": "4/8",
+        "kind": "split",
+        "multiModelInches": 4,
+        "singleModelInches": 8,
+        "canMoveOrBeRepositioned": true
+      },
+      "supplyProfile": [
+        {
+          "tier": 1,
+          "printedModelCount": "1 - 6",
+          "applicable": true,
+          "minimumModels": 1,
+          "maximumModels": 6,
+          "supply": 0
+        },
+        {
+          "tier": 2,
+          "printedModelCount": "7 - 18",
+          "applicable": true,
+          "minimumModels": 7,
+          "maximumModels": 18,
+          "supply": 1
+        },
+        {
+          "tier": 3,
+          "printedModelCount": "-",
+          "applicable": false,
+          "minimumModels": null,
+          "maximumModels": null,
+          "supply": 0
+        }
+      ],
+      "compositions": [
+        {
+          "kind": "small",
+          "startingModels": 18,
+          "startingSupply": 1,
+          "pointsCost": 210
+        }
+      ],
+      "phaseBoxes": [
+        {
+          "phase": "Any Phase",
+          "definitionCount": 1,
+          "definitionNames": [
+            "Squadron"
+          ],
+          "definitionsHash": "cd619de1dadf37671c10a9f2096467f7589570321de69da53fc8469de2b59479"
+        },
+        {
+          "phase": "Movement Phase",
+          "definitionCount": 2,
+          "definitionNames": [
+            "Burrow Ambush",
+            "Zergling Reconstitution"
+          ],
+          "definitionsHash": "5461e0c85bc878dd151bcbc25738f10cccd707051cb9d6e02baecd514adc337f"
+        },
+        {
+          "phase": "Assault Phase",
+          "definitionCount": 2,
+          "definitionNames": [
+            "Metabolic Boost",
+            "Devastating Charge"
+          ],
+          "definitionsHash": "3a58c25e0c68b21e44d588867c6df70ea058497a6907ce5c51bb6ec054d3dd14"
+        },
+        {
+          "phase": "Combat Phase",
+          "definitionCount": 1,
+          "definitionNames": [
+            "Claws"
+          ],
+          "definitionsHash": "027e5b1f8e8daf6c94e380de9c998acb668a767d1f8b0b6c2d3e387455e037ff"
+        }
+      ],
+      "combatRange": {
+        "printedValue": "1",
+        "inches": 1
+      },
+      "base": {
+        "shape": "round",
+        "widthMillimetres": 32,
+        "depthMillimetres": 32,
+        "printedBase": "Ø 32MM",
+        "p2pSourceId": "zerg_p2p",
+        "p2pSourceContentHash": "6810f46ee422ac5d8f3cc169c3eda3ccb9551f01ab71a1f7e4ac8c266817b364"
+      },
+      "geometryStatus": {
+        "status": "source_bound"
+      },
+      "upgradeSide": {
+        "present": true,
+        "definitionCount": 6,
+        "definitionsHash": "8983ff2eef37e489a494c5e5dcee420fbbbd6b444f2f312e6bad9032abebe8e0"
+      },
+      "rulesOwnedLayoutFields": [
+        "faction_tag",
+        "army_slot",
+        "phase_boxes",
+        "speed",
+        "supply_profile",
+        "base",
+        "combat_range",
+        "upgrade_side"
+      ],
+      "trainingTruth": false,
+      "profileHash": "a9228b80636c238d10c730c13fd87790b3d2dd40b2c63f5c285e1fc318236c07"
+    },
+    {
+      "schema": "starcraft_tmg_official_unit_card_supply_profile_v2",
+      "recordKey": "army_units:tassadar",
+      "sourceRecordHash": "8aa312078caee932f092ffedefb01ab6e3a3deff011dbb62a84ffa5605d314eb",
+      "payloadHash": "d7f345bac75441cff80b8297376f75c2065ec56db224e622e147aba58842f5af",
+      "unitId": "tassadar",
+      "unitName": "Tassadar",
+      "factionTag": "Protoss",
+      "armySlotType": "Hero",
+      "sourceUnitType": "Hero",
+      "fieldableDuringArmyBuilding": true,
+      "speed": {
+        "printedValue": "7",
+        "kind": "single",
+        "multiModelInches": 7,
+        "singleModelInches": 7,
+        "canMoveOrBeRepositioned": true
+      },
+      "supplyProfile": [
+        {
+          "tier": 1,
+          "printedModelCount": "-",
+          "applicable": false,
+          "minimumModels": null,
+          "maximumModels": null,
+          "supply": 0
+        },
+        {
+          "tier": 2,
+          "printedModelCount": "1 - 1",
+          "applicable": true,
+          "minimumModels": 1,
+          "maximumModels": 1,
+          "supply": 1
+        },
+        {
+          "tier": 3,
+          "printedModelCount": "-",
+          "applicable": false,
+          "minimumModels": null,
+          "maximumModels": null,
+          "supply": 0
+        }
+      ],
+      "compositions": [
+        {
+          "kind": "small",
+          "startingModels": 1,
+          "startingSupply": 1,
+          "pointsCost": 230
+        }
+      ],
+      "phaseBoxes": [
+        {
+          "phase": "Any Phase",
+          "definitionCount": 1,
+          "definitionNames": [
+            "Commander"
+          ],
+          "definitionsHash": "89ccca397f284422b3d230a087a05445075dd8f8f46394b76ae21d7761764fbf"
+        },
+        {
+          "phase": "Movement Phase",
+          "definitionCount": 3,
+          "definitionNames": [
+            "Force Wall",
+            "Executor's Will",
+            "Khala's Gift"
+          ],
+          "definitionsHash": "24017f29f35248b6082d58d4f14677e7b75014c6318e2f8f48a92c4486b08616"
+        },
+        {
+          "phase": "Assault Phase",
+          "definitionCount": 3,
+          "definitionNames": [
+            "Telekinetic Push",
+            "Psi Lightning",
+            "Resonance Beam"
+          ],
+          "definitionsHash": "93262b49305da107102884322fff55e9337efc55a81ad41591b7522b6c6beadc"
+        },
+        {
+          "phase": "Combat Phase",
+          "definitionCount": 1,
+          "definitionNames": [
+            "Strike"
+          ],
+          "definitionsHash": "e233e799f0fa216fde19b5b28fe8b8ad53c734a595b891d585bfa3ab435af91e"
+        }
+      ],
+      "combatRange": {
+        "printedValue": "4",
+        "inches": 4
+      },
+      "base": {
+        "shape": "round",
+        "widthMillimetres": 40,
+        "depthMillimetres": 40,
+        "printedBase": "Ø 40MM",
+        "p2pSourceId": "protoss_w3",
+        "p2pSourceContentHash": "c5ef1d1e2c953a8c5c376464dff46a51878d8e5ae0c3e8260684afbf1dd5f0aa"
+      },
+      "geometryStatus": {
+        "status": "source_bound"
+      },
+      "upgradeSide": {
+        "present": true,
+        "definitionCount": 8,
+        "definitionsHash": "8211409e910f7622a6d96d52250fc22f9cc61bfef7a2ed127bcc439a8b7991dc"
+      },
+      "rulesOwnedLayoutFields": [
+        "faction_tag",
+        "army_slot",
+        "phase_boxes",
+        "speed",
+        "supply_profile",
+        "base",
+        "combat_range",
+        "upgrade_side"
+      ],
+      "trainingTruth": false,
+      "profileHash": "6be8320952a643ad19da1f8827e2e649d52ba79c689e700bfea13c4756a99686"
+    },
+    {
+      "schema": "starcraft_tmg_official_unit_card_supply_profile_v2",
+      "recordKey": "army_units:twilight_templar__high_templar_",
+      "sourceRecordHash": "5bc212dfb865fc3fba7f60e9f1e362c03b1d671c5bf11161504fd37f60c0994d",
+      "payloadHash": "46526238ce1d95888d4a3faec70cdeeba9f2f0bef356c37453ff2832a5416e47",
+      "unitId": "twilight_templar__high_templar_",
+      "unitName": "Twilight Templar (High Templar)",
+      "factionTag": "Protoss",
+      "armySlotType": "Support",
+      "sourceUnitType": "Support",
+      "fieldableDuringArmyBuilding": true,
+      "speed": {
+        "printedValue": "4/7",
+        "kind": "split",
+        "multiModelInches": 4,
+        "singleModelInches": 7,
+        "canMoveOrBeRepositioned": true
+      },
+      "supplyProfile": [
+        {
+          "tier": 1,
+          "printedModelCount": "1 - 1",
+          "applicable": true,
+          "minimumModels": 1,
+          "maximumModels": 1,
+          "supply": 0
+        },
+        {
+          "tier": 2,
+          "printedModelCount": "2 - 2",
+          "applicable": true,
+          "minimumModels": 2,
+          "maximumModels": 2,
+          "supply": 1
+        },
+        {
+          "tier": 3,
+          "printedModelCount": "-",
+          "applicable": false,
+          "minimumModels": null,
+          "maximumModels": null,
+          "supply": 0
+        }
+      ],
+      "compositions": [
+        {
+          "kind": "small",
+          "startingModels": 2,
+          "startingSupply": 1,
+          "pointsCost": 230
+        }
+      ],
+      "phaseBoxes": [
+        {
+          "phase": "Any Phase",
+          "definitionCount": 1,
+          "definitionNames": [
+            "Bound by the Khala"
+          ],
+          "definitionsHash": "d8638d6e1148b6fb5c1e4ba7962053fe200410215b9213b735a1ccc5e43f2069"
+        },
+        {
+          "phase": "Movement Phase",
+          "definitionCount": 3,
+          "definitionNames": [
+            "Warp-In",
+            "Psionic Gale",
+            "Feedback"
+          ],
+          "definitionsHash": "f5ec1c79e247500dc4093bbfad9ae4e6ad423298ee47600f8a7aeedf7fcde884"
+        },
+        {
+          "phase": "Assault Phase",
+          "definitionCount": 1,
+          "definitionNames": [
+            "Psi Blast"
+          ],
+          "definitionsHash": "35c63b6f48c6929526f1d827bf4bd43b629b026f63410dbd05ad9b5a12510c9b"
+        },
+        {
+          "phase": "Combat Phase",
+          "definitionCount": 1,
+          "definitionNames": [
+            "Strike"
+          ],
+          "definitionsHash": "36a98524a4ecb86e766c5927f172356cee2bb3a66be4928c23b0fcb5b2003804"
+        }
+      ],
+      "combatRange": {
+        "printedValue": "4",
+        "inches": 4
+      },
+      "base": {
+        "shape": "round",
+        "widthMillimetres": 40,
+        "depthMillimetres": 40,
+        "printedBase": "Ø 40MM",
+        "p2pSourceId": "protoss_w3",
+        "p2pSourceContentHash": "c5ef1d1e2c953a8c5c376464dff46a51878d8e5ae0c3e8260684afbf1dd5f0aa"
+      },
+      "geometryStatus": {
+        "status": "source_bound"
+      },
+      "upgradeSide": {
+        "present": true,
+        "definitionCount": 6,
+        "definitionsHash": "ebce9f346de61d2c302bf663f088395f4f2c7700f819279a91bc4e378c4b9b9b"
+      },
+      "rulesOwnedLayoutFields": [
+        "faction_tag",
+        "army_slot",
+        "phase_boxes",
+        "speed",
+        "supply_profile",
+        "base",
+        "combat_range",
+        "upgrade_side"
+      ],
+      "trainingTruth": false,
+      "profileHash": "61314d77e49714f05061276f24b26f350096092431245f8776f11cb8442888e3"
+    },
+    {
+      "schema": "starcraft_tmg_official_unit_card_supply_profile_v2",
+      "recordKey": "army_units:vile__roach_",
+      "sourceRecordHash": "e462009845a7337fedb910f8cb9291127ba4d2e11bcf1c994f8909e8e4d78b04",
+      "payloadHash": "1ddc8bb2fcf2435c1814daf3bfb0d00ffea085867f517832ae03609795a9063a",
+      "unitId": "vile__roach_",
+      "unitName": "Vile (Roach)",
+      "factionTag": "Zerg",
+      "armySlotType": "Core",
+      "sourceUnitType": "Core",
+      "fieldableDuringArmyBuilding": true,
+      "speed": {
+        "printedValue": "4/7",
+        "kind": "split",
+        "multiModelInches": 4,
+        "singleModelInches": 7,
+        "canMoveOrBeRepositioned": true
+      },
+      "supplyProfile": [
+        {
+          "tier": 1,
+          "printedModelCount": "1 - 1",
+          "applicable": true,
+          "minimumModels": 1,
+          "maximumModels": 1,
+          "supply": 0
+        },
+        {
+          "tier": 2,
+          "printedModelCount": "2 - 3",
+          "applicable": true,
+          "minimumModels": 2,
+          "maximumModels": 3,
+          "supply": 1
+        },
+        {
+          "tier": 3,
+          "printedModelCount": "-",
+          "applicable": false,
+          "minimumModels": null,
+          "maximumModels": null,
+          "supply": 0
+        }
+      ],
+      "compositions": [
+        {
+          "kind": "small",
+          "startingModels": 3,
+          "startingSupply": 1,
+          "pointsCost": 190
+        }
+      ],
+      "phaseBoxes": [
+        {
+          "phase": "Any Phase",
+          "definitionCount": 3,
+          "definitionNames": [
+            "Debilitating Saliva",
+            "Burrow",
+            "Tunneling Claws"
+          ],
+          "definitionsHash": "5d397cf17fa93a6701e4f2cdbe65edea13e1c92740f0912a77b0078130a8f098"
+        },
+        {
+          "phase": "Movement Phase",
+          "definitionCount": 2,
+          "definitionNames": [
+            "Burrow Ambush",
+            "Glial Reconstitution"
+          ],
+          "definitionsHash": "6d77895fadcfd5579944d23f34a68c62da26e0af8e61d342f2d9ba702f356163"
+        },
+        {
+          "phase": "Assault Phase",
+          "definitionCount": 4,
+          "definitionNames": [
+            "Acid Saliva",
+            "Regeneration",
+            "Hydriodic Bile",
+            "Devastating Charge"
+          ],
+          "definitionsHash": "9af62d575ef1e126d824e37b32b5b9b44396bc54fb3297c3924eee402cb964d9"
+        },
+        {
+          "phase": "Combat Phase",
+          "definitionCount": 1,
+          "definitionNames": [
+            "Vile Claws"
+          ],
+          "definitionsHash": "8742e5f9305c1af05ea9de3604c585de55614b5c2427ee8a7eb62ebc6230f277"
+        }
+      ],
+      "combatRange": {
+        "printedValue": "3",
+        "inches": 3
+      },
+      "base": {
+        "shape": "round",
+        "widthMillimetres": 50,
+        "depthMillimetres": 50,
+        "printedBase": "Ø 50MM",
+        "p2pSourceId": "zerg_p2p",
+        "p2pSourceContentHash": "6810f46ee422ac5d8f3cc169c3eda3ccb9551f01ab71a1f7e4ac8c266817b364"
+      },
+      "geometryStatus": {
+        "status": "source_bound"
+      },
+      "upgradeSide": {
+        "present": true,
+        "definitionCount": 10,
+        "definitionsHash": "4afd4b8136de1f2f27123e5de3ebe5ca944f432869bb34dc34db7c5af395e61a"
+      },
+      "rulesOwnedLayoutFields": [
+        "faction_tag",
+        "army_slot",
+        "phase_boxes",
+        "speed",
+        "supply_profile",
+        "base",
+        "combat_range",
+        "upgrade_side"
+      ],
+      "trainingTruth": false,
+      "profileHash": "5b519a36cd6f9baab7c3aa401314859217539b195f208362c8774f14658fce3d"
+    },
+    {
+      "schema": "starcraft_tmg_official_unit_card_supply_profile_v2",
+      "recordKey": "army_units:vileling__zergling_",
+      "sourceRecordHash": "df5ca8d83006366e75eba43c6eea018abedb89ff392d7f6d53c9e5eb100f2a9f",
+      "payloadHash": "e7e4bebf3a4493c2dd4e14b477488161968adbb230b242e9aa9bb7df28f38d96",
+      "unitId": "vileling__zergling_",
+      "unitName": "Vileling (Zergling)",
+      "factionTag": "Zerg",
+      "armySlotType": "Core",
+      "sourceUnitType": "Core",
+      "fieldableDuringArmyBuilding": true,
+      "speed": {
+        "printedValue": "4/8",
+        "kind": "split",
+        "multiModelInches": 4,
+        "singleModelInches": 8,
+        "canMoveOrBeRepositioned": true
+      },
+      "supplyProfile": [
+        {
+          "tier": 1,
+          "printedModelCount": "1 - 6",
+          "applicable": true,
+          "minimumModels": 1,
+          "maximumModels": 6,
+          "supply": 1
+        },
+        {
+          "tier": 2,
+          "printedModelCount": "7 - 18",
+          "applicable": true,
+          "minimumModels": 7,
+          "maximumModels": 18,
+          "supply": 2
+        }
+      ],
+      "compositions": [
+        {
+          "kind": "small",
+          "startingModels": 18,
+          "startingSupply": 2,
+          "pointsCost": 180
+        }
+      ],
+      "phaseBoxes": [
+        {
+          "phase": "Any Phase",
+          "definitionCount": 1,
+          "definitionNames": [
+            "Squadron"
+          ],
+          "definitionsHash": "cd619de1dadf37671c10a9f2096467f7589570321de69da53fc8469de2b59479"
+        },
+        {
+          "phase": "Movement Phase",
+          "definitionCount": 2,
+          "definitionNames": [
+            "Burrow Ambush",
+            "Zergling Reconstitution"
+          ],
+          "definitionsHash": "86df57086ba024052c0979054181348e84442ba55efbac3425ecb24b491b6233"
+        },
+        {
+          "phase": "Assault Phase",
+          "definitionCount": 2,
+          "definitionNames": [
+            "Metabolic Boost",
+            "Devastating Charge"
+          ],
+          "definitionsHash": "3a58c25e0c68b21e44d588867c6df70ea058497a6907ce5c51bb6ec054d3dd14"
+        },
+        {
+          "phase": "Combat Phase",
+          "definitionCount": 2,
+          "definitionNames": [
+            "Debilitating Claws",
+            "Claws"
+          ],
+          "definitionsHash": "89aaf47551948a3bb15ca0dcba004ca8555b7b7d818952019ae1917169cedf3e"
+        }
+      ],
+      "combatRange": {
+        "printedValue": "1",
+        "inches": 1
+      },
+      "base": {
+        "shape": "round",
+        "widthMillimetres": 32,
+        "depthMillimetres": 32,
+        "printedBase": "Ø 32MM",
+        "p2pSourceId": "zerg_w3",
+        "p2pSourceContentHash": "ebc05eeea6456538b57e3b417bb1defc87159bd560fed81e0342e6119e85d6eb"
+      },
+      "geometryStatus": {
+        "status": "source_bound"
+      },
+      "upgradeSide": {
+        "present": true,
+        "definitionCount": 7,
+        "definitionsHash": "0e75db87a16d617ed232d043d60da46c8a69a2979d6fea44744a83fb94a6fda7"
+      },
+      "rulesOwnedLayoutFields": [
+        "faction_tag",
+        "army_slot",
+        "phase_boxes",
+        "speed",
+        "supply_profile",
+        "base",
+        "combat_range",
+        "upgrade_side"
+      ],
+      "trainingTruth": false,
+      "profileHash": "4c31049d0cc72703bd369ca296f68591a9465cc134941f3570e687847c526a37"
+    },
+    {
+      "schema": "starcraft_tmg_official_unit_card_supply_profile_v2",
+      "recordKey": "army_units:zagara",
+      "sourceRecordHash": "5c85d80cc8d36c0ae7be92dabf95983a29c72d8ffb52c29188e943f12b6d982d",
+      "payloadHash": "0bb4dddcaefd80887f7df581c74641c021e3d8d01969460bc1f34b7d8ef6b90c",
+      "unitId": "zagara",
+      "unitName": "Zagara",
+      "factionTag": "Zerg",
+      "armySlotType": "Hero",
+      "sourceUnitType": "Hero",
+      "fieldableDuringArmyBuilding": true,
+      "speed": {
+        "printedValue": "7",
+        "kind": "single",
+        "multiModelInches": 7,
+        "singleModelInches": 7,
+        "canMoveOrBeRepositioned": true
+      },
+      "supplyProfile": [
+        {
+          "tier": 1,
+          "printedModelCount": "-",
+          "applicable": false,
+          "minimumModels": null,
+          "maximumModels": null,
+          "supply": 0
+        },
+        {
+          "tier": 2,
+          "printedModelCount": "1 - 1",
+          "applicable": true,
+          "minimumModels": 1,
+          "maximumModels": 1,
+          "supply": 1
+        },
+        {
+          "tier": 3,
+          "printedModelCount": "-",
+          "applicable": false,
+          "minimumModels": null,
+          "maximumModels": null,
+          "supply": 0
+        }
+      ],
+      "compositions": [
+        {
+          "kind": "small",
+          "startingModels": 1,
+          "startingSupply": 1,
+          "pointsCost": 250
+        }
+      ],
+      "phaseBoxes": [
+        {
+          "phase": "Any Phase",
+          "definitionCount": 3,
+          "definitionNames": [
+            "Commander",
+            "Transfusion",
+            "Psionic Link"
+          ],
+          "definitionsHash": "6a3442ead18106db28a2499f6d4ad264be049d3dfe3e9584ab7add33fec946cd"
+        },
+        {
+          "phase": "Movement Phase",
+          "definitionCount": 2,
+          "definitionNames": [
+            "Broodmother",
+            "Infested Drop"
+          ],
+          "definitionsHash": "1685a2c159c1d2761b6991f5b320a42cf5fc3d1be9314fcf661c15ee0a6ba15a"
+        },
+        {
+          "phase": "Assault Phase",
+          "definitionCount": 4,
+          "definitionNames": [
+            "Indomitable",
+            "Zagara's Talons",
+            "Zagara's Acid Spines",
+            "Devastating Charge"
+          ],
+          "definitionsHash": "9d64ece9a61688e2743911b5a26057ec1ad8da2b8f75ef8264ff76d4201cfac6"
+        },
+        {
+          "phase": "Combat Phase",
+          "definitionCount": 1,
+          "definitionNames": [
+            "Talons"
+          ],
+          "definitionsHash": "007c1e0e6408b919187ae630c9e9a02de078169010cf6a4b2a4339089e329e1a"
+        }
+      ],
+      "combatRange": {
+        "printedValue": "3",
+        "inches": 3
+      },
+      "base": {
+        "shape": "round",
+        "widthMillimetres": 100,
+        "depthMillimetres": 100,
+        "printedBase": "Ø 100MM",
+        "p2pSourceId": "zerg_w3",
+        "p2pSourceContentHash": "ebc05eeea6456538b57e3b417bb1defc87159bd560fed81e0342e6119e85d6eb"
+      },
+      "geometryStatus": {
+        "status": "source_bound"
+      },
+      "upgradeSide": {
+        "present": true,
+        "definitionCount": 10,
+        "definitionsHash": "db5249609ef9ee985651eada1fd0a8700c801ff3dadec77aa90c9c01761da31f"
+      },
+      "rulesOwnedLayoutFields": [
+        "faction_tag",
+        "army_slot",
+        "phase_boxes",
+        "speed",
+        "supply_profile",
+        "base",
+        "combat_range",
+        "upgrade_side"
+      ],
+      "trainingTruth": false,
+      "profileHash": "999a6320538d09854196909ee609930e5efda71615e3a849ff1dd02eb0b6dd4f"
+    },
+    {
+      "schema": "starcraft_tmg_official_unit_card_supply_profile_v2",
+      "recordKey": "army_units:zealot",
+      "sourceRecordHash": "58acd8a81f3de33e0990280c62b93302635dbb59b8c01316ce43b122c7761506",
+      "payloadHash": "ec1bbc4f0a124efaf251903cda2f7be405533ec58b951498904643f29d2de2a0",
+      "unitId": "zealot",
+      "unitName": "Zealot",
+      "factionTag": "Protoss",
+      "armySlotType": "Core",
+      "sourceUnitType": "Core",
+      "fieldableDuringArmyBuilding": true,
+      "speed": {
+        "printedValue": "4/7",
+        "kind": "split",
+        "multiModelInches": 4,
+        "singleModelInches": 7,
+        "canMoveOrBeRepositioned": true
+      },
+      "supplyProfile": [
+        {
+          "tier": 1,
+          "printedModelCount": "1 - 1",
+          "applicable": true,
+          "minimumModels": 1,
+          "maximumModels": 1,
+          "supply": 1
+        },
+        {
+          "tier": 2,
+          "printedModelCount": "2 - 3",
+          "applicable": true,
+          "minimumModels": 2,
+          "maximumModels": 3,
+          "supply": 2
+        },
+        {
+          "tier": 3,
+          "printedModelCount": "-",
+          "applicable": false,
+          "minimumModels": null,
+          "maximumModels": null,
+          "supply": 0
+        }
+      ],
+      "compositions": [
+        {
+          "kind": "small",
+          "startingModels": 3,
+          "startingSupply": 2,
+          "pointsCost": 170
+        }
+      ],
+      "phaseBoxes": [
+        {
+          "phase": "Any Phase",
+          "definitionCount": 1,
+          "definitionNames": [
+            "My Life for Aiur"
+          ],
+          "definitionsHash": "3c05caabe2b71ebb4f9c64d2ffef1c854966905d6dfb772e5de20facdb1dc128"
+        },
+        {
+          "phase": "Movement Phase",
+          "definitionCount": 1,
+          "definitionNames": [
+            "Leg Enhancements"
+          ],
+          "definitionsHash": "7bea3aa0356e186b5532a746a35f03bb9dbdc3e8ddaa575b933e3f2d90157778"
+        },
+        {
+          "phase": "Assault Phase",
+          "definitionCount": 3,
+          "definitionNames": [
+            "Charge",
+            "Devastating Charge",
+            "Zealous Round"
+          ],
+          "definitionsHash": "f1f6bb9069771fd2533d9cbdf3c8b6ef6b4e3f07fb9e259921ca8544a33c1bfd"
+        },
+        {
+          "phase": "Combat Phase",
+          "definitionCount": 2,
+          "definitionNames": [
+            "Psi Blades",
+            "We Stand as One"
+          ],
+          "definitionsHash": "9c1a11e085ccd8597b704a60bbb4f47b65bebeef255ff107b99d70cea29b0ee6"
+        }
+      ],
+      "combatRange": {
+        "printedValue": "1",
+        "inches": 1
+      },
+      "base": {
+        "shape": "round",
+        "widthMillimetres": 40,
+        "depthMillimetres": 40,
+        "printedBase": "Ø 40MM",
+        "p2pSourceId": "protoss_p2p",
+        "p2pSourceContentHash": "4e8547b2df8d545df3d0ebb7d7821521a888dc0437d6f4dde21d82145337a212"
+      },
+      "geometryStatus": {
+        "status": "source_bound"
+      },
+      "upgradeSide": {
+        "present": true,
+        "definitionCount": 7,
+        "definitionsHash": "c314db84a59a3ba50b2def64540ab6e454d0fccfcb6f7d54366af7e1b81cbe6d"
+      },
+      "rulesOwnedLayoutFields": [
+        "faction_tag",
+        "army_slot",
+        "phase_boxes",
+        "speed",
+        "supply_profile",
+        "base",
+        "combat_range",
+        "upgrade_side"
+      ],
+      "trainingTruth": false,
+      "profileHash": "1eb458bfd230800bd7dedd5c216570607f36292916d7f5d5aeb3037ca01d65b8"
+    },
+    {
+      "schema": "starcraft_tmg_official_unit_card_supply_profile_v2",
+      "recordKey": "army_units:zeratul",
+      "sourceRecordHash": "d452a07b3c3db5db5857a51e0fd613933e6d3cf378734b6fcb9046c37a1d67c4",
+      "payloadHash": "686f4412486b64184d6d02c1085171a6408b50ce6fc3a669070f74438feb1884",
+      "unitId": "zeratul",
+      "unitName": "Zeratul",
+      "factionTag": "Protoss",
+      "armySlotType": "Hero",
+      "sourceUnitType": "Hero",
+      "fieldableDuringArmyBuilding": true,
+      "speed": {
+        "printedValue": "7",
+        "kind": "single",
+        "multiModelInches": 7,
+        "singleModelInches": 7,
+        "canMoveOrBeRepositioned": true
+      },
+      "supplyProfile": [
+        {
+          "tier": 1,
+          "printedModelCount": "-",
+          "applicable": false,
+          "minimumModels": null,
+          "maximumModels": null,
+          "supply": 0
+        },
+        {
+          "tier": 2,
+          "printedModelCount": "1 - 1",
+          "applicable": true,
+          "minimumModels": 1,
+          "maximumModels": 1,
+          "supply": 1
+        },
+        {
+          "tier": 3,
+          "printedModelCount": "-",
+          "applicable": false,
+          "minimumModels": null,
+          "maximumModels": null,
+          "supply": 0
+        }
+      ],
+      "compositions": [
+        {
+          "kind": "small",
+          "startingModels": 1,
+          "startingSupply": 1,
+          "pointsCost": 230
+        }
+      ],
+      "phaseBoxes": [
+        {
+          "phase": "Any Phase",
+          "definitionCount": 2,
+          "definitionNames": [
+            "One With the Shadows",
+            "Prophetic Vision"
+          ],
+          "definitionsHash": "406df6afac288e34a45f4b06388bd8cff743b30fcf4e6443c18926a1c5896728"
+        },
+        {
+          "phase": "Movement Phase",
+          "definitionCount": 2,
+          "definitionNames": [
+            "Sentenced to Death",
+            "Void Prison"
+          ],
+          "definitionsHash": "5686c3ea979d19522f7679caeba12b42c42108804f2fe88952d76ce4c95a301b"
+        },
+        {
+          "phase": "Assault Phase",
+          "definitionCount": 2,
+          "definitionNames": [
+            "Void Blink",
+            "Devastating Charge"
+          ],
+          "definitionsHash": "0c1a3cb88fecbab5b312e76a5eb8d85ed3aecd0f1cab7df8c433928f06273e95"
+        },
+        {
+          "phase": "Combat Phase",
+          "definitionCount": 2,
+          "definitionNames": [
+            "Master Warp Blade",
+            "Shadow Strike"
+          ],
+          "definitionsHash": "20d4f007a20cb28c95bcff1300f75ba48ebb24c1c599e511d9cf45a5cc888aa3"
+        }
+      ],
+      "combatRange": {
+        "printedValue": "1",
+        "inches": 1
+      },
+      "base": {
+        "shape": "round",
+        "widthMillimetres": 40,
+        "depthMillimetres": 40,
+        "printedBase": "Ø 40MM",
+        "p2pSourceId": "protoss_w2",
+        "p2pSourceContentHash": "09f6b940a7582719f1527574e22047529e3629d078e479e3baf06c552c99f7fe"
+      },
+      "geometryStatus": {
+        "status": "source_bound"
+      },
+      "upgradeSide": {
+        "present": true,
+        "definitionCount": 8,
+        "definitionsHash": "111cdb8453ba3f9545e8941517fa70c8718879b5516fda1692aea98ee2060d06"
+      },
+      "rulesOwnedLayoutFields": [
+        "faction_tag",
+        "army_slot",
+        "phase_boxes",
+        "speed",
+        "supply_profile",
+        "base",
+        "combat_range",
+        "upgrade_side"
+      ],
+      "trainingTruth": false,
+      "profileHash": "ec42f52dd5f19a188f30ae62e594694c4d7605e8f668ee6d7613553847fefbf9"
+    },
+    {
+      "schema": "starcraft_tmg_official_unit_card_supply_profile_v2",
+      "recordKey": "army_units:zergling",
+      "sourceRecordHash": "cb146bd5a44f3e0af8f0fd2cde2becb09f9fed920a661f6b9d8305b1c79edf73",
+      "payloadHash": "1f177d4116028dcf3a3bc3337fc4c4df5acb87093617832a26eb255f7e7a6c11",
+      "unitId": "zergling",
+      "unitName": "Zergling",
+      "factionTag": "Zerg",
+      "armySlotType": "Core",
+      "sourceUnitType": "Core",
+      "fieldableDuringArmyBuilding": true,
+      "speed": {
+        "printedValue": "4/8",
+        "kind": "split",
+        "multiModelInches": 4,
+        "singleModelInches": 8,
+        "canMoveOrBeRepositioned": true
+      },
+      "supplyProfile": [
+        {
+          "tier": 1,
+          "printedModelCount": "1 - 6",
+          "applicable": true,
+          "minimumModels": 1,
+          "maximumModels": 6,
+          "supply": 0
+        },
+        {
+          "tier": 2,
+          "printedModelCount": "7 - 12",
+          "applicable": true,
+          "minimumModels": 7,
+          "maximumModels": 12,
+          "supply": 1
+        },
+        {
+          "tier": 3,
+          "printedModelCount": "13 - 18",
+          "applicable": true,
+          "minimumModels": 13,
+          "maximumModels": 18,
+          "supply": 2
+        }
+      ],
+      "compositions": [
+        {
+          "kind": "small",
+          "startingModels": 12,
+          "startingSupply": 1,
+          "pointsCost": 150
+        },
+        {
+          "kind": "large",
+          "startingModels": 18,
+          "startingSupply": 2,
+          "pointsCost": 210
+        }
+      ],
+      "phaseBoxes": [
+        {
+          "phase": "Any Phase",
+          "definitionCount": 1,
+          "definitionNames": [
+            "Squadron"
+          ],
+          "definitionsHash": "cd619de1dadf37671c10a9f2096467f7589570321de69da53fc8469de2b59479"
+        },
+        {
+          "phase": "Movement Phase",
+          "definitionCount": 1,
+          "definitionNames": [
+            "Burrow Ambush"
+          ],
+          "definitionsHash": "c875abc5a63400d59abde8292a63e862fbfc74412195679a9f93771f22a65e01"
+        },
+        {
+          "phase": "Assault Phase",
+          "definitionCount": 2,
+          "definitionNames": [
+            "Metabolic Boost",
+            "Devastating Charge"
+          ],
+          "definitionsHash": "3a58c25e0c68b21e44d588867c6df70ea058497a6907ce5c51bb6ec054d3dd14"
+        },
+        {
+          "phase": "Combat Phase",
+          "definitionCount": 3,
+          "definitionNames": [
+            "Claws",
+            "Shredding Claws",
+            "Adrenal Glands"
+          ],
+          "definitionsHash": "eccf6d86932899146e4d2aed694c0e3d9a63376fed55e68df03e05f55fdae580"
+        }
+      ],
+      "combatRange": {
+        "printedValue": "1",
+        "inches": 1
+      },
+      "base": {
+        "shape": "round",
+        "widthMillimetres": 32,
+        "depthMillimetres": 32,
+        "printedBase": "Ø 32MM",
+        "p2pSourceId": "zerg_p2p",
+        "p2pSourceContentHash": "6810f46ee422ac5d8f3cc169c3eda3ccb9551f01ab71a1f7e4ac8c266817b364"
+      },
+      "geometryStatus": {
+        "status": "source_bound"
+      },
+      "upgradeSide": {
+        "present": true,
+        "definitionCount": 7,
+        "definitionsHash": "40a17b48032dad67d6832fd7a035b3fe34d6718996b3eee97677c0d6affe9b0d"
+      },
+      "rulesOwnedLayoutFields": [
+        "faction_tag",
+        "army_slot",
+        "phase_boxes",
+        "speed",
+        "supply_profile",
+        "base",
+        "combat_range",
+        "upgrade_side"
+      ],
+      "trainingTruth": false,
+      "profileHash": "e989f84d4062b016dc1ccfba0b2eb0532ceae40221d84b030d692629fa30aae2"
+    }
+  ],
+  "unitProfileIndexHash": "5f3549573ec6d73a2770c45e1cc6acd176881cea9d5f6f8c998d43832f59085e",
+  "unitSourceIndex": [
+    {
+      "recordKey": "army_units:adept",
+      "sourceRecordHash": "e17a52a8c4b31e989190b95e60bf793d6da7fcc7b77b8b9421fc4620ccf7b431",
+      "payloadHash": "587133eef84b6620f9e4c61b95e865655b89f12fad2b67b22fcfd03eb9fb8fc6"
+    },
+    {
+      "recordKey": "army_units:artanis",
+      "sourceRecordHash": "40176eeecd7936a20d0a333666515a2972186d1f7a285fbd241fe039bb8450df",
+      "payloadHash": "75cad844983ae0ca7a7947ad24c7d46ba0ca04a6b4f7ff5d22db7d549eae2325"
+    },
+    {
+      "recordKey": "army_units:auto_turret",
+      "sourceRecordHash": "92ca23dbf7ea8d5673bbbc0a15d153faaef123aecfa40779baeee6dd726c2d5a",
+      "payloadHash": "cf20dd26caecb180529786eb41092188ea247b93ae269361fff0c779e7e236b4"
+    },
+    {
+      "recordKey": "army_units:bile_launcher",
+      "sourceRecordHash": "b7d2cd52bb018700f8a1421731fb5ef52179118f9f48f164285351f6aad0bdc8",
+      "payloadHash": "0500ec3df44a14df74de7f35dce149bbdc076bcd243aefc438d09f75312ea8b2"
+    },
+    {
+      "recordKey": "army_units:corpser__roach_",
+      "sourceRecordHash": "99187cec6bf55738ad6114fbdc4c2a5fa44ca76d020732300d1c6552e0c61ea9",
+      "payloadHash": "b1cdd9fa6911f48853e4c7dbec14046c11dfcb6634c5d0bf7e1dbb4031187e53"
+    },
+    {
+      "recordKey": "army_units:defiler",
+      "sourceRecordHash": "4a31693409c8d3d8a647ee91943277fc2bc84e7ff6e811f39b54ea83873ddb7c",
+      "payloadHash": "d61341180186819bdc920ee3670f5221bc74f5f2271dc88b0ae44ece8e163d31"
+    },
+    {
+      "recordKey": "army_units:goliath",
+      "sourceRecordHash": "3284a8c430a3e5925df9dced1af47817b5500cf85e0ae1b293de437a8a27dad9",
+      "payloadHash": "5984c7f157dc34477032cd03da9f1a2afea261343c19eec3a3b789b072bda518"
+    },
+    {
+      "recordKey": "army_units:high_templar",
+      "sourceRecordHash": "d71f1185838f3b1979767aeabd2b631b51f036e5714ceca2b6d7bd709ad56d29",
+      "payloadHash": "b8995f45f3188d72e89e7b83b704af56fe2f7b4a407903540d9ebe9de09289e5"
+    },
+    {
+      "recordKey": "army_units:holo_decoy",
+      "sourceRecordHash": "f7cacc3cfbf8060d3c3703266a4085f0355f541665fb16693807c4d8d460b12c",
+      "payloadHash": "519a89cd6da3b1aa30fb51759ffabd35e9c0a203fcc467f000ab4d82e93652cc"
+    },
+    {
+      "recordKey": "army_units:hydralisk",
+      "sourceRecordHash": "9803bc91e7c8ca7c2e108e5f2e0b3134a6357904aa8070c5ffc6f59e35937680",
+      "payloadHash": "6da875d545cd93b75122b6b082ad1497ecfefcf47a65fcb5822636776c7cce26"
+    },
+    {
+      "recordKey": "army_units:immortal",
+      "sourceRecordHash": "940a1e3e874b9c69d09823a2a833ff22bff6baac538df16aa60bff1adb1f1a92",
+      "payloadHash": "ece87fbd83a1a5f995963734dbde2c4d9cf6b799742f1cf48ef58a9b273ef5f5"
+    },
+    {
+      "recordKey": "army_units:jim_raynor",
+      "sourceRecordHash": "7ebb93e74361e2a6d90a42aa46b812d67e122d3c83a85bf40ee765a99f55cdaf",
+      "payloadHash": "3f6e5817706c4ecb431036f778ca2ac8d9db46fcf6a023835cf099917762c065"
+    },
+    {
+      "recordKey": "army_units:kerrigan",
+      "sourceRecordHash": "9555e809c6f8f6a764a6469ba8911fa76224f4fc4147e637a9146f8f9de7c7b0",
+      "payloadHash": "58903583a0e4b4a99603e4ea8d1455d8b76c62b464685e4762dc61647992fe69"
+    },
+    {
+      "recordKey": "army_units:kerrigan_swarm_raptor__zergling_",
+      "sourceRecordHash": "c72d5ba03f901c1e8a9b7154c7ba9d3477a76f3d23805b743a2cba4923deb11c",
+      "payloadHash": "5b2c2a97e443c3889d1c1b3243421ddfa4afe1affd8f23f3e20b6fa4a1aa62cf"
+    },
+    {
+      "recordKey": "army_units:marauder",
+      "sourceRecordHash": "f08a3908ca02cc6ecf5f168280079b3442edd1f99189f2dc89fe534e73cba6ee",
+      "payloadHash": "ea1aa6b4e542adafb20637b1ac5727f92e43501d4109150e88e3531fe190c823"
+    },
+    {
+      "recordKey": "army_units:marine",
+      "sourceRecordHash": "ced0fdbd3b7c847e87980bcd1af6aa2ba4d8325cf39aca25131698bc06c331aa",
+      "payloadHash": "c615595f9b21f08bdd25b6f2b50a3d96d38177b98e5544572d086bee46a2c87b"
+    },
+    {
+      "recordKey": "army_units:medic",
+      "sourceRecordHash": "f695baada89edd02b6f7672438aff75817e54851356dfb76680744c1db809852",
+      "payloadHash": "c25d62a7add008b2ffef818e713a3ea21e6842d8a1a8bd2901f74808d9a5e977"
+    },
+    {
+      "recordKey": "army_units:nerazim_watchers__adept_",
+      "sourceRecordHash": "2c6e60f4902a61d9e511389c4116ea5458faafe6861a1bd08ab9d22ddda3a924",
+      "payloadHash": "beb547d7a25de1f96ecc92cc7ee78324b946ffce9b74492adab6160f619e8b2f"
+    },
+    {
+      "recordKey": "army_units:nova_assault_mode",
+      "sourceRecordHash": "853987b789d39084bce81c4fd188ec2eda5fa5eb0aca9b8f8f28342ae992aa8e",
+      "payloadHash": "bfd82337e27118315d26810ca9958f346326cb5ae1e8d9da2cf7f7a42ffefe86"
+    },
+    {
+      "recordKey": "army_units:nova_stealth_mode",
+      "sourceRecordHash": "ed23c7ee0770d35e764085781ff374151014bd37bc3f309a5c3e40014cc2ceec",
+      "payloadHash": "a495361277530076371ba40c5e6af4bdb4faab7cbf8d3af1c792d80f87684e31"
+    },
+    {
+      "recordKey": "army_units:omega_worm",
+      "sourceRecordHash": "349b6dc6e3fead1ec361f2bd687acf21880a1c4c03ef9afd7f8d89344def1d70",
+      "payloadHash": "0486fa81efbaeddee60a365bc051aa0a71957b3308c8e955bc689705bc50e812"
+    },
+    {
+      "recordKey": "army_units:point_defense_drone",
+      "sourceRecordHash": "e8c9a2fb937375b2c33c508c79f5253c7c465179aca2b28b97febc36f8d6c2dc",
+      "payloadHash": "d248d4d7fa6999a9c5c8eb001871c4256c1ee70e42bfbfaf67065ea011081ddf"
+    },
+    {
+      "recordKey": "army_units:praetor_guard__zealot_",
+      "sourceRecordHash": "aaf0b7d625ba0b25fb70ebddf75673b84bb15bd7d7f8fab7012140f1fbd06797",
+      "payloadHash": "4f4723d03977f37824585144143533007e5f4bd47cc530e6b1dd314af70320ba"
+    },
+    {
+      "recordKey": "army_units:pylon",
+      "sourceRecordHash": "ffc2e86f75c3e54731691c04e477c3841c44ade1e44955a592359eb5a3dfa687",
+      "payloadHash": "d9ecc9f442fc675c1c2ad6ebb6695e4f9982502e9b2b144f9f760735764d7630"
+    },
+    {
+      "recordKey": "army_units:queen",
+      "sourceRecordHash": "67d4658587990405d2ad969e1fad6d77e67f4c1f6552a3ffa216f859b3e19b18",
+      "payloadHash": "918c6954cee7eee015e03b61b1b360ad2c5ced73a58186a5d027b70eff65a31f"
+    },
+    {
+      "recordKey": "army_units:raptor__zergling_",
+      "sourceRecordHash": "4ff8fe3cef5800813b3b123eacf1c64830ae3604b5215b800ca8d210215efab6",
+      "payloadHash": "15fed892490beffb78c730059c149096676281902437580c792ba72f6fb6b99d"
+    },
+    {
+      "recordKey": "army_units:ravager",
+      "sourceRecordHash": "d5b2f67a2b7767dfa3d3849ccf0b2d45e70da1eb26027fe1519b149b9f318f58",
+      "payloadHash": "2a063a63dd3efa6dc29e2649d6f72afceb85864e87120c6dd3e5d93e2483dbc8"
+    },
+    {
+      "recordKey": "army_units:raven",
+      "sourceRecordHash": "5482593ea8e36d7dc7757e41607c8f879b57746b0f0d699ec27ac6519df823bb",
+      "payloadHash": "91c229018f013bbba1bc97ea0137b7b166e9b1359706bf732884dfb0e0a64504"
+    },
+    {
+      "recordKey": "army_units:raynor_s_raider__marine_",
+      "sourceRecordHash": "f293e94be33773a11bb8a7ca535c1ae62e0780f646842fd02f4fef43b190486e",
+      "payloadHash": "efaf829f4c56914d171a071b27e6743f4a3abf94f00645b1b90abd5d37a289ec"
+    },
+    {
+      "recordKey": "army_units:roach",
+      "sourceRecordHash": "e899d2a7b5f1a65f2c356d5c38badcae1632fdc64b05f4761b3191e4b07a6d0c",
+      "payloadHash": "c0cdf85c665fe0ed5c0dc7786c3449f471c7666d28a4605cf8c332b7a3f82941"
+    },
+    {
+      "recordKey": "army_units:roachling",
+      "sourceRecordHash": "dad7c2a3e2d41c9b3548051528766315de0b3317f9c6c6dfb7a3c88adfa1aac6",
+      "payloadHash": "798f976c444281d665eebf4e2223a13f089a91e874a5c327f7bebfef1499a02f"
+    },
+    {
+      "recordKey": "army_units:sabotage_drone",
+      "sourceRecordHash": "dc0f4088847feea1afefc1866f790d7dea5cddc47922b1b185176a07625ff3cc",
+      "payloadHash": "09a68fdc2079dbc63b0fd560c9f7a3e267b137a2d1910a42be4f11bb0ff2f1c7"
+    },
+    {
+      "recordKey": "army_units:sentry",
+      "sourceRecordHash": "53a8abb9f5d7ae92d0dc6c230dadf73bc21b17af955e69a80685c6374f000269",
+      "payloadHash": "924d1af5180ed4faf5fc3140fbc1b697cbe7f4ad44e6f7554f2bdf1c6c877435"
+    },
+    {
+      "recordKey": "army_units:siege_tank",
+      "sourceRecordHash": "89a0d3d97984b63d7cb3e81b0c3ddd2339a4176645f00249517b71100ddd7766",
+      "payloadHash": "f6c3e7b486b14df3cb3192ca65a5575cef45e04cbdc7b7f782b3623eceb5a0fd"
+    },
+    {
+      "recordKey": "army_units:spec_ops_marauder__marauder_",
+      "sourceRecordHash": "4b57a66e3b3cc5d040d2f963fef8cdc8393c1a87ea763c9f0611a4c089c6a9c8",
+      "payloadHash": "a63453720c3dbd535659ca24a23da3d2cc0cbd4defb1b8b261da8c253142d91c"
+    },
+    {
+      "recordKey": "army_units:stalker",
+      "sourceRecordHash": "ff33aa26920de222908d1b46b3ae18477a5a8d573b03f27deed6fc4a52af18a9",
+      "payloadHash": "ced34a9dc9731b09e53395f80434bc52be8c1fef0847c68c373617a17b85ff72"
+    },
+    {
+      "recordKey": "army_units:swarmling__zergling_",
+      "sourceRecordHash": "3d7278b9d22d313a4946f5bd92e6d5ab6a5f4cf35af7a1d001ab7bdd552b5a9a",
+      "payloadHash": "8fd68ef8cf1a8a7950eba4d90e5104dcab52befedb75566ad804f60b6efdcf79"
+    },
+    {
+      "recordKey": "army_units:tassadar",
+      "sourceRecordHash": "8aa312078caee932f092ffedefb01ab6e3a3deff011dbb62a84ffa5605d314eb",
+      "payloadHash": "d7f345bac75441cff80b8297376f75c2065ec56db224e622e147aba58842f5af"
+    },
+    {
+      "recordKey": "army_units:twilight_templar__high_templar_",
+      "sourceRecordHash": "5bc212dfb865fc3fba7f60e9f1e362c03b1d671c5bf11161504fd37f60c0994d",
+      "payloadHash": "46526238ce1d95888d4a3faec70cdeeba9f2f0bef356c37453ff2832a5416e47"
+    },
+    {
+      "recordKey": "army_units:vile__roach_",
+      "sourceRecordHash": "e462009845a7337fedb910f8cb9291127ba4d2e11bcf1c994f8909e8e4d78b04",
+      "payloadHash": "1ddc8bb2fcf2435c1814daf3bfb0d00ffea085867f517832ae03609795a9063a"
+    },
+    {
+      "recordKey": "army_units:vileling__zergling_",
+      "sourceRecordHash": "df5ca8d83006366e75eba43c6eea018abedb89ff392d7f6d53c9e5eb100f2a9f",
+      "payloadHash": "e7e4bebf3a4493c2dd4e14b477488161968adbb230b242e9aa9bb7df28f38d96"
+    },
+    {
+      "recordKey": "army_units:zagara",
+      "sourceRecordHash": "5c85d80cc8d36c0ae7be92dabf95983a29c72d8ffb52c29188e943f12b6d982d",
+      "payloadHash": "0bb4dddcaefd80887f7df581c74641c021e3d8d01969460bc1f34b7d8ef6b90c"
+    },
+    {
+      "recordKey": "army_units:zealot",
+      "sourceRecordHash": "58acd8a81f3de33e0990280c62b93302635dbb59b8c01316ce43b122c7761506",
+      "payloadHash": "ec1bbc4f0a124efaf251903cda2f7be405533ec58b951498904643f29d2de2a0"
+    },
+    {
+      "recordKey": "army_units:zeratul",
+      "sourceRecordHash": "d452a07b3c3db5db5857a51e0fd613933e6d3cf378734b6fcb9046c37a1d67c4",
+      "payloadHash": "686f4412486b64184d6d02c1085171a6408b50ce6fc3a669070f74438feb1884"
+    },
+    {
+      "recordKey": "army_units:zergling",
+      "sourceRecordHash": "cb146bd5a44f3e0af8f0fd2cde2becb09f9fed920a661f6b9d8305b1c79edf73",
+      "payloadHash": "1f177d4116028dcf3a3bc3337fc4c4df5acb87093617832a26eb255f7e7a6c11"
+    }
+  ],
+  "unitSourceIndexHash": "d3c62d39a2577cd75152ae8e6490c7552cae1e5c11768c2ea4ce0111141c5313",
+  "armyBuilderUnitDataBundleHash": "6d7f8d2e098a51c365a6b917c389c1ac592c5c3c73cb7827d851f7b02e02135d",
+  "baseGeometryBundleHash": "0d8d362ba668624c83af65df1929aa279952fc08f4d9bc9bea382c7e3bdfb80e",
+  "baseGeometryProfileIndexHash": "f098e2cdb5de5f6d1354963511d60ffd0fa963d065d884c2ef8496db5637392c",
+  "audit": {
+    "unitCount": 45,
+    "geometryBoundCount": 44,
+    "geometryMissingCount": 1
+  },
+  "armySlotTypes": [
+    "Air",
+    "Core",
+    "Elite",
+    "Hero",
+    "Support"
+  ],
+  "phaseBoxPhases": [
+    "Any Phase",
+    "Movement Phase",
+    "Assault Phase",
+    "Combat Phase"
+  ],
+  "supplyUses": [
+    "deployment",
+    "mission_marker_control",
+    "scoring",
+    "tactical_mass"
+  ],
+  "sourcePolicy": {
+    "refreshDuringDevelopment": false,
+    "repositoryFallbackAllowed": false,
+    "commandCenterRole": "primary_unit_characteristics_and_compositions",
+    "pdfRole": "reference_and_verified_core_rules_and_base_geometry"
+  },
+  "productionRoomEligible": false,
+  "rulesTruth": "official_unit_card_fields_and_current_model_count_supply_projection",
+  "trainingTruth": false,
+  "bundleHash": "60365a02d0a97172392b509ec342aa8511d7aaea7def354351a64e5ba1dbc32d"
+}

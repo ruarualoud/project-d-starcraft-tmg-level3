@@ -1,3 +1,4 @@
+import {compileMeleeProbabilityQueryParametersV1} from './melee-probability-query-parameters-v1.mjs';
 import { hashStarcraftTmgContract } from
   "../authoritative-engine/transition-v1.mjs";
 import {
@@ -47,7 +48,14 @@ function freeze(value) {
 }
 
 function sourceDomain(domain) {
-  return object(domain?.sourceDomain) ? domain.sourceDomain : domain;
+  // Formal rooms can compose Match → release component → native weapon.
+  // A delegated action with a different contract remains its own action.
+  const current = object(domain?.sourceDomain) ? domain.sourceDomain : domain;
+  const native = current?.sourceDomain;
+  if ((current?.sourceRuntimeKind === "melee" || current?.sourceRuntimeKind === "ranged")
+    && object(native) && native.actionType === current.actionType
+    && native.parameterKind === current.parameterKind) return native;
+  return current;
 }
 
 function boundedSampleBudget(value, fallback = DEFAULT_SAMPLE_BUDGET) {
@@ -455,7 +463,8 @@ function attackProbabilityPreview(input, previewAction) {
   const state = input.state;
   const domain = sourceDomain(input.domain);
   if (object(state) && domain?.parameterKind === OFFICIAL_SELECTED_ROSTER_FIGHT_PARAMETER_KIND) {
-    const { targetUnitId, ...parameters } = input.parameters || {};
+    const { targetUnitId, ...parameters } =
+      compileMeleeProbabilityQueryParametersV1(domain, input.parameters) || {};
     // Allocation, weapon, Close Ranks and effects remain explicit Agent choices.
     // Multi-target Precision allocation needs a separately declared policy.
     if (!targetUnitId || parameters.allocations?.length !== 1

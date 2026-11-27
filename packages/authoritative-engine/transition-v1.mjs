@@ -113,6 +113,12 @@ const ACTION_FIELDS = Object.freeze([
   "sourceRuntimeKind", "sourceAction", "sourceActionHash",
 ]);
 
+// This new binding group is emitted by weapon-aware composed runtimes. Keeping
+// it opt-in preserves the exact projection of all historical finite actions.
+const SOURCE_WEAPON_BINDING_ACTION_FIELDS_V1 = Object.freeze([
+  'sourceDefinitionId', 'sourceFeatureHash', 'weaponSourceRouteHash',
+]);
+
 class AuthorityError extends Error {
   constructor(code, message = code, details = {}) {
     super(message);
@@ -182,7 +188,9 @@ function rejectedFrom(error, fallback = "PROPOSAL_INVALID") {
 }
 
 function contractAction(candidate = {}) {
-  return Object.fromEntries(ACTION_FIELDS
+  const fields = candidate.weaponSourceRouteHash === undefined ? ACTION_FIELDS
+    : [...ACTION_FIELDS, ...SOURCE_WEAPON_BINDING_ACTION_FIELDS_V1];
+  return Object.fromEntries(fields
     .filter((field) => candidate[field] !== undefined)
     .map((field) => [field, clone(candidate[field])]));
 }
@@ -257,7 +265,7 @@ function replayMemoPlainData(value, visiting = new WeakSet()) {
   } catch { return false; }
 }
 
-function normalizeAuthorityState(input, stateRevision = 0) {
+export function normalizeAuthorityState(input, stateRevision = 0) {
   const state = normalizeStarcraftTmgState(input || {});
   // The legacy v0 normalizer knows only its historical `scoring` label and
   // otherwise rewrites unknown phases to Movement. Official pre-game setup,
@@ -648,6 +656,10 @@ export function createStarcraftTmgAuthoritativeEngine(options = {}) {
       },
     );
   }
+  const releaseBinding = rulesRuntime?.releaseBinding || null;
+  if (releaseBinding && releaseBinding.runtimeHash !== rulesRuntime.descriptor.runtimeHash) {
+    throw new AuthorityError('RULE_RELEASE_BINDING_INVALID', 'Runtime release binding differs from its descriptor');
+  }
   const rulesVersion = nonEmpty(
     rulesRuntime?.descriptor.rulesVersion || options.rulesVersion || STARCRAFT_TMG_RULES_VERSION,
     "rulesVersion",
@@ -880,6 +892,14 @@ export function createStarcraftTmgAuthoritativeEngine(options = {}) {
   }
 
   function createMatchBinding(input = {}) {
+    if (releaseBinding) {
+      const source = input.dependencies?.sourceSnapshot?.content;
+      const data = input.dependencies?.dataSnapshot?.content;
+      if (source?.snapshotHash !== releaseBinding.sourceSnapshotHash
+        || data?.normalizedDatasetHash !== releaseBinding.normalizedDatasetHash) {
+        throw new AuthorityError('RULE_RELEASE_SOURCE_MISMATCH', 'Initial source differs from the selected release');
+      }
+    }
     const roomId = nonEmpty(input.roomId, "roomId");
     const gameId = nonEmpty(input.gameId || "starcraft-tmg", "gameId");
     const dataVersion = String(input.dataVersion ?? defaultDataVersion);
@@ -941,6 +961,7 @@ export function createStarcraftTmgAuthoritativeEngine(options = {}) {
       actionSchemaHash: dependencies.actionSchema.contentHash,
       dependencies,
       rulesRuntimeBinding: clone(rulesRuntimeBinding),
+      ...(releaseBinding ? { releaseBinding: clone(releaseBinding) } : {}),
       refereeKeyId: crypto.descriptor.keyId,
       refereePublicKeyFingerprint: crypto.descriptor.publicKeyFingerprint,
       rulesDisplayBinding: {
@@ -985,6 +1006,9 @@ export function createStarcraftTmgAuthoritativeEngine(options = {}) {
           silentCompatibilityUsed: false,
         },
       );
+    }
+    if (hashStarcraftTmgContract(binding.releaseBinding || null) !== hashStarcraftTmgContract(releaseBinding)) {
+      throw new AuthorityError('DEPENDENCY_QUARANTINED', 'Frozen release differs from the selected engine');
     }
     return binding;
   }
@@ -1087,6 +1111,9 @@ export function createStarcraftTmgAuthoritativeEngine(options = {}) {
       productionReady: input.productionReady,
     });
     validateMatchBinding(matchBinding);
+    if (runtimeDescriptor.releaseNativeMissionOpening === true && input.state?.phase === "setup") {
+      throw new AuthorityError("PROPOSAL_INVALID", "OFFICIAL_RELEASE_MISSION_OPENING_NOT_PREPARED");
+    }
     const state = normalizeAuthorityState(input.state || {}, stateRevision);
     const envelope = {
       schemaVersion: `${STARCRAFT_TMG_AUTHORITY_VERSION}.envelope`,
@@ -2179,12 +2206,18 @@ export function createStarcraftTmgAuthoritativeEngine(options = {}) {
           core.chanceReveal,
         );
         const transition = deterministicTransition(envelope, { ...resolved, chanceReveals });
-        if (resolved.space.legalSpaceHash !== core.legalSpaceHash
-          || proposalHash !== core.proposalHash
-          || hashStarcraftTmgContract(transition.nextState) !== core.postStateHash
-          || hashStarcraftTmgContract(transition.events) !== core.eventsHash
+        const mismatches = [];
+        if (resolved.space.legalSpaceHash !== core.legalSpaceHash) mismatches.push("legalSpace");
+        if (proposalHash !== core.proposalHash) mismatches.push("proposal");
+        if (hashStarcraftTmgContract(transition.nextState) !== core.postStateHash) mismatches.push("state");
+        if (hashStarcraftTmgContract(transition.events) !== core.eventsHash
           || canonicalStarcraftTmgJson(transition.events) !== canonicalStarcraftTmgJson(core.events)) {
-          throw new AuthorityError("REPLAY_DIVERGED", "receipt did not replay to the same result", { index });
+          mismatches.push("events");
+        }
+        if (mismatches.length) {
+          throw new AuthorityError("REPLAY_DIVERGED", "receipt did not replay to the same result", {
+            index, stateRevision: core.postStateRevision, mismatches,
+          });
         }
         envelope = createEnvelope({
           gameId: envelope.gameId,
@@ -2220,6 +2253,7 @@ export function createStarcraftTmgAuthoritativeEngine(options = {}) {
       referee: clone(crypto.descriptor),
       registeredDependencyCount: dependencyRegistry.size,
       manualAdjudicationEnabled: false,
+      ...(releaseBinding ? { releaseBinding: clone(releaseBinding) } : {}),
       rulesRuntimeMode: rulesRuntimeBinding.mode,
       rulesRuntime: clone(runtimeDescriptor),
       rulesRuntimeBinding: clone(rulesRuntimeBinding),

@@ -69,8 +69,8 @@ function sourcePieceId(value) {
     ? String(value.sourcePieceId || value.appliedByPieceId || "")
     : "";
 }
-function localEffectSnapshot(piece) {
-  return LOCAL_EFFECT_FIELDS.flatMap((field) => (
+function localEffectSnapshot(piece, fields = LOCAL_EFFECT_FIELDS) {
+  return fields.flatMap((field) => (
     Array.isArray(piece[field])
       ? piece[field].map((entry, index) => ({ field,
         effectId: effectId(entry, field, index),
@@ -78,14 +78,14 @@ function localEffectSnapshot(piece) {
       : []
   ));
 }
-function outwardEffects(state, sourceId) {
+function outwardEffects(state, sourceId, fields = OUTWARD_EFFECT_FIELDS) {
   const preserved = [];
   const explicitlyEnding = [];
   const targetPatches = [];
   for (const target of state.pieces) {
     if (target.id === sourceId) continue;
     const set = {};
-    for (const field of OUTWARD_EFFECT_FIELDS) {
+    for (const field of fields) {
       if (!Array.isArray(target[field])) continue;
       const kept = [];
       let changed = false;
@@ -128,15 +128,25 @@ function destructionSettled(state, pieceId) {
   ));
 }
 
-export function resolveOfficialUnitDestructionSettlementV1(input = {}) {
-  const { state, bundle } = validate(input);
-  const piece = pieceFor(state, input.pieceId);
-  const models = piece.models;
-  if (input.procedureKind !== "settle_unit_destruction"
-    || !HASH.test(String(input.triggerReceiptHash || ""))
-    || !["casualty_resolution", "final_reserve_destruction",
-      "rule_effect_resolution"].includes(input.triggerAuthority)
-    || !Array.isArray(models) || models.length < 1
+// The existing V1 procedure uses `id`; current battlefield tokens use `tokenId`.
+// Each caller supplies its actual identity field after validating its own source.
+export function projectOfficialDestroyedSourceTokenIdsV1(tokens, pieceId, identityField = 'id') {
+  if (!Array.isArray(tokens) || !['id', 'tokenId'].includes(identityField)) {
+    fail('UNIT_DESTRUCTION_TOKEN_INPUT_INVALID');
+  }
+  const sourceId = nonEmpty(pieceId, 'UNIT_DESTRUCTION_PIECE_REQUIRED');
+  const owned = tokens.filter(token => token?.createdByPieceId === sourceId);
+  const tokenId = token => nonEmpty(token[identityField], 'UNIT_DESTRUCTION_TOKEN_ID_REQUIRED');
+  return {
+    removeBoardTokenIds: owned.filter(token => token.stayInPlay !== true).map(tokenId).sort(),
+    stayInPlayTokenIds: owned.filter(token => token.stayInPlay === true).map(tokenId).sort(),
+  };
+}
+
+export function projectOfficialDestroyedUnitConsequencesV1({ state, pieceId,
+  tokenIdentityField = 'id', includeCurrentProductEffects = false, dispatchCreatedTokensAfterTransition = false } = {}) {
+  const piece = pieceFor(state, pieceId), models = piece.models;
+  if (!Array.isArray(models) || models.length < 1
     || Number(piece.currentModels) !== 0 || Number(piece.currentSupply) !== 0
     || models.some((model) => model?.isDestroyed !== true
       || model?.isOnField !== false)
@@ -146,16 +156,10 @@ export function resolveOfficialUnitDestructionSettlementV1(input = {}) {
     || destructionSettled(state, piece.id)) {
     fail("UNIT_DESTRUCTION_SETTLEMENT_INVALID", piece.id);
   }
-  const localEffectsEnded = localEffectSnapshot(piece);
-  const removeBoardTokenIds = state.board.tokens.filter((token) => (
-    token?.createdByPieceId === piece.id && token?.stayInPlay !== true
-  )).map((token) => nonEmpty(token.id,
-    "UNIT_DESTRUCTION_TOKEN_ID_REQUIRED")).sort();
-  const stayInPlayTokenIds = state.board.tokens.filter((token) => (
-    token?.createdByPieceId === piece.id && token?.stayInPlay === true
-  )).map((token) => nonEmpty(token.id,
-    "UNIT_DESTRUCTION_TOKEN_ID_REQUIRED")).sort();
-  const outward = outwardEffects(state, piece.id);
+  const fields = includeCurrentProductEffects ? [...LOCAL_EFFECT_FIELDS, 'officialAbilityEffects'] : LOCAL_EFFECT_FIELDS;
+  const localEffectsEnded = localEffectSnapshot(piece, fields);
+  const { removeBoardTokenIds, stayInPlayTokenIds } = projectOfficialDestroyedSourceTokenIdsV1(state.board.tokens, piece.id, tokenIdentityField);
+  const outward = outwardEffects(state, piece.id, fields);
   const localMarkerIds = state.board.effectMarkers.filter((marker) => (
     marker?.affectedPieceId === piece.id || marker?.targetPieceId === piece.id
   )).map((marker) => nonEmpty(marker.id,
@@ -178,19 +182,16 @@ export function resolveOfficialUnitDestructionSettlementV1(input = {}) {
   const localSet = {
     isDestroyed: true, isOnField: false, isInReserves: false,
     abilitiesActive: false, destructionLifecycleSettled: true,
-    ...Object.fromEntries(LOCAL_EFFECT_FIELDS.filter((field) => (
+    ...Object.fromEntries(fields.filter((field) => (
       Array.isArray(piece[field])
     )).map((field) => [field, []])),
   };
-  return result({
-    schema: "starcraft_tmg_official_unit_destruction_settlement_v1",
-    procedureKind: "settle_unit_destruction", pieceId: piece.id,
-    sideKey: piece.sideKey, triggerReceiptHash: input.triggerReceiptHash,
-    triggerAuthority: input.triggerAuthority,
+  return {
     lastModelFallen: true, unitDestroyed: true,
     localEffectsEnded, localEffectsEndedImmediately: true,
-    removeBoardTokenIds, stayInPlayTokenIds,
-    nonStayInPlayCreatedTokensRemoved: true,
+    removeBoardTokenIds: dispatchCreatedTokensAfterTransition ? [] : removeBoardTokenIds, stayInPlayTokenIds,
+    nonStayInPlayCreatedTokensRemoved: !dispatchCreatedTokensAfterTransition,
+    ...(dispatchCreatedTokensAfterTransition ? {createdTokenDispositionOwner:'release_match_transition'} : {}),
     outwardEffectsPreserved: outward.preserved,
     explicitOutwardEffectsEnded: outward.explicitlyEnding,
     outwardEffectsRemainUnlessExplicitlyStatedOtherwise: true,
@@ -200,8 +201,24 @@ export function resolveOfficialUnitDestructionSettlementV1(input = {}) {
         expectedBeforePieceHash: hashStarcraftTmgContract(piece),
         set: localSet, deleteFields: ["xInches", "yInches"] }],
       outwardPiecePatches: outward.targetPatches,
-      removeBoardTokenIds, removeEffectMarkerIds,
+      removeBoardTokenIds: dispatchCreatedTokensAfterTransition ? [] : removeBoardTokenIds, removeEffectMarkerIds,
     },
+  };
+}
+
+export function resolveOfficialUnitDestructionSettlementV1(input = {}) {
+  const { state, bundle } = validate(input);
+  const piece = pieceFor(state, input.pieceId);
+  if (input.procedureKind !== 'settle_unit_destruction'
+    || !HASH.test(String(input.triggerReceiptHash || ''))
+    || !['casualty_resolution', 'final_reserve_destruction', 'rule_effect_resolution'].includes(input.triggerAuthority)) {
+    fail('UNIT_DESTRUCTION_SETTLEMENT_INVALID', piece.id);
+  }
+  return result({ schema: 'starcraft_tmg_official_unit_destruction_settlement_v1',
+    procedureKind: 'settle_unit_destruction', pieceId: piece.id,
+    sideKey: piece.sideKey, triggerReceiptHash: input.triggerReceiptHash,
+    triggerAuthority: input.triggerAuthority,
+    ...projectOfficialDestroyedUnitConsequencesV1({ state, pieceId: piece.id }),
     unitDestructionLifecycleDataBundleHash: bundle.bundleHash,
     clientSuppliedMutationAccepted: false, trainingTruth: false,
   });

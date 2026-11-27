@@ -7,6 +7,9 @@ import { createOfficialPhysicalFootprintV1, evaluateOfficialPhysicalFootprintRel
   "./official-model-base-geometry-rules-kernel-v1.mjs";
 import { resolveOfficialLogicalTerrainSurfaceCoverageV1 } from
   "../product-composition/official-logical-terrain-surface-geometry-v1.mjs";
+import { officialRectangleUnionCoversBasesV1 } from "./official-footprint-rectangle-union-geometry-v1.mjs";
+import { hasOfficialHighGroundFinalPlacementPolicyV13 } from
+  "./official-high-ground-final-placement-policy-v13.mjs";
 
 const V3_OVERLAY = "local_ramp_corridor_v3_1";
 const TOLERANCE = 1;
@@ -101,6 +104,14 @@ function whollyInsideRectangle(footprint, rect) {
 // axis-aligned rectangles: partition at every rectangle/vertex x-edge,
 // then cover the entire vertical cross-section within each slab.
 function whollyInsideUnion(footprint, rows) {
+  if (footprint.shape === "measured_contour" || footprint.shape === "orthogonal_cross") {
+    const cells = rows.map(row => {
+      const { minX, maxX, minY, maxY } = rectangle(row);
+      return { shape: "axis_aligned_rectangle", minXMilliInches: minX, maxXMilliInches: maxX,
+        minYMilliInches: minY, maxYMilliInches: maxY };
+    });
+    return cells.length > 0 && officialRectangleUnionCoversBasesV1(cells, [footprint]);
+  }
   const box = bounds(footprint);
   const nearby = rows.map(rectangle).filter((rect) => (
     rect.maxX >= box.minX && rect.minX <= box.maxX
@@ -145,12 +156,51 @@ function whollyInsideUnion(footprint, rows) {
   return true;
 }
 
+function centreInside(footprint, row) {
+  const rect = rectangle(row);
+  const point = footprint.center;
+  return point.xMilliInches >= rect.minX - TOLERANCE
+    && point.xMilliInches <= rect.maxX + TOLERANCE
+    && point.yMilliInches >= rect.minY - TOLERANCE
+    && point.yMilliInches <= rect.maxY + TOLERANCE;
+}
+
+function terrainSupports(terrain, footprint, finalPosition) {
+  const cells = terrain.footprintCells || [terrain.footprint];
+  return whollyInsideUnion(footprint, cells)
+    || (finalPosition && Number(terrain.size) >= 3
+      && cells.some(cell => centreInside(footprint, cell)));
+}
+
+// A path/ramp caller retains the complete-base contract. Only an explicit
+// action-end consumer may use the independently versioned centre condition.
 export function deriveOfficialSemanticSurfaceSupportV1(state, footprint) {
+  return deriveSurfaceSupport(state, footprint, false);
+}
+
+export function deriveOfficialFinalPlacementSurfaceSupportV13(state, footprint) {
+  return deriveSurfaceSupport(state, footprint,
+    hasOfficialHighGroundFinalPlacementPolicyV13(state));
+}
+
+function deriveSurfaceSupport(state, footprint, finalPosition) {
   const freeze = state?.officialCompetitiveMapRoomFreeze;
   if (freeze?.overlayReceipt?.terrainProfilePolicy === "accepted_premade_group_rectangle_overlay_v1") {
     const coverage = resolveOfficialLogicalTerrainSurfaceCoverageV1(state, [footprint]);
-    if (!coverage) return null;
-    const covered = new Map(coverage.groups.filter(group => group.covered)
+    if (!coverage) {
+      // This registered map has no active standable surface groups. Its
+      // implicit ground still supplies an explicit action-end result.
+      if (!finalPosition) return null;
+      return Object.freeze({ elevation: "ground", supportTerrainIds: Object.freeze([]),
+        semanticHeightTier: null, fullModelBaseChecked: true,
+        exactNativeSurfaceUnionChecked: true, finalPositionOnly: true,
+        highGroundOverhang: false });
+    }
+    const covered = new Map(coverage.groups.filter(group => group.covered
+      || (finalPosition && group.elevation === "high"
+        && state.board.terrain.filter(terrain => terrain.terrainGroupId === group.terrainGroupId)
+          .some(terrain => (terrain.footprintCells || [terrain.footprint])
+            .some(cell => centreInside(footprint, cell)))))
       .map(group => [group.terrainGroupId, group]));
     const supports = (state.board?.terrain || []).filter(terrain => {
       if (!covered.has(terrain.terrainGroupId) || terrain.isRemoved === true || terrain.isDestroyed === true) return false;
@@ -168,9 +218,22 @@ export function deriveOfficialSemanticSurfaceSupportV1(state, footprint) {
       : [...covered.values()].some(group => group.elevation === "mid") ? "mid" : "ground";
     return Object.freeze({ elevation, supportTerrainIds: Object.freeze(supports.map(terrain => terrain.id)),
       semanticHeightTier: elevation === "high" ? "high_ground" : elevation === "mid" ? "mid_ground" : null,
-      fullModelBaseChecked: true, exactNativeSurfaceUnionChecked: true });
+      fullModelBaseChecked: true, exactNativeSurfaceUnionChecked: true,
+      ...(finalPosition ? { finalPositionOnly: true,
+        highGroundOverhang: [...covered.values()].some(group => !group.covered) } : {}) });
   }
-  if (freeze?.overlayReceipt?.overlayCompilerVersion !== V3_OVERLAY) return null;
+  if (freeze?.overlayReceipt?.overlayCompilerVersion !== V3_OVERLAY) {
+    if (!finalPosition) return null;
+    const supports = (state.board?.terrain || []).filter(terrain => (
+      terrain.isRemoved !== true && terrain.isDestroyed !== true
+      && terrain.standableHorizontalSurface === true && terrainSupports(terrain, footprint, true)))
+      .sort((a, b) => String(a.id).localeCompare(String(b.id)));
+    const highest = Math.max(0, ...supports.map(terrain => Number(terrain.size || 0)));
+    return Object.freeze({ elevation: highest >= 3 ? "high" : highest >= 1 ? "mid" : "ground",
+      supportTerrainIds: Object.freeze(supports.map(terrain => terrain.id)),
+      finalPositionOnly: true, fullModelBaseChecked: true,
+      highGroundOverhang: supports.some(terrain => !terrainSupports(terrain, footprint, false)) });
+  }
   const rows = freeze.semanticTerrainCertificate?.heightTierLedgerRows;
   const ledger = state.officialTerrainHeightTierLedger;
   if (!Array.isArray(rows) || !ledger
@@ -182,11 +245,15 @@ export function deriveOfficialSemanticSurfaceSupportV1(state, footprint) {
   const boardSupports = (state.board?.terrain || []).filter((terrain) => (
     terrain.isRemoved !== true && terrain.isDestroyed !== true
       && terrain.standableHorizontalSurface === true
-      && whollyInsideRectangle(footprint, rectangle(terrain))))
+      && (finalPosition ? terrainSupports(terrain, footprint, true)
+        : whollyInsideRectangle(footprint, rectangle(terrain)))))
     .sort((a, b) => String(a.id).localeCompare(String(b.id)));
   const tier = ["high_ground", "mid_ground"].find((heightTier) => (
     whollyInsideUnion(footprint, rows.filter((row) => (
-      row.heightTier === heightTier && row.impassable !== true))))) || null;
+      row.heightTier === heightTier && row.impassable !== true)))
+      || (finalPosition && heightTier === "high_ground"
+        && rows.some(row => row.heightTier === heightTier
+          && row.impassable !== true && centreInside(footprint, row))))) || null;
   const highestBoardSize = boardSupports.reduce((value, terrain) => (
     Math.max(value, Number(terrain.size || 0))), 0);
   const elevation = tier === "high_ground" || highestBoardSize >= 3
@@ -196,5 +263,9 @@ export function deriveOfficialSemanticSurfaceSupportV1(state, footprint) {
     supportTerrainIds: Object.freeze(boardSupports.map((terrain) => String(terrain.id))),
     semanticHeightTier: tier,
     semanticCertificateHash: freeze.semanticTerrainCertificateHash,
-    fullModelBaseChecked: true });
+    fullModelBaseChecked: true,
+    ...(finalPosition ? { finalPositionOnly: true,
+      highGroundOverhang: tier === "high_ground" && !whollyInsideUnion(footprint,
+        rows.filter(row => row.heightTier === "high_ground" && row.impassable !== true))
+        || boardSupports.some(terrain => !terrainSupports(terrain, footprint, false)) } : {}) });
 }

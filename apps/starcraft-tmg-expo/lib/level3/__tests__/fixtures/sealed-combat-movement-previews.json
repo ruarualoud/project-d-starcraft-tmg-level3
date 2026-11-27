@@ -1,0 +1,373 @@
+[
+  {
+    "source": "charge",
+    "roomId": "standard-ravager-charge-signed-map-v243",
+    "revision": 3,
+    "proposalHash": "7270cde207be55e56473e2656d305b5398c68e1eb4c9ab1bba8bf450150aebb3",
+    "piece": {
+      "id": "ravager",
+      "name": "Ravager",
+      "sideKey": "player2",
+      "isOnField": true,
+      "models": [
+        {
+          "id": "ravager-model-1",
+          "xInches": 18,
+          "yInches": 18,
+          "isOnField": true,
+          "isDestroyed": false,
+          "baseShape": "round",
+          "baseWidthInches": 3.15,
+          "baseDepthInches": 3.15,
+          "baseRotationDegrees": 0
+        }
+      ]
+    },
+    "core": {
+      "action": {
+        "actionType": "resolve_charge",
+        "pieceId": "ravager",
+        "sideKey": "player2",
+        "sourceAction": {
+          "actionType": "resolve_charge",
+          "pieceId": "ravager",
+          "sideKey": "player2",
+          "sourceAction": {
+            "actionType": "resolve_charge",
+            "pieceId": "ravager",
+            "sideKey": "player2",
+            "chargeResolutionPlan": {
+              "pieceId": "ravager",
+              "outcome": "success",
+              "geometry": {
+                "pieceId": "ravager",
+                "actionType": "charge",
+                "leadingModelId": "ravager-model-1",
+                "canonicalPath": {
+                  "schemaVersion": "starcraft_tmg_selected_spatial_path_v1",
+                  "unit": "milli-inch",
+                  "points": [
+                    {
+                      "xMilliInches": 18000,
+                      "yMilliInches": 18000,
+                      "elevation": "ground",
+                      "supportTerrainIds": [],
+                      "rotationDegrees": 0
+                    },
+                    {
+                      "xMilliInches": 18000,
+                      "yMilliInches": 20440,
+                      "elevation": "ground",
+                      "supportTerrainIds": [],
+                      "rotationDegrees": 0
+                    }
+                  ],
+                  "distanceMilliInches": 2440
+                },
+                "finalModelPositions": [
+                  {
+                    "modelId": "ravager-model-1",
+                    "xMilliInches": 18000,
+                    "yMilliInches": 20440,
+                    "elevation": "ground",
+                    "supportTerrainIds": [],
+                    "rotationDegrees": 0
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      "proposal": {
+        "parameters": {
+          "path": [
+            {
+              "xMilliInches": 18000,
+              "yMilliInches": 20440,
+              "elevation": "ground",
+              "supportTerrainIds": []
+            }
+          ]
+        }
+      }
+    },
+    "expected": {
+      "points": [
+        {
+          "xMilliInches": 18000,
+          "yMilliInches": 18000
+        },
+        {
+          "xMilliInches": 18000,
+          "yMilliInches": 20440
+        }
+      ],
+      "positions": [
+        {
+          "modelId": "ravager-model-1",
+          "xMilliInches": 18000,
+          "yMilliInches": 20440
+        }
+      ]
+    }
+  },
+  {
+    "source": "close-ranks",
+    "roomId": "wave2-close-ranks-displacement",
+    "revision": 0,
+    "proposalHash": "0e6a7edaaa4db178bedaf91e072ba2fcb3d07fad7abcb0a4405f9051fb2e40d3",
+    "piece": {
+      "id": "watchers1",
+      "name": "Nerazim Watchers (Adept)",
+      "sideKey": "player1",
+      "isOnField": true,
+      "models": [
+        {
+          "id": "watchers1-model-1",
+          "xInches": 14.8,
+          "yInches": 12.5,
+          "isOnField": true,
+          "isDestroyed": false,
+          "baseShape": "round",
+          "baseWidthInches": 1.575,
+          "baseDepthInches": 1.575,
+          "baseRotationDegrees": 0
+        },
+        {
+          "id": "watchers1-model-2",
+          "xInches": 12,
+          "yInches": 11.575,
+          "isOnField": true,
+          "isDestroyed": false,
+          "baseShape": "round",
+          "baseWidthInches": 1.575,
+          "baseDepthInches": 1.575,
+          "baseRotationDegrees": 0
+        },
+        {
+          "id": "watchers1-model-3",
+          "xInches": 13.2,
+          "yInches": 12.8,
+          "isOnField": true,
+          "isDestroyed": false,
+          "baseShape": "round",
+          "baseWidthInches": 1.575,
+          "baseDepthInches": 1.575,
+          "baseRotationDegrees": 0
+        },
+        {
+          "id": "watchers1-model-4",
+          "xInches": 16,
+          "yInches": 10.8,
+          "isOnField": true,
+          "isDestroyed": false,
+          "baseShape": "round",
+          "baseWidthInches": 1.575,
+          "baseDepthInches": 1.575,
+          "baseRotationDegrees": 0
+        }
+      ]
+    },
+    "core": {
+      "action": {
+        "actionType": "fight",
+        "pieceId": "watchers1",
+        "sideKey": "player1",
+        "sourceAction": {
+          "actionType": "fight",
+          "pieceId": "watchers1",
+          "sideKey": "player1",
+          "originalAction": {
+            "actionType": "fight",
+            "pieceId": "watchers1",
+            "sideKey": "player1",
+            "meleePlan": {
+              "pieceId": "watchers1",
+              "closeRanksMode": "move",
+              "closeRanksGeometry": {
+                "pieceId": "watchers1",
+                "actionType": "close_ranks",
+                "leadingModelId": "watchers1-model-1",
+                "canonicalPath": {
+                  "schemaVersion": "starcraft_tmg_selected_spatial_path_v1",
+                  "unit": "milli-inch",
+                  "points": [
+                    {
+                      "xMilliInches": 14800,
+                      "yMilliInches": 12500,
+                      "elevation": "ground",
+                      "supportTerrainIds": [],
+                      "rotationDegrees": 0
+                    },
+                    {
+                      "xMilliInches": 14000,
+                      "yMilliInches": 10000,
+                      "elevation": "ground",
+                      "supportTerrainIds": [],
+                      "rotationDegrees": 0
+                    }
+                  ],
+                  "distanceMilliInches": 2625
+                },
+                "finalModelPositions": [
+                  {
+                    "modelId": "watchers1-model-1",
+                    "xMilliInches": 14000,
+                    "yMilliInches": 10000,
+                    "elevation": "ground",
+                    "supportTerrainIds": [],
+                    "rotationDegrees": 0
+                  },
+                  {
+                    "modelId": "watchers1-model-2",
+                    "xMilliInches": 12000,
+                    "yMilliInches": 11575,
+                    "elevation": "ground",
+                    "supportTerrainIds": [],
+                    "rotationDegrees": 0
+                  },
+                  {
+                    "modelId": "watchers1-model-3",
+                    "xMilliInches": 13200,
+                    "yMilliInches": 12800,
+                    "elevation": "ground",
+                    "supportTerrainIds": [],
+                    "rotationDegrees": 0
+                  },
+                  {
+                    "modelId": "watchers1-model-4",
+                    "xMilliInches": 16000,
+                    "yMilliInches": 10800,
+                    "elevation": "ground",
+                    "supportTerrainIds": [],
+                    "rotationDegrees": 0
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      "proposal": {
+        "parameters": {
+          "path": [
+            {
+              "xMilliInches": 14000,
+              "yMilliInches": 10000,
+              "elevation": "ground",
+              "supportTerrainIds": []
+            }
+          ]
+        }
+      }
+    },
+    "expected": {
+      "points": [
+        {
+          "xMilliInches": 14800,
+          "yMilliInches": 12500
+        },
+        {
+          "xMilliInches": 14000,
+          "yMilliInches": 10000
+        }
+      ],
+      "positions": [
+        {
+          "modelId": "watchers1-model-1",
+          "xMilliInches": 14000,
+          "yMilliInches": 10000
+        },
+        {
+          "modelId": "watchers1-model-2",
+          "xMilliInches": 12000,
+          "yMilliInches": 11575
+        },
+        {
+          "modelId": "watchers1-model-3",
+          "xMilliInches": 13200,
+          "yMilliInches": 12800
+        },
+        {
+          "modelId": "watchers1-model-4",
+          "xMilliInches": 16000,
+          "yMilliInches": 10800
+        }
+      ]
+    }
+  },
+  {
+    "source": "blink",
+    "roomId": "wave2-displacement-special-blink",
+    "revision": 0,
+    "proposalHash": "b6ac5a83451765ada2e6c6f5129384485638e7b63c391b9bd0888af5ca333184",
+    "piece": {
+      "id": "stalker1",
+      "name": "Stalker",
+      "sideKey": "player1",
+      "isOnField": true,
+      "models": [
+        {
+          "id": "stalker1-model-1",
+          "xInches": 19,
+          "yInches": 10,
+          "isOnField": true,
+          "isDestroyed": false,
+          "baseShape": "round",
+          "baseWidthInches": 3.15,
+          "baseDepthInches": 3.15,
+          "baseRotationDegrees": 0
+        }
+      ]
+    },
+    "core": {
+      "action": {
+        "actionType": "resolve_relocation_ability",
+        "pieceId": "stalker1",
+        "sideKey": "player1",
+        "sourceAction": {
+          "actionType": "resolve_relocation_ability",
+          "pieceId": "stalker1",
+          "sideKey": "player1",
+          "originalAction": {
+            "actionType": "resolve_relocation_ability",
+            "pieceId": "stalker1",
+            "sideKey": "player1",
+            "relocationPlan": {
+              "pieceId": "stalker1",
+              "geometryPlan": {
+                "pieceId": "stalker1",
+                "leadingModelId": "stalker1-model-1",
+                "finalModelPositions": [
+                  {
+                    "modelId": "stalker1-model-1",
+                    "xMilliInches": 14000,
+                    "yMilliInches": 10000,
+                    "rotationDegrees": 0,
+                    "elevation": "ground",
+                    "supportTerrainIds": []
+                  }
+                ],
+                "pathIgnoredForPlaceEffects": true
+              }
+            }
+          }
+        }
+      },
+      "proposal": {
+        "parameters": {}
+      }
+    },
+    "expected": {
+      "points": [],
+      "positions": [
+        {
+          "modelId": "stalker1-model-1",
+          "xMilliInches": 14000,
+          "yMilliInches": 10000
+        }
+      ]
+    }
+  }
+]

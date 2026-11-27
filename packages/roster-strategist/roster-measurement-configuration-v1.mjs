@@ -19,15 +19,37 @@ function measuredParticipants(value){
     requestedFilters:{subjectUnitIds:clone(value.request?.subjectUnitIds??[]),targetIds:clone(value.request?.targetIds??[])},
     instruction:'Participants identify actual Native attack rows, not the requested search scope. Omitted filters do not mean no observations; ignored legacy aliases are not relabelled as consumed filters. Missing Native row identities remain unavailable, never inferred from a request or arm label.'};
 }
+function checkedConfigurations(value,participants){
+  const check=value.participantConfigurationCheck;
+  if(!check)return null;
+  // This check was made by the laboratory against BOTH selected armies at
+  // execution. Its actual selections, not the model's expected selections or
+  // the current friendly draft, describe this measured scene.
+  const identities=check.schema==='roster_participant_configuration_check_v1'
+    &&check.status==='matched'&&check.configurationScope==='both_selected_armies'
+    &&check.source==='selected_and_frozen_reference_inputs'
+    &&check.contextRef===value.contextRef
+    &&typeof check.sourceStateHash==='string'&&check.sourceStateHash===value.receipt.sourceStateHash
+    &&typeof check.baseStateHash==='string'&&check.baseStateHash===value.receipt.baseStateHash;
+  const actual=check.actualConfigurations;
+  const unique=Array.isArray(actual)&&actual.every(u=>typeof u.unitInstanceId==='string'&&u.unitInstanceId.trim())
+    &&new Set(actual.map(u=>u.unitInstanceId)).size===actual.length;
+  const ids=[...new Set([...participants.subjectUnitIds,...participants.targetIds])];
+  const selected=identities&&unique?actual.filter(u=>ids.includes(u.unitInstanceId)):[];
+  return {check,selected,status:!identities||!unique?'conflicting_sources':
+    participants.participantStatus==='resolved'&&selected.length===ids.length?'resolved':'missing_participant'};
+}
 export async function projectRosterMeasurementConfigurationInputsV1({assignment,state,readArtifact,resolveReferences,compareSceneConditions}){
   const roots=new Set((assignment.inputs.sourceDirectory?.value?.entries??[]).map(e=>e.sourceEvidenceId));
-  if(!roots.size)for(const [key,input]of Object.entries(assignment.inputs??{})){
+  // A directory is discovery metadata, not an exhaustive replacement for
+  // explicitly assigned results (in particular newly corrected facts).
+  for(const [key,input]of Object.entries(assignment.inputs??{})){
     // Global Plan/catalogue roots are not evidence newly assigned to this local
     // task. Actual saved reads remain eligible regardless of the input name.
     if(['draft','menu','teach','requirements','frozenTaskAuthority','currentArmyAuthority','currentArmyConfiguration'].includes(key))continue;
     if(input.source==='evidence')roots.add(input.id??input.evidenceId);
     if(input.source==='work'){
-      const w=state.work.find(w=>w.id===input.id);if(w)roots.add((w.role==='roster_workflow_tool'?'tool:':'role:')+w.id);
+      const w=state.work.find(w=>w.id===(input.workId??input.id));if(w)roots.add((w.role==='roster_workflow_tool'?'tool:':'role:')+w.id);
     }
   }
   const current=state.work.find(w=>w.id===(assignment.workId??assignment.id));
@@ -47,7 +69,20 @@ export async function projectRosterMeasurementConfigurationInputsV1({assignment,
   for(const {row,e}of sources.values()){
     const value=unwrap(await get(e.artifactRef));
     if(!['threat_exchange','probability'].includes(value?.operation)||!value.receipt)continue;
-    const participants=measuredParticipants(value),units=participants.subjectUnitIds;
+    const participants=measuredParticipants(value),units=[...new Set([...participants.subjectUnitIds,...participants.targetIds])];
+    const checked=checkedConfigurations(value,participants);
+    if(checked){
+      const source={e,number:row.evidenceNumber};
+      addSource(source,'/participantConfigurationCheck',checked.check);
+      measurements.push({evidenceNumber:row.evidenceNumber,sourceEvidenceId:e.id,artifactRef:e.artifactRef,
+        contextRef:value.contextRef??null,sourceStateHash:value.receipt.sourceStateHash??null,...participants,
+        configurationStatus:checked.status,configurationScope:'measured_attackers_and_targets',
+        configurationSource:{evidenceNumber:row.evidenceNumber,artifactRef:e.artifactRef,pointer:'/participantConfigurationCheck/actualConfigurations'},
+        units:clone(checked.selected),declaredLabel:value.experimentOrigin?.comparisonBinding?.arm??null,labelIsConfigurationProof:false});
+      // A mismatched or incomplete Native check is not permission to silently
+      // substitute a friendly draft, a request label or expected declarations.
+      continue;
+    }
     const candidates=[];
     if(value.contextRef){
       // A model may supply a complete saved stateRef rather than a parameter
@@ -91,7 +126,9 @@ export async function projectRosterMeasurementConfigurationInputsV1({assignment,
       ||!keysEqual(left.subjectUnitIds,right.subjectUnitIds)||!keysEqual(left.targetIds,right.targetIds))continue;
     const unitChanges=left.units.map(a=>{const b=right.units.find(u=>u.unitInstanceId===a.unitInstanceId);
       const au=a.upgrades??[],bu=b.upgrades??[];
-      return {unitInstanceId:a.unitInstanceId,configurationEqual:isDeepStrictEqual(a,b),
+      return {unitInstanceId:a.unitInstanceId,
+        roles:[...(left.subjectUnitIds.includes(a.unitInstanceId)?['attacker']:[]),...(left.targetIds.includes(a.unitInstanceId)?['target']:[])],
+        configurationEqual:isDeepStrictEqual(a,b),
         changedFields:[...new Set([...Object.keys(a),...Object.keys(b)])].filter(k=>!isDeepStrictEqual(a[k],b[k])),
         sharedUpgrades:clone(au.filter(x=>bu.some(y=>isDeepStrictEqual(x,y)))),
         onlyLeftUpgrades:clone(au.filter(x=>!bu.some(y=>isDeepStrictEqual(x,y)))),
@@ -100,8 +137,8 @@ export async function projectRosterMeasurementConfigurationInputsV1({assignment,
       geometryAssessment:'separate_scene_evidence'});
   }
   const sceneInputs=await projectRosterMeasurementSceneInputsV1({sources,measurements,readArtifact:get,compareSceneConditions});
-  return {...inputs,...sceneInputs,measurementConfigurations:{source:'literal',value:{schema:'roster_measurement_configurations_v1',version:2,
+  return {...inputs,...sceneInputs,measurementConfigurations:{source:'literal',value:{schema:'roster_measurement_configurations_v1',version:3,
     measurements,configurationSources,comparisons,unresolvedReferences:graph.unresolvedReferences,
     assessmentScope:assessmentScope('saved_configuration_differences'),originalArtifactsUnchanged:true,
-    instruction:'These are exact saved subject configurations behind the referenced measurements and deterministic field differences, not arm-name interpretations or strategy approval. The accompanying measurementConfiguration inputs deliver the original candidateInput with source number/pointer. Shared upgrades are held constant in those two records; their marginal effect is not measured by merely changing another upgrade. Compare the ORIGINAL authorized alternatives and changed factors to these actual configurations. Unknown/conflicting/missing participant is not an empty loadout or zero effect. Geometry, payment, effect timing and outcome aggregation require their separate evidence. Do not infer upgrade superiority or a preferred roster from this matrix; the model still owns scoped interpretation and the strategic choice.'}}};
+    instruction:'These are exact saved configurations of BOTH measured attackers and targets and deterministic field differences, not arm-name interpretations or strategy approval. The accompanying measurementConfiguration inputs deliver the original Native participant check (actualConfigurations, not expected declarations) or saved candidateInput with source number/pointer. Attacker/target roles come from Native attack rows, not army ownership. Shared upgrades are held constant in those two records; their marginal effect is not measured by merely changing another upgrade. Compare the ORIGINAL authorized alternatives and changed factors to these actual configurations. Unknown/conflicting/missing participant is not an empty loadout or zero effect. Geometry, payment, effect timing and outcome aggregation require their separate evidence. Do not infer upgrade superiority or a preferred roster from this matrix; the model still owns scoped interpretation and the strategic choice.'}}};
 }

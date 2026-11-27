@@ -57,7 +57,20 @@ function roomBinding(input) {
   const projectionRuntime = object(match.rulesRuntimeBinding) ? match.rulesRuntimeBinding : null;
   const legalRuntime = object(legal?.rulesRuntimeBinding) ? legal.rulesRuntimeBinding : null;
   const observed = legalRuntime || projectionRuntime || {};
-  const classified = classifyStarcraftTmgCurrentFaqRoomBindingV1(observed);
+  const legacyClassification = classifyStarcraftTmgCurrentFaqRoomBindingV1(observed);
+  // The room host supplies its installed Native descriptor only after checking
+  // frozen dependencies. A dated FAQ client release is not today's authority.
+  const installed = input.verifiedNativeRuntime;
+  const nativeMatch = object(installed) && installed.mode === 'official_executable_catalogue'
+    && installed.legalSpaceComplete === true
+    && installed.legacyCompatibilityUsed === false
+    && hashStarcraftTmgContract(installed) === hashStarcraftTmgContract(observed);
+  const classified = nativeMatch ? {
+    ...legacyClassification, status: 'current_native_runtime', current: true,
+    historical: false, executable: true, mutationAllowed: false,
+    displayAllowed: true, replayAllowed: true,
+    actionsRemainBoundToObservedLegalSpace: true, reasonCode: null,
+  } : legacyClassification;
   const mismatches = [];
   if (legal) {
     if (text(legal.roomId) !== text(room.roomId)) mismatches.push("room_id");

@@ -1,5 +1,6 @@
 import { hashStarcraftTmgContract } from
   "../authoritative-engine/transition-v1.mjs";
+import { isCurrentOpponentPredictionCalibrationV1 } from './opponent-prediction-window-v1.mjs';
 
 export const STARCRAFT_TMG_MATCH_DECISION_CONTINUITY_VERSION =
   "starcraft_tmg_match_decision_continuity_v1";
@@ -264,7 +265,8 @@ function workingMemoryProjection(records, scope, authority, target) {
   const resourceUses = recent(records, ["resource_spent"], target);
   const opponentResponses = recent(records, ["opponent_response_observed"],
     target);
-  const predictionCalibrations = recent(records, ["prediction_calibration"],
+  const predictionCalibrations = recent(records.filter(entry=>
+    entry.kind !== 'prediction_calibration' || isCurrentOpponentPredictionCalibrationV1(entry.payload)), ["prediction_calibration"],
     target);
   const counterResponses = recent(records, ["counter_response_used"], target);
   const latestIntent = intents.at(-1) || null;

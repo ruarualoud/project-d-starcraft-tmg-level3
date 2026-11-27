@@ -1,5 +1,7 @@
+import { assertOfficialReleaseSourceV2 } from "./official-release-context-v2.mjs";
 import { hashStarcraftTmgContract } from
   "../authoritative-engine/referee-crypto-v1.mjs";
+import { createOfficialAbilityEffectIrCatalogueV1 } from './official-ability-effect-ir-v1.mjs';
 import { verifyCommandCenterSnapshot } from
   "../rule-atoms/official-live-source-snapshots-v1.mjs";
 import {
@@ -34,6 +36,12 @@ const EFFECT_REGISTRY = Object.freeze([
 })));
 
 const EFFECT_BY_KIND = new Map(EFFECT_REGISTRY.map((entry) => [entry.keywordKind, entry]));
+const CONCENTRATED_FIRE_EFFECT = Object.freeze({
+  effectAtomId: 'attack-effect:concentrated-fire-v1', keywordKind: 'concentrated_fire',
+  implementationStatus: 'executable_subset', parameterContract: 'attack-effect:concentrated-fire-v1.parameters',
+  sourceAuthority: 'official_current_command_center_profile_text', trainingTruth: false,
+});
+const EXTENDED_EFFECT_REGISTRY = Object.freeze([...EFFECT_REGISTRY, CONCENTRATED_FIRE_EFFECT]);
 
 function fail(code, detail = "") {
   throw new Error(detail ? `${code}:${detail}` : code);
@@ -78,10 +86,14 @@ function effect(keywordKind, parameters, sourceKind) {
   };
 }
 
-function parseSurge(value, context) {
+function parseSurge(value, context, allowTemplates = false) {
   const text = String(value || "").trim();
-  if (text === "-") return { surge: null, effects: [] };
-  const match = text.match(/^([A-Za-z]+(?:\s*,\s*[A-Za-z]+)*)\s*\((D3(?:\+1)?|D6)\)$/u);
+  // The frozen current-release API also spells out a null type and null die.
+  if (text === "-" || allowTemplates && /^-\s*\(\s*-\s*\)$/u.test(text)) return { surge: null, effects: [] };
+  const pattern = allowTemplates
+    ? /^([A-Za-z]+(?:\s*,\s*[A-Za-z]+)*)\s*\((D3(?:\+1)?|D6|BT|FT)\)$/u
+    : /^([A-Za-z]+(?:\s*,\s*[A-Za-z]+)*)\s*\((D3(?:\+1)?|D6)\)$/u;
+  const match = text.match(pattern);
   if (!match) fail("OFFICIAL_ATTACK_SURGE_UNKNOWN", `${context}:${text}`);
   const surge = {
     targetTags: normalizedTags(match[1], "OFFICIAL_ATTACK_SURGE_TARGET_INVALID"),
@@ -93,9 +105,14 @@ function parseSurge(value, context) {
   };
 }
 
-function parseKeywordToken(token, context) {
+function parseKeywordToken(token, context, allowExtendedEffects = false) {
   const text = String(token || "").trim();
   let match;
+  if (allowExtendedEffects && (match = text.match(/^CONCENTRATED FIRE\s*\((\d+)\)$/u))) {
+    return { effectAtomId: CONCENTRATED_FIRE_EFFECT.effectAtomId,
+      parameters: { maximumCasualties: positiveInteger(match[1], 'OFFICIAL_ATTACK_EFFECT_PARAMETER_INVALID', context) },
+      sourceKind: 'weapon_keyword' };
+  }
   if ((match = text.match(/^ANTI-EVADE\s*\((\d+)\)$/u))) {
     return effect("anti_evade", {
       evadeThresholdModifier: -positiveInteger(match[1], "OFFICIAL_ATTACK_EFFECT_PARAMETER_INVALID", context),
@@ -137,22 +154,26 @@ function parseKeywordToken(token, context) {
   fail("OFFICIAL_ATTACK_EFFECT_UNKNOWN", `${context}:${text}`);
 }
 
-function parseKeywordEffects(value, context) {
+function parseKeywordEffects(value, context, allowExtendedEffects = false) {
   const text = String(value || "").trim();
-  if (!text) return [];
-  return text.split(",").map((token) => parseKeywordToken(token, context));
+  if (!text || text === '-') return [];
+  return text.split(",").map((token) => parseKeywordToken(token, context, allowExtendedEffects));
 }
 
 function parseRange(value, context) {
   const text = String(value || "").trim();
   if (text === "E") return { kind: "engagement" };
+  // Some official profiles print inches with a quote or two apostrophes.
+  // Keep source text intact and normalize only this numeric field.
+  const explicitInches = text.match(/^(\d+)(?:"|'')$/u);
   return {
     kind: "inches",
-    normalRangeInches: positiveInteger(text, "OFFICIAL_ATTACK_RANGE_INVALID", context),
+    normalRangeInches: positiveInteger(explicitInches ? explicitInches[1] : text, "OFFICIAL_ATTACK_RANGE_INVALID", context),
   };
 }
 
-function parseAttackProfile(record, upgrade) {
+function parseAttackProfile(record, upgrade, allowTemplates = false, reviewedKind) {
+  if (reviewedKind !== undefined && reviewedKind !== 'weapon') return null;
   const phaseText = String(upgrade?.phase || "");
   if (!["Assault Phase", "Combat Phase"].includes(phaseText)
     || String(upgrade?.activation || "").trim()) {
@@ -160,7 +181,7 @@ function parseAttackProfile(record, upgrade) {
   }
   const description = String(upgrade.description || "").replace(/\r\n/gu, "\n").normalize("NFC");
   const match = description.match(
-    /^RANGE:\s*([^|\n]+)\s*\|\s*TARGET:\s*([^|\n]+)\s*\|\s*RoA:\s*(\d+)\s*\|\s*HIT:\s*(\d+)\+\s*\|\s*DMG:\s*(\d+)\nSURGE:\s*([^\n]+)(?:\n\n([\s\S]+))?$/u,
+    /^RANGE:\s*([^|\n]+)\s*\|\s*TARGET:\s*([^|\n]+)\s*\|\s*RoA:\s*([^|\n]+)\s*\|\s*HIT:\s*(\d+)\+\s*\|\s*DMG:\s*(\d+)\nSURGE:\s*([^\n]+)(?:\n\n([\s\S]+))?$/u,
   );
   if (!match) fail("OFFICIAL_ATTACK_PROFILE_SYNTAX_UNKNOWN", record.recordKey);
   const phase = phaseText === "Assault Phase" ? "assault" : "combat";
@@ -169,11 +190,14 @@ function parseAttackProfile(record, upgrade) {
   const context = `${record.recordKey}:${phase}:${weaponName}`;
   const hitThreshold = positiveInteger(match[4], "OFFICIAL_ATTACK_HIT_INVALID", context);
   if (hitThreshold < 2 || hitThreshold > 6) fail("OFFICIAL_ATTACK_HIT_INVALID", context);
-  const parsedSurge = parseSurge(match[6], context);
-  const effects = [
-    ...parsedSurge.effects,
-    ...parseKeywordEffects(match[7], context),
-  ];
+  const templateMatch = allowTemplates ? match[3].trim().match(/^(BT|FT)(?:\+(\d+))?$/u) : null;
+  const rateOfAttack = templateMatch ? null : positiveInteger(match[3], "OFFICIAL_ATTACK_ROA_INVALID", context);
+  const parsedSurge = parseSurge(match[6], context, allowTemplates);
+  if (['BT', 'FT'].includes(parsedSurge.surge?.diceExpression)
+    && parsedSurge.surge.diceExpression !== templateMatch?.[1]) fail('OFFICIAL_ATTACK_TEMPLATE_SURGE_MISMATCH', context);
+  const requiresSiegeMode = allowTemplates && String(match[7] || '').trim() === 'SIEGE MODE Status';
+  const effects = [ ...parsedSurge.effects,
+    ...parseKeywordEffects(requiresSiegeMode ? '' : match[7], context, allowTemplates) ];
   const profileKey = `${record.recordKey}::${phase}::${weaponName}`;
   const body = {
     schema: "starcraft_tmg_official_attack_profile_v1",
@@ -190,7 +214,11 @@ function parseAttackProfile(record, upgrade) {
     costLarge: Number(upgrade.costL || 0),
     range: parseRange(match[1], context),
     targetTags: normalizedTags(match[2], "OFFICIAL_ATTACK_TARGET_TAGS_INVALID"),
-    rateOfAttack: positiveInteger(match[3], "OFFICIAL_ATTACK_ROA_INVALID", context),
+    rateOfAttack,
+    ...(templateMatch ? { templateWeapon: { templateType: templateMatch[1] === 'BT' ? 'blast' : 'flamer',
+      rateOfAttackExpression: match[3].trim(), mainTargetRateModifier: Number(templateMatch[2] || 0),
+      geometryRequired: true }, executionRequirement: 'source_bound_template_geometry_and_runtime' } : {}),
+    ...(requiresSiegeMode ? { requiredStatus: 'siege_mode' } : {}),
     hitThreshold,
     damage: positiveInteger(match[5], "OFFICIAL_ATTACK_DAMAGE_INVALID", context),
     surge: parsedSurge.surge,
@@ -210,7 +238,7 @@ function profileBody(profile) {
   return without(profile, ["profileHash"]);
 }
 
-export function createOfficialAttackProfileCatalogueV1(input = {}) {
+function compileAttackProfiles(input, allowTemplates = false) {
   verifyCommandCenterSnapshot(input.snapshot);
   verifyOfficialCommandCenterDataset({ snapshot: input.snapshot, dataset: input.dataset });
   const recordKeys = [...new Set((input.recordKeys || input.dataset.recordIndex
@@ -225,12 +253,18 @@ export function createOfficialAttackProfileCatalogueV1(input = {}) {
   const profiles = recordKeys.flatMap((recordKey) => {
     const record = getOfficialCurrentProductRecord(input.dataset, recordKey);
     return (record.payload.upgrades || [])
-      .map((upgrade) => parseAttackProfile(record, upgrade))
+      .map((upgrade, index) => parseAttackProfile(record, upgrade, allowTemplates,
+        input.featureKinds?.get(recordKey + ':' + index)))
       .filter(Boolean);
   }).sort((left, right) => left.profileKey.localeCompare(right.profileKey));
   if (profiles.length === 0 || new Set(profiles.map((profile) => profile.profileKey)).size !== profiles.length) {
     fail("OFFICIAL_ATTACK_PROFILE_DENOMINATOR_INVALID");
   }
+  return { recordKeys, profiles };
+}
+
+export function createOfficialAttackProfileCatalogueV1(input = {}) {
+  const { recordKeys, profiles } = compileAttackProfiles(input);
   const body = {
     schema: OFFICIAL_ATTACK_PROFILE_CATALOGUE_SCHEMA,
     sourceId: input.dataset.sourceId,
@@ -259,14 +293,20 @@ export function createOfficialAttackProfileCatalogueV1(input = {}) {
 }
 
 export function verifyOfficialAttackProfileCatalogueV1(catalogue) {
-  if (!object(catalogue) || catalogue.schema !== OFFICIAL_ATTACK_PROFILE_CATALOGUE_SCHEMA) {
+  const releaseBound = catalogue?.schema === "starcraft_tmg_official_attack_profile_catalogue_v3";
+  if (!object(catalogue) || (!releaseBound && catalogue.schema !== OFFICIAL_ATTACK_PROFILE_CATALOGUE_SCHEMA)) {
     fail("OFFICIAL_ATTACK_PROFILE_CATALOGUE_INVALID");
   }
   if (hashStarcraftTmgContract(catalogueBody(catalogue)) !== catalogue.catalogueHash) {
     fail("OFFICIAL_ATTACK_PROFILE_CATALOGUE_HASH_MISMATCH");
   }
+  const extended = releaseBound && catalogue.extendedWeaponEffectRegistryVersion === '1.0.0';
+  if (catalogue.extendedWeaponEffectRegistryVersion !== undefined && !extended) {
+    fail('OFFICIAL_ATTACK_EXTENDED_EFFECT_REGISTRY_INVALID');
+  }
+  const effectRegistry = extended ? EXTENDED_EFFECT_REGISTRY : EFFECT_REGISTRY;
   if (catalogue.effectRegistryHash !== hashStarcraftTmgContract(catalogue.effectRegistry)
-    || hashStarcraftTmgContract(catalogue.effectRegistry) !== hashStarcraftTmgContract(EFFECT_REGISTRY)
+    || hashStarcraftTmgContract(catalogue.effectRegistry) !== hashStarcraftTmgContract(effectRegistry)
     || !Array.isArray(catalogue.profiles)
     || !Array.isArray(catalogue.unitRecordKeys)
     || !Array.isArray(catalogue.unknownEffects)
@@ -286,13 +326,34 @@ export function verifyOfficialAttackProfileCatalogueV1(catalogue) {
       || profile.trainingTruth !== false
       || !Object.hasOwn(byPhase, profile.phase)
       || !Array.isArray(profile.effects)
-      || profile.effects.some((entry) => !EFFECT_REGISTRY.some((definition) => (
+      || profile.effects.some((entry) => !effectRegistry.some((definition) => (
         definition.effectAtomId === entry.effectAtomId
       )))) {
       fail("OFFICIAL_ATTACK_PROFILE_INTEGRITY_MISMATCH", profile.profileKey);
     }
     seen.add(profile.profileKey);
     byPhase[profile.phase] += 1;
+  }
+  if (releaseBound) {
+    if (!catalogue.sourceBinding?.releaseId
+      || catalogue.sourceBinding.sourceSnapshotHash !== catalogue.sourceSnapshotHash
+      || catalogue.sourceBinding.normalizedDatasetHash !== catalogue.normalizedDatasetHash
+      || !Array.isArray(catalogue.templateProfiles)
+      || catalogue.numericAndTemplateProfilesSeparated !== true
+      || catalogue.profiles.some(profile => !Number.isSafeInteger(profile.rateOfAttack) || profile.rateOfAttack <= 0)) {
+      fail('OFFICIAL_ATTACK_PROFILE_V3_BINDING_INVALID');
+    }
+    for (const profile of catalogue.templateProfiles) {
+      if (seen.has(profile.profileKey) || profile.profileHash !== hashStarcraftTmgContract(profileBody(profile))
+        || profile.rateOfAttack !== null || !['blast', 'flamer'].includes(profile.templateWeapon?.templateType)
+        || !Number.isSafeInteger(profile.templateWeapon.mainTargetRateModifier)
+        || profile.templateWeapon.mainTargetRateModifier < 0 || profile.templateWeapon.geometryRequired !== true
+        || profile.executionRequirement !== 'source_bound_template_geometry_and_runtime'
+        || profile.canAffectRules !== false || profile.trainingTruth !== false) {
+        fail('OFFICIAL_ATTACK_TEMPLATE_PROFILE_INTEGRITY_MISMATCH', profile.profileKey);
+      }
+      seen.add(profile.profileKey);
+    }
   }
   const expectedIndex = Object.fromEntries(catalogue.profiles.map((profile) => [
     profile.profileKey,
@@ -323,6 +384,53 @@ export function getOfficialAttackProfileV1(catalogue, query = {}) {
     ? query
     : `${String(query.recordKey || "")}::${String(query.phase || "")}::${String(query.weaponName || "")}`;
   const profile = catalogue.profilesByProfileKey?.[profileKey];
+  if (!profile && catalogue.templateProfiles?.some(row => row.profileKey === profileKey)) {
+    fail('OFFICIAL_ATTACK_PROFILE_REQUIRES_TEMPLATE_RUNTIME', profileKey);
+  }
   if (!profile) fail("OFFICIAL_ATTACK_PROFILE_MISSING", profileKey);
+  return profile;
+}
+
+// Selected-release profiles retain dynamic template expressions outside the
+// numeric interface, preventing legacy Number() consumers from treating BT as 0.
+export function createOfficialAttackProfileCatalogueV3({ context, recordKeys } = {}) {
+  const manifest = assertOfficialReleaseSourceV2(context, context || {});
+  const abilityCatalogue = context.resources?.abilityIdentities ? createOfficialAbilityEffectIrCatalogueV1({
+    dataset: context.dataset, identityCatalogue: context.resources.abilityIdentities }) : null;
+  const featureKinds = abilityCatalogue ? new Map(abilityCatalogue.definitions
+    .filter(definition => definition.sourceKind === 'unit_feature')
+    .map(definition => [definition.recordKey + ':' + definition.sourceIndex, definition.activationKind])) : null;
+  const compiled = compileAttackProfiles({ dataset: context.dataset, snapshot: context.snapshot, recordKeys, featureKinds }, true);
+  const profiles = compiled.profiles.filter(profile => !profile.templateWeapon);
+  const templateProfiles = compiled.profiles.filter(profile => profile.templateWeapon);
+  const extended = compiled.profiles.some(profile => profile.effects.some(effect =>
+    effect.effectAtomId === CONCENTRATED_FIRE_EFFECT.effectAtomId));
+  const effectRegistry = extended ? EXTENDED_EFFECT_REGISTRY : EFFECT_REGISTRY;
+  const body = { schema: 'starcraft_tmg_official_attack_profile_catalogue_v3',
+    sourceId: context.dataset.sourceId, sourceSnapshotHash: context.snapshot.snapshotHash,
+    normalizedDatasetHash: context.dataset.datasetHash, dataVersions: { ...context.dataset.dataVersions },
+    sourceBinding: { releaseId: manifest.releaseId, sourceSnapshotHash: context.snapshot.snapshotHash,
+      normalizedDatasetHash: context.dataset.datasetHash },
+    unitRecordKeys: compiled.recordKeys, effectRegistry: effectRegistry.map(row => ({ ...row })),
+    effectRegistryHash: hashStarcraftTmgContract(effectRegistry), profiles, templateProfiles,
+    ...(extended ? { extendedWeaponEffectRegistryVersion: '1.0.0' } : {}),
+    numericAndTemplateProfilesSeparated: true, unknownEffects: [], repositoryFallbackAllowed: false,
+    productionRoomBindingEligible: false,
+    rulesTruth: 'official_profile_data_compiled_effects_pending_individual_rule_authority',
+    canAffectRules: false, trainingTruth: false };
+  const catalogue = deepFreeze({ ...body, catalogueHash: hashStarcraftTmgContract(body),
+    profilesByProfileKey: Object.fromEntries(profiles.map(profile => [profile.profileKey, profile])) });
+  verifyOfficialAttackProfileCatalogueV1(catalogue);
+  return catalogue;
+}
+
+export function getOfficialAttackProfileV3(catalogue, query = {}) {
+  verifyOfficialAttackProfileCatalogueV1(catalogue);
+  if (catalogue.schema !== 'starcraft_tmg_official_attack_profile_catalogue_v3') fail('OFFICIAL_ATTACK_PROFILE_V3_REQUIRED');
+  const profileKey = typeof query === 'string' ? query
+    : [query.recordKey, query.phase, query.weaponName].map(value => String(value || '')).join('::');
+  const profile = catalogue.profilesByProfileKey[profileKey]
+    || catalogue.templateProfiles.find(row => row.profileKey === profileKey);
+  if (!profile) fail('OFFICIAL_ATTACK_PROFILE_MISSING', profileKey);
   return profile;
 }

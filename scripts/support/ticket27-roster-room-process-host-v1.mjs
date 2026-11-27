@@ -21,17 +21,20 @@ function liveProcess(pid) {
 
 function validate(input) {
   if (!/^[0-9a-f]{64}$/u.test(String(input?.launchKey || ""))
-    || (input.planningSource === 'fixed_roster'
+    || (['fixed_roster','decision_workflow'].includes(input.planningSource)
       ? input.iterativeSessionId != null
       : !/^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/u.test(String(input?.iterativeSessionId || '')))
-    || ![undefined, 'agent_selected', 'fixed_roster'].includes(input.planningSource)
-    || !/^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/u.test(
-      String(input?.teachSessionId || ""))
+    || ![undefined, 'agent_selected', 'fixed_roster', 'decision_workflow'].includes(input.planningSource)
+    || (input.planningSource === 'decision_workflow'
+      ? !/^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/u.test(String(input.decisionWorkflowId || ''))
+        || !Number.isSafeInteger(input.draftRevision) || input.draftRevision < 1
+      : !/^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/u.test(String(input?.teachSessionId || '')))
     || !/^[0-9a-f]{64}$/u.test(String(input?.planHash || ""))
+    || ![undefined, "deepseek", "kimi_code"].includes(input.player1Provider)
     || input.matchMode !== "agent_vs_agent"
     || typeof input.mapConfiguration?.seedId !== "string"
-    || !Array.isArray(input.mapConfiguration.elementSelections)
-    || !Array.isArray(input.mapConfiguration.passageSelections)) {
+    || (input.mapConfiguration.elementSelections !== undefined && !Array.isArray(input.mapConfiguration.elementSelections))
+    || (input.mapConfiguration.passageSelections !== undefined && !Array.isArray(input.mapConfiguration.passageSelections))) {
     fail("ROSTER_ROOM_LAUNCH_INPUT_INVALID");
   }
 }
@@ -86,6 +89,10 @@ export function createTicket27RosterRoomProcessHostV1(input = {}) {
       iterativeSessionId: request.iterativeSessionId,
       planningSource: request.planningSource || 'agent_selected',
       teachSessionId: request.teachSessionId,
+      decisionWorkflowId: request.decisionWorkflowId || null,
+      draftRevision: request.draftRevision ?? null,
+      referenceArmyRecipes: request.referenceArmyRecipes || null,
+      player1Provider: request.player1Provider || "deepseek",
       planHash: request.planHash,
       mapConfiguration: request.mapConfiguration,
       opponentRosterPlanSessionId: opponentSessionId,
@@ -101,7 +108,11 @@ export function createTicket27RosterRoomProcessHostV1(input = {}) {
         "scripts/serve-ticket-23-slice-248-agent-agent-web-v1.mjs"),
         `--run-id=${runId}`,
         ...(autoDriveOnLaunch ? ["--auto-drive-on-launch"] : []),
-        ...(request.planningSource === 'fixed_roster'
+        ...(request.planningSource === 'decision_workflow'
+          ? [`--pregame-decision-workflow-id=${request.decisionWorkflowId}`,
+            `--pregame-decision-revision=${request.draftRevision}`,
+            `--pregame-reference-army-recipes-json=${JSON.stringify(request.referenceArmyRecipes)}`]
+          : request.planningSource === 'fixed_roster'
           ? [`--pregame-roster-session-id=${request.teachSessionId}`]
           : [`--pregame-agent-selected-iterative-session-id=${request.iterativeSessionId}`,
             `--pregame-agent-selected-teach-session-id=${request.teachSessionId}`]),
@@ -111,7 +122,8 @@ export function createTicket27RosterRoomProcessHostV1(input = {}) {
           `--opponent-pregame-roster-session-id=${opponentSessionId}`,
           `--opponent-roster-plan-data-directory=${opponentDataDirectory}`,
         ] : [])];
-    args.push(`--provider-interaction-mode=${providerInteractionMode}`);
+    args.push(`--provider-interaction-mode=${providerInteractionMode}`,
+      `--player1-provider=${request.player1Provider || "deepseek"}`);
     const child = spawn(process.execPath, args, {
       cwd: root, shell: false,
       env: { ...process.env,
@@ -213,8 +225,12 @@ export function createTicket27RosterRoomProcessHostV1(input = {}) {
           || prior.iterativeSessionId !== request.iterativeSessionId
           || (prior.planningSource || 'agent_selected') !== (request.planningSource || 'agent_selected')
           || prior.teachSessionId !== request.teachSessionId
+          || (prior.decisionWorkflowId || null) !== (request.decisionWorkflowId || null)
+          || (prior.draftRevision ?? null) !== (request.draftRevision ?? null)
+          || JSON.stringify(prior.referenceArmyRecipes || null) !== JSON.stringify(request.referenceArmyRecipes || null)
           || (prior.opponentRosterPlanSessionId || null) !== opponentSessionId
           || (prior.opponentRosterPlanHash || null) !== opponentPlanHash
+          || (prior.player1Provider || "deepseek") !== (request.player1Provider || "deepseek")
           || (prior.providerInteractionMode || "native_tools") !== providerInteractionMode
           || JSON.stringify(prior.mapConfiguration)
             !== JSON.stringify(request.mapConfiguration)) {

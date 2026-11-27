@@ -1,3 +1,5 @@
+import { consumeOfficialActionPerformedStatusesV1 } from './official-action-status-lifecycle-policy-v1.mjs';
+
 export const OFFICIAL_ASSAULT_HOLD_EXECUTOR_ID = "authority.assault-hold-v1";
 export const OFFICIAL_ASSAULT_HOLD_EXECUTOR_VERSION = "1.0.0";
 export const OFFICIAL_ASSAULT_HOLD_TRANSITION_SCHEMA = "starcraft_tmg_authority_v2.receipt";
@@ -125,6 +127,7 @@ export function applyOfficialAssaultHoldV1(stateInput, actionInput, options = {}
     state.activeSideKey = action.sideKey;
   }
 
+  if (state.officialHoldActionFaq) consumeOfficialActionPerformedStatusesV1(state, piece.id, 'declared_hold');
   const events = [{ type: "hold", pieceId: piece.id, phase: "assault" }];
   state.log = Array.isArray(state.log) ? state.log : [];
   state.log.push({

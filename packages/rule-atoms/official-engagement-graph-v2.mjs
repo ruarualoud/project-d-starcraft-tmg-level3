@@ -1,11 +1,20 @@
+import { normalizeOfficialElevationV1 } from "./official-elevation-contract-v1.mjs";
+import { isOfficialDecoyUnitV1 } from './official-decoy-rules-v1.mjs';
 import { isDeepStrictEqual } from "node:util";
+import { verifyOfficialBattlefieldTokenV1 } from './official-battlefield-token-marker-rules-kernel-v1.mjs';
+import { createOfficialDisplacementTokenFootprintV1 } from './official-token-displacement-geometry-v1.mjs';
 
 import { hashStarcraftTmgContract } from "../authoritative-engine/referee-crypto-v1.mjs";
 import {
+  createOfficialModelBaseFootprintV1,
   createOfficialPhysicalFootprintV1,
   evaluateOfficialPhysicalFootprintRelationV1,
   isOfficialPhysicalFootprintInsideBoardV1,
+  isOfficialProfileBoundOutlineV1,
 } from "./official-model-base-geometry-rules-kernel-v1.mjs";
+
+import { deriveOfficialFinalPlacementSurfaceSupportV13 } from './official-semantic-surface-support-v1.mjs';
+import { usesWave3FaqClarifications } from './official-wave3-faq-clarifications-v1.mjs';
 
 export const OFFICIAL_ENGAGEMENT_GRAPH_V2_SCHEMA = "starcraft_tmg_official_engagement_graph_v2";
 export const OFFICIAL_ENGAGEMENT_GEOMETRY_INPUT_V2_SCHEMA =
@@ -14,11 +23,6 @@ export const OFFICIAL_ENGAGEMENT_RANGE_V2_MILLI_INCHES = 1000;
 
 const SIDE_KEYS = Object.freeze(["player1", "player2"]);
 const ELEVATIONS = Object.freeze(["ground", "mid", "high"]);
-const ELEVATION_ALIASES = Object.freeze({
-  ground_level: "ground",
-  mid_ground: "mid",
-  high_ground: "high",
-});
 const COMPLETENESS_FLAGS = Object.freeze([
   "modelCoordinatesComplete",
   "baseFootprintsComplete",
@@ -63,8 +67,7 @@ function uniqueSortedStrings(values, code, detail) {
 }
 
 function normalizeElevation(value) {
-  const normalized = String(value || "").trim().toLowerCase();
-  return ELEVATION_ALIASES[normalized] || normalized;
+  return normalizeOfficialElevationV1(value);
 }
 
 function activePiece(piece) {
@@ -115,6 +118,31 @@ function physicalFootprint(value, objectId, kind) {
 }
 
 function modelBaseTouchesFootprint(modelFootprint, value, objectId, kind) {
+  // This function only returns contact, not separation or a signed receipt.
+  // Keep exact geometry for nearby objects. Conservative bounds reject the
+  // thousands of distant terrain cells without building/hashing their geometry.
+  // A two-milli-inch margin preserves the exact kernel's rounding/contact rule.
+  const validValue = value.footprint === "rect"
+    && [0, 180].includes(value.rotationDegrees)
+    || value.footprint === "circle" && value.width === value.height;
+  if (validValue && String(objectId || "").trim() && String(kind || "").trim()) {
+    const center = modelFootprint.center;
+    const vertices = modelFootprint.vertices;
+    const radius = modelFootprint.radiusMilliInches;
+    const bounds = modelFootprint.shape === "round"
+      ? [center.xMilliInches - radius, center.xMilliInches + radius,
+        center.yMilliInches - radius, center.yMilliInches + radius]
+      : [Math.min(...vertices.map(p => p.xMilliInches)),
+        Math.max(...vertices.map(p => p.xMilliInches)),
+        Math.min(...vertices.map(p => p.yMilliInches)),
+        Math.max(...vertices.map(p => p.yMilliInches))];
+    const halfWidth = Math.ceil(value.width / 2) + 1;
+    const halfHeight = Math.ceil(value.height / 2) + 1;
+    if (bounds[1] < value.x - halfWidth - 2
+      || bounds[0] > value.x + halfWidth + 2
+      || bounds[3] < value.y - halfHeight - 2
+      || bounds[2] > value.y + halfHeight + 2) return false;
+  }
   return evaluateOfficialPhysicalFootprintRelationV1({
     left: modelFootprint,
     right: physicalFootprint(value, objectId, kind),
@@ -242,12 +270,14 @@ export function deriveOfficialModelSurfacePlacementV2(state, request = {}) {
     "ENGAGEMENT_V2_BASE_GEOMETRY_REQUIRED", modelId);
   const baseDepth = milli(model.baseDepthInches,
     "ENGAGEMENT_V2_BASE_GEOMETRY_REQUIRED", modelId);
-  if (!new Set(["round", "rectangle"]).has(baseShape)
+  if (!(["round", "rectangle"].includes(baseShape) || isOfficialProfileBoundOutlineV1(baseShape))
     || baseWidth <= 0 || baseDepth <= 0
     || (baseShape === "round" && Math.abs(baseWidth - baseDepth) > 1)) {
     fail("ENGAGEMENT_V2_BASE_UNSUPPORTED", modelId);
   }
-  const modelFootprint = createOfficialPhysicalFootprintV1({
+  const modelFootprint = isOfficialProfileBoundOutlineV1(baseShape)
+      ? createOfficialModelBaseFootprintV1({ piece, model, dataBundle: state.officialModelBaseGeometryDataBundle })
+      : createOfficialPhysicalFootprintV1({
     objectId: modelId,
     kind: "model_base",
     shape: baseShape,
@@ -261,6 +291,36 @@ export function deriveOfficialModelSurfacePlacementV2(state, request = {}) {
     depthMilliInches: baseDepth,
     rotationDegrees: model.baseRotationDegrees ?? model.rotationDegrees ?? 0,
   });
+  const surface = physicalSurfacePlacement(state, modelFootprint, combatTag, modelId);
+  return Object.freeze({
+    schemaVersion: `${OFFICIAL_ENGAGEMENT_GRAPH_V2_SCHEMA}.model-surface-placement`,
+    pieceId, modelId,
+    elevation: surface.elevation,
+    supportTerrainIds: Object.freeze(surface.supportTerrainIds),
+    adjacentAccessPointIds: Object.freeze(surface.adjacentAccessPointIds),
+    rulesTruth: "official_derived_model_surface_placement", trainingTruth: false,
+  });
+}
+
+function placementSupport(state, modelFootprint, terrain, terrainById) {
+  // On art-bound maps the interior height lives in the signed terrain ledger.
+  // The board obstacle rows alone contain only the rim and access points.
+  if (modelFootprint.kind === "model_base"
+    && state.officialCompetitiveMapRoomFreeze?.overlayReceipt?.overlayCompilerVersion === "local_ramp_corridor_v3_1"
+    && usesWave3FaqClarifications(state)) {
+    return deriveOfficialFinalPlacementSurfaceSupportV13(state, modelFootprint);
+  }
+  const supportTerrainIds = terrain
+    .filter((entry) => entry.elevationSurface && modelBaseTouchesFootprint(
+      modelFootprint, entry, entry.terrainId, "terrain",
+    ))
+    .map((entry) => entry.terrainId)
+    .sort((left, right) => left.localeCompare(right));
+  const elevation = elevationForSupportTerrainIds(supportTerrainIds, terrainById);
+  return { supportTerrainIds, elevation };
+}
+
+function physicalSurfacePlacement(state, modelFootprint, combatTag, modelId) {
   const boardWidth = milli(state?.board?.widthInches,
     "ENGAGEMENT_V2_BOARD_INVALID", "width");
   const boardHeight = milli(state?.board?.heightInches,
@@ -273,13 +333,7 @@ export function deriveOfficialModelSurfacePlacementV2(state, request = {}) {
   const terrain = normalizeTerrain(state.board);
   const terrainById = new Map(terrain.map((entry) => [entry.terrainId, entry]));
   const accessPoints = normalizeAccessPoints(state.board, terrainById);
-  const supportTerrainIds = terrain
-    .filter((entry) => entry.elevationSurface && modelBaseTouchesFootprint(
-      modelFootprint, entry, entry.terrainId, "terrain",
-    ))
-    .map((entry) => entry.terrainId)
-    .sort((left, right) => left.localeCompare(right));
-  const elevation = elevationForSupportTerrainIds(supportTerrainIds, terrainById);
+  const { supportTerrainIds, elevation } = placementSupport(state, modelFootprint, terrain, terrainById);
   const adjacentAccessPointIds = combatTag === "flying" ? [] : accessPoints
     .filter((entry) => (
       entry.connectsElevations.includes(elevation)
@@ -289,16 +343,57 @@ export function deriveOfficialModelSurfacePlacementV2(state, request = {}) {
     ))
     .map((entry) => entry.accessPointId)
     .sort((left, right) => left.localeCompare(right));
-  return Object.freeze({
-    schemaVersion: `${OFFICIAL_ENGAGEMENT_GRAPH_V2_SCHEMA}.model-surface-placement`,
-    pieceId,
-    modelId,
-    elevation,
-    supportTerrainIds: Object.freeze(supportTerrainIds),
-    adjacentAccessPointIds: Object.freeze(adjacentAccessPointIds),
-    rulesTruth: "official_derived_model_surface_placement",
-    trainingTruth: false,
-  });
+  return { elevation, supportTerrainIds, adjacentAccessPointIds };
+}
+
+export function deriveOfficialTargetPointSurfacePlacementV2(state, footprint) {
+  const { footprintHash, ...body } = footprint || {};
+  if (body.kind !== 'template_target_point' || body.radiusMilliInches !== 0
+    || footprintHash !== hashStarcraftTmgContract(body)) fail('ENGAGEMENT_V2_TARGET_POINT_INVALID');
+  const surface = physicalSurfacePlacement(state, footprint, 'ground', footprint.objectId);
+  return Object.freeze({ targetPointId: footprint.objectId, footprintHash,
+    elevation: surface.elevation, supportTerrainIds: Object.freeze(surface.supportTerrainIds),
+    trainingTruth: false });
+}
+
+// Mission Markers are intangible. Their disc must fit on the board and
+// avoid impassable terrain. The centre determines their support surface.
+export function deriveOfficialMissionMarkerSurfacePlacementV2(state, footprint) {
+  const { footprintHash, ...body } = footprint || {};
+  if (body.kind !== "mission_marker" || body.shape !== "round"
+    || footprintHash !== hashStarcraftTmgContract(body)) fail("MISSION_MARKER_DROP_FOOTPRINT_INVALID");
+  const { xMilliInches: x, yMilliInches: y } = body.center;
+  const width = milli(state?.board?.widthInches, "ENGAGEMENT_V2_BOARD_INVALID", "width");
+  const height = milli(state?.board?.heightInches, "ENGAGEMENT_V2_BOARD_INVALID", "height");
+  if (x < body.radiusMilliInches || x > width - body.radiusMilliInches
+    || y < body.radiusMilliInches || y > height - body.radiusMilliInches) {
+    fail("MISSION_MARKER_OUTSIDE_BATTLEFIELD", body.objectId);
+  }
+  const terrain = normalizeTerrain(state.board);
+  const impassableIds = new Set(state.board.terrain
+    .filter(row => row.impassable === true || row.terrainKind === "impassable").map(row => row.id));
+  if (terrain.some(row => impassableIds.has(row.terrainId) && evaluateOfficialPhysicalFootprintRelationV1({
+    left: footprint, right: physicalFootprint(row, row.terrainId, "terrain"),
+  }).overlappingInteriors)) fail("MISSION_MARKER_IMPASSABLE_OVERLAP", body.objectId);
+  const supports = terrain.filter(row => row.elevationSurface && Math.abs(x - row.x) <= row.width / 2
+    && Math.abs(y - row.y) <= row.height / 2);
+  if (supports.length > 1) fail("MISSION_MARKER_SUPPORT_AMBIGUOUS", body.objectId);
+  const supportTerrainIds = supports.map(row => row.terrainId);
+  const elevation = elevationForSupportTerrainIds(supportTerrainIds, new Map(terrain.map(row => [row.terrainId, row])));
+  return Object.freeze({ markerId: body.objectId, footprintHash, elevation,
+    supportTerrainIds: Object.freeze(supportTerrainIds), trainingTruth: false });
+}
+
+export function deriveOfficialTokenSurfacePlacementV2(state, token) {
+  verifyOfficialBattlefieldTokenV1(token, state.officialBattlefieldTokenMarkerRegistry);
+  const footprint = createOfficialDisplacementTokenFootprintV1(token);
+  const surface = physicalSurfacePlacement(state, footprint, 'ground', token.tokenId);
+  return Object.freeze({ schemaVersion: `${OFFICIAL_ENGAGEMENT_GRAPH_V2_SCHEMA}.token-surface-placement`,
+    tokenId: token.tokenId, tokenHash: token.tokenHash, footprintHash: footprint.footprintHash,
+    elevation: surface.elevation,
+    supportTerrainIds: Object.freeze(surface.supportTerrainIds),
+    adjacentAccessPointIds: Object.freeze(surface.adjacentAccessPointIds),
+    rulesTruth: 'official_derived_token_surface_placement', trainingTruth: false });
 }
 
 function normalizeModels(state, boardWidth, boardHeight, terrain, accessPoints) {
@@ -329,14 +424,16 @@ function normalizeModels(state, boardWidth, boardHeight, terrain, accessPoints) 
       const baseShape = String(model.baseShape || "").trim().toLowerCase();
       const baseWidth = milli(model.baseWidthInches, "ENGAGEMENT_V2_BASE_GEOMETRY_REQUIRED", modelId);
       const baseDepth = milli(model.baseDepthInches, "ENGAGEMENT_V2_BASE_GEOMETRY_REQUIRED", modelId);
-      if (!new Set(["round", "rectangle"]).has(baseShape)
+      if (!(["round", "rectangle"].includes(baseShape) || isOfficialProfileBoundOutlineV1(baseShape))
         || baseWidth <= 0 || baseDepth <= 0
         || (baseShape === "round" && Math.abs(baseWidth - baseDepth) > 1)) {
         fail("ENGAGEMENT_V2_BASE_UNSUPPORTED", modelId);
       }
       const x = milli(model.xInches, "ENGAGEMENT_V2_MODEL_POSITION_REQUIRED", modelId);
       const y = milli(model.yInches, "ENGAGEMENT_V2_MODEL_POSITION_REQUIRED", modelId);
-      const modelFootprint = createOfficialPhysicalFootprintV1({
+      const modelFootprint = isOfficialProfileBoundOutlineV1(baseShape)
+      ? createOfficialModelBaseFootprintV1({ piece, model, dataBundle: state.officialModelBaseGeometryDataBundle })
+      : createOfficialPhysicalFootprintV1({
         objectId: modelId,
         kind: "model_base",
         shape: baseShape,
@@ -352,12 +449,8 @@ function normalizeModels(state, boardWidth, boardHeight, terrain, accessPoints) 
       })) {
         fail("ENGAGEMENT_V2_MODEL_OUTSIDE_BOARD", modelId);
       }
-      const derivedSupportTerrainIds = terrain
-        .filter((entry) => entry.elevationSurface && modelBaseTouchesFootprint(
-          modelFootprint, entry, entry.terrainId, "terrain",
-        ))
-        .map((entry) => entry.terrainId)
-        .sort((left, right) => left.localeCompare(right));
+      const { supportTerrainIds: derivedSupportTerrainIds, elevation: derivedElevation } =
+        placementSupport(state, modelFootprint, terrain, terrainById);
       const declaredSupportTerrainIds = uniqueSortedStrings(
         model.supportTerrainIds,
         "ENGAGEMENT_V2_ELEVATION_SUPPORTS_REQUIRED",
@@ -366,7 +459,6 @@ function normalizeModels(state, boardWidth, boardHeight, terrain, accessPoints) 
       if (!isDeepStrictEqual(declaredSupportTerrainIds, derivedSupportTerrainIds)) {
         fail("ENGAGEMENT_V2_ELEVATION_SUPPORT_MISMATCH", modelId);
       }
-      const derivedElevation = elevationForSupportTerrainIds(derivedSupportTerrainIds, terrainById);
       const declaredElevation = normalizeElevation(model.elevation);
       if (combatTag === "ground"
         && (!ELEVATIONS.includes(declaredElevation) || declaredElevation !== derivedElevation)) {
@@ -464,13 +556,15 @@ export function deriveOfficialEngagementGraphV2(state) {
   const accessPoints = normalizeAccessPoints(state.board, terrainById);
   const accessPointById = new Map(accessPoints.map((entry) => [entry.accessPointId, entry]));
   const models = normalizeModels(state, boardWidth, boardHeight, terrain, accessPoints);
+  const nonEngagingUnitIds = new Set(state.pieces.filter(piece => isOfficialDecoyUnitV1(state, piece)).map(piece => piece.id));
   const modelEdges = [];
   const elevationRejections = [];
   for (let leftIndex = 0; leftIndex < models.length; leftIndex += 1) {
     const left = models[leftIndex];
     for (let rightIndex = leftIndex + 1; rightIndex < models.length; rightIndex += 1) {
       const right = models[rightIndex];
-      if (left.sideKey === right.sideKey || left.combatTag !== "ground" || right.combatTag !== "ground") continue;
+      if (left.sideKey === right.sideKey || left.combatTag !== "ground" || right.combatTag !== "ground"
+        || nonEngagingUnitIds.has(left.unitId) || nonEngagingUnitIds.has(right.unitId)) continue;
       const relation = evaluateOfficialPhysicalFootprintRelationV1({
         left: left.footprint,
         right: right.footprint,
@@ -539,6 +633,8 @@ export function deriveOfficialEngagementGraphV2(state) {
     rulesSourceSnapshotId: "core-rules-en@27639c562e6d",
     rulesSourceContentHash: "27639c562e6db9777dd9ba984d0c9f9b581841ec30166848e021f893cd00ea54",
     geometryInputHash: hashStarcraftTmgContract(geometryInput),
+    ...(state.officialDecoySourceBundle ? { decoySourceBundleHash: state.officialDecoySourceBundle.bundleHash,
+      nonEngagingUnitIds: [...nonEngagingUnitIds].sort() } : {}),
     engagementRangeMilliInches: OFFICIAL_ENGAGEMENT_RANGE_V2_MILLI_INCHES,
     supportedGeometryScope:
       "round_and_rotated_rectangle_bases_all_elevations_derived_supports_access_points_axis_aligned_terrain_v2",
@@ -550,4 +646,48 @@ export function deriveOfficialEngagementGraphV2(state) {
     trainingTruth: false,
   };
   return Object.freeze({ ...body, graphHash: hashStarcraftTmgContract(body) });
+}
+
+// Sufficient whole-cell exclusion for the flat round-base charge proof. This
+// shares the graph's exact terrain normalization and intersection predicate;
+// it never adds terrain, guesses passability, or supplies a finite-search veto.
+export function createOfficialGroundEngagementShadowCoverV2(state, targetModelId) {
+  const target = (state?.pieces || []).flatMap(p => p.models || [])
+    .find(m => m.id === targetModelId);
+  if (!target || target.baseShape !== "round" || target.elevation !== "ground"
+    || (target.supportTerrainIds || []).length) return null;
+  const x = Math.round(Number(target.xInches) * 1000);
+  const y = Math.round(Number(target.yInches) * 1000);
+  const width = Math.round(Number(target.baseWidthInches) * 1000);
+  const depth = Math.round(Number(target.baseDepthInches ?? target.baseWidthInches) * 1000);
+  if (![x, y, width, depth].every(Number.isSafeInteger) || width <= 0 || width !== depth) return null;
+  const source = new Map((state.board?.terrain || []).map(t => [t.id, t]));
+  let terrain;
+  try { terrain = normalizeTerrain(state.board); } catch { return null; }
+  const origin = { x, y };
+  const rectangles = terrain.filter(t => {
+    const raw = source.get(t.terrainId);
+    if (!t.blocksEngagement || t.footprint !== "rect" || t.width <= 4 || t.height <= 4
+      || raw?.terrainKind !== "ordinary" || raw.standableHorizontalSurface === true
+      || raw.elevationSurface === true || (raw.openings || []).length
+      || (raw.setupAgreement?.openings || []).length || (raw.accessPoints || []).length) return false;
+    const separation = Math.hypot(Math.max(Math.abs(x - t.x) - t.width / 2, 0),
+      Math.max(Math.abs(y - t.y) - t.height / 2, 0));
+    // The target base must lie entirely outside the occluder. Shrinking every
+    // edge by 2 also protects the graph's rounded nearest-base endpoints.
+    return separation > Math.ceil(width / 2) + 2;
+  }).map(t => ({ ...t, width: t.width - 4, height: t.height - 4 }));
+  if (!rectangles.length) return null;
+  return cell => {
+    if (![cell.minX, cell.maxX, cell.minY, cell.maxY].every(Number.isSafeInteger)
+      || cell.minX > cell.maxX || cell.minY > cell.maxY) return null;
+    const corners = [cell.minX, cell.maxX].flatMap(cx =>
+      [cell.minY, cell.maxY].map(cy => ({ x: cx, y: cy })));
+    // The shadow cast by one convex rectangle from an external point is
+    // convex. Covering all four corners covers this entire rectangle, including
+    // every integer endpoint. An overlapping base is already illegal; otherwise
+    // the obstructed centre line contains the same obstructed base-to-base gap.
+    return rectangles.find(t => corners.every(corner =>
+      segmentIntersectsRect(origin, corner, t)))?.terrainId ?? null;
+  };
 }

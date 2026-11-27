@@ -2,16 +2,51 @@
 // or a request to reproduce the previous strategic reply. No verdict is made here.
 import {isDeepStrictEqual} from 'node:util';
 import {rosterOriginalSelectedQuestionsV1} from './roster-author-question-contract-v1.mjs';
+import {isRosterBuilderAuthorFailureReturnV1} from './roster-builder-inquiry-v1.mjs';
 const returnOrigins=Object.freeze({
   author_decision_return:'deterministic_task_router',
   source_interpretation_challenge:'deterministic_material_router',
   work_order_capability_return:'deterministic_compiler_router',
   work_order_delegation_return:'deterministic_compiler_router',
+  work_order_design_return:'deterministic_compiler_router',
+  work_order_scope_return:'deterministic_compiler_router',
+  bounded_observation_return:'deterministic_tool_result_router',
+  author_candidate_input_return:'deterministic_compiler_router',
 });
+// Design inherits the CURRENT owner's actual choice, not every historical
+// instruction/failed method as another simultaneous requirement. Preserve the
+// exact current request; only redundant historical bodies become read handles.
+function comparisonDesignContext(assignment){
+  const inputs=assignment?.inputs,source=inputs?.redesignContract?.value?.source;
+  const binding=source?.choiceBinding;
+  if(assignment?.role!=='roster_workflow_local_teach'
+    ||inputs?.comparisonStageOwnership?.value?.design?.owner!=='comparison_design_author'
+    ||binding?.status!=='bound'||!isDeepStrictEqual(binding.choice,source.request?.choice)
+    ||binding.sourceStateHash!==assignment.scope?.source||binding.rulesRuntimeHash!==assignment.scope?.rules)return null;
+  const current={...inputs},history={};
+  for(const key of ['previousDesign','originalTeach','authorRedesignRequest']){
+    const input=inputs[key],id=input?.evidenceId??input?.id;
+    const entry=assignment.evidenceDirectory?.find(e=>e.id===id);
+    // Never drop a body without an actual retrievable source in this request.
+    if(input?.source!=='evidence'||!entry||!Number.isSafeInteger(entry.number))continue;
+    const {value,...metadata}=input;
+    history[key]={...metadata,evidenceId:id,evidenceNumber:entry.number,
+      artifactRef:entry.artifactRef,pointer:input.pointer??'',status:'available_on_demand',
+      bodyDeliveredInThisProjection:false,currentMethodInstruction:false};
+    delete current[key];
+  }
+  return {inputs:current,history,node:{kind:'comparison_design_assignment',version:1,
+    currentWorkId:assignment.workId,
+    ownerSource:{workId:source.authorWorkId,resultRef:source.authorResultRef,requestRef:source.authorRequestRef,replyRef:source.authorReplyRef},
+    choiceBinding:structuredClone(binding),currentRequest:structuredClone(source.request),
+    choicesChangedByHost:false,designApproved:false,factsApproved:false,
+    instruction:'Design for this CURRENT source-bound choice and exact currentRequest. The historical_reference handles explain earlier proposals/failed methods; they are not additional current instructions or established facts. A current correction rejecting an old claim is not a request to repeat that claim. Compare wording with its actual version before alleging a contradiction. proposedChange is the owner\'s proposed operationalization, not Rules authority: correct invalid mechanism/timing while preserving the SAME selected choice and intended decision use. You own legal hypothetical conditions, controls, bounded method, endpoint and result-to-choice mapping; do not return those ordinary design choices to the strategic owner. Keeping supporting participants/actions equal in both arms is a control, not an investment comparison; it cannot rank their investment but may allow a marginal-action question if the actual observable distinguishes that decision. Do not force approval: if the CURRENT choice really cannot be tested, name the exact current clause, concrete source/capability conflict and required owner change. Never use an old defect, an unknown unmeasured winner or a missing exact coordinate delegated to Native as that conflict. Source-bound choices alone do not prove legality, causal relevance or utility. Retain frozen facts, original question scope and independent preflight; no experiment is authorized by this projection.'}};
+}
 function validReturn(c){
   if(!c||c.version!==1||!Object.hasOwn(returnOrigins,c.kind)||returnOrigins[c.kind]!==c.origin)return false;
   if(c.kind==='author_decision_return')return c.questions?.length
-    &&c.questions.every(q=>q.classification==='author_decision');
+    &&c.questions.every(q=>q.classification==='author_decision'
+      ||q.classification==='authored_choice'&&q.resolutionRequired==='author_rationale_revision');
   if(c.nativeRetryAuthorized!==false)return false;
   return c.kind==='source_interpretation_challenge'
     ?!!c.proposedConclusion&&!!c.diagnostic?.questions?.length:!!c.failure;
@@ -85,12 +120,100 @@ function noProgressReturnSource(assignment){
   return {source:repeated,coordination:{kind:frontier.returnReason,questions:frontier.unresolvedQuestions},
     proof:structuredClone(proof)};
 }
-export function projectRosterIncomingAuthorContextV1(assignment){
+// A failed author-selected candidate is a decision handoff, including when
+// several review domains join without an investigationFrontier. Keep exact
+// diagnostics, but do not make a method's old "do not choose another army"
+// instruction the current author's restriction. Roster mode still owns writes.
+function candidateOwnerReturnContext(assignment){
+  const inputs=assignment.inputs,control=inputs?.authorCandidateRequests;
+  const rows=control?.value,draft=inputs?.wholeDraft?.value;
+  if(control?.source!=='literal'||!Array.isArray(rows)||!rows.length
+    ||!['fixed','editable'].includes(draft?.mode)
+    ||draft.rosterEditAuthority!==(draft.mode==='fixed'?'preset_immutable':'agent_may_reselect_after_evidence')
+    ||!rows.every(row=>validReturn(row)&&row.kind==='author_candidate_input_return'
+      &&row.ownerRole===assignment.role&&row.factApprovalGranted===false&&row.planApprovalGranted===false
+      &&row.hostAuthoredPlanValues===false&&isRosterBuilderAuthorFailureReturnV1(row.failure)))return null;
+  const current={...inputs},history={};
+  for(const key of ['originalTask','originalQuestion','originalStrategicDecision','originalReviewIssues']){
+    if(current[key]){history[key]=current[key];delete current[key];}
+  }
+  if(inputs.investigationFrontier?.value){
+    const {originalQuestion,...frontier}=inputs.investigationFrontier.value;
+    if(originalQuestion!==undefined)history.factOwnerOriginalQuestion={source:'literal',value:originalQuestion};
+    current.investigationFrontier={...inputs.investigationFrontier,value:frontier};
+  }
+  current.authorCandidateRequests={...control,value:rows.map((row,index)=>{
+    const {failure,...identity}=row;
+    history[`authorCandidateMethod${index}`]={source:'literal',value:structuredClone(failure)};
+    return {...identity,previousAuthorCandidate:structuredClone(failure.originalRequest?.builderCandidateAuthority?.query??null),
+      failure:{error:structuredClone(failure.error)}};
+  })};
+  return {inputs:current,history,node:{kind:'strategy_owner_assignment',version:5,
+    returnKind:'author_candidate_requires_revision',currentWorkId:assignment.workId,
+    rosterEditAuthority:draft.rosterEditAuthority,
+    sources:rows.map(row=>({workId:row.workId,resultRef:row.resultRef,
+      sourceWorkId:row.sourceWorkId,sourceResultRef:row.sourceResultRef})),
+    factApprovalGranted:false,planApprovalGranted:false,hostAuthoredPlanValues:false,
+    instruction:'The method could not execute the author-selected candidate. YOU now own the next strategy choice, within wholeDraft.rosterEditAuthority. The exact negative Native diagnosis and previousAuthorCandidate are current evidence; authorCandidateMethod and original tasks are immutable historical context, not current method-only restrictions. In editable mode choose another explicit candidate, a justified retention, or a specific necessary factual query; in fixed mode adapt the Plan without reselecting the imposed army. Do not send the unchanged illegal baseline back to technical repair, infer every alternative is impossible, or silently waive the remaining target. No candidate is adopted, no retry authorized, no fact or Plan approved by this handoff.'}};
+}
+// A normal batch returns through its owned summary, not through the method's
+// earlier proposal. Resolve this from persisted work/evidence links, never a
+// guessed ID suffix or a model claim that a batch succeeded.
+function completedBatchSource(assignment,state){
+  const inputs=assignment.inputs,frontier=inputs?.investigationFrontier?.value;
+  if(!state||!['investigation_decision_window_complete','completed_batch_contains_only_exact_reused_observations'].includes(frontier?.returnReason))return null;
+  const author=state.work?.find(w=>w.id===assignment.workId);
+  const owner=state.work?.find(w=>w.id===frontier.ownerWorkId);
+  if(author?.investigationOwnerId!==owner?.id||author?.investigationFrontierOf!==frontier.goalId
+    ||owner?.role!=='roster_workflow_experiment_planner'||owner.status!=='evidence_ready')return null;
+  return Object.entries(inputs).find(([key,input])=>{
+    if(!/^batchFacts\d+$/u.test(key)||input.source!=='evidence'||input.status!=='read'||input.validity!=='current'||input.pointer!=='')return false;
+    const id=input.evidenceId??input.id,summary=state.work?.find(w=>'role:'+w.id===id);
+    const evidence=state.evidence?.find(e=>e.id===id);
+    if(summary?.role!=='roster_workflow_fact_summary'||summary.experimentOwnerId!==owner.id
+      ||summary.status!=='evidence_ready'||!summary.resultRef||!evidence?.artifactRef)return false;
+    // resultRef stores the typed result envelope; role evidence publishes its
+    // value body. They intentionally have different artifact identities. The
+    // persisted summary-owner link and current registered source identify this
+    // handoff; the ordinary evidence reader still validates the body.
+    const value=input.value?.kind?input.value.value:input.value;
+    return !!normalReturn(value,frontier,input,inputs);
+  })??null;
+}
+function methodContractReturnContext(assignment,state){
+  const inputs=assignment.inputs,proof=inputs?.methodContractRepair?.value;
+  if(inputs?.methodContractRepair?.source!=='literal'||proof?.version!==1||proof.methodExecuted!==false
+    ||proof.factsApproved!==false||proof.planApproved!==false||proof.historyReset!==false
+    ||proof.decisionId!==assignment.workId||isDeepStrictEqual(proof.oldOperation,proof.currentOperation))return null;
+  const job=state?.work?.find(w=>w.id===assignment.workId),owner=state?.work?.find(w=>w.id===proof.sourceWorkId);
+  if(job?.investigationOwnerId!==owner?.id||owner?.resultRef!==proof.sourceResultRef
+    ||!isDeepStrictEqual(job.inputs.methodContractRepair?.value,proof))return null;
+  const selected=rosterOriginalSelectedQuestionsV1(assignment),current={...inputs},history={};
+  for(const key of ['originalTask','originalQuestion','originalStrategicDecision','originalReviewIssues','previousBatch']){
+    if(current[key]){history[key]=current[key];delete current[key];}
+  }
+  if(current.investigationFrontier?.value){
+    const {originalQuestion,...frontier}=current.investigationFrontier.value;
+    if(originalQuestion!==undefined)history.factOwnerOriginalQuestion={source:'literal',value:originalQuestion};
+    current.investigationFrontier={...current.investigationFrontier,value:frontier};
+  }
+  return {inputs:current,history,node:{kind:'strategy_owner_assignment',version:7,returnKind:'tool_input_contract_revised',
+    currentWorkId:assignment.workId,sourceWorkId:proof.sourceWorkId,sourceResultRef:proof.sourceResultRef,
+    questions:selected?.questions??inputs.investigationFrontier.value.unresolvedQuestions,
+    factApprovalGranted:false,planApprovalGranted:false,hostAuthoredPlanValues:false,
+    instruction:'Reconsider the UNEXECUTED method against methodContractRepair.currentOperation. The previous operation contract and method rationale are historical, not current instructions. No measurement was executed or approved by this return. Resolve the exact original question using the actual current tool parameter ownership; do not re-authorize a prerequisite just because the old method claimed it was required. Strategic choices and hypothetical intent remain yours; Native owns its declared computation. Keep all necessary unknowns and original evidence; no whole-match simulation or automatic Plan approval.'}};
+}
+
+export function projectRosterIncomingAuthorContextV1(assignment,{state}={}){
+  const design=comparisonDesignContext(assignment);if(design)return design;
   const inputs=assignment?.inputs,frontier=inputs?.investigationFrontier?.value;
   if(assignment?.role!=='roster_workflow_strategy_decision')return null;
+  const revised=methodContractReturnContext(assignment,state);if(revised)return revised;
   const capability=capabilityDeliveryReturn(assignment);if(capability)return capability;
+  const candidate=candidateOwnerReturnContext(assignment);if(candidate)return candidate;
   if(frontier?.version!==1)return null;
   const stopped=noProgressReturnSource(assignment);
+  const completed=completedBatchSource(assignment,state);
   const source=stopped?.source??Object.entries(inputs).find(([key,input])=>{
     if(!/^batchFacts\d+$/u.test(key)||input.source!=='evidence')return false;
     const value=input.value?.kind?input.value.value:input.value,c=value?.coordination;
@@ -99,12 +222,14 @@ export function projectRosterIncomingAuthorContextV1(assignment){
       &&c.factApprovalGranted===false&&c.planApprovalGranted===false
       ||!!normalReturn(value,frontier,input,inputs);
   });
-  if(!source)return null;
-  const [inputKey,input]=source,value=input.value?.kind?input.value.value:input.value;
+  const selectedSource=source??completed;
+  if(!selectedSource)return null;
+  const [inputKey,input]=selectedSource,value=input.value?.kind?input.value.value:input.value;
   const history={},current={...inputs};
   for(const key of ['originalTask','originalQuestion','originalStrategicDecision','originalReviewIssues']){
     if(current[key]){history[key]=current[key];delete current[key];}
   }
+  if(completed&&current.previousBatch){history.previousBatch=current.previousBatch;delete current.previousBatch;}
   const {originalQuestion,...currentFrontier}=frontier;
   if(originalQuestion!==undefined)history.factOwnerOriginalQuestion={source:'literal',value:originalQuestion};
   current.investigationFrontier={...inputs.investigationFrontier,value:currentFrontier};
@@ -114,11 +239,15 @@ export function projectRosterIncomingAuthorContextV1(assignment){
     &&inputs.ownerDeliveryRepair.value?.sourceContract==='strategy_owner_assignment'
     &&inputs.ownerDeliveryRepair.value.workId===assignment.workId
     ?inputs.ownerDeliveryRepair.value.noProgressControl:null;
-  return {inputs:current,history,node:{kind:'strategy_owner_assignment',version:stopped?4:2,
+  return {inputs:current,history,node:{kind:'strategy_owner_assignment',version:completed?6:stopped?4:2,
     returnKind:coordination.kind,
     currentWorkId:assignment.workId,source:{inputKey,evidenceId:input.evidenceId??input.id,
       evidenceNumber:input.evidenceNumber??null,originalAssignmentWorkId:frontier.ownerWorkId},
     questions:structuredClone(selectedQuestions?.questions??coordination.questions??frontier.unresolvedQuestions??[]),
+    ...(completed?{completedBatch:{ownerWorkId:frontier.ownerWorkId,summaryEvidenceId:input.evidenceId??input.id,
+      executionSources:Object.entries(current).filter(([key])=>/^batchToolSource\d+$/u.test(key)).map(([key,row])=>({inputKey:key,evidenceId:row.evidenceId??row.id,evidenceNumber:row.evidenceNumber??null})),
+      priorMethodIsHistorical:true,originalQuestionAnsweredByBatch:false,
+      instruction:'This batch has executed. Its original proposed next steps belong to history, not a new to-do list. Reconcile the delivered exact results and saved successor before choosing any NEW operation. The remaining original predicate is still unproved unless these results actually answer it; do not replay a completed prerequisite or infer arrival/control from a menu.'}}:{}),
     ...(selectedQuestions?{questionSource:selectedQuestions.source,
       returnedQuestionProposals:structuredClone(coordination.questions??frontier.unresolvedQuestions??[])}:{}),
     ...(repairedControl?{noProgressControl:structuredClone(repairedControl)}:{}),

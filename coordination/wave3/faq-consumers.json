@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 1,
+  "scope": "04静态影响索引，引用现存工厂；行为接线与产品准出由05～12验证",
+  "shared": {
+    "host": {"path":"packages/authoritative-engine/transition-v1.mjs","export":"createStarcraftTmgAuthoritativeEngine","role":"所选RulesRuntime执行preview/apply，原生后继与回放"},
+    "query": {"path":"packages/online-agent-session/room-backed-spatial-rules-query-adapter-v1.mjs","export":"createStarcraftTmgRoomBackedSpatialRulesQueryAdapterV1","role":"同release查询并传播到worker/场景，覆盖Plan/Teach/在线决策与复盘"},
+    "rosterPlan": {"path":"packages/product-composition/roster-planning-product-module-v1.mjs","export":"createRosterPlanningProductModuleV1","role":"人工编军事实及从头写表/固定表Plan的能力与任务实验"},
+    "ui": {"path":"apps/starcraft-tmg-expo/components/battlefield/authoritative-battle-workspace.tsx","export":"AuthoritativeBattleWorkspace","role":"Web/App动作、反应、位置、状态和任务显示"},
+    "readPanels": {"path":"apps/starcraft-tmg-expo/components/battlefield/battle-workbench-read-panels.tsx","export":"BattleWorkbenchReadPanel","role":"规则速览、概率与状态面板"},
+    "skill": {"path":"content/strategy-skills/ticket-18-foundational-v1/skills/general-rules-and-strategy.json","role":"13按条款依赖标旧知识失效，14生成增量；副官/复盘按所选发布检索"}
+  },
+  "families": {
+    "geometry": {
+      "owners":["T28-W3-05","T28-W3-06"],
+      "rules":[{"path":"packages/rule-atoms/official-elevation-effective-size-rules-kernel-v1.mjs","export":"evaluateOfficialElevatedLineOfSightV1"},{"path":"packages/rule-atoms/official-gap-place-geometry-kernel-v1.mjs","export":"certifyOfficialGapPlaceGeometryPlanV1"}],
+      "queryKinds":["legal_full_path_movement","legal_asset_placement_options","action_specific_threat","attack_probability"],
+      "lifecycle":"准备合法候选→同位置preview/apply→摆放/高地效果→存储恢复"
+    },
+    "mission": {
+      "owners":["T28-W3-05","T28-W3-11"],
+      "rules":[{"path":"packages/rule-atoms/official-standard-mission-runtime-v1.mjs","export":"createOfficialMissionRuntimeV2"}],
+      "queryKinds":["mission_marker_control"],
+      "lifecycle":"回合开始/标记状态→任务行动→控制和真实计分→保存恢复；新增Artefact任务由11接完整生命周期"
+    },
+    "deployment": {
+      "owners":["T28-W3-05","T28-W3-06","T28-W3-07","T28-W3-09"],
+      "rules":[{"path":"packages/product-composition/official-battlefield-asset-family-adapter-v1.mjs","export":"createOfficialBattlefieldAssetFamilyAdapterV1"},{"path":"packages/product-composition/official-unit-lifecycle-family-adapter-v1.mjs","export":"createOfficialUnitLifecycleFamilyAdapterV1"}],
+      "queryKinds":["legal_asset_placement_options","legal_full_path_movement"],
+      "lifecycle":"入口/源能力资格→同高度与全底盘合法摆放→源使用归因→激活结束→恢复"
+    },
+    "reaction": {
+      "owners":["T28-W3-05","T28-W3-10"],
+      "rules":[{"path":"packages/rule-atoms/official-faq-f4-ability-tactical-keyword-kernel-v1.mjs","export":"evaluateOfficialFaqF4RuleV1"},{"path":"packages/product-composition/official-reaction-family-adapter-v1.mjs","export":"openOfficialReactionFamilyWindowV1"}],
+      "queryKinds":["action_specific_threat","attack_probability"],
+      "lifecycle":"原始事件→窗口与每阶段/每激活/每trigger次数→支付→回到父动作→恢复无重复"
+    },
+    "targeting": {
+      "owners":["T28-W3-05","T28-W3-08","T28-W3-09","T28-W3-10"],
+      "rules":[{"path":"packages/product-composition/official-ability-effect-runtime-v1.mjs","export":"createOfficialAbilityEffectRuntimeV1"},{"path":"packages/product-composition/official-selected-roster-ability-runtime-v1.mjs","export":"queryOfficialSelectedRosterAbilityV1"}],
+      "queryKinds":["action_specific_threat","legal_asset_placement_options","attack_probability"],
+      "lifecycle":"区分目标、区域与测距参照→资格/显式LOS→Host绑定→preview/apply"
+    },
+    "activation": {
+      "owners":["T28-W3-05","T28-W3-10"],
+      "rules":[{"path":"packages/rule-atoms/official-round-phase-activation-rules-executor-v1.mjs","export":"applyOfficialRoundPhaseActivationRulesV1"},{"path":"packages/product-composition/official-selected-roster-ability-runtime-v1.mjs","export":"openOfficialSelectedRosterAfterActionWindowV1"}],
+      "queryKinds":["action_specific_threat"],
+      "lifecycle":"当前激活者身份→合法子行动→保留父激活者→action后状态→后继；Pass补标记与action回调分开"
+    },
+    "attack": {
+      "owners":["T28-W3-05","T28-W3-08","T28-W3-10"],
+      "rules":[{"path":"packages/rule-atoms/official-template-weapon-executor-v1.mjs","export":"applyOfficialTemplateWeaponV1"},{"path":"packages/rule-atoms/official-dodge-resolution-kernel-v1.mjs","export":"createOfficialDodgeResolutionKernelV1"},{"path":"packages/rule-atoms/official-impact-executor-v1.mjs","export":"applyOfficialImpactV1"}],
+      "queryKinds":["attack_probability","ranged_activation_probability","fire_zone_exchange"],
+      "lifecycle":"选批次/参数→同核心概率→掷骰与损伤→伤亡/状态→下一批次→恢复"
+    },
+    "damage": {
+      "owners":["T28-W3-05","T28-W3-07","T28-W3-08"],
+      "rules":[{"path":"packages/rule-atoms/official-attack-pool-edge-executor-v1.mjs","export":"applyOfficialAttackPoolEdgeV1"},{"path":"packages/product-composition/official-selected-roster-ability-runtime-v1.mjs","export":"resolveOfficialSelectedRosterAbilityModifiersV1"}],
+      "queryKinds":["attack_probability","ranged_activation_probability","fire_zone_exchange"],
+      "lifecycle":"实际伤害来源/防御资格→旧伤加新伤→伤亡上限→余伤/人口/分数→恢复"
+    },
+    "tokens": {
+      "owners":["T28-W3-05","T28-W3-06","T28-W3-08","T28-W3-09"],
+      "rules":[{"path":"packages/product-composition/official-battlefield-asset-family-adapter-v1.mjs","export":"createOfficialBattlefieldAssetFamilyAdapterV1"},{"path":"packages/product-composition/official-match-lifecycle-family-adapter-v1.mjs","export":"createOfficialMatchLifecycleFamilyAdapterV1"}],
+      "queryKinds":["legal_asset_placement_options","action_specific_threat","attack_probability"],
+      "lifecycle":"token来源/高度/适用域→保存→具名触发→来源死亡策略→结算与到期清理"
+    },
+    "modifiers": {
+      "owners":["T28-W3-05","T28-W3-08","T28-W3-10"],
+      "rules":[{"path":"packages/product-composition/official-selected-roster-ability-runtime-v1.mjs","export":"consumeOfficialSelectedRosterFirstWeaponModifierV1"},{"path":"packages/product-composition/official-battlefield-asset-family-adapter-v1.mjs","export":"consumeOfficialBattlefieldAssetFirstWeaponEffectsV1"}],
+      "queryKinds":["attack_probability","ranged_activation_probability","fire_zone_exchange"],
+      "lifecycle":"效果来源、受益者、武器绑定和有效期→覆盖/再次攻击→到期→保存恢复"
+    }
+  }
+}

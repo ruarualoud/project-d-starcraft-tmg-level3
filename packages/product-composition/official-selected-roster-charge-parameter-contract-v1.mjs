@@ -59,3 +59,28 @@ export function describeOfficialSelectedRosterChargeParameterRepairV1(domain, fa
     useForSameChoiceRepairOnly: true, doesNotProveProposalLegal: true, trainingTruth: false,
   };
 }
+
+// The post-roll domain and its proof choices are supplied by Native, including
+// the failure-only occupied-path variant. The client never computes reach.
+export function describeOfficialChargeResolutionFieldsV1(domain, {modelIds = []} = {}) {
+  if (domain?.parameterKind !== 'official_selected_roster_charge_resolution_v1') return null;
+  const {parameterSchema: schema, constraints} = domain;
+  const fields = {outcome: schema.outcome.length === 1 ? {const: schema.outcome[0]} : {type: 'string', enum: schema.outcome}};
+  if (schema.outcome.includes('success')) {
+    const point = {type: 'object', required: ['xMilliInches','yMilliInches'], properties: {
+      xMilliInches: {type: 'integer'}, yMilliInches: {type: 'integer'},
+      rotationDegrees: {type: 'number'}, elevation: {type: 'string'}, supportTerrainIds: {type: 'array', items: {type: 'string'}},
+    }};
+    fields.path = {type: 'array', minItems: 1, items: point};
+    const count = constraints.exactRemainingPlacementCount;
+    fields.placements = count === 0 ? {const: []} : {type: 'array', minItems: count, maxItems: count, items: {
+      ...point, required: ['modelId', ...point.required], properties: {...point.properties,
+        modelId: {type: 'string', enum: modelIds.filter(id => id !== constraints.leadingModelId)}},
+    }};
+  }
+  if (schema.outcome.includes('failure')) {
+    fields.failureProof = schema.failureProofKind ? {const: {kind: schema.failureProofKind}}
+      : {type: 'object', required: ['kind'], properties: {kind: {type: 'string', enum: constraints.acceptedFailureProofs}}};
+  }
+  return fields;
+}

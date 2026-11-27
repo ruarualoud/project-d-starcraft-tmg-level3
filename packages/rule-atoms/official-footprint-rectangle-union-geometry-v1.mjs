@@ -1,14 +1,18 @@
 // Exact physical rectangle-union geometry shared by native terrain and Rules.
 // Moved unchanged from the existing logical-surface geometry; no height,
 // access permission, source inference or state mutation is decided here.
+import { centeredFootprintTrianglesV1 } from "./measured-footprint-contour-v1.mjs";
+
 const TOLERANCE = 1;
+const hasConcaveOutline = base => base.shape === "measured_contour" || base.shape === "orthogonal_cross";
 const fail = (code, detail = "") => { throw new Error(`${code}${detail ? `:${detail}` : ""}`); };
 function bounds(base) {
   if (base.shape === "round") return { minX: base.center.xMilliInches - base.radiusMilliInches,
     maxX: base.center.xMilliInches + base.radiusMilliInches,
     minY: base.center.yMilliInches - base.radiusMilliInches,
     maxY: base.center.yMilliInches + base.radiusMilliInches };
-  if (base.shape !== "rectangle" || base.vertices?.length !== 4) fail("LOGICAL_SURFACE_BASE_UNSUPPORTED");
+  if (!(base.shape === "rectangle" && base.vertices?.length === 4)
+    && !(hasConcaveOutline(base) && base.vertices?.length >= 3)) fail("LOGICAL_SURFACE_BASE_UNSUPPORTED");
   return { minX: Math.min(...base.vertices.map(p => p.xMilliInches)),
     maxX: Math.max(...base.vertices.map(p => p.xMilliInches)),
     minY: Math.min(...base.vertices.map(p => p.yMilliInches)),
@@ -96,7 +100,19 @@ function coversPath(rects, bases, prepared = complement(rects)) {
   const pairs = bases.length === 1 ? [[bases[0], bases[0]]] : bases.slice(1).map((b, i) => [bases[i], b]);
   return pairs.every(([a, b]) => {
     if (a.shape !== b.shape || a.widthMilliInches !== b.widthMilliInches || a.depthMilliInches !== b.depthMilliInches
-      || a.shape === "rectangle" && a.rotationDegrees !== b.rotationDegrees) fail("LOGICAL_SURFACE_RIGID_SWEEP_REQUIRED");
+      || a.shape !== "round" && a.rotationDegrees !== b.rotationDegrees) fail("LOGICAL_SURFACE_RIGID_SWEEP_REQUIRED");
+    if (hasConcaveOutline(a)) {
+      if (a.horizontalArmDepthMilliInches !== b.horizontalArmDepthMilliInches || a.verticalArmWidthMilliInches !== b.verticalArmWidthMilliInches
+        || (a !== b && a.shape === "measured_contour" && JSON.stringify(a.localVerticesMilliInches) !== JSON.stringify(b.localVerticesMilliInches))) {
+        fail("LOGICAL_SURFACE_RIGID_SWEEP_REQUIRED");
+      }
+      if (!voids.length) return true;
+      const ends = centeredFootprintTrianglesV1(b);
+      return centeredFootprintTrianglesV1(a).every((triangle, i) => {
+        const swept = hull([...triangle.vertices, ...ends[i].vertices]);
+        return voids.every(r => !polygonOverlapsRect(swept, r));
+      });
+    }
     return a.shape === "round" ? voids.every(r => segmentRectDistance(a.center, b.center, r) >= a.radiusMilliInches - TOLERANCE)
       : voids.every(r => !polygonOverlapsRect(hull([...a.vertices, ...b.vertices]), r));
   });

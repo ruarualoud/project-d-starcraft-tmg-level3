@@ -7,6 +7,8 @@ import { assertStarcraftTmgProjectionStorePort } from "./projection-store-adapte
 import { hashStarcraftTmgClientContract } from "./portable-contract-hash-v1.mjs";
 import {
   isExactStarcraftTmgViewerStateShapeV3,
+  REQUIRED_PUBLIC_MATCH_BINDING_FIELDS,
+  OPTIONAL_PUBLIC_MATCH_BINDING_FIELDS,
   STARCRAFT_TMG_VIEWER_PROJECTION_V3_TOP_LEVEL_KEYS,
 } from "./viewer-projection-v3.mjs";
 import { assertStarcraftTmgClientCharacterProjectionV2 } from
@@ -122,6 +124,60 @@ const COMPANION_PRODUCT_CONVERSATION_ID = /^[A-Za-z0-9._:-]{1,160}$/u;
 // caller-supplied transport, is never persisted by the Client Domain, and is
 // scrubbed from every error surface through the shared credential registry.
 const COMPANION_PRODUCT_INGRESS = new WeakMap();
+const HOSTED_PHYSICAL_INGRESS = new WeakMap();
+
+// Only this narrow facade may attach the current seat credential to a physical
+// operation. Components never receive or persist the credential.
+export function createStarcraftTmgHostedPhysicalClientV1({ clientDomain, baseUrl = '', fetchImpl = globalThis.fetch }) {
+  return Object.freeze({ async operate(taskId, operation, reason = '') {
+    if (!['delegate', 'complete', 'dispute'].includes(operation)
+      || !/^[A-Za-z0-9_-]+$/u.test(taskId)) return { ok: false, reason: 'PHYSICAL_OPERATION_INVALID' };
+    const invoke = HOSTED_PHYSICAL_INGRESS.get(clientDomain);
+    if (!invoke) return { ok: false, reason: 'CLIENT_DOMAIN_NOT_MOUNTED' };
+    return invoke(async ({ roomId, seatToken }) => {
+      const response = await fetchImpl(`${baseUrl}/starcraft-tmg-level3/bot/api/v1/rooms/${encodeURIComponent(roomId)}/physical-tasks/${encodeURIComponent(taskId)}/${operation}`, {
+        method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${seatToken}` },
+        body: JSON.stringify(operation === 'dispute' ? { reason } : {}),
+      });
+      const body = await response.json();
+      return body.result || { ok: false, reason: body.reason || 'PHYSICAL_OPERATION_FAILED' };
+    });
+  } });
+}
+export function createStarcraftTmgLearningProductClientV1({clientDomain,baseUrl='',fetchImpl=globalThis.fetch}) {
+  return Object.freeze({async request(method,suffix='',body) {
+    const parts=suffix.split('/');
+    if(!['GET','POST'].includes(method)||parts.length>2||!/^[A-Za-z0-9%._~:-]*$/.test(parts[0])
+      ||(parts.length===2&&!['step','run','pause','resume','rollback'].includes(parts[1])))
+      return {ok:false,reason:'LEARNING_OPERATION_INVALID'};
+    let invoke=HOSTED_PHYSICAL_INGRESS.get(clientDomain);
+    if(!invoke&&COMPANION_PRODUCT_MOUNTED_DOMAINS.size===1){const [mounted]=COMPANION_PRODUCT_MOUNTED_DOMAINS;invoke=HOSTED_PHYSICAL_INGRESS.get(mounted);}
+    if(!invoke)return {ok:false,reason:'CLIENT_DOMAIN_NOT_MOUNTED'};
+    return invoke(async({roomId,seatToken})=>{
+      const url=baseUrl+'/starcraft-tmg-level3/product/v1/learning'+(suffix?'/'+suffix:'')+'?roomId='+encodeURIComponent(roomId);
+      const response=await fetchImpl(url,{method,headers:{'content-type':'application/json',authorization:'Bearer '+seatToken},
+        ...(method==='POST'?{body:JSON.stringify(body||{})}:{})});
+      return response.json();
+    });
+  }});
+}
+
+export function createStarcraftTmgProductRoomKeyClientV1({clientDomain,baseUrl='',fetchImpl=globalThis.fetch}) {
+  async function request(method,apiKey) {
+    let invoke=HOSTED_PHYSICAL_INGRESS.get(clientDomain);
+    if(!invoke&&COMPANION_PRODUCT_MOUNTED_DOMAINS.size===1){
+      const [mounted]=COMPANION_PRODUCT_MOUNTED_DOMAINS;invoke=HOSTED_PHYSICAL_INGRESS.get(mounted);
+    }
+    if(!invoke)return {ok:false,reason:'CLIENT_DOMAIN_NOT_MOUNTED'};
+    return invoke(async({roomId,seatToken})=>{
+      const result=await fetchImpl(`${baseUrl}/starcraft-tmg-level3/product/v1/rooms/${encodeURIComponent(roomId)}/provider-key`,{
+        method,headers:{'content-type':'application/json',authorization:`Bearer ${seatToken}`},
+        ...(method==='POST'?{body:JSON.stringify({apiKey})}:{})});
+      return result.json();
+    });
+  }
+  return Object.freeze({read:()=>request('GET'),replace:apiKey=>request('POST',apiKey),revoke:()=>request('DELETE')});
+}
 // The product mounts the Client Domain behind the role-Agent session client,
 // which wraps the base domain in a NEW frozen object (the exact four-operation
 // interface is preserved, so wrappers cannot be distinguished by shape). The
@@ -686,13 +742,6 @@ const VIEWER_ROOM_SUMMARY_KEYS = Object.freeze([
   "seatRecoveryRevision", "previewCount", "acceptedReceiptCount", "durability",
   "rulesRuntimeBinding", "productionReady", "trainingTruth",
 ]);
-const PUBLIC_MATCH_BINDING_KEYS = Object.freeze([
-  "schemaVersion", "matchId", "gameId", "roomId", "rulesVersion", "dataVersion",
-  "rngSchemeId", "sourceSnapshotHash", "dataSnapshotHash", "rulesArtifactHash",
-  "executorArtifactHash", "geometryArtifactHash", "actionSchemaHash", "refereeKeyId",
-  "refereePublicKeyFingerprint", "rulesRuntimeBinding", "rulesDisplayBinding",
-  "productionReady", "bindingHash", "refereeSignature",
-]);
 const RULES_RUNTIME_BINDING_KEYS = Object.freeze([
   "schemaVersion", "mode", "runtimeId", "runtimeVersion", "runtimeHash",
   "catalogueHash", "executableRuleAtomCount", "nonExecutableRuleAtomCount",
@@ -899,6 +948,18 @@ function viewerPrivateStateMatches(state, viewer, publicAccess) {
       .every((incident) => object(incident) && allied.has(String(incident.playerId || "")));
 }
 
+function validPublicMatchBinding(binding) {
+  if (!exactOrOptionalKeys(binding, REQUIRED_PUBLIC_MATCH_BINDING_FIELDS, OPTIONAL_PUBLIC_MATCH_BINDING_FIELDS)) return false;
+  if (!Object.hasOwn(binding, "releaseBinding")) return true;
+  const release = binding.releaseBinding;
+  const hashes = ["manifestHash", "sourceSnapshotHash", "normalizedDatasetHash", "runtimeHash"];
+  return hasExactKeys(release, ["schema", "releaseId", ...hashes])
+    && release.schema === "starcraft_tmg_release_binding_v2"
+    && typeof release.releaseId === "string" && release.releaseId.trim().length > 0
+    && hashes.every((key) => typeof release[key] === "string" && validContractHash(release[key]))
+    && release.runtimeHash === binding.rulesRuntimeBinding?.runtimeHash;
+}
+
 function viewerProjectionSubcontractsMatch(projection, publicAccess) {
   const room = projection.room;
   const viewer = projection.viewer;
@@ -933,7 +994,7 @@ function viewerProjectionSubcontractsMatch(projection, publicAccess) {
     && validContractHash(room.journalHeadHash)
     && room.trainingTruth === false
     && typeof room.productionReady === "boolean"
-    && hasExactKeys(matchBinding, PUBLIC_MATCH_BINDING_KEYS)
+    && validPublicMatchBinding(matchBinding)
     && matchBinding.schemaVersion === `${projection.authorityVersion}.match-binding`
     && matchBinding.roomId === room.roomId
     && matchBinding.gameId === room.gameId
@@ -3171,9 +3232,14 @@ export function createStarcraftTmgClientDomain(options = {}) {
       const result = await request("read_battle_workbench");
       const projection = internal.roomProjection;
       const snapshot = result?.snapshot;
+      const expected = {roomId: binding.roomId, matchBindingHash: projection?.matchBinding?.bindingHash,
+        releaseBinding: projection?.matchBinding?.releaseBinding, viewerSideKey: projection?.viewer?.seatKey};
+      if (result?.ok && isStarcraftTmgBattleWorkbenchSnapshotV1(snapshot, expected) && snapshot.stateRevision > currentStateRevision()) {
+        await refreshProjection("battle_workbench_revision_ahead");
+        return rejection("BATTLE_WORKBENCH_STALE", { refreshed: true });
+      }
       if (!result?.ok || !isStarcraftTmgBattleWorkbenchSnapshotV1(snapshot, {
-        roomId: binding.roomId,
-        matchBindingHash: projection?.matchBinding?.bindingHash,
+        ...expected,
         stateRevision: currentStateRevision(),
         stateHash: projection?.room?.stateHash,
       })) {
@@ -3217,7 +3283,8 @@ export function createStarcraftTmgClientDomain(options = {}) {
       if (!result?.ok) {
         if (AUTHENTICATION_CODES.has(result?.reason)) return rejectAuthentication(result.reason, { operation: "preview_action" });
         if (["LEGAL_SPACE_STALE", "REVISION_CONFLICT"].includes(result?.reason)) await refreshProjection("preview_revision_rejected");
-        return rejection(result?.reason || "PREVIEW_REJECTED");
+        const rulesReason = String(result.rulesReason || result.message || "").match(/^([A-Z][A-Z0-9_]+)(?=:|$)/)?.[1] || null;
+        return rejection(result?.reason || "PREVIEW_REJECTED", rulesReason ? { rulesReason } : {});
       }
       const preview = result.preview;
       if (!object(preview)
@@ -4259,5 +4326,10 @@ export function createStarcraftTmgClientDomain(options = {}) {
   COMPANION_PRODUCT_INGRESS.set(clientDomain, (input) =>
     enqueue(() => performTrustedCompanionProductOperation(input)));
   COMPANION_PRODUCT_MOUNTED_DOMAINS.add(clientDomain);
+  HOSTED_PHYSICAL_INGRESS.set(clientDomain, execute => enqueue(async () => {
+    if (!binding || !bindingCredential) return { ok: false, reason: 'SEAT_BINDING_REQUIRED' };
+    try { return deepFreeze(clone(await execute({ roomId: binding.roomId, seatToken: bindingCredential }))); }
+    catch { return { ok: false, reason: 'PHYSICAL_OPERATION_TRANSPORT_FAILED' }; }
+  }));
   return clientDomain;
 }

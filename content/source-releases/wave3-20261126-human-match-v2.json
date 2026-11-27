@@ -1,0 +1,132 @@
+{
+  "schema": "starcraft_tmg_release_manifest_v2",
+  "releaseId": "wave3-human-match-three-deployments-v1",
+  "status": "candidate",
+  "source": {
+    "snapshotRef": "build/ticket-28-wave3-source-candidate-20261112-v1/compiled/snapshot.json",
+    "datasetRef": "build/ticket-28-wave3-source-candidate-20261112-v1/compiled/dataset.json",
+    "sourceRevisionRef": "build/ticket-28-wave3-source-candidate-20261112-v1/compiled/candidate-revision.json",
+    "sourceRevisionHash": "e001b54ee2789bb184b6770c2004153213ae92e378bbb758ff69174b3cb13573",
+    "references": {
+      "core": {
+        "byteHash": "27639c562e6db9777dd9ba984d0c9f9b581841ec30166848e021f893cd00ea54",
+        "ref": "build/ticket-28-wave3-source-candidate-20261112-v1/raw/StarCraft-TMG_EN.pdf",
+        "role": "reference",
+        "version": "frozen-byte-version"
+      },
+      "costs": {
+        "byteHash": "5b1e3adf0c12128d5184b1926b25889a46833cbe1f7b2886d9857e1f15f7b350",
+        "ref": "build/ticket-28-wave3-source-candidate-20261112-v1/raw/StarCraft-TMG-Cost-Table-10.2026_EN.pdf",
+        "role": "reference",
+        "version": "10.2026"
+      },
+      "faq": {
+        "byteHash": "65cb2399c44e29b45d65faddbade7c72a46726e7b9c812e2c4af57c1704cc213",
+        "ref": "build/ticket-28-wave3-assessment-20261112/faq-v1.3.pdf",
+        "role": "reference",
+        "version": "1.3"
+      },
+      "ravenExtentNotice": {
+        "byteHash": "c5fe1cf4b776d445a392c0a9b09f81c137f018913dcf87c9609f18741044a5cb",
+        "ref": "build/ticket-28-terran-wave3-20261117-v1/raven-detection-railguns/official-geometry-lookup-20261117/wave3-bases-official-news.json",
+        "role": "reference",
+        "version": "2026-10-09"
+      }
+    },
+    "snapshotHash": "4412c17faaebaff04b117d1ddc666d1cdd939eca420a22f861c7c944f1179c8c",
+    "datasetHash": "718057e86ac4f93a72c06b8e4d8f4d851ba33ee04c9dddea33e966eda9fe6685",
+    "versions": {
+      "cardsVersion": "84",
+      "rulesVersion": "50",
+      "unitsVersion": "83"
+    },
+    "policy": {
+      "collections": [
+        "army_units",
+        "tactical_cards",
+        "faction_cards",
+        "system_metadata_versions"
+      ],
+      "conflictAction": "preserve_builder_values_and_record_reference_discrepancy",
+      "explicitUserInstruction": "2026-11-12 官方写表器抓数据为主，PDF参考",
+      "freezePolicy": "reuse_existing_observed_payloads_no_background_refresh",
+      "pdfUse": "supplementary_reference_and_conflict_log",
+      "source": "official_command_center_army_builder_firestore"
+    }
+  },
+  "components": {
+    "abilityIdentities": {
+      "integrity": {
+        "field": "identityCatalogueHash",
+        "value": "5d97626c9596a71768a41c3a707f1a2900b8be9f7acbd52536767397e0c21004"
+      },
+      "ref": "build/ticket-28-wave3-release-context-20261112-v1/ability-identities-v2.json",
+      "version": "2"
+    },
+    "armyBuilder": {
+      "integrity": {
+        "field": "bundleHash",
+        "value": "277bcfcdb28920ea3b4ea0dc500df9b49ce5e77b08a1959c753ac0a9b339392b"
+      },
+      "ref": "content/source-releases/wave3-20261112-army-builder-v2.json",
+      "version": "2.0.0"
+    },
+    "battlefieldAssets": {
+      "integrity": {
+        "field": "profileHash",
+        "value": "56408fdb44637406696e2013306b8d683f02c6998e6ba4ba941d9d13be4d8f2e"
+      },
+      "ref": "build/ticket-28-terran-wave3-20261117-v1/raven-detection-railguns/tabletop-assembly-v1/battlefield-components.json",
+      "version": "2.2.0"
+    },
+    "geometry": {
+      "integrity": {
+        "field": "bundleHash",
+        "value": "b3b7a59aefcbe32ee1cfdd6d09e3b61d979cfc8ee82dbabe0b0ba93ea18f04d1"
+      },
+      "ref": "build/ticket-28-terran-wave3-20261117-v1/raven-detection-railguns/tabletop-assembly-v1/catalogue.json",
+      "version": "2.2.0"
+    },
+    "unitCharacteristics": {
+      "integrity": {
+        "field": "bundleHash",
+        "value": "240d9a568ce0915410338f7119091932a3b8ead9c0f4c1e38246d7247620e077"
+      },
+      "ref": "build/ticket-28-terran-wave3-20261117-v1/raven-detection-railguns/tabletop-assembly-v1/unit-characteristics.json",
+      "version": "2.0.0"
+    },
+    "wave3CommunityGeometry": {
+      "integrity": {
+        "field": "profileHash",
+        "value": "f16a4581fbe240cb188f97f2084d970afd48538666ea9855475ea92bc491d388"
+      },
+      "ref": "build/ticket-28-terran-wave3-20261117-v1/raven-detection-railguns/tabletop-assembly-v1/profile.json",
+      "version": "wave3-raven-tabletop-assembly-estimate-v1"
+    },
+    "blastTemplateGeometry": {
+      "ref": "content/source-releases/wave3-20261113-blast-template-v1.json",
+      "version": "2.0.1",
+      "integrity": {
+        "field": "assetHash",
+        "value": "d6615086a74f95ff07b8bb940fa02d074264a672a9390dd1f5020fedcaf924cb"
+      }
+    },
+    "missionSource": {
+      "ref": "content/source-releases/wave3-20261126-lobby-missions-v1.json",
+      "version": "1.0.0",
+      "integrity": {
+        "field": "bundleHash",
+        "value": "1a5df3d101864eb7428d7408c9e1dab783bf26d3cea8d1d94ee7e3981dabf56d"
+      }
+    },
+    "deploymentCardGeometry": {
+      "ref": "content/source-releases/wave3-20261125-reviewed-deployment-cards-v2.json",
+      "version": "1.0.0",
+      "integrity": {
+        "field": "bundleHash",
+        "value": "408293248c624034089158d9cf2f77972f5fdbc36ac54321e8461624b6587425"
+      }
+    }
+  },
+  "manifestHash": "25e2a34afe6189842d4ab45254821038c21b90e56f99fb3043170773fda30745"
+}

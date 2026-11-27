@@ -19,6 +19,7 @@ import {
   createOfficialCharacteristicStatusFamilyDefinitionBindingsV1,
   createOfficialCharacteristicStatusFamilySourceBundleV1,
   verifyOfficialCharacteristicStatusFamilySourceBundleV1,
+  synchronizeOfficialEffectiveHitPointWoundsV1,
 } from "./official-characteristic-status-family-adapter-v1.mjs";
 import {
   createOfficialCurrentProductAbilityCoverageReleaseV1,
@@ -199,6 +200,7 @@ export function composeOfficialCurrentProductActionRuntimeV1(input = {}) {
     [...selectedBindings, ...relocationBindings],
     createOfficialCharacteristicStatusFamilySourceBundleV1);
   state.officialCharacteristicStatusFamilySourceBundle = characteristic.bundle;
+  for (const piece of state.pieces) synchronizeOfficialEffectiveHitPointWoundsV1(state, piece);
   const characteristicBindings =
     createOfficialCharacteristicStatusFamilyDefinitionBindingsV1(characteristic.bundle);
 

@@ -1,3 +1,4 @@
+import { ARMY_BUILDER_RELEASE_SCHEMAS_V2, verifyOfficialArmyBuilderReleaseBundleV2 } from './official-army-builder-release-bundle-v2.mjs';
 import { hashStarcraftTmgContract } from
   "../authoritative-engine/referee-crypto-v1.mjs";
 import {
@@ -443,6 +444,7 @@ export function createOfficialUnitCompositionUpgradeDataBundleV1(input = {}) {
 }
 
 export function verifyOfficialUnitCompositionUpgradeDataBundleV1(bundle) {
+  if (bundle?.schema === ARMY_BUILDER_RELEASE_SCHEMAS_V2.composition) return verifyOfficialArmyBuilderReleaseBundleV2(bundle, 'composition');
   if (!object(bundle) || bundle.schema !== OFFICIAL_UNIT_COMPOSITION_UPGRADE_DATA_BUNDLE_SCHEMA
     || bundle.sourceLockHash !== OFFICIAL_DEVELOPMENT_TRANCHE_SOURCE_LOCK_HASH
     || bundle.sourceSnapshotHash !== OFFICIAL_DEVELOPMENT_TRANCHE_SNAPSHOT_HASH

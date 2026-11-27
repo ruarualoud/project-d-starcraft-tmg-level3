@@ -2,6 +2,8 @@ import { isDeepStrictEqual } from "node:util";
 
 import { hashStarcraftTmgContract } from "../authoritative-engine/referee-crypto-v1.mjs";
 import { verifyOfficialGameplayDataBundleV1 } from "../source-data/official-gameplay-data-bundle-v1.mjs";
+import { verifyOfficialMatchGameplayDataBundleV2 } from '../source-data/official-match-gameplay-data-bundle-v2.mjs';
+import { verifyOfficialMissionSupplyProfileV2 } from '../source-data/official-mission-supply-profile-v2.mjs';
 import { projectOfficialContextualSupplyValueV1 } from
   "./official-contextual-supply-projection-v1.mjs";
 
@@ -43,14 +45,27 @@ function runtimeHash(value) {
   if (!HASH_PATTERN.test(hash)) fail("ROUND_SUPPLY_RUNTIME_HASH_REQUIRED");
   return hash;
 }
+function supplyOccupancy(state) {
+  const onTableSupplyBySide = Object.fromEntries(SIDE_KEYS.map(sideKey => [sideKey,
+    state.pieces.filter(piece => piece?.sideKey === sideKey && piece.isOnField === true && live(piece))
+      .reduce((sum, piece) => sum + exactSupply(state, piece), 0)]));
+  const reserveSupplyBySide = Object.fromEntries(SIDE_KEYS.map(sideKey => [sideKey,
+    state.pieces.filter(piece => piece?.sideKey === sideKey && piece.isOnField !== true && live(piece))
+      .reduce((sum, piece) => sum + exactSupply(state, piece), 0)]));
+  return { onTableSupplyBySide, reserveSupplyBySide };
+}
 
 export function createOfficialRoundSupplyStateV1(input = {}) {
   const state = input.state;
   const gameplayDataBundle = input.gameplayDataBundle;
-  verifyOfficialGameplayDataBundleV1(gameplayDataBundle);
+  const missionSupplyProfile = input.missionSupplyProfile;
+  if (missionSupplyProfile) verifyOfficialMissionSupplyProfileV2(missionSupplyProfile);
+  else if (gameplayDataBundle?.schema === 'starcraft_tmg_official_match_gameplay_data_bundle_v2') {
+    verifyOfficialMatchGameplayDataBundleV2(gameplayDataBundle);
+  } else verifyOfficialGameplayDataBundleV1(gameplayDataBundle);
   if (!object(state) || !Array.isArray(state.pieces)) fail("ROUND_SUPPLY_STATE_INVALID");
   const round = Number(state.round);
-  const mission = gameplayDataBundle.missionScoringProfile;
+  const mission = missionSupplyProfile || gameplayDataBundle.missionScoringProfile;
   if (!Number.isSafeInteger(round) || round < 1 || round > mission.gameLengthRounds) {
     fail("ROUND_SUPPLY_ROUND_UNSUPPORTED", String(round));
   }
@@ -58,18 +73,7 @@ export function createOfficialRoundSupplyStateV1(input = {}) {
   const finitePool = finalRound
     ? null
     : mission.startingSupply + mission.extraSupplyPerRound * (round - 1);
-  const onTableSupplyBySide = Object.fromEntries(SIDE_KEYS.map((sideKey) => [
-    sideKey,
-    state.pieces.filter((piece) => (
-      piece?.sideKey === sideKey && piece?.isOnField === true && live(piece)
-    )).reduce((sum, piece) => sum + exactSupply(state, piece), 0),
-  ]));
-  const reserveSupplyBySide = Object.fromEntries(SIDE_KEYS.map((sideKey) => [
-    sideKey,
-    state.pieces.filter((piece) => (
-      piece?.sideKey === sideKey && piece?.isOnField !== true && live(piece)
-    )).reduce((sum, piece) => sum + exactSupply(state, piece), 0),
-  ]));
+  const { onTableSupplyBySide, reserveSupplyBySide } = supplyOccupancy(state);
   if (!finalRound && SIDE_KEYS.some((sideKey) => onTableSupplyBySide[sideKey] > finitePool)) {
     fail("ROUND_SUPPLY_CAP_EXCEEDED");
   }
@@ -90,8 +94,8 @@ export function createOfficialRoundSupplyStateV1(input = {}) {
         ])),
     reserveExcludedFromOnTableSupply: true,
     supplyCapVerified: true,
-    gameplayDataBundleHash: gameplayDataBundle.gameplayDataBundleHash,
-    missionScoringProfileHash: mission.missionScoringProfileHash,
+    ...(missionSupplyProfile ? { missionSupplyProfileHash: missionSupplyProfile.profileHash, missionRecordKey: missionSupplyProfile.recordKey }
+      : { gameplayDataBundleHash: gameplayDataBundle.gameplayDataBundleHash, missionScoringProfileHash: mission.missionScoringProfileHash }),
     rulesRuntimeHash: runtimeHash(input.rulesRuntimeHash),
     rulesTruth: finalRound
       ? "official_final_round_unlimited_supply"
@@ -104,6 +108,28 @@ export function createOfficialRoundSupplyStateV1(input = {}) {
     ...body,
     roundSupplyStateHash: hashStarcraftTmgContract(body),
   };
+}
+
+// A same-round relocation changes occupancy without changing mission pacing.
+// Preserve the originally bound capacity/profile and recalculate from pieces.
+export function refreshOfficialRoundSupplyOccupancyV1({ state, expectedRulesRuntimeHash } = {}) {
+  const previous = state?.officialRoundSupplyState;
+  if (previous?.schema !== OFFICIAL_ROUND_SUPPLY_STATE_SCHEMA
+    || previous.roundSupplyStateHash !== hashStarcraftTmgContract(without(previous, ['roundSupplyStateHash']))
+    || previous.round !== Number(state.round) || !['finite', 'unlimited'].includes(previous.mode)
+    || expectedRulesRuntimeHash && previous.rulesRuntimeHash !== runtimeHash(expectedRulesRuntimeHash)
+    || !Array.isArray(state.pieces)) fail('ROUND_SUPPLY_OCCUPANCY_BINDING_INVALID');
+  const occupancy = supplyOccupancy(state);
+  const unlimited = previous.mode === 'unlimited';
+  for (const side of SIDE_KEYS) {
+    const capacity = previous.supplyPoolBySide?.[side];
+    if (unlimited ? capacity !== null : !Number.isSafeInteger(capacity) || capacity < 0
+      || occupancy.onTableSupplyBySide[side] > capacity) fail('ROUND_SUPPLY_OCCUPANCY_CAP_INVALID', side);
+  }
+  const body = { ...without(previous, ['roundSupplyStateHash']), ...occupancy,
+    availableSupplyBySide: Object.fromEntries(SIDE_KEYS.map(side => [side,
+      unlimited ? null : previous.supplyPoolBySide[side] - occupancy.onTableSupplyBySide[side]])) };
+  return { ...body, roundSupplyStateHash: hashStarcraftTmgContract(body) };
 }
 
 export function verifyOfficialRoundSupplyStateV1(input = {}) {

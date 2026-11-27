@@ -2,9 +2,20 @@ import { hashStarcraftTmgContract as hash } from '../authoritative-engine/refere
 import { solveStarcraftTmgHypotheticalFormationV1 } from './legal-formation-search-v1.mjs';
 import { evaluateOfficialHypotheticalCoherencySnapshotV1 } from '../rule-atoms/official-model-base-geometry-rules-kernel-v1.mjs';
 import { projectOfficialCharacteristicStatusFamilyModifiersV1 } from '../product-composition/official-characteristic-status-family-adapter-v1.mjs';
-import { normalizeExplicitStaticFormationObjectivesV1,STATIC_FORMATION_JOINT_SEARCH_DEFAULTS_V1 } from './formation-intent-contract-v1.mjs';
+import { normalizeExplicitStaticFormationObjectivesV1,STATIC_FORMATION_JOINT_SEARCH_DEFAULTS_V1,STATIC_FORMATION_OBJECTIVES_INPUT_SCHEMA_V1 } from './formation-intent-contract-v1.mjs';
 import {STARCRAFT_TMG_SPATIAL_QUERY_CONTRACTS_V1} from './spatial-query-contracts-v1.mjs';
 import {prepareStaticFormationAnchorSpaceV1} from './static-formation-anchor-space-v1.mjs';
+import {prepareStaticFormationRelationshipsV1,projectStaticFormationPlacementV1,STATIC_FORMATION_RELATIONSHIP_SCHEMA_V1} from './static-formation-relationships-v1.mjs';
+
+
+// Typed authoring contract for the SAME Native static solver. Coordinates,
+// regions, intent, unit order and search budgets are supplied by the caller.
+export function staticFormationSemanticParametersV1(){
+ const point={type:'object',additionalProperties:false,required:['xInches','yInches'],properties:{xInches:{type:'number'},yInches:{type:'number'}}};
+ const region={type:'object',additionalProperties:false,required:['minimumXInches','maximumXInches','minimumYInches','maximumYInches','stepInches'],properties:{minimumXInches:{type:'number'},maximumXInches:{type:'number'},minimumYInches:{type:'number'},maximumYInches:{type:'number'},stepInches:{type:'number',minimum:0.001},preferredAnchor:point}};
+ const unit={type:'object',additionalProperties:false,required:['unitId'],properties:{unitId:{type:'string',minLength:1},anchors:{type:'array',items:point},anchorRegions:{type:'array',items:region},formationObjectives:structuredClone(STATIC_FORMATION_OBJECTIVES_INPUT_SCHEMA_V1),modelSpreadInches:{type:'number',minimum:0.001}}};
+ return {...unit,properties:{...unit.properties,jointUnits:{type:'array',minItems:1,items:unit},maximumJointOptions:{type:'integer',minimum:1},maximumJointEvaluations:{type:'integer',minimum:1},relationshipConstraints:{...structuredClone(STATIC_FORMATION_RELATIONSHIP_SCHEMA_V1),required:[]}}};
+}
 
 const invalid=detail=>{throw Object.assign(Error('STATIC_FORMATION_ARGUMENTS_INVALID:'+detail),{code:'STATIC_FORMATION_ARGUMENTS_INVALID'});};
 const inputContract=STARCRAFT_TMG_SPATIAL_QUERY_CONTRACTS_V1['space.solve_static_formation'].arguments;
@@ -28,10 +39,11 @@ function searchBudgets(args,anchorCount,joint=false){
 export function queryStarcraftTmgStaticFormationV1({ state, arguments: args = {} }) {
   const unrecognized=Object.keys(args).filter(key=>!inputFields.has(key));
   if(unrecognized.length)invalid('unrecognized_fields:'+unrecognized.join(','));
-  if (args.jointUnits !== undefined) return queryJointStaticFormation({ state, args });
-  return querySingleStaticFormation({state,args});
+  const relationships=prepareStaticFormationRelationshipsV1(state,args);
+  if (args.jointUnits !== undefined) return queryJointStaticFormation({ state, args,relationships });
+  return querySingleStaticFormation({state,args,relationships});
 }
-function querySingleStaticFormation({state,args,includeSourceStateHash=true}){
+function querySingleStaticFormation({state,args,includeSourceStateHash=true,relationships=null,partialRelationships=false}){
   const fail = detail => { throw Object.assign(Error('STATIC_FORMATION_ARGUMENTS_INVALID:' + detail), { code: 'STATIC_FORMATION_ARGUMENTS_INVALID' }); };
   const formationObjectives = normalizeExplicitStaticFormationObjectivesV1(args.formationObjectives);
   const piece = state.pieces.find(p => p.id === args.unitId);
@@ -40,7 +52,7 @@ function querySingleStaticFormation({state,args,includeSourceStateHash=true}){
   if (piece.isDestroyed === true || Number(piece.currentModels || 0) <= 0) fail('living_unit_required');
   const living = piece.models.filter(m => !m.isDestroyed);
   if (!living.length) fail('living_models_required');
-  const formationOptions = [], misses = [];
+  const formationOptions = [], misses = [],seen=new Set();
   const {maximumOptions,maximumEvaluations}=searchBudgets(args,anchorSpace.count,anchorSpace.usesRegions);
   let evaluations=0,evaluationLimitReached=false,optionLimitReached=false;
   for (const {anchorIndex,anchor,anchorSource} of anchorSpace.candidates()) {
@@ -73,29 +85,39 @@ function querySingleStaticFormation({state,args,includeSourceStateHash=true}){
         xInches: row.xMilliInches / 1000, yInches: row.yMilliInches / 1000,
         rotationDegrees: row.rotationDegrees || 0, elevation: row.elevation || 'ground',
         supportTerrainIds: structuredClone(row.supportTerrainIds || []), adjacentAccessPointIds: [] })) };
-    const projected = copyStaticFormationPieces(state,new Set([piece.id])), actor = projected.pieces.find(p => p.id === piece.id);
-    actor.isOnField = true;
-    for (const position of canonicalPlacement.modelPositions) {
-      Object.assign(actor.models.find(m => m.id === position.modelId), position,
-        { isOnField: true, baseRotationDegrees: position.rotationDegrees });
-    }
-    const coherencyRangeMilliInches = projected.officialCharacteristicStatusFamilySourceBundle
-      ? projectOfficialCharacteristicStatusFamilyModifiersV1(projected.officialCharacteristicStatusFamilySourceBundle,
-        projected, { pieceId: piece.id }).horizontalCoherencyMilliInches : undefined;
-    try {
-      const native = evaluateOfficialHypotheticalCoherencySnapshotV1({ state: projected, actor,
-        dataBundle: projected.officialModelBaseGeometryDataBundle, coherencyRangeMilliInches,
-        plan: { planId: `static-formation:${piece.id}:${anchorIndex}`, leadingModelId: solved.rows[0].modelId,
-          placements: solved.rows, currentlyEngagedEnemyUnitIds: [] } });
-      if (!native.inCoherency) { misses.push({ anchorIndex, anchor: structuredClone(anchor), ...provenance, reason: 'out_of_coherency', impossibilityProven: false }); continue; }
-      formationOptions.push({ formationOptionId: 'static-' + hash(canonicalPlacement).slice(0, 24),
-        pieceId: piece.id, anchorIndex, anchor: structuredClone(anchor), ...provenance, canonicalPlacement,
-        tacticalMetrics: solved.metrics, staticGeometryProven: true, rulesAuthority: true,
-        nativeGeometryResultHash: native.resultHash, arrivalOrMovementLegalityProven: false,
-        trainingTruth: false });
-    } catch (error) {
-      if (!/^MODEL_BASE_GEOMETRY_/u.test(error.message || '')) throw error;
-      misses.push({ anchorIndex, anchor: structuredClone(anchor), ...provenance, reason: error.message, impossibilityProven: false });
+    const variants=relationships?relationships.variants(state,canonicalPlacement,{anchor,anchorSource,
+      region:anchorSource?.kind==='region_grid'?args.anchorRegions[anchorSource.regionIndex]:null})
+      :[{placement:canonicalPlacement,anchor,anchorSource,translated:false}];
+    for(const candidate of variants){
+      if(formationOptions.length>=maximumOptions){optionLimitReached=true;break;}
+      const placement=candidate.placement,key=hash(placement);
+      if(relationships&&seen.has(key))continue;seen.add(key);
+      const projected=projectStaticFormationPlacementV1(state,placement),actor=projected.pieces.find(p=>p.id===piece.id);
+      const origin=candidate.anchorSource?{anchorSource:candidate.anchorSource}:{};
+      const coherencyRangeMilliInches = projected.officialCharacteristicStatusFamilySourceBundle
+        ? projectOfficialCharacteristicStatusFamilyModifiersV1(projected.officialCharacteristicStatusFamilySourceBundle,
+          projected, { pieceId: piece.id }).horizontalCoherencyMilliInches : undefined;
+      try {
+        const native = evaluateOfficialHypotheticalCoherencySnapshotV1({ state: projected, actor,
+          dataBundle: projected.officialModelBaseGeometryDataBundle, coherencyRangeMilliInches,
+          plan: { planId: `static-formation:${piece.id}:${anchorIndex}`, leadingModelId: solved.rows[0].modelId,
+            placements:candidate.translated?placement.modelPositions.map(p=>({...p,xMilliInches:Math.round(p.xInches*1000),yMilliInches:Math.round(p.yInches*1000)})):solved.rows,
+            currentlyEngagedEnemyUnitIds: [] } });
+        if (!native.inCoherency) { misses.push({ anchorIndex, anchor: candidate.anchor, ...origin, reason: 'out_of_coherency', impossibilityProven: false }); continue; }
+        const relationshipAssessment=relationships?.assess(projected,{partial:partialRelationships});
+        if(relationshipAssessment&&!relationshipAssessment.passed){misses.push({anchorIndex,anchor:candidate.anchor,...origin,
+          reason:'scene_relationship_constraints_not_met',relationshipAssessment,impossibilityProven:false});continue;}
+        formationOptions.push({ formationOptionId: 'static-' + key.slice(0, 24),
+          pieceId: piece.id, anchorIndex, anchor: structuredClone(candidate.anchor), ...origin, canonicalPlacement:placement,
+          tacticalMetrics:candidate.translated?null:solved.metrics,
+          ...(candidate.translated?{searchSeedTacticalMetrics:solved.metrics,tacticalMetricsUnavailableReason:'seed_metrics_not_reused_after_constraint_translation'}:{}),
+          ...(relationshipAssessment?{relationshipAssessment}:{}),staticGeometryProven: true, rulesAuthority: true,
+          nativeGeometryResultHash: native.resultHash, arrivalOrMovementLegalityProven: false,
+          trainingTruth: false });
+      } catch (error) {
+        if (!/^MODEL_BASE_GEOMETRY_/u.test(error.message || '')) throw error;
+        misses.push({ anchorIndex, anchor: candidate.anchor, ...origin, reason: error.message, impossibilityProven: false });
+      }
     }
   }
   return { queryKind: 'space.solve_static_formation', formationOptions, optionCount: formationOptions.length, misses,
@@ -107,6 +129,7 @@ function querySingleStaticFormation({state,args,includeSourceStateHash=true}){
       exhaustiveOverFormations:false,unitOrder:[piece.id],
       ...(anchorSpace.usesRegions?{anchorSpaceKind:anchorSpace.kind,
         regionSamplingScope:'bounded_discrete_leader_grid_not_continuous_feasibility',suppliedGridCandidateCount:anchorSpace.count}: {})},
+    ...(relationships?{relationshipConstraints:relationships.constraints,relationshipSearch:relationships.stats}:{}),
     arrivalOrMovementLegalityProven: false, noLegalFormationProven: false, trainingTruth: false };
 }
 
@@ -114,7 +137,7 @@ function querySingleStaticFormation({state,args,includeSourceStateHash=true}){
 // Search branches reuse the single-unit Native solver, retaining each earlier
 // placement as a blocker. No anchor, unit order or tactical objective is chosen
 // by the Host. Every returned option is checked again with the entire group.
-function queryJointStaticFormation({ state, args }) {
+function queryJointStaticFormation({ state, args,relationships=null }) {
   const fail = detail => { throw Object.assign(Error('STATIC_FORMATION_ARGUMENTS_INVALID:' + detail), { code: 'STATIC_FORMATION_ARGUMENTS_INVALID' }); };
   const unitFields = ['unitId', 'anchors', 'anchorRegions', 'formationObjectives', 'modelSpreadInches'];
   if (!Array.isArray(args.jointUnits) || !args.jointUnits.length) fail('jointUnits_nonempty_array_required');
@@ -171,6 +194,8 @@ function queryJointStaticFormation({ state, args }) {
         if (!/^MODEL_BASE_GEOMETRY_/u.test(error.message || '')) throw error;
         misses.push({ unitIds: [...ids], reason: error.message, impossibilityProven: false }); return;
       }
+      const relationshipAssessment=relationships?.assess(projected);
+      if(relationshipAssessment&&!relationshipAssessment.passed){misses.push({unitIds:[...ids],reason:'scene_relationship_constraints_not_met',relationshipAssessment,impossibilityProven:false});return;}
       const canonicalPlacements = selected.map(option => option.canonicalPlacement), key = hash(canonicalPlacements);
       if (seen.has(key)) return;
       seen.add(key);
@@ -180,6 +205,7 @@ function queryJointStaticFormation({ state, args }) {
         unitOptions: selected.map(option => ({ pieceId: option.pieceId, anchorIndex: option.anchorIndex,
           anchor: option.anchor, ...(option.anchorSource?{anchorSource:option.anchorSource}:{}),tacticalMetrics: option.tacticalMetrics })),
         nativeGeometryResults: checks, nativeGeometryResultHash: hash(checks), staticGeometryProven: true,
+        ...(relationshipAssessment?{relationshipAssessment}:{}),
         rulesAuthority: true, arrivalOrMovementLegalityProven: false, trainingTruth: false });
       return;
     }
@@ -190,13 +216,18 @@ function queryJointStaticFormation({ state, args }) {
       const {anchorRegions,...unitArgs}=units[index];
       // The inner result's complete-state hash is discarded by joint search.
       // Hash only the public result's unchanged source once, not every prefix.
-      const result = querySingleStaticFormation({state:projected,args:{...unitArgs,anchors:[anchor]},includeSourceStateHash:false});
+      // Preserve the caller's region for optional relationship refinement, while
+      // evaluating only this chosen lattice seed. Exact anchors remain exact.
+      const result = querySingleStaticFormation({state:projected,args:{...unitArgs,
+        ...(relationships&&anchorSource?{anchors:[],anchorRegions:[{...anchorRegions[anchorSource.regionIndex],preferredAnchor:anchor}],
+          maximumJointEvaluations:1,maximumJointOptions:maximumOptions}: {anchors:[anchor]})},
+        includeSourceStateHash:false,relationships,partialRelationships:true});
       misses.push(...result.misses.map(miss => ({ ...miss, unitId: units[index].unitId, anchorIndex,...(anchorSource?{anchorSource}:{}),
         selectedPrefix: selected.map(option => ({ pieceId: option.pieceId, anchor: option.anchor })) })));
       for (const option of result.formationOptions) {
         const next = copyStaticFormationPieces(projected,new Set([option.canonicalPlacement.pieceId]));
         project(next, option.canonicalPlacement);
-        search(index + 1, next, [...selected, { ...option, anchorIndex,...(anchorSource?{anchorSource}: {}) }]);
+        search(index + 1, next, [...selected, { ...option, anchorIndex,...(option.anchorSource?{anchorSource:option.anchorSource}:anchorSource?{anchorSource}: {}) }]);
       }
     }
   }
@@ -210,5 +241,6 @@ function queryJointStaticFormation({ state, args }) {
       ...(usesRegions?{anchorSpaceKind:anchorSpaces.some(space=>space.hasExactAnchors)?'mixed_model_points_and_regions':'model_supplied_regions',
         regionSamplingScope:'bounded_discrete_leader_grid_not_continuous_feasibility',
         suppliedGridCandidateCounts:anchorSpaces.map((space,index)=>({unitId:units[index].unitId,count:space.count}))}: {}) },
+    ...(relationships?{relationshipConstraints:relationships.constraints,relationshipSearch:relationships.stats}:{}),
     arrivalOrMovementLegalityProven: false, noLegalFormationProven: false, trainingTruth: false };
 }

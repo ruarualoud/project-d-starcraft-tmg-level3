@@ -1,3 +1,8 @@
+import { evaluateOfficialWithinWhollyWithinV1 } from
+  '../rule-atoms/official-model-base-geometry-rules-kernel-v1.mjs';
+
+export const OFFICIAL_CREEP_FOOTPRINT_MEASUREMENT_V1 = 'source_and_unit_footprints_v1';
+
 export const OFFICIAL_CURRENT_PRODUCT_STATE_FACTS_VERSION =
   "official_current_product_state_facts_v1";
 
@@ -83,8 +88,13 @@ const CAPABILITY_EFFECT_KINDS = Object.freeze({
   ]),
 });
 
-function sourceInstances(state, route) {
+function sourceInstances(state, route, explicitSourceBundle) {
   if (route.sourceKind === "card_feature") {
+    if (explicitSourceBundle && route.sideKey === undefined && route.sourceCardInstanceId === undefined) {
+      return Object.entries(state?.cardResources || {}).flatMap(([sideKey, cards]) =>
+        cards.filter(card => card.officialCardRecordKey === route.recordKey)
+          .map(card => ({ sideKey, sourceInstanceId: card.cardInstanceId })));
+    }
     return (state?.cardResources?.[route.sideKey] || []).filter((card) =>
       card.cardInstanceId === route.sourceCardInstanceId
       && card.officialCardRecordKey === route.recordKey).map((card) => ({
@@ -125,10 +135,11 @@ export function resolveOfficialCurrentProductSideCapabilityV1(state, input = {})
       adapterKind: "selected_roster_ability",
     });
   }
-  for (const route of
-    state.officialBattlefieldAssetFamilySourceBundle?.routes || []) {
+  const assetBundle = state.officialBattlefieldAssetFamilySourceBundle;
+  const explicitSourceBundle = assetBundle?.schema === "starcraft_tmg_official_battlefield_asset_family_source_bundle_v2";
+  for (const route of assetBundle?.routes || []) {
     if (!effectKinds.has(route.effectKind)) continue;
-    for (const instance of sourceInstances(state, route)) {
+    for (const instance of sourceInstances(state, route, explicitSourceBundle)) {
       if (instance.sideKey !== sideKey) continue;
       rows.push({
         sourceFeatureHash: route.sourceFeatureHash,
@@ -202,10 +213,28 @@ export function resolveOfficialCurrentProductPieceCapabilityV1(state, input = {}
 
 export function isOfficialCurrentProductUnitOnCreepV1(state, piece) {
   if (!activePiece(piece) || !zergGround(state, piece)) return false;
-  const withinTumor = liveModels(piece).some((model) => creepTumorRows(state)
-    .some((token) => baseGap(pointForModel(model), modelRadius(model),
-      token.point, token.radius) <= 6.001));
+  const exact = state.officialCreepRangeMeasurement === OFFICIAL_CREEP_FOOTPRINT_MEASUREMENT_V1;
+  const within = (source, rangeMilliInches) => evaluateOfficialWithinWhollyWithinV1({
+    state, dataBundle: state.officialModelBaseGeometryDataBundle, source, targetUnitId: piece.id, rangeMilliInches,
+  }).unitWithin;
+  const tumors = creepTumorRows(state);
+  const withinTumor = exact
+    ? tumors.some(token => within({ kind: 'token', id: token.tokenId }, 6000))
+    : liveModels(piece).some(model => tumors.some(token => baseGap(pointForModel(model),
+      modelRadius(model), token.point, token.radius) <= 6.001));
   if (withinTumor) return true;
+  // Current explicit source bundles are verified and recompiled by the Root.
+  // Legacy rooms retain the original Omega Worm and token consumers below.
+  const sourceBundle = state?.officialBattlefieldAssetFamilySourceBundle;
+  const auraRoutes = (sourceBundle?.schema === 'starcraft_tmg_official_battlefield_asset_family_source_bundle_v2'
+    ? sourceBundle.routes : [])
+    .filter(route => route.effectKind === 'source_of_creep' && route.sourceKind === 'unit_feature');
+  const withinSourceAura = auraRoutes.some(route => (state.pieces || []).some(source =>
+    activePiece(source) && source.officialUnitRecordKey === route.recordKey
+    && structureSpecialAbilitiesAvailable(state, source)
+    && liveModels(source).some(model => within({ kind: 'model', unitId: source.id, modelId: model.id },
+      Math.round(route.rangeInches * 1000)))));
+  if (exact || withinSourceAura) return withinSourceAura;
   return (state?.pieces || []).filter((entry) => activePiece(entry)
     && entry.officialUnitRecordKey === "army_units:omega_worm"
     && structureSpecialAbilitiesAvailable(state, entry))

@@ -1,3 +1,4 @@
+import { ARMY_BUILDER_RELEASE_SCHEMAS_V2, verifyOfficialArmyBuilderReleaseBundleV2 } from './official-army-builder-release-bundle-v2.mjs';
 import { hashStarcraftTmgContract } from
   "../authoritative-engine/referee-crypto-v1.mjs";
 import { types } from "node:util";
@@ -108,15 +109,15 @@ function exactRuleSectionRecords(dataset) {
   });
 }
 
-function compileCards(dataset) {
+export function compileOfficialCardBuildPaymentProfilesV2(dataset, expectedCounts = { cards: 37, factions: 6 }) {
   const indexes = dataset.recordIndex.filter((entry) => (
     entry.authorityDisposition === "official_current_product_candidate"
       && entry.recordType === "tactical_card"
   ));
-  if (indexes.length !== 37) fail("CARD_BUILD_PAYMENT_CARD_DENOMINATOR_DRIFT");
+  if (expectedCounts && indexes.length !== expectedCounts.cards) fail("CARD_BUILD_PAYMENT_CARD_DENOMINATOR_DRIFT");
   const factionRecords = indexes.map((index) => dataset.recordsByKey[index.recordKey])
     .filter((record) => record?.payload?.isFactionCard === true);
-  if (factionRecords.length !== 6) fail("CARD_BUILD_PAYMENT_FACTION_CARD_DENOMINATOR_DRIFT");
+  if (expectedCounts && factionRecords.length !== expectedCounts.factions) fail("CARD_BUILD_PAYMENT_FACTION_CARD_DENOMINATOR_DRIFT");
   const subFactionRace = new Map();
   for (const record of factionRecords) {
     const race = String(record.payload.faction || "");
@@ -186,7 +187,7 @@ export function createOfficialCardBuildPaymentDataBundleV1(input = {}) {
     || dataset.sourceSnapshotHash !== OFFICIAL_DEVELOPMENT_TRANCHE_SNAPSHOT_HASH
     || dataset.repositoryFallbackAllowed !== false || !Array.isArray(dataset.recordIndex)
     || !object(dataset.recordsByKey)) fail("CARD_BUILD_PAYMENT_DATASET_INVALID");
-  const compiled = compileCards(dataset);
+  const compiled = compileOfficialCardBuildPaymentProfilesV2(dataset);
   const audit = {
     cardCount: compiled.profiles.length,
     factionCardCount: compiled.profiles.filter((entry) => entry.isFactionCard).length,
@@ -233,6 +234,7 @@ export function createOfficialCardBuildPaymentDataBundleV1(input = {}) {
 }
 
 export function verifyOfficialCardBuildPaymentDataBundleV1(bundle) {
+  if (bundle?.schema === ARMY_BUILDER_RELEASE_SCHEMAS_V2.cards) return verifyOfficialArmyBuilderReleaseBundleV2(bundle, 'cards');
   if (VERIFIED_IMMUTABLE_BUNDLES.has(bundle)) return true;
   if (!object(bundle) || bundle.schema !== OFFICIAL_CARD_BUILD_PAYMENT_DATA_BUNDLE_SCHEMA
     || bundle.sourceLockHash !== OFFICIAL_DEVELOPMENT_TRANCHE_SOURCE_LOCK_HASH

@@ -16,6 +16,8 @@ export const OFFICIAL_MATCH_LIFECYCLE_FAMILY_BUNDLE_SCHEMA =
   "starcraft_tmg_official_match_lifecycle_family_source_bundle_v1";
 
 const QUEEN_RECORD_KEY = "army_units:queen";
+export const OFFICIAL_QUEEN_PSIONIC_LINK_DEFINITION_ID = 'unit:queen/psionic-link-any-phase@1';
+export const ZAGARA_PSIONIC_LINK_DEFINITION_ID = "unit:zagara/psionic-link-any-phase@1";
 const STALKER_RECORD_KEY = "army_units:stalker";
 const EXPECTED_ARCHETYPE_COUNTS = Object.freeze({
   activated_target_particle_disruptors_instant: 1,
@@ -218,6 +220,116 @@ function psionicLinkUsed(state, route, pieceId) {
       && entry.sourcePieceId === pieceId));
 }
 
+export function createOfficialZagaraPsionicLinkSourceV1(catalogue) {
+  verifyOfficialAbilityEffectIrCatalogueV1(catalogue);
+  const definition = catalogue.definitions.find(row => row.definitionId === ZAGARA_PSIONIC_LINK_DEFINITION_ID);
+  const queen = catalogue.definitions.find(row => row.recordKey === QUEEN_RECORD_KEY && row.definitionName === "Psionic Link");
+  if (definition?.recordKey !== "army_units:zagara" || definition.activationKind !== "passive"
+    || definition.definitionName !== "Psionic Link" || !queen || definition.sourceText !== queen.sourceText) {
+    fail("ZAGARA_PSIONIC_LINK_SOURCE_UNSUPPORTED");
+  }
+  const prior = compileRoute(queen);
+  return seal(routeBase(definition, {
+    effectKind: "zagara_psionic_link_biomass_discount",
+    rangeMilliInches: prior.rangeMilliInches, requiredFriendlyModelCount: prior.requiredFriendlyModelCount,
+    resourceTypeAffected: prior.resourceTypeAffected, resourceCostReduction: prior.resourceCostReduction,
+    minimumResourceCost: prior.minimumResourceCost, oncePerRound: prior.oncePerRound,
+    appliesToSourceUnitSpecialAbilitiesOnly: prior.appliesToSourceUnitSpecialAbilitiesOnly,
+  }), "routeHash");
+}
+
+export const STALKER_FURY_ID = "unit:stalker/fury-of-the-nerazim-assault-phase@1";
+export function createOfficialStalkerFurySourceV1(catalogue) {
+  verifyOfficialAbilityEffectIrCatalogueV1(catalogue);
+  const def = catalogue.definitions.find(row=>row.definitionId===STALKER_FURY_ID);
+  if (def?.recordKey!==STALKER_RECORD_KEY || def.activationKind!=='passive' || def.phase!=='assault' || def.sourceText!=="When this Unit attacks an Enemy Unit that has already been Activated during this Phase, its Particle Disruptors gain INSTANT for that attack.") fail('STALKER_FURY_SOURCE_UNSUPPORTED');
+  return compileRoute(def);
+}
+export function createOfficialStalkerFuryAdapterV1(route) {
+  if (route.definitionId!==STALKER_FURY_ID) fail('STALKER_FURY_SOURCE_UNSUPPORTED');
+  return createPassiveRouteAdapter(route,'official-stalker-fury-v1');
+}
+export function projectOfficialStalkerFuryV1(state,piece,target,weaponName,fury) {
+  const applies=Boolean(activePiece(piece) && piece.officialUnitRecordKey === fury.recordKey
+    && fieldedFeature(piece, fury)
+    && activePiece(target) && target.sideKey !== piece.sideKey
+    && state.phase === "assault" && target.activatedPhases?.[state.phase] === true
+    && normalized(weaponName) === normalized(fury.weaponName));
+  return {instant:applies,instantSourceDefinitionId:applies?fury.definitionId:null};
+}
+
+export function createOfficialQueenPsionicLinkSourceV1(catalogue) {
+  verifyOfficialAbilityEffectIrCatalogueV1(catalogue);
+  const definition = catalogue.definitions.find(row => row.definitionId === OFFICIAL_QUEEN_PSIONIC_LINK_DEFINITION_ID);
+  if (definition?.recordKey !== QUEEN_RECORD_KEY || definition.activationKind !== 'passive'
+    || definition.phase !== 'any' || definition.sourceText !== "Once per Round, if there are at least 7 Friendly models Within 6\" of this Unit, it may resolve its Special Ability with the BM cost reduced by 1.") {
+    fail('QUEEN_PSIONIC_LINK_SOURCE_UNSUPPORTED');
+  }
+  return compileRoute(definition);
+}
+
+export function quoteOfficialZagaraPsionicLinkV1(state, request, options) {
+  return quoteUnitPsionicLink(state, request, state.officialZagaraPsionicLinkSource,
+    ZAGARA_PSIONIC_LINK_DEFINITION_ID, options);
+}
+
+export function quoteOfficialSelectedUnitPsionicLinkV1(state, request, options) {
+  return quoteUnitPsionicLink(state, request, state.officialQueenPsionicLinkSource,
+    OFFICIAL_QUEEN_PSIONIC_LINK_DEFINITION_ID, options)
+    || quoteOfficialZagaraPsionicLinkV1(state, request, options);
+}
+
+function quoteUnitPsionicLink(state, request, route, definitionId, { consume = false } = {}) {
+  if (!route) return null;
+  const piece = state.pieces.find(row => row.id === request.pieceId);
+  if (route.definitionId !== definitionId
+    || route.routeHash !== hashStarcraftTmgContract(without(route, ["routeHash"]))
+    || !activePiece(piece) || !fieldedFeature(piece, route)
+    || piece.sideKey !== request.sideKey || piece.officialUnitRecordKey !== route.recordKey
+    || request.resourceType !== route.resourceTypeAffected || !Number.isSafeInteger(request.printedResourceCost)
+    || request.printedResourceCost <= 0
+    || psionicLinkUsed(state, route, piece.id)) return null;
+  const nearby = friendlyModelsWithin(state, piece, route.rangeMilliInches).filter(model => model.within);
+  if (nearby.length < route.requiredFriendlyModelCount) return null;
+  const reduction = Math.min(request.printedResourceCost, route.resourceCostReduction);
+  const quote = freezeDeep({
+    resourceType: request.resourceType, printedResourceCost: request.printedResourceCost,
+    resourceCostReduction: reduction, effectiveResourceCost: request.printedResourceCost - reduction,
+    discountSourcePieceId: piece.id, sourcePieceId: piece.id, psionicLinkDefinitionId: route.definitionId,
+    nearbyFriendlyModelCount: nearby.length, requiredFriendlyModelCount: route.requiredFriendlyModelCount,
+    trainingTruth: false,
+  });
+  if (consume) {
+    state.matchLifecycleUseHistory ||= [];
+    state.matchLifecycleUseHistory.push({ round: Number(state.round), phase: state.phase,
+      sideKey: piece.sideKey, sourcePieceId: piece.id, definitionId: route.definitionId, effectKind: route.effectKind,
+      resourceType: quote.resourceType, printedResourceCost: quote.printedResourceCost,
+      effectiveResourceCost: quote.effectiveResourceCost, planHash: request.planHash, trainingTruth: false });
+  }
+  return quote;
+}
+
+export function createOfficialZagaraPsionicLinkAdapterV1(route) {
+  return createPassiveRouteAdapter(route, "official-zagara-psionic-link-v1");
+}
+
+export function createOfficialQueenPsionicLinkAdapterV1(route) {
+  if (route.definitionId !== OFFICIAL_QUEEN_PSIONIC_LINK_DEFINITION_ID) fail('QUEEN_PSIONIC_LINK_SOURCE_UNSUPPORTED');
+  return createPassiveRouteAdapter(route, "official-queen-psionic-link-v1");
+}
+
+function createPassiveRouteAdapter(route, adapterId) {
+  const binding = { sourceFeatureHash: route.sourceFeatureHash, adapterId,
+    adapterVersion: "1.0.0", capability: "automatic_consumer" };
+  return freezeDeep({
+    definitionBindings: [binding],
+    descriptor: { adapterId: binding.adapterId, adapterVersion: binding.adapterVersion, adapterKind: "exact_runtime",
+      coveredDefinitionCount: 1, coveredSourceFeatureHashes: [binding.sourceFeatureHash], supportedOperations: ["legal_space"],
+      sourceRouteHash: route.routeHash, rulesAuthority: true, trainingTruth: false },
+    legalSpace: () => ({ candidates: [], parameterDomains: [] }),
+  });
+}
+
 export function projectOfficialMatchLifecycleFamilyModifiersV1(
   bundle, state, request = {}, options = {},
 ) {
@@ -227,11 +339,7 @@ export function projectOfficialMatchLifecycleFamilyModifiersV1(
   const fury = routeFor(bundle, "activated_target_particle_disruptors_instant");
   const psionic = routeFor(bundle, "queen_psionic_link_biomass_discount");
   const weaponName = normalized(request.weaponName);
-  const furyApplies = activePiece(piece) && piece.officialUnitRecordKey === fury.recordKey
-    && fieldedFeature(piece, fury)
-    && activePiece(target) && target.sideKey !== piece.sideKey
-    && state.phase === "assault" && target.activatedPhases?.[state.phase] === true
-    && weaponName === normalized(fury.weaponName);
+  const furyApplies = projectOfficialStalkerFuryV1(state,piece,target,weaponName,fury).instant;
   const printedResourceCost = Math.max(0, Number(request.printedResourceCost || 0));
   const resourceType = String(request.resourceType || "").toUpperCase();
   const nearbyModels = activePiece(piece) && piece.officialUnitRecordKey === psionic.recordKey

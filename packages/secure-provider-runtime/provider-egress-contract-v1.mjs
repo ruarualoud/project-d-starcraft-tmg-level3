@@ -1,3 +1,4 @@
+import {assertProviderTransportDiagnosticsV1} from './provider-transport-diagnostics-v1.mjs';
 import net from "node:net";
 import { assertProviderResponseOutcomeV1 } from "./provider-response-outcome-v1.mjs";
 
@@ -87,7 +88,7 @@ function integer(value, field, maximum) {
 }
 
 export function assertStarcraftTmgProviderTransportProgressV1(value) {
-  exactFields(value, new Set(["phase", "elapsedMs", "milestonesMs", "responseBody", "timeoutCause"]),
+  exactFields(value, new Set(["phase", "elapsedMs", "milestonesMs", "responseBody", "timeoutCause", "diagnostics"]),
     "transport progress");
   if (!TRANSPORT_PROGRESS_PHASES.has(value.phase)
     || !Number.isSafeInteger(value.elapsedMs) || value.elapsedMs < 0
@@ -107,6 +108,7 @@ export function assertStarcraftTmgProviderTransportProgressV1(value) {
       throw new TypeError(`transport milestone ${field} is invalid`);
     }
   }
+  if (value.diagnostics !== undefined) assertProviderTransportDiagnosticsV1(value.diagnostics);
   if (value.timeoutCause !== undefined
     && !["total_deadline", "socket_inactivity"].includes(value.timeoutCause)) {
     throw new TypeError("transport timeout cause is invalid");

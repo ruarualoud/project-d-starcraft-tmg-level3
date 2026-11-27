@@ -11,6 +11,7 @@ import {
 } from "../room-store/room-store-v1.mjs";
 import {
   projectStarcraftTmgViewerStateShapeV3,
+  projectStarcraftTmgPublicMatchBindingV3,
   STARCRAFT_TMG_ROSTER_PLAN_ROOM_EVIDENCE_SCHEMA,
   STARCRAFT_TMG_VIEWER_STATE_V3_FIELDS,
 } from "../client-domain/viewer-projection-v3.mjs";
@@ -185,41 +186,13 @@ function rejectedAuthorityFields(input) {
     .filter((field) => input[field] !== undefined);
 }
 
-function publicMatchBinding(binding) {
-  return {
-    schemaVersion: binding.schemaVersion,
-    matchId: binding.matchId,
-    gameId: binding.gameId,
-    roomId: binding.roomId,
-    rulesVersion: binding.rulesVersion,
-    dataVersion: binding.dataVersion,
-    rngSchemeId: binding.rngSchemeId,
-    sourceSnapshotHash: binding.sourceSnapshotHash,
-    dataSnapshotHash: binding.dataSnapshotHash,
-    rulesArtifactHash: binding.rulesArtifactHash,
-    executorArtifactHash: binding.executorArtifactHash,
-    geometryArtifactHash: binding.geometryArtifactHash,
-    actionSchemaHash: binding.actionSchemaHash,
-    refereeKeyId: binding.refereeKeyId,
-    refereePublicKeyFingerprint: binding.refereePublicKeyFingerprint,
-    rulesRuntimeBinding: clone(binding.rulesRuntimeBinding),
-    rulesDisplayBinding: clone(binding.rulesDisplayBinding),
-    productionReady: binding.productionReady === true,
-    bindingHash: binding.bindingHash,
-    refereeSignature: clone(binding.refereeSignature),
-  };
-}
-
 function filteredBySide(value, allowedSideKeys) {
   if (!object(value)) return {};
   return Object.fromEntries(Object.entries(value).filter(([sideKey]) => (
     allowedSideKeys.has(sideKey))).map(([sideKey, row]) => [sideKey, clone(row)]));
 }
 
-export function projectStarcraftTmgStateForViewerV2(state, seatKey = null) {
-  const projection = clone(state);
-  if (!seatKey) projection.cardResources = {};
-  else projection.cardResources = { [seatKey]: clone(state.cardResources?.[seatKey] || []) };
+export function starcraftTmgVisibleRosterSideKeysV2(state, seatKey = null) {
   const visibility = state.rosterVisibilityResolution?.rosterVisibility;
   const teamId = state.rosterRegistryResolution?.teamMembershipByPlayer?.[seatKey];
   const alliedSideKeys = new Set(seatKey ? [seatKey] : []);
@@ -238,6 +211,15 @@ export function projectStarcraftTmgStateForViewerV2(state, seatKey = null) {
     ? new Set()
     : revealAllRosters
       ? new Set(Object.keys(state.players || {})) : alliedSideKeys;
+  return { alliedSideKeys, visiblePrivateSideKeys };
+}
+
+export function projectStarcraftTmgStateForViewerV2(state, seatKey = null) {
+  const projection = clone(state);
+  if (!seatKey) projection.cardResources = {};
+  else projection.cardResources = { [seatKey]: clone(state.cardResources?.[seatKey] || []) };
+  const { alliedSideKeys, visiblePrivateSideKeys } =
+    starcraftTmgVisibleRosterSideKeysV2(state, seatKey);
   for (const field of ["armyBuildingConfigurationBySide",
     "armyResourceBudgetsBySide", "unitCompositionSelectionsBySide",
     "unitUpgradeSelectionsBySide", "armyCompositionUpgradeAuditsBySide"]) {
@@ -379,7 +361,7 @@ function replayFinalProjection(envelope, grant = null) {
       visibilityScope: "public",
     },
     room: safeEnvelopeSummary(envelope),
-    matchBinding: publicMatchBinding(envelope.matchBinding),
+    matchBinding: projectStarcraftTmgPublicMatchBindingV3(envelope.matchBinding),
     authorityVersion: STARCRAFT_TMG_AUTHORITY_VERSION,
     state: projectState(envelope.state, grant?.seatKey || null),
     training: { eligibleForTraining: false, trainingTruth: false, reviewStatus: "raw" },
@@ -598,6 +580,11 @@ export function createStarcraftTmgRoomRuntime(options = {}) {
         return rejection("INITIAL_STATE_AUTHORITY_REQUIRED", { clientInitialStateAccepted: false });
       }
       const authorityHealth = authorityEngine.health();
+      if ((trusted.releaseManifestHash || authorityHealth.releaseBinding)
+        && (trusted.releaseManifestHash !== authorityHealth.releaseBinding?.manifestHash
+          || trusted.releaseId !== authorityHealth.releaseBinding?.releaseId)) {
+        return rejection('INITIAL_STATE_RELEASE_MISMATCH');
+      }
       if (input.productionRoom === true
         && authorityHealth.rulesRuntimeBinding?.productionRoomEligible !== true) {
         return rejection("PRODUCTION_RULE_RUNTIME_REQUIRED", {
@@ -644,7 +631,7 @@ export function createStarcraftTmgRoomRuntime(options = {}) {
         initialStateHash: envelope.stateHash,
       });
       const publicGenesis = journalEvent("match_created", {
-        matchBinding: publicMatchBinding(envelope.matchBinding),
+        matchBinding: projectStarcraftTmgPublicMatchBindingV3(envelope.matchBinding),
         initialPublicStateHash: hashStarcraftTmgContract(projectState(envelope.state, null)),
       }, "public");
       const storeHealth = await roomStore.health();
@@ -707,7 +694,7 @@ export function createStarcraftTmgRoomRuntime(options = {}) {
         ok: true,
         room: roomSummary(aggregate),
         credentials,
-        matchBinding: publicMatchBinding(envelope.matchBinding),
+        matchBinding: projectStarcraftTmgPublicMatchBindingV3(envelope.matchBinding),
       });
     } catch (error) {
       return rejection(error.code || "ROOM_CREATION_FAILED", { message: error instanceof Error ? error.message : String(error) });
@@ -1192,7 +1179,7 @@ export function createStarcraftTmgRoomRuntime(options = {}) {
         ownedByViewer: false,
         hasActiveLease: false,
       },
-      matchBinding: publicMatchBinding(aggregate.envelope.matchBinding),
+      matchBinding: projectStarcraftTmgPublicMatchBindingV3(aggregate.envelope.matchBinding),
       authorityVersion: STARCRAFT_TMG_AUTHORITY_VERSION,
       state: projectOwnedState(aggregate.envelope.state, grant?.seatKey || null),
       training: { eligibleForTraining: false, trainingTruth: false, reviewStatus: "raw" },
@@ -1256,16 +1243,20 @@ export function createStarcraftTmgRoomRuntime(options = {}) {
         grantRecoveryRevision: grant.authority.recoveryRevision,
       } : { roleMode: "public_observer", visibilityScope: "public", capabilities: ["read_public"] },
       control: { visible: Boolean(grant) },
-      matchBinding: publicMatchBinding(aggregate.envelope.matchBinding),
+      matchBinding: projectStarcraftTmgPublicMatchBindingV3(aggregate.envelope.matchBinding),
       authorityVersion: STARCRAFT_TMG_AUTHORITY_VERSION,
       state: projectOwnedState(aggregate.envelope.state, grant?.seatKey || null),
       training: { eligibleForTraining: false, trainingTruth: false, reviewStatus: "raw" },
     };
+    const verifiedNativeRuntime = authorityEngine.verifyFrozenDependencies(aggregate.envelope.matchBinding).ok
+      ? authorityEngine.health().rulesRuntimeBinding : null;
     const scoreForecast = projectStarcraftTmgScoreForecastV1({
+      verifiedNativeRuntime,
       roomProjection: projection,
       legalSpace: currentLegalSpace,
     });
     const rulesQuickView = projectStarcraftTmgRulesQuickViewV1({
+      verifiedNativeRuntime,
       roomProjection: projection,
       legalSpace: currentLegalSpace,
     });
@@ -1273,6 +1264,10 @@ export function createStarcraftTmgRoomRuntime(options = {}) {
       roomProjection: projection,
       legalSpace: currentLegalSpace,
       officialProfileSource: {
+        viewerSideKey: grant?.seatKey || null,
+        ownUnitAudits: aggregate.envelope.state.armyCompositionUpgradeAuditsBySide
+          ?.[grant?.seatKey]?.units || [],
+        modelBaseGeometryBundle: aggregate.envelope.state.officialModelBaseGeometryDataBundle,
         combatProfileBundle: aggregate.envelope.state.officialCombatProfileBundle
           || aggregate.envelope.state.officialGameplayDataBundle?.combatProfileBundle,
         attackProfileCatalogue: aggregate.envelope.state.officialAttackProfileCatalogueV2

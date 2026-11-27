@@ -1,12 +1,21 @@
+import {assertTemporalDeploymentEntriesV1} from './pregame-temporal-formation-intent-v1.mjs';
+import {ROSTER_BUDGET_GENERATION_DESCRIPTION_V1} from './roster-budget-branch-query-v1.mjs';
+import {STATIC_FORMATION_OBJECTIVES_INPUT_SCHEMA_V1} from '../online-agent-session/formation-intent-contract-v1.mjs';
+import {JOINT_TEMPORAL_INPUT,assertJointTemporalInputV1,evaluateJointTemporalV1,jointTemporalActionAllowedV1,assertJointTemporalTransitionV1} from './pregame-joint-temporal-v1.mjs';
+import {createPregameNativeTemporalPortsV1} from './pregame-native-temporal-ports-v1.mjs';
 import { hashStarcraftTmgContract } from
   "../authoritative-engine/referee-crypto-v1.mjs";
-import {compilePregameSceneProjectionV1,PREGAME_SCENE_PROJECTION_ARGUMENTS_V1} from './pregame-scene-projection-v1.mjs';
+import {compilePregameSceneProjectionV1,PREGAME_SCENE_PROJECTION_ARGUMENTS_V1,
+  capturePregameTerrainEnvironmentV1,applyPregameProjectedTerrainV1} from './pregame-scene-projection-v1.mjs';
 import {projectOfficialSelectedRosterDeploymentSupplyV1} from '../product-composition/official-selected-roster-spatial-action-runtime-v1.mjs';
 import {assertRosterLocalNativeTransitionV1,assertRosterLocalScenarioPlacementsV1,
   rosterLocalScenarioInputContractV1} from './roster-experiment-scope-v1.mjs';
 import {ARMY_BUILDER_CANDIDATE_INPUT_CONTRACT_V1} from './army-builder-query-port-v1.mjs';
 import {projectPregameGeometryRepairContractV1} from './pregame-query-repair-contract-v1.mjs';
 import {isDeepStrictEqual} from 'node:util';
+import {evaluatePregameBoundedArrivalControlV1,PREGAME_BOUNDED_ARRIVAL_CONTROL_INPUT_V1,assertPregameBoundedArrivalInputV1} from './pregame-bounded-arrival-control-v1.mjs';
+import {evaluateSingleUnitTemporal,assertSingleUnitTemporalInput,assertTemporalTransition,
+  temporalActionAllowed,SINGLE_UNIT_TEMPORAL_INPUT} from './pregame-single-unit-temporal-v1.mjs';
 
 const requiredWorkflowArguments=Object.freeze({
   probability:Object.freeze([
@@ -29,6 +38,24 @@ function requiredPregameArguments(operation,args){
     instruction:'Select the exact required participants from the actual source before issuing this query. If a menu/strategic choice is still needed, finish the work order after the necessary inspect with completionStepId empty, then decide from that result; do not append an empty placeholder query. Host has not selected any attacker, target, domain or parameters.'});
   return Object.fromEntries((requiredWorkflowArguments[operation]??[])
     .map(({argument})=>[argument,String(args[argument]||'').trim()]));
+}
+
+const inspectInputContract=Object.freeze({schema:'pregame_inspect_input_v1',
+  allowedArguments:Object.freeze(['base','seatKey']),additionalProperties:false,
+  semanticParameters:{type:'object',required:[],properties:{seatKey:{type:'string',enum:['player1','player2']}}},
+  purpose:'Inspect one Native scene. A saved evidenceNumber is an evidence-read handle, not a scene selector. Read saved evidence through the role read command; inspect never interprets or ignores a saved-evidence handle.'});
+
+// One source contract for new work, retained bound work and direct Native calls.
+// Reference resolution remains owned by the existing workflow state resolver.
+export function assertPregameInspectInputV1(query,{allowWorkflowReferences=false}={}){
+  const allowedArguments=[...inspectInputContract.allowedArguments,
+    ...(allowWorkflowReferences?['stateRef','contextRef','branchIdRef']:[])];
+  const unsupportedArguments=object(query)?Object.keys(query).filter(key=>!allowedArguments.includes(key)):[];
+  if(object(query)&&!unsupportedArguments.length)return;
+  const detail={allowedArguments,unsupportedArguments,...(!object(query)?{invalidArguments:['query_object']}:{} )};
+  fail('PREGAME_LAB_INSPECT_INPUT_INVALID',detail,{correctable:true,
+    sourceContract:inspectInputContract.schema,originalQueryNotAnswered:true,inputProblem:detail,
+    instruction:inspectInputContract.purpose+' No scene was inspected. If a new scene inspection is actually intended, select its exact saved stateRef/base through the existing binding contract; do not drop a requested evidence handle and silently query the initial scene. Host has not chosen a replacement operation or scene.'});
 }
 
 // One input contract for model compilation, bound execution and Native entry.
@@ -108,16 +135,29 @@ export function assertPregameFormationSelectionSourceV1({receipt,formationOption
     projectPregameFormationParentRepairV1({detail}));
 }
 
+// Receipt-producing methods are owned here, alongside the implementation.
+// Product facades must not maintain a second, silently incomplete tool list.
+// Internal restore/inspection methods are deliberately not receipt operations.
+export const PREGAME_LAB_RECEIPT_METHODS_V1=Object.freeze([
+  'queryScene','querySpatial','queryProbability','queryThreatExchange',
+  'queryBoundedArrivalControl','querySingleUnitTemporal','queryJointTemporal','queryMath',
+  'runScenarioBranch','runFormationSelectionBranch','runProjectedScenarioBranch',
+  'compareCandidatesSameState','missionScoringAuthority','compareSceneConditions',
+]);
+
 // Source-owned caller contracts. Availability is separate from a particular
 // scene having a legal action/domain; no workflow should infer no capability
 // merely because a Plan or earlier interpretation says so.
 export function describePregameWorkflowInputContractsV1(){
   return {
+    bounded_unit_temporal:clone(SINGLE_UNIT_TEMPORAL_INPUT),
+    bounded_joint_temporal:clone(JOINT_TEMPORAL_INPUT),
+    bounded_arrival_control:clone(PREGAME_BOUNDED_ARRIVAL_CONTROL_INPUT_V1),
     scenario:{argumentsShape:{spec:'Exact source-owned specContract; do not invent participants/positions aliases',
       base:'optional {kind:"branch",branchStateHash}; omit for frozen source'},
       specContract:rosterLocalScenarioInputContractV1(describePregameScenarioInputContractV1()),
       purpose:'Construct only explicitly chosen hypothetical placements or phase context. Unknown fields and unconsumed effects are input errors, never successful unchanged scenes.'},
-    inspect:{argumentsShape:{base:'optional {kind:"branch",branchStateHash}; omit for frozen source',seatKey:'optional player1|player2'},
+    inspect:{inputContract:clone(inspectInputContract),argumentsShape:{base:'optional {kind:"branch",branchStateHash}; omit for frozen source',seatKey:'optional player1|player2'},
       resultSections:{baseStateHash:'Exact inspected state hash, including when inspecting a hypothetical branch. Bind /baseStateHash to reuse this state; inspect has no /branchStateHash. sourceStateHash separately identifies the immutable root, not the selected state.',
         availableUnits:'Actual unit IDs, side, onTable, current Supply, exact per-phase activatedPhases marker map, official base bindings and model positions; not complete upgrade selections',
         cardResources:'Source-owned card/resource context',
@@ -156,7 +196,7 @@ export function describePregameWorkflowInputContractsV1(){
       purpose:'Audit an explicit candidate through the Native Builder. A candidate-address error is not a Rules legality/cost verdict; correct the named missing fields from the shared contract.'},
     builder_branches:{argumentsShape:{candidateInput:clone(ARMY_BUILDER_CANDIDATE_INPUT_CONTRACT_V1),
       maximumEvaluations:'optional bounded page size',startOffset:'optional saved cursor',maximumMutationDepth:'optional supported depth',
-      generationPolicy:'breadth_first_v3 for current discovery: uses Native-audited selected compositions/upgrades for either ID or name inputs. Preserve an existing saved cursor\'s policy; v1/v2 are retained historical populations. No policy adds card replacement or removals.'},
+      generationPolicy:ROSTER_BUDGET_GENERATION_DESCRIPTION_V1},
       legalBaselineRequired:true,emptyArmyIsNotALegalBaseline:true,
       purpose:'Read-only budget neighbours of a Native-legal starting army. A partial-budget legal candidate is allowed; exact final spending is not a prerequisite. For empty/invalid input, choose and audit an explicit starting candidate first; this query does not silently construct or admit one.'},
     compare_armies:{argumentsShape:{comparisonId:'nonempty comparison label',candidates:'exactly two {candidateRef,candidateInput} complete Builder candidates',
@@ -165,6 +205,7 @@ export function describePregameWorkflowInputContractsV1(){
   };
 }
 import { projectStarcraftTmgFiniteActionV1 } from '../authoritative-engine/transition-v1.mjs';
+import { assertSameOfficialQueryReleaseV2 } from "../source-data/official-release-context-v2.mjs";
 import { createStarcraftTmgSnapshotSceneQueryServiceV1 } from "../online-agent-session/scene-query-service-v1.mjs";
 import { STARCRAFT_TMG_SPATIAL_QUERY_CONTRACTS_V1,
   inspectStarcraftTmgMarkerControlArgumentsV1 } from "../online-agent-session/spatial-query-contracts-v1.mjs";
@@ -186,6 +227,7 @@ import { solveStarcraftTmgHypotheticalFormationV1 } from
 import { projectPregameStaticPlacementUnitV1 } from './pregame-placement-evidence-v1.mjs';
 import { projectPregameOfficialBaseIdentityV1 } from './pregame-map-evidence-port-v1.mjs';
 import { projectNativeAbilityReferenceV1 } from './native-ability-reference-v1.mjs';
+import {projectRosterComparisonInterventionsV1} from './roster-comparison-intervention-v1.mjs';
 import { compileStarcraftTmgActionParameterContractV1, inspectStarcraftTmgActionParametersV1 } from
   '../online-agent-session/action-parameter-contract-v1.mjs';
 import {describeStarcraftTmgActionParameterRepairContextV1} from
@@ -197,7 +239,9 @@ import {comparePregameSceneConditionsV1,PREGAME_SCENE_COMPARISON_ARGUMENTS_V1}
 
 export const PREGAME_SCENE_LABORATORY_MODULE =
   "packages/roster-strategist/pregame-scene-laboratory-v1.mjs";
-export const PREGAME_SCENE_LABORATORY_VERSION = "1.4.13";
+export const PREGAME_SCENE_LABORATORY_VERSION = "1.4.15";
+// Version only the affected calculations, not frozen sources or saved geometry.
+export const PREGAME_COMBAT_QUERY_IMPLEMENTATION_VERSION = 'selected-effective-hp-v1';
 
 export const PREGAME_LAB_DESCRIPTOR_SCHEMA =
   "starcraft_tmg_pregame_scene_laboratory_descriptor_v1";
@@ -235,19 +279,36 @@ const BUILDER_COMPARISON_ARGUMENT_CONTRACT = freezeDeep({
 });
 // One discovery/repair contract for the existing calculators. These describe
 // inputs, not recommendations or inferred scoring premises.
+const mathInteger={type:'integer',minimum:Number.MIN_SAFE_INTEGER,maximum:Number.MAX_SAFE_INTEGER};
+const mathText={type:'string',minLength:1};
+const mathObject=properties=>({type:'object',additionalProperties:false,required:Object.keys(properties),properties});
+const mathArray=items=>({type:'array',items});
+export const PREGAME_ARMY_COMPARISON_PARAMETER_SCHEMA_V1=Object.freeze(mathObject({candidates:{type:'array',minItems:2,maxItems:2,
+ items:mathObject({candidateRef:mathText,candidateInput:clone(ARMY_BUILDER_CANDIDATE_INPUT_CONTRACT_V1)})}}));
+const MATH_INPUT_SCHEMAS=Object.freeze({
+ builder_candidate_comparison:PREGAME_ARMY_COMPARISON_PARAMETER_SCHEMA_V1,
+ budget_fit:mathObject({mineralBudget:mathInteger,mineralSpent:mathInteger,vespeneSpent:mathInteger,vespeneLimitNumerator:mathInteger,vespeneLimitDenominator:{...mathInteger,minimum:1}}),
+ vp_schedule_delta:mathObject({planned:mathArray(mathObject({window:mathText,plannedCumulativeVp:mathInteger})),projected:mathArray(mathObject({window:mathText,cumulativeVp:mathInteger}))}),
+ integer_sum:mathObject({values:{...mathArray(mathInteger),maxItems:256}}),
+ mission_marker_schedule:mathObject({sideKey:{type:'string',enum:['player1','player2']},windows:mathArray(mathObject({round:mathInteger,controlledMarkersBySide:mathObject({player1:mathArray(mathInteger),player2:mathArray(mathInteger)})}))}),
+});
+export function describePregameMathParameterSchemaV1(kind){
+ if(!MATH_INPUT_SCHEMAS[kind])throw new TypeError('PREGAME_MATH_PARAMETER_SCHEMA_UNAVAILABLE');
+ return clone(MATH_INPUT_SCHEMAS[kind]);
+}
 const MATH_CONTRACTS = freezeDeep({
-  budget_fit: { inputs: { mineralBudget: 'integer', mineralSpent: 'integer',
+  budget_fit: { inputSchema:MATH_INPUT_SCHEMAS.budget_fit, inputs: { mineralBudget: 'integer', mineralSpent: 'integer',
     vespeneSpent: 'integer', vespeneLimitNumerator: 'integer', vespeneLimitDenominator: 'integer >= 1' },
     scope: 'Arithmetic over explicitly supplied budgets; not a Builder legality verdict.' },
-  vp_schedule_delta: { inputs: { planned: [{ window: 'nonempty label', plannedCumulativeVp: 'integer' }],
+  vp_schedule_delta: { inputSchema:MATH_INPUT_SCHEMAS.vp_schedule_delta, inputs: { planned: [{ window: 'nonempty label', plannedCumulativeVp: 'integer' }],
     projected: [{ window: 'same label', cumulativeVp: 'integer' }] },
     scope: 'Subtract supplied cumulative totals. A missing projected window stays unknown.' },
-  integer_sum: { inputs: { values: 'array of at most 256 integers; signed values allowed' },
+  integer_sum: { inputSchema:MATH_INPUT_SCHEMAS.integer_sum, inputs: { values: 'array of at most 256 integers; signed values allowed' },
     scope: 'Add declared inputs only; does not establish casualties, scoring rules or victory.' },
-  mission_marker_schedule: { argumentsJsonShape: { sideKey: 'player1|player2', windows: [{ round: 'integer',
+  mission_marker_schedule: { inputSchema:MATH_INPUT_SCHEMAS.mission_marker_schedule, argumentsJsonShape: { sideKey: 'player1|player2', windows: [{ round: 'integer',
     controlledMarkersBySide: { player1: ['marker number'], player2: ['marker number'] } }] },
     scope: 'Native marker VP under explicit hypothetical control. Kill VP is not included; do not send destroyedEnemySupplyBySide expecting it to be counted.' },
-  builder_candidate_comparison: BUILDER_COMPARISON_ARGUMENT_CONTRACT,
+  builder_candidate_comparison: {...BUILDER_COMPARISON_ARGUMENT_CONTRACT,inputSchema:PREGAME_ARMY_COMPARISON_PARAMETER_SCHEMA_V1},
 });
 const MATH_KINDS = new Set(Object.keys(MATH_CONTRACTS));
 // Tool adapters consume the same discovery contract as this implementation.
@@ -256,8 +317,13 @@ const ACTIVATION_PHASES = new Set(["movement", "assault", "combat"]);
 const SCENARIO_PHASES = new Set([...ACTIVATION_PHASES,'start_of_round']);
 const SCENARIO_KINDS = new Set(["hypothetical_geometry", "rules_lifecycle", "native_action"]);
 function firstRoundInitializationContract(state){
-  return {version:'shared_official_first_round_setup_v1',
-    request:"kind:scenario, toolRequest:{branchIdRef:'',spec:{kind:'hypothetical_geometry',preservePositions:true,phase:'start_of_round',activeSideKey:source.firstPlayerSideKey,placements:[]}}",
+  return {version:'shared_official_first_round_setup_v2',
+    request:'Use workflow operation scenario with workflowArguments. Bind the COMPLETE /stateRef of this exact inspect result to argumentPointer /stateRef using its actual evidence number or prior step. Do not copy hashes or use a string/empty branchIdRef. Without an inspected source, read inspect first to obtain firstPlayerSideKey and eligibility.',
+    workflowOperation:'scenario',
+    workflowArguments:{spec:{kind:'hypothetical_geometry',preservePositions:true,phase:'start_of_round',
+      ...(state?{activeSideKey:state.firstPlayerSideKey}:{}),placements:[]}},
+    workflowStateBinding:{argumentPointer:'/stateRef',resultPointer:'/stateRef',
+      source:'same_inspect_result',selection:'actual fromEvidenceNumber with empty fromStepId, or actual prior fromStepId with fromEvidenceNumber 0'},
     ...(state?{firstPlayerSideKey:state.firstPlayerSideKey,
       sourceEligible:state.phase==='setup'&&state.stage==='army_in_reserves'&&Number(state.round)===1}:{}),
     purpose:'Prepare the SAME round-one setup as actual room startup, preserving the complete army, reserves, map and mission. This only exposes the Native resolve_mission_start_of_round finite action. Select it with native_action, then inspect/select the Native first-actor choice, then actual deploy/move domains. Native computes Supply, card resources and all action effects. Chain successors for a conditional arrival witness; do not teleport units, bypass Supply, use legacy lifecycleSteps without a binding, or treat one local move as a complete arrival. No live room is created or mutated.'};
@@ -271,15 +337,23 @@ export function describePregameScenarioInputContractV1() {
       kind:{type:'string',enum:[...SCENARIO_KINDS]},
       phase:{type:'string',enum:[...SCENARIO_PHASES]},
       activeSideKey:{type:'string',enum:['player1','player2']},
-      placements:{type:'array',items:{type:'object',required:['pieceId'],
+      placements:{type:'array',items:{type:'object',required:['pieceId'],additionalProperties:false,
+        properties:{pieceId:{type:'string',minLength:1},xInches:{type:'number',minimum:0},yInches:{type:'number',minimum:0},
+          modelPositions:{type:'array',items:{type:'object',required:['modelId','xInches','yInches'],properties:{modelId:{type:'string',minLength:1},xInches:{type:'number',minimum:0},yInches:{type:'number',minimum:0},rotationDegrees:{type:'number'},elevation:{type:'string',minLength:1},supportTerrainIds:{type:'array',items:{type:'string',minLength:1}},adjacentAccessPointIds:{type:'array',items:{type:'string',minLength:1}}}}},
+          formationObjectives:clone(STATIC_FORMATION_OBJECTIVES_INPUT_SCHEMA_V1),modelSpreadInches:{type:'number'}},
         description:'pieceId is the exact unit ID. Supply xInches/yInches or complete modelPositions containing the anchor. Coordinates are model-owned inches, not mm or pixels. Optional formationObjectives/modelSpreadInches as described by inspect.scenarioConstruction.'}},
       preservePositions:{type:'boolean'},clearTerrain:{type:'boolean'},
       isolateToPlacedPieces:{type:'boolean'},reassessAllOnField:{type:'boolean'},
       lifecycleSteps:{type:'integer',minimum:0,maximum:MAX_LIFECYCLE_STEPS_PER_BRANCH}},
-    capabilityContracts:{firstRoundInitialization:firstRoundInitializationContract()},
+    capabilityContracts:{firstRoundInitialization:firstRoundInitializationContract(),
+      modelLosses:{directModelCountOverride:false,
+        geometryChangesModelCounts:false,omittedModelsAreCasualties:false,
+        measurementQueriesChangeState:false,
+        instruction:'Geometry sets positions, not casualties. modelPositions must include every living model; removing a participant from the board is not destroying it. mission_marker_control/contextual_supply_projection read the selected state and do not reduce counts. A reduced-count observation needs an actual saved Native successor with settled casualties. For a bounded conditional attack choose the inspected Native action and explicit allowed chance outcomes, then resolve any required casualty choice; this is a conditional witness, not expected losses or future history. Do not claim a prose loss cap was applied by a geometry/query call. If the required distribution or scenario is a new strategic choice, return strategy_required to its author; if the necessary operation is unavailable, return that precise capability gap. Do not repeat a full-strength baseline as reduced strength.'}},
     constraints:[
       'phase, clearTerrain, isolateToPlacedPieces and reassessAllOnField require nonempty placements unless preservePositions is explicitly true.',
       'preservePositions:true requires phase and activeSideKey; forbids placements and terrain/isolation/lifecycle changes.',
+       'start_of_round is ONLY actual first-round initialization on an eligible inspected setup source: kind=hypothetical_geometry, preservePositions=true, no placements, activeSideKey=the source firstPlayerSideKey. It is not a phase for arbitrary hypothetical placements. For a static conditional scene, explicitly choose a supported activation phase if appropriate to the original question; do not silently change experimental assumptions or manufacture an arrival history.',
       'After applying selected formation options, completing the same scene must use its returned state with preservePositions:true and reassessAllOnField:true, preserving the declared phase/side. Do not repeat anchor-only placements: that requests a new packing, not reuse of the selected model positions. This returns whole-scene geometry assessment without solving again; unresolved inherited packing remains unresolved.',
       'A phase-only movement/assault/combat hypothesis preserves round/resources and does not initialize Supply on a setup source. For a Native entry witness read firstRoundInitialization, prepare start_of_round on the eligible source, explicitly choose the returned Native mission-start and first-actor actions, then inspect its real deploy domains. Never repeat a phase-only change expecting new Supply or choose Supply/round values manually.',
       'native_action accepts only kind in spec; choose the exact parent action using the native_action operation.',
@@ -288,32 +362,59 @@ export function describePregameScenarioInputContractV1() {
     ]};
 }
 
-function validateScenarioIntent(spec) {
+export function assertPregameScenarioIntentV1(spec) {
   const contract=describePregameScenarioInputContractV1();
+  if(!object(spec))scenarioInputFailure('PREGAME_LAB_BRANCH_SPEC_INVALID','',spec,contract);
+  if(!SCENARIO_KINDS.has(spec.kind))
+    scenarioInputFailure('PREGAME_LAB_BRANCH_KIND_UNKNOWN','/kind',spec.kind,contract.properties.kind);
   const unsupported=Object.keys(spec).filter(key=>!Object.hasOwn(contract.properties,key));
   if(unsupported.length)scenarioInputFailure('PREGAME_LAB_BRANCH_FIELDS_UNSUPPORTED','',spec,contract);
   if(spec.placements!==undefined&&!Array.isArray(spec.placements))
     scenarioInputFailure('PREGAME_LAB_BRANCH_PLACEMENTS_INVALID','/placements',spec.placements,contract.properties.placements);
+  // Validate field shape before participant permissions; a missing identity is
+  // an argument error, not an undeclared actor or a new authorization request.
+  validateScenarioPlacementInputs(spec,null);
   for(const key of ['preservePositions','clearTerrain','isolateToPlacedPieces','reassessAllOnField'])
     if(spec[key]!==undefined&&typeof spec[key]!=='boolean')
       scenarioInputFailure('PREGAME_LAB_BRANCH_FLAG_INVALID','/'+key,spec[key],contract.properties[key]);
+  assertPregameStartOfRoundScenarioInputV1(spec);
   if(spec.kind!=='native_action'&&spec.preservePositions!==true&&!spec.placements?.length
     &&(spec.phase!==undefined||spec.activeSideKey!==undefined||spec.clearTerrain===true
       ||spec.isolateToPlacedPieces===true||spec.reassessAllOnField===true))
     scenarioInputFailure('PREGAME_LAB_BRANCH_PLACEMENTS_REQUIRED','',spec,contract);
 }
 
+// One source-owned parameter boundary for fresh calls and saved failures.
+// Without the inspected source, this can diagnose malformed parameters only;
+// it cannot decide source eligibility or guess the first player's seat.
+export function assertPregameStartOfRoundScenarioInputV1(spec,{firstPlayerSideKey=null}={}){
+  if(spec?.phase!=='start_of_round')return;
+  if(spec.kind!=='hypothetical_geometry'||spec.preservePositions!==true
+    ||spec.placements?.length||spec.clearTerrain===true||spec.isolateToPlacedPieces===true
+    ||Number(spec.lifecycleSteps||0)!==0){
+    scenarioInputFailure('CURRENT_PRODUCT_FIRST_ROUND_SETUP_REQUIRED','',spec,{
+      type:'object',required:['kind','phase','preservePositions','activeSideKey'],
+      properties:{kind:{const:'hypothetical_geometry'},phase:{const:'start_of_round'},
+        preservePositions:{const:true},placements:{type:'array',maxItems:0},
+        activeSideKey:{type:'string',enum:['player1','player2']}},
+      description:'Initialization preserves the inspected eligible setup; it cannot place units. Choose the correct method for the original question, not automatic replacement coordinates/phase.'});
+  }
+  if(firstPlayerSideKey!==null&&spec.activeSideKey!==firstPlayerSideKey)
+    scenarioInputFailure('CURRENT_PRODUCT_FIRST_ROUND_SETUP_REQUIRED','/activeSideKey',
+      spec.activeSideKey,{const:firstPlayerSideKey,source:'inspected source firstPlayerSideKey'});
+}
+
 function validateScenarioPlacementInputs(spec,state) {
   if(!Array.isArray(spec.placements)||!spec.placements.length)return;
-  const width=finiteNumber(state.board.widthInches,'PREGAME_LAB_SOURCE_STATE_INVALID');
-  const height=finiteNumber(state.board.heightInches,'PREGAME_LAB_SOURCE_STATE_INVALID');
+  const width=state?finiteNumber(state.board.widthInches,'PREGAME_LAB_SOURCE_STATE_INVALID'):null;
+  const height=state?finiteNumber(state.board.heightInches,'PREGAME_LAB_SOURCE_STATE_INVALID'):null;
   const targets=[],seen=new Set();
   const issue=(pointer,value,expectedSchema)=>targets.push({requestPointer:'/toolRequest/spec'+pointer,
     requestKind:'scenario',failureOrigin:'scenario_input_contract',receivedValue:clone(value??null),expectedSchema,
     correctionInstruction:'Use the named unit and inches on this board. Explicitly revise invalid experimental assumptions; no Host-selected coordinates or invented successful placement.'});
   const coordinate=(value,max,pointer)=>{
-    if(typeof value!=='number'||!Number.isFinite(value)||value<0||value>max)
-      issue(pointer,value,{type:'number',minimum:0,maximum:max,unit:'inches',note:'Centre bounds are necessary, NOT sufficient: Native still checks complete bases, blockers and coherency.'});
+    if(typeof value!=='number'||!Number.isFinite(value)||value<0||max!==null&&value>max)
+      issue(pointer,value,{type:'number',minimum:0,...(max!==null?{maximum:max}:{}),unit:'inches',note:'Centre bounds are necessary, NOT sufficient: Native still checks complete bases, blockers and coherency.'});
   };
   const placementFields=['pieceId','xInches','yInches','modelPositions','formationObjectives','modelSpreadInches'];
   for(const [index,p] of spec.placements.entries()){
@@ -321,8 +422,9 @@ function validateScenarioPlacementInputs(spec,state) {
     if(!object(p)){issue(pointer,p,{type:'object',required:['pieceId']});continue;}
     const unknown=Object.keys(p).filter(k=>!placementFields.includes(k));
     if(unknown.length)issue(pointer,p,{type:'object',allowedFields:placementFields,additionalProperties:false});
-    const piece=state.pieces.find(u=>u.id===p.pieceId);
-    if(!piece)issue(pointer+'/pieceId',p.pieceId,{type:'string',enum:state.pieces.map(u=>u.id),note:'Unit ID, never a model ID.'});
+    const piece=state?.pieces.find(u=>u.id===p.pieceId);
+    if(typeof p.pieceId!=='string'||!p.pieceId.trim()||state&&!piece)issue(pointer+'/pieceId',p.pieceId,
+      {type:'string',minLength:1,...(state?{enum:state.pieces.map(u=>u.id)}:{}),note:'Use pieceId for the unit identity. No participant authorization failure is inferred from a missing field.'});
     if(seen.has(p.pieceId))issue(pointer+'/pieceId',p.pieceId,{uniqueUnitPlacement:true});
     seen.add(p.pieceId);
     coordinate(p.xInches??p.modelPositions?.[0]?.xInches,width,pointer+'/xInches');
@@ -335,6 +437,7 @@ function validateScenarioPlacementInputs(spec,state) {
         ||p.modelPositions.some(m=>!living.includes(m?.modelId))))
         issue(pointer+'/modelPositions',p.modelPositions,{type:'array',exactModelIds:living,completeUnitRequired:true});
       for(const [j,m] of p.modelPositions.entries()){
+        if(!object(m)||typeof m.modelId!=='string'||!m.modelId.trim())issue(pointer+'/modelPositions/'+j+'/modelId',m?.modelId,{type:'string',minLength:1});
         coordinate(m?.xInches,width,pointer+'/modelPositions/'+j+'/xInches');
         coordinate(m?.yInches,height,pointer+'/modelPositions/'+j+'/yInches');
       }
@@ -344,7 +447,7 @@ function validateScenarioPlacementInputs(spec,state) {
     sourceContract:'pregame_scenario_intent_v1',correctable:true,originalQueryNotAnswered:true,
     reasonCode:'PREGAME_LAB_PLACEMENT_INPUT_INVALID',failureTargets:targets,
     currentInputContract:describePregameScenarioInputContractV1(),
-    coordinateContext:{unit:'inches',widthInches:width,heightInches:height,
+    coordinateContext:{unit:'inches',sourceGeometryAvailable:Boolean(state),widthInches:width,heightInches:height,
       fullBaseTerrainAndCoherencyStillRequireNative:true},
     instruction:'Correct all reported source-owned input issues together. Do not convert units by guessing, silently drop participants, or claim a branch was constructed. Model chooses explicit revised experimental assumptions.'});
 }
@@ -369,10 +472,18 @@ function scenarioInputFailure(code, pointer, receivedValue, expectedSchema) {
   });
 }
 
+// The chance descriptor is not a submitted outcome. All callers and retained
+// failure projections use this input shape; Native owns action-specific ranges,
+// count/order and settlement. No dice are sampled or selected by this contract.
+import {describePregameNativeChanceOutcomeInputV1,isPregameNativeChanceOutcomeV1,compilePregameNativeChanceOutcomeV1} from './pregame-native-chance-input-v1.mjs';
+export {describePregameNativeChanceOutcomeInputV1};
+
 function nativeActionInputFailure(request, code, instruction) {
   fail(code, '', {
     sourceContract: 'pregame_native_action_input_v1', correctable: true,
     reasonCode: code, originalQueryNotAnswered: true, hostSelectsDomain: false,
+    ...(code==='PREGAME_LAB_NATIVE_ACTION_OUTCOME_INVALID'?{
+      chanceInputContractVersion:2,outcomeInputContract:describePregameNativeChanceOutcomeInputV1()}:{}),
     correctionInstruction: instruction,
     failureTargets: [{ requestPointer: '/toolRequest/argumentsJson',
       requestKind: 'scenario', failureOrigin: 'native_action_input_contract',
@@ -433,12 +544,9 @@ export function parsePregameNativeActionInputV1(request) {
   // Transport shape belongs to the SAME pure input contract, including for
   // retained failures. Native still owns the action-specific dice count,
   // ranges, layout, Precision choice and resulting casualties.
-  if (args.outcome !== undefined && (!object(args.outcome)
-    || !Array.isArray(args.outcome.chanceReveals)
-    || Object.keys(args.outcome).some(key => !['chanceReveals',
-      'precisionConvertedFailedHitDieIndices'].includes(key)))) {
+  if (args.outcome !== undefined && !isPregameNativeChanceOutcomeV1(args.outcome)) {
     inputFailure('PREGAME_LAB_NATIVE_ACTION_OUTCOME_INVALID',
-      'outcome.chanceReveals must be an array of explicit integer die faces, not the chance contract object (kind/faces/count/layout/revealOrder). Preserve domainId and parameters. Use the selected action nativeChanceContract to choose a conditional face for each required die in its declared order; do not submit counts, expected losses or a predicted future fact. The Host never chooses the roll, and Native still validates the count, range and settlement. Only chanceReveals and optional precisionConvertedFailedHitDieIndices are allowed in outcome.');
+      'Each outcome.chanceReveals entry must be an explicit integer die result or the Native representation {faces:integer,outcome:integer}. {kind,value}, numeric strings, null and a chance contract object are not die results. Preserve domainId, parameters and the intended conditional assumption; correct its representation yourself. Use the selected action nativeChanceContract for the required dice/order; do not submit expected losses or a predicted future fact. Host never selects/coerces a roll. Native still validates the count, faces, range and settlement. Only chanceReveals and optional precisionConvertedFailedHitDieIndices are allowed in outcome.');
   }
   return args;
 }
@@ -678,6 +786,7 @@ export function createPregameSceneLaboratoryV1(input = {}) {
     sourceRoomRef,
     builderBundleHash,
     portDescriptorHash: portDescriptor.descriptorHash,
+    ...(rulesRuntime.releaseBinding ? {releaseBinding: clone(rulesRuntime.releaseBinding)} : {}),
     rulesRuntimeHash,
     readOnly: true,
     mutatesRoomState: false,
@@ -705,6 +814,7 @@ export function createPregameSceneLaboratoryV1(input = {}) {
     return {
       laboratoryId,
       laboratoryVersion: PREGAME_SCENE_LABORATORY_VERSION,
+      ...(rulesRuntime.releaseBinding ? {releaseBinding: clone(rulesRuntime.releaseBinding)} : {}),
       sourceStateHash,
       sourceRoomRef,
       builderBundleHash,
@@ -772,15 +882,28 @@ export function createPregameSceneLaboratoryV1(input = {}) {
   }
 
   const sceneServices = new Map();
+  // A temporal search revisits immutable states but must not retain a full
+  // scene service/snapshot for every explored node. This backend-only cache
+  // limit changes retention, never search bounds, Rules or selected actions.
+  const sceneServiceCacheLimit=input.maximumCachedSceneServices??Infinity;
+  if(sceneServiceCacheLimit!==Infinity&&(!Number.isSafeInteger(sceneServiceCacheLimit)||sceneServiceCacheLimit<1))
+    fail('PREGAME_LAB_SCENE_CACHE_LIMIT_INVALID');
   function sceneService(query = {}) {
     const { state, baseStateHash } = resolveBaseState(query.base);
     const seatKey = String(query.seatKey || state.activeSideKey || state.firstPlayerSideKey || "player1");
     if (!SIDE_KEY_PATTERN.test(seatKey)) fail("PREGAME_LAB_SEAT_INVALID", seatKey);
     const key = baseStateHash + ":" + seatKey;
-    if (!sceneServices.has(key)) {
+    if(sceneServices.has(key)){
+      const retained=sceneServices.get(key);sceneServices.delete(key);sceneServices.set(key,retained);
+    }else {
+      while(sceneServices.size>=sceneServiceCacheLimit)sceneServices.delete(sceneServices.keys().next().value);
       const branch = branches.get(baseStateHash);
       sceneServices.set(key, createStarcraftTmgSnapshotSceneQueryServiceV1({ state,
         seatKey, rulesRuntime, matchBinding,
+        // Backend-only observability, identical to the live query lane. These
+        // callbacks are not part of model inputs, receipts or Rules state.
+        observeQueryDiagnostic: input.observeQueryDiagnostic,
+        observeQueryBatchDiagnostic: input.observeQueryBatchDiagnostic,
         geometryRepairOnly: branch?.hypotheticalPlacementAssessment?.units?.some(u => u.resultStatus !== 'ok') === true,
         sceneScope: {
           kind: branch ? "hypothetical_branch" : "pregame_reference",
@@ -850,7 +973,9 @@ export function createPregameSceneLaboratoryV1(input = {}) {
     return noteOperation(hashedReceipt({ schema: PREGAME_LAB_SPATIAL_RECEIPT_SCHEMA,
       queryId, ...sharedFields(), baseStateHash, seatKey, queryKind: queryReceipt.queryKind,
       resultStatus: queryReceipt.status === "unknown" ? "unknown" : "ok",
-      unknownReason: queryReceipt.reason || null, queryReceipt,
+      unknownReason: queryReceipt.status === "unknown" ? queryReceipt.reason || null : null,
+      ...(queryReceipt.status === "rejected" ? { rejectedProposal: queryReceipt.result } : {}),
+      queryReceipt,
       sceneScope: clone(queryReceipt.authority.sceneScope),
     }));
   }
@@ -876,6 +1001,46 @@ export function createPregameSceneLaboratoryV1(input = {}) {
       relationshipCount: relationships.length, truncated: relationships.length > MAX_RELATIONSHIPS_PER_RECEIPT,
     }));
   }
+
+  async function queryBoundedArrivalControl(query = {}) {
+    assertPregameBoundedArrivalInputV1(query);
+    const context=describeQueryContext({base:query.base,seatKey:query.seatKey});
+    const result=await evaluatePregameBoundedArrivalControlV1({query,context,querySpatial});
+    return noteOperation(hashedReceipt({...sharedFields(),...result}));
+  }
+
+  async function queryTemporal(query = {}, {shouldStop} = {}, joint = false) {
+    (joint?assertJointTemporalInputV1:assertSingleUnitTemporalInput)(query);
+    const {state,baseStateHash}=resolveBaseState(query.base);
+    const entrySelectionBindings=assertTemporalDeploymentEntriesV1({query,entryEdgesByPlayer:state.officialDeploymentGeometryBinding?.entryEdgesByPlayer});
+    if(branches.get(baseStateHash)?.hypotheticalPlacementAssessment?.units.some(u=>u.resultStatus!=='ok'))
+      fail('PREGAME_TEMPORAL_PARENT_GEOMETRY_INVALID');
+    // A separate disposable Native laboratory keeps all search branches out
+    // of the parent's registry. No scope waiver is exposed on native_action.
+    // Frozen planning authorities need not be rooms and have no room binding.
+    // Native cleanup nevertheless needs the REAL loaded runtime identity. This
+    // is an explicit read-only context, not a signed room/event or mock Rules.
+    const temporalBinding=matchBinding??{
+      schema:'pregame_native_runtime_context_v1',liveRoomBinding:false,
+      ...(rulesRuntime.releaseBinding ? {releaseBinding: rulesRuntime.releaseBinding} : {}),
+      rulesRuntimeBinding:{runtimeId:rulesRuntime.descriptor.runtimeId,
+        runtimeVersion:rulesRuntime.descriptor.runtimeVersion,runtimeHash:rulesRuntimeHash}};
+    const child=createPregameSceneLaboratoryV1({laboratoryId:laboratoryId+(joint?':joint-temporal':':single-unit-temporal'),
+      sourceState:state,rulesRuntime,armyBuilderPort,matchBinding:temporalBinding,
+      maximumCachedSceneServices:2,shareUnchangedNativeState:true});
+    const ports=createPregameNativeTemporalPortsV1({child,query,
+      actionAllowed:joint?jointTemporalActionAllowedV1:temporalActionAllowed,
+      assertTransition:joint?assertJointTemporalTransitionV1:assertTemporalTransition,
+      controlArguments:q=>joint?{markerIds:[...new Set(q.participants.map(p=>p.markerId))],unitIds:q.participants.map(p=>p.unitId)}
+        :{markerIds:[q.markerId],unitIds:[q.unitId]},onStep:input.onTemporalStep});
+    const result=await (joint?evaluateJointTemporalV1:evaluateSingleUnitTemporal)({query,ports,shouldStop});
+    child.proveMutationZero();
+    return noteOperation(hashedReceipt({...sharedFields(),...result,baseStateHash,entrySelectionBindings,
+      isolatedSearchSourceHash:child.labDescriptor().sourceStateHash,branchStateRegisteredForQueries:false}));
+  }
+
+  const querySingleUnitTemporal=(query,options)=>queryTemporal(query,options,false);
+  const queryJointTemporal=(query,options)=>queryTemporal(query,options,true);
 
   async function queryProbability(query = {}) {
     assertPregameProbabilityInputV1(query,{requireExplicitDomain:false});
@@ -929,6 +1094,7 @@ export function createPregameSceneLaboratoryV1(input = {}) {
       { attackerUnitId, targetUnitId, estimate: null, queryReceipt }));
     const outcomes = estimate.outcomes || {};
     return noteOperation(hashedReceipt({ schema: PREGAME_LAB_PROBABILITY_RECEIPT_SCHEMA,
+      queryImplementationVersion:PREGAME_COMBAT_QUERY_IMPLEMENTATION_VERSION,
       queryId, ...sharedFields(), baseStateHash, resultStatus: "ok", unknownReason: null,
       attackerUnitId, targetUnitId, queryReceipt,
       estimate: { ...clone(estimate), sampleBudget, expectedDamage: outcomes.expectedDamage ?? null,
@@ -958,6 +1124,7 @@ export function createPregameSceneLaboratoryV1(input = {}) {
       { seatKey, exchange: null, queryReceipt }));
     const exchange = queryReceipt.result;
     return noteOperation(hashedReceipt({ schema: PREGAME_LAB_THREAT_EXCHANGE_RECEIPT_SCHEMA,
+      queryImplementationVersion:PREGAME_COMBAT_QUERY_IMPLEMENTATION_VERSION,
       queryId, ...sharedFields(), baseStateHash, resultStatus: "ok", unknownReason: null, seatKey, queryReceipt,
       ...(normalized.normalizations.length?{inputNormalizations:normalized.normalizations}:{}),
       exchange: { ...clone(exchange), unknownValuesNeverPromotedToZero:
@@ -1217,9 +1384,7 @@ export function createPregameSceneLaboratoryV1(input = {}) {
 
   function inspectScenarioInput(request = {}) {
     try{
-      if(!object(request.spec))scenarioInputFailure('PREGAME_LAB_BRANCH_SPEC_INVALID','',request.spec,describePregameScenarioInputContractV1());
-      if(!SCENARIO_KINDS.has(request.spec.kind))scenarioInputFailure('PREGAME_LAB_BRANCH_KIND_UNKNOWN','/kind',request.spec.kind,{type:'string',enum:[...SCENARIO_KINDS]});
-      validateScenarioIntent(request.spec);
+      assertPregameScenarioIntentV1(request.spec);
       if(request.spec.kind!=='native_action')validateScenarioPlacementInputs(request.spec,resolveBaseState(request.base).state);
       return {valid:true};
     }catch(error){
@@ -1283,7 +1448,7 @@ export function createPregameSceneLaboratoryV1(input = {}) {
     return freezeDeep({sourceStateHash,baseStateHash,rulesRuntimeHash,builderBundleHash,
       rulesContract:{runtimeId:rulesRuntime.descriptor.runtimeId,runtimeVersion:rulesRuntime.descriptor.runtimeVersion,
         rulesVersion:rulesRuntime.descriptor.rulesVersion,missionRuntimeHash:rulesRuntime.descriptor.missionRuntimeHash},
-      boardHash:hashStarcraftTmgContract(state.board),round:state.round,
+      boardHash:hashStarcraftTmgContract(state.board),terrainEnvironment:capturePregameTerrainEnvironmentV1(state.board),round:state.round,
       phase:state.phase,activeSideKey:state.activeSideKey,
       geometryFailures:clone((branches.get(baseStateHash)?.hypotheticalPlacementAssessment?.units||[])
         .filter(u=>u.resultStatus!=='ok')),
@@ -1300,6 +1465,15 @@ export function createPregameSceneLaboratoryV1(input = {}) {
       })});
   }
 
+  // Host-internal view for the read-only temporal scope guards. Branches are
+  // already deeply frozen; freeze the private source once on first access.
+  // No model-facing tool or mutable state reference is introduced here.
+  function captureNativeTemporalInvariantView({base}={}) {
+    const {state,baseStateHash}=resolveBaseState(base);
+    if (!Object.isFrozen(state)) freezeDeep(state);
+    return Object.freeze({sourceStateHash,baseStateHash,state});
+  }
+
   function captureComparisonSnapshot({base}={}) {
     const {state,baseStateHash}=resolveBaseState(base);
     return freezeDeep({schema:'pregame_scene_comparison_snapshot_v1',sourceStateHash,baseStateHash,
@@ -1314,10 +1488,11 @@ export function createPregameSceneLaboratoryV1(input = {}) {
       comparison:comparePregameSceneConditionsV1({reference:referenceSnapshot,target})}));
   }
 
-  function runProjectedScenarioBranch({branchId,base,referenceLayout,changedUnits,unlistedUnits,executionScope}={}) {
+  function runProjectedScenarioBranch({branchId,base,referenceLayout,changedUnits,unlistedUnits,terrainPolicy,executionScope}={}) {
     const projection=compilePregameSceneProjectionV1({reference:referenceLayout,
-      target:captureSceneLayout({base}),changedUnits,unlistedUnits});
-    return materializeScenarioBranch({branchId,base,spec:projection.spec,executionScope,sceneProjection:projection.proof});
+      target:captureSceneLayout({base}),changedUnits,unlistedUnits,terrainPolicy});
+    return materializeScenarioBranch({branchId,base,spec:projection.spec,executionScope,sceneProjection:projection.proof},
+      null,projection.proof.terrainTransfer);
   }
 
   function restoreProjectedScenarioBranch({receipt,base}={}) {
@@ -1329,16 +1504,18 @@ export function createPregameSceneLaboratoryV1(input = {}) {
 
   function restoreHypotheticalBranch({ receipt, spec, base } = {}) {
     verifyPregameLabScenarioBranchReceiptV1(receipt);
+    // Earlier receipts stay readable under the existing source/runtime checks.
+    if (receipt.releaseBinding) assertSameOfficialQueryReleaseV2(rulesRuntime.releaseBinding, receipt.releaseBinding);
     const { baseStateHash } = resolveBaseState(base);
     if (receipt.branchKind !== 'hypothetical_geometry' || receipt.sourceStateHash !== sourceStateHash
       || receipt.parentStateHash !== baseStateHash || receipt.rulesRuntimeHash !== rulesRuntimeHash
       || receipt.builderBundleHash !== builderBundleHash || receipt.specHash !== hashStarcraftTmgContract(spec)
       || Number(spec.lifecycleSteps || 0) !== 0) fail('PREGAME_LAB_RETAINED_GEOMETRY_SOURCE_CHANGED');
     if (branches.has(receipt.branchStateHash)) return receipt;
-    return materializeScenarioBranch({ branchId: receipt.branchId, spec, base }, receipt);
+    return materializeScenarioBranch({ branchId: receipt.branchId, spec, base }, receipt,receipt.sceneProjection?.terrainTransfer);
   }
 
-  function materializeScenarioBranch(request = {}, retained = null) {
+  function materializeScenarioBranch(request = {}, retained = null, projectedTerrain = null) {
     const branchId = nonEmpty(request.branchId, "PREGAME_LAB_BRANCH_ID_REQUIRED");
     const spec = object(request.spec) ? clone(request.spec)
       : scenarioInputFailure("PREGAME_LAB_BRANCH_SPEC_INVALID", "", request.spec,
@@ -1352,7 +1529,7 @@ export function createPregameSceneLaboratoryV1(input = {}) {
     }
     // Old immutable receipts remain exactly restorable; this is a new invocation
     // check, not a rewrite or reinterpretation of previously paid/tool evidence.
-    if(!retained)validateScenarioIntent(spec);
+    if(!retained)assertPregameScenarioIntentV1(spec);
     if (branchKind === 'native_action') return runNativeActionBranch(request, spec);
     // All fresh product scene writes, including selected static formations and
     // cross-roster projections, cross this SAME check after exact placements
@@ -1361,8 +1538,11 @@ export function createPregameSceneLaboratoryV1(input = {}) {
     if(!retained&&request.executionScope)
       assertRosterLocalScenarioPlacementsV1({scope:request.executionScope,args:request});
     const { state: baseState, baseStateHash } = resolveBaseState(request.base);
-    if(!retained)validateScenarioPlacementInputs(spec,baseState);
     const working = clone(baseState);
+    // Only the explicit source-bound projection entry (or a verified retained
+    // receipt) can supply this internal argument. Ordinary scenario JSON cannot.
+    if(projectedTerrain)working.board=applyPregameProjectedTerrainV1(working.board,projectedTerrain);
+    if(!retained)validateScenarioPlacementInputs(spec,working);
     const lifecycleSteps = [];
     const requestedSteps = Number(spec.lifecycleSteps || 0);
     if (!Number.isSafeInteger(requestedSteps)
@@ -1414,9 +1594,7 @@ export function createPregameSceneLaboratoryV1(input = {}) {
           spec.activeSideKey, {type:'string',enum:['player1','player2']});
       }
       if(phase==='start_of_round') {
-        if(spec.preservePositions!==true||sideKey!==working.firstPlayerSideKey) {
-          fail('CURRENT_PRODUCT_FIRST_ROUND_SETUP_REQUIRED');
-        }
+        assertPregameStartOfRoundScenarioInputV1(spec,{firstPlayerSideKey:working.firstPlayerSideKey});
         const prepared=prepareOfficialCurrentProductFirstRoundV1(working);
         for(const key of Object.keys(working))delete working[key];
         Object.assign(working,prepared);
@@ -1591,7 +1769,7 @@ export function createPregameSceneLaboratoryV1(input = {}) {
     if (invalidLayout) fail('PREGAME_LAB_NATIVE_ACTION_PARENT_GEOMETRY_INVALID', invalidLayout.unknownReason);
     const sideKey = request.seatKey || parent.activeSideKey;
     if (!SIDE_KEY_PATTERN.test(sideKey || '')) fail('PREGAME_LAB_SEAT_INVALID');
-    const legal = rulesRuntime.enumerate(parent, { sideKey, includeDisabled: false });
+    const legal = rulesRuntime.enumerate(parent, { sideKey, includeDisabled: false,matchBinding });
     const finite = args.actionKey ? (legal.candidates || []).map(candidate =>
       projectStarcraftTmgFiniteActionV1(candidate, {
         matchBindingHash: matchBinding?.bindingHash || hashStarcraftTmgContract(matchBinding || {}),
@@ -1612,7 +1790,7 @@ export function createPregameSceneLaboratoryV1(input = {}) {
           failureOrigin:'native_action_input_contract',receivedValue:request.argumentsJson,
           correctionInstruction:'Correct the selected domain parameters using fieldIssues and parameterContract. Do not invent IDs or alter the parent scene. Shape correction is not geometry acceptance; Native still checks every path and base. Use the available geometry solver for a complete legal candidate rather than guessing collisions.'}]});
     }
-    let prepared, applied, nativeChanceContract;
+    let prepared, applied, nativeChanceContract, nativeOutcome;
     try {
       prepared = finite ? { action: clone(finite.action) }
         : rulesRuntime.instantiate(clone(parent), domain, args.parameters, { matchBinding });
@@ -1628,16 +1806,19 @@ export function createPregameSceneLaboratoryV1(input = {}) {
         fail(code, '', { sourceContract: 'pregame_scene_scenario_input_v1',
           correctable: true, reasonCode: code, originalQueryNotAnswered: true,
           nativeChanceContract: clone(action.chance),
+          chanceInputContractVersion:2,
+          outcomeInputContract:describePregameNativeChanceOutcomeInputV1(action.chance),
           failureTargets: [{ requestPointer: '/toolRequest/argumentsJson',
             requestKind: 'scenario', failureOrigin: 'native_action_outcome_input',
             receivedValue: request.argumentsJson,
-            correctionInstruction: 'Preserve domainId/parameters and add outcome.chanceReveals following nativeChanceContract. Declare a conditional roll, never an expected loss or predicted future fact. Native may then require a defender casualty selection on the successor.' }] });
+            correctionInstruction: 'Preserve domainId/parameters and add outcome.chanceReveals as the ARRAY described by outcomeInputContract, following the count/order in nativeChanceContract. Do not submit the chance descriptor as the dice. Declare a conditional roll, never an expected loss or predicted future fact. Native may then require a defender casualty selection on the successor.' }] });
       }
       if (!action.chance && args.outcome !== undefined) {
         fail('PREGAME_LAB_NATIVE_ACTION_OUTCOME_NOT_APPLICABLE');
       }
+      nativeOutcome=compilePregameNativeChanceOutcomeV1(args.outcome,nativeChanceContract);
       applied = rulesRuntime.apply(clone(parent), prepared.action,
-        { matchBinding, ...(args.outcome === undefined ? {} : clone(args.outcome)) });
+        { matchBinding, ...(nativeOutcome ?? {}) });
     } catch (error) {
       if (String(error.code || error.message).startsWith('PREGAME_LAB_')) throw error;
       fail('PREGAME_LAB_NATIVE_ACTION_REJECTED', String(error.code || error.message),
@@ -1658,6 +1839,10 @@ export function createPregameSceneLaboratoryV1(input = {}) {
       if (!Object.hasOwn(successor, key)) stateChanges.push({ key, operation: 'remove' });
       else if (!Object.hasOwn(parent, key) || JSON.stringify(parent[key]) !== JSON.stringify(successor[key])) {
         stateChanges.push({ key, operation: 'set', value: clone(successor[key]) });
+      }else if(input.shareUnchangedNativeState===true){
+        // Native already produced this exact value. Share only equal immutable
+        // subtrees; never synthesize a delta or skip any transition/receipt.
+        successor[key]=parent[key];
       }
     }
     if (!branches.has(branchStateHash)) {
@@ -1673,6 +1858,7 @@ export function createPregameSceneLaboratoryV1(input = {}) {
       nativeEvents: clone(applied.events || []),
       ...(nativeChanceContract ? { nativeChanceContract: clone(nativeChanceContract),
         nativeOutcomeAssumption: clone(args.outcome), conditionalOnOutcome: true,
+        nativeOutcomeInput: clone(nativeOutcome),
         outcomeProbability: null,
         outcomeScope: 'explicit_native_random_input_not_probability_or_prediction' } : {}),
       nativeTransitionsApplied: 1, stateChanges, resultStatus: 'ok', unknownReason: null,
@@ -1682,6 +1868,8 @@ export function createPregameSceneLaboratoryV1(input = {}) {
 
   function restoreNativeActionBranch({ receipt, base } = {}) {
     verifyPregameLabScenarioBranchReceiptV1(receipt);
+    // Earlier receipts stay readable under the existing source/runtime checks.
+    if (receipt.releaseBinding) assertSameOfficialQueryReleaseV2(rulesRuntime.releaseBinding, receipt.releaseBinding);
     const { state: parent, baseStateHash } = resolveBaseState(base);
     if (receipt.branchKind !== 'native_action' || receipt.sourceStateHash !== sourceStateHash
       || receipt.parentStateHash !== baseStateHash || receipt.rulesRuntimeHash !== rulesRuntimeHash
@@ -1884,6 +2072,7 @@ export function createPregameSceneLaboratoryV1(input = {}) {
   }
 
   function describeQueryContext(query = {}) {
+    assertPregameInspectInputV1(query);
     const { state, baseStateHash, service } = sceneService(query);
     const actionSpace = service.actionSpace();
     return freezeDeep({
@@ -1923,7 +2112,7 @@ export function createPregameSceneLaboratoryV1(input = {}) {
         side,projectOfficialSelectedRosterDeploymentSupplyV1(state,side)])),
       deploymentSupplyScope:{source:'same_native_deployment_validator_and_snapshot',context:'supply_pool_calculation',
         inferMissionMarkerControl:false,futureCapacityProven:false},
-      nativeAbilityReference: projectNativeAbilityReferenceV1(state),
+      nativeAbilityReference: projectNativeAbilityReferenceV1(state,rulesRuntime.queryAbilityTiming),
       resourceEvidenceScope: {
         source: 'same_immutable_native_snapshot_as_action_space',
         paymentOrFutureReadinessProven: false,
@@ -1934,6 +2123,8 @@ export function createPregameSceneLaboratoryV1(input = {}) {
         mapRouteBinding: projectPregameOfficialBaseIdentityV1(state, piece.officialUnitRecordKey),
         onTable: piece.isOnField === true,
         currentSupply:piece.currentSupply??null,
+        deploymentPoolRequirement: piece.isInReserves === true && piece.isDestroyed !== true
+          ? projectOfficialSelectedRosterDeploymentSupplyV1(state, piece.sideKey, piece.id) : null,
         deploymentStatus:piece.deploymentStatus??null,
         // Same field read/written by Native activation and Orders. This is a
         // snapshot observation, not inferred future readiness or action value.
@@ -1973,6 +2164,7 @@ export function createPregameSceneLaboratoryV1(input = {}) {
           request: "kind:scenario, toolRequest:{branchIdRef,seatKey,spec:{kind:'native_action'},argumentsJson:JSON.stringify({actionKey,outcome?} OR {domainId,parameters,outcome?}),followUps:[...]}",
           purpose: "Select exact actionSpace.finiteActions[].proposal.actionKey OR an inspected parameterDomains[].domainId with native parameters on the SAME branch. Finite actions allow Rules-owned lifecycle/activation/phase progression; the Host does not select one. Subsequent queries see the actual Native successor, including created assets and settled casualties. Do not supply placements/phase/terrain overrides. Inspect the successor before selecting another action.",
           randomOutcomes: "For an action with chance, declare outcome.chanceReveals using the Native dice contract returned by attack_probability or missing-outcome feedback; optional Precision selection uses Native indices. This is a conditional scenario, NOT expected damage, a probability claim or future fact. Native validates the dice and computes losses/Supply. If it leaves a defender-owned casualty choice, inspect and select that successor's current domain in a separate native_action; do not assume pending damage was already applied or hand-edit survivors. Omit outcome for deterministic actions.",
+          outcomeInputContract:describePregameNativeChanceOutcomeInputV1(),
           hypotheticalParentNotProvenArrival: true,
         },
         placementEvidenceScope: "staticGeometry reports Native footprint/coherency checks at the supplied positions. placementLegalityProven:false excludes complete action/arrival history, not those positive static checks. Conditional opponent positions are assumptions, not a prediction that they WILL occur. A path or arrival claim needs separate evidence; no extra arbitrary move is required to prove static fit.",
@@ -2012,9 +2204,12 @@ export function createPregameSceneLaboratoryV1(input = {}) {
 
   return freezeDeep({
     labDescriptor: () => descriptor,
+    describeComparisonInterventions: () => projectRosterComparisonInterventionsV1({state:sourceState,sourceStateHash,
+      rulesRuntimeHash, releaseBinding:rulesRuntime.releaseBinding}),
     describeQueryContext,
     captureSceneLayout,
     captureComparisonSnapshot,
+    captureNativeTemporalInvariantView,
     compareSceneConditions,
     runProjectedScenarioBranch,
     restoreProjectedScenarioBranch,
@@ -2023,6 +2218,9 @@ export function createPregameSceneLaboratoryV1(input = {}) {
     restoreFormationSelectionBranch,
     queryScene,
     querySpatial,
+    queryBoundedArrivalControl,
+    querySingleUnitTemporal,
+    queryJointTemporal,
     queryProbability,
     queryThreatExchange,
     queryMath,

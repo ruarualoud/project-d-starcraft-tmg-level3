@@ -2670,6 +2670,8 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
     const boundCompanions: any[] = conversation.companions || [];
     const lastMessage = messages.length ? messages[messages.length - 1] : null;
     const nextOwner = conversation.nextTurn?.ownerParticipantId || null;
+    const replyPending = conversation.status === "active" && messages.length > 0
+      && !!nextOwner && nextOwner !== conversation.userParticipantId;
     const speakerCompanion = boundCompanions.find((entry) => entry.participantId === nextOwner)
       || boundCompanions.find((entry) => entry.participantId === lastMessage?.participantId)
       || boundCompanions[0]
@@ -2839,14 +2841,14 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
           )}
         </View>
 
-        {chat.interrupted && (
+        {(chat.interrupted || replyPending) && (
           <View style={styles.chatInterruptCard} testID="companion-chat-interrupted">
             <Text style={styles.chatInterruptTitle}>
               {zh ? "Provider 回合已中断" : "Provider turn interrupted"}
             </Text>
             <Text style={styles.chatInterruptText}>
-              {chat.interrupted.reason}
-              {chat.interrupted.pendingParticipantId
+              {chat.interrupted?.reason || (zh ? "已保存消息，等待同伴回复" : "Saved message awaits a companion reply")}
+              {chat.interrupted?.pendingParticipantId
                 ? ` · ${zh ? "待发言" : "pending"}: ${chatParticipantLabel(conversation, chat.interrupted.pendingParticipantId)}`
                 : ""}
             </Text>
@@ -2884,7 +2886,7 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
 
         <TextInput
           accessibilityLabel={zh ? "同伴会话消息" : "Companion conversation message"}
-          editable={!chat.busy && conversation.status === "active"}
+          editable={!chat.busy && !replyPending && conversation.status === "active"}
           maxLength={4096}
           multiline
           onChangeText={(value) => patchChat({ draft: value })}
@@ -2896,7 +2898,7 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
         />
         <View style={styles.actionRow}>
           <ActionButton
-            disabled={!chat.draft.trim() || chat.busy || conversation.status !== "active"}
+            disabled={!chat.draft.trim() || chat.busy || replyPending || conversation.status !== "active"}
             label={zh ? "发送" : "Send"}
             onPress={() => void sendChatMessage()}
             testID="companion-chat-send"

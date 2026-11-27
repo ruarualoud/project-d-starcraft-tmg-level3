@@ -10,11 +10,9 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { View, Text, TextInput, Pressable, ScrollView, StyleSheet, Alert, Linking, Platform } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { RosterDecisionWorkflowPanel } from './roster-decision-workflow-panel';
+import { useMatchPlanningClient } from '@/lib/roster-planning/match-setup-context';
 import { useI18n } from '@/lib/i18n';
-import {
-  rosterPlanningClient,
-  RosterPlanningClientError,
-} from '@/lib/roster-planning/roster-planning-client-v1';
+import { RosterPlanningClientError } from '@/lib/roster-planning/roster-planning-client-v1';
 
 type Lang = 'en' | 'zh';
 function ui(lang: Lang, zh: string, en: string): string {
@@ -49,6 +47,7 @@ function costText(verdict: any): string {
 }
 
 export function RosterPlanningWorkspacePanel() {
+  const rosterPlanningClient = useMatchPlanningClient();
   const { lang } = useI18n();
   const L = lang as Lang;
   const [connection, setConnection] = useState<'loading' | 'connected' | 'disconnected'>('loading');
@@ -467,12 +466,14 @@ function SessionsView({ L, catalogue, sessions, iterativeSessions, workflows = [
 // ── Setup view ─────────────────────────────────────────────────────────────
 function SetupView({ L, catalogue, deliberation, iterativeAvailable, decisionAvailable,
   onCancel, onCreated, onCreatedIterative, onCreatedWorkflow, onError }: any) {
+  const rosterPlanningClient = useMatchPlanningClient();
   const defaults = catalogue.defaults;
   const [own, setOwn] = useState(defaults.factionRecordKey);
   const [opponent, setOpponent] = useState(defaults.opponentFactionRecordKey);
   const [boundary, setBoundary] = useState(defaults.opponentInformationBoundary);
   const [budgetText, setBudgetText] = useState(String(defaults.mineralBudget));
   const [presetText, setPresetText] = useState('');
+  const [planningEntry, setPlanningEntry] = useState<'balanced' | 'card_synergy' | 'restructure'>('balanced');
   const [busy, setBusy] = useState(false);
   const matchups = catalogue.matchupRoutes || [];
   const routeAvailable = matchups.some((m: any) => (
@@ -520,7 +521,7 @@ function SetupView({ L, catalogue, deliberation, iterativeAvailable, decisionAva
             <Text style={[st.chipText, boundary === value && st.chipTextActive]}>
               {value === 'open_roster'
                 ? ui(L, '公开军表', 'Open roster')
-                : ui(L, '未知军表', 'Unknown roster')}
+                : ui(L, '仅知对手子势力', 'Faction only · roster unknown')}
             </Text>
           </Pressable>
         ))}
@@ -575,9 +576,24 @@ function SetupView({ L, catalogue, deliberation, iterativeAvailable, decisionAva
       </Text>
       <TextInput style={st.importInputSmall} multiline value={presetText}
         onChangeText={setPresetText}
-        placeholder={ui(L, '留空则由 AI 多轮查询并写满 2000 分军表；填入则锁定军表，只生成用法计划',
-          'Leave empty for iterative AI 2000-point selection; provide a list to lock its models and plan their use')}
+        placeholder={ui(L, '留空则从头写表；填入默认锁表写计划，选择“替换与重构”则允许改表',
+          'Leave empty to build a roster; a provided roster stays fixed unless you select Roster alternatives')}
         placeholderTextColor="#64748b" testID="setup-preset-candidate-json" />
+      {decisionAvailable && <View testID="setup-planning-entry">
+        <Text style={st.label}>{ui(L, '规划起点', 'Planning approach')}</Text>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+          {(['balanced', 'card_synergy', 'restructure'] as const).map(key => <Pressable
+            key={key} testID={`planning-entry-${key}`} onPress={() => setPlanningEntry(key)}
+            accessibilityRole="radio" accessibilityState={{ checked: planningEntry === key }}
+            style={[st.btn, planningEntry === key && { borderColor: '#55b9dd', backgroundColor: '#12364b' }]}>
+            <Text style={st.btnText}>{ui(L, { balanced: '综合规划', card_synergy: '卡牌能力组合', restructure: '替换与重构' }[key],
+              { balanced: 'Balanced', card_synergy: 'Card synergies', restructure: 'Roster alternatives' }[key])}</Text>
+          </Pressable>)}
+        </View>
+        <Text style={st.hint}>{presetText.trim() && planningEntry !== 'restructure'
+          ? ui(L, '已提供军表：保留全部单位与配装，只规划其能力配合和行动。', 'Provided roster stays fixed; plan its synergies and actions.')
+          : ui(L, '从选定角度形成候选，再与原思路比较；不会强制买卡或替换单位。', 'Explore the selected approach, then compare; no forced purchases or swaps.')}</Text>
+      </View>}
       {decisionAvailable && <Text style={st.hint} testID="setup-decision-workflow-route">
         {ui(L, '使用新分块流程：形成军表与初步计划 → 工具查证 → 局部 Teach → 同步修订 → 来源与发布审核。不会转回旧规划链路。',
           'Scoped workflow: roster + initial plan → tool evidence → local Teach → joint revision → release review. No fallback to the legacy planner.')}
@@ -613,7 +629,7 @@ function SetupView({ L, catalogue, deliberation, iterativeAvailable, decisionAva
                   try { candidateInput = JSON.parse(presetText); }
                   catch { throw new Error(ui(L, '预制军表不是有效 JSON', 'Preset roster is not valid JSON')); }
                 }
-                const created = await rosterPlanningClient.createWorkflow(setup, candidateInput);
+                const created = await rosterPlanningClient.createWorkflow(setup, candidateInput, planningEntry);
                 onCreatedWorkflow(created.workflow);
                 const started = await rosterPlanningClient.runWorkflow(created.workflow.workflowId);
                 onCreatedWorkflow(started.workflow);
@@ -662,6 +678,7 @@ function SetupView({ L, catalogue, deliberation, iterativeAvailable, decisionAva
 // Teach plan is not yet an admitted Room plan.
 function IterativeSessionView({ L, journey, catalogue, onJourney, onError,
   onOpenTeach, onRefreshSessions, roomLaunchAvailable }: any) {
+  const rosterPlanningClient = useMatchPlanningClient();
   const [busy, setBusy] = useState(false);
   const [launching, setLaunching] = useState(false);
   const operate = async (operation: 'run' | 'pause') => {
@@ -896,6 +913,7 @@ function IterativeSessionView({ L, journey, catalogue, onJourney, onError,
 
 // ── Session view ───────────────────────────────────────────────────────────
 function SessionView({ L, session, catalogue, deliberation, roomLaunchAvailable, onSession, onError, onRefreshSessions }: any) {
+  const rosterPlanningClient = useMatchPlanningClient();
   const [exportText, setExportText] = useState('');
   const [launching, setLaunching] = useState(false);
   const [revisionReason, setRevisionReason] = useState('');
@@ -1666,6 +1684,7 @@ function CandidateDiff({ L, diff, session, candidate }: any) {
 
 // ── Working list editor (manual override via the authoritative Builder port)
 function WorkingListEditor({ L, session, catalogue, act }: any) {
+  const rosterPlanningClient = useMatchPlanningClient();
   const [showAdd, setShowAdd] = useState(false);
   const [menu, setMenu] = useState<any>(null);
   const working = session.working;

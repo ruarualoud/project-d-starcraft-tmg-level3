@@ -7,6 +7,7 @@ import {
 } from "./official-development-tranche-source-lock-v1.mjs";
 import { getOfficialCurrentProductRecord } from
   "./official-command-center-adapter-v1.mjs";
+import { assertOfficialReleaseSourceV2 } from "./official-release-context-v2.mjs";
 
 export const OFFICIAL_TERRAIN_LOS_DATA_BUNDLE_SCHEMA =
   "starcraft_tmg_official_terrain_los_data_bundle_v1";
@@ -38,17 +39,22 @@ function parseSize(value, tags, recordKey) {
 }
 
 export function verifyOfficialTerrainLosDataBundleV1(bundle) {
+  const releaseBound = bundle?.schema === "starcraft_tmg_official_terrain_los_data_bundle_v2";
   if (!object(bundle)
-    || bundle.schema !== OFFICIAL_TERRAIN_LOS_DATA_BUNDLE_SCHEMA
-    || bundle.sourceLockHash !== OFFICIAL_DEVELOPMENT_TRANCHE_SOURCE_LOCK_HASH
-    || bundle.sourceSnapshotHash !== OFFICIAL_DEVELOPMENT_TRANCHE_SNAPSHOT_HASH
-    || bundle.normalizedDatasetHash !== OFFICIAL_DEVELOPMENT_TRANCHE_DATASET_HASH
+    || (!releaseBound && (bundle.schema !== OFFICIAL_TERRAIN_LOS_DATA_BUNDLE_SCHEMA
+      || bundle.sourceLockHash !== OFFICIAL_DEVELOPMENT_TRANCHE_SOURCE_LOCK_HASH
+      || bundle.sourceSnapshotHash !== OFFICIAL_DEVELOPMENT_TRANCHE_SNAPSHOT_HASH
+      || bundle.normalizedDatasetHash !== OFFICIAL_DEVELOPMENT_TRANCHE_DATASET_HASH))
+    || (releaseBound && (!bundle.sourceBinding?.releaseId
+      || bundle.sourceBinding.sourceSnapshotHash !== bundle.sourceSnapshotHash
+      || bundle.sourceBinding.normalizedDatasetHash !== bundle.normalizedDatasetHash
+      || !/^[a-f0-9]{64}$/u.test(bundle.sourceLockHash)))
     || bundle.coreRulebookHash !== OFFICIAL_TERRAIN_LOS_CORE_RULEBOOK_HASH
     || bundle.repositoryFallbackAllowed !== false
     || bundle.productionRoomEligible !== false
     || bundle.rulesTruth !== "official_current_unit_size_and_core_terrain_los_source"
     || bundle.trainingTruth !== false
-    || !Array.isArray(bundle.profiles) || bundle.profiles.length !== 26
+    || !Array.isArray(bundle.profiles) || (releaseBound ? bundle.profiles.length < 1 : bundle.profiles.length !== 26)
     || bundle.bundleHash !== hashStarcraftTmgContract(without(bundle, ["bundleHash"]))) {
     fail("TERRAIN_LOS_DATA_BUNDLE_INVALID");
   }
@@ -78,6 +84,18 @@ export function createOfficialTerrainLosDataBundleV1(input = {}) {
     || !Array.isArray(dataset.recordIndex)) {
     fail("TERRAIN_LOS_DATASET_INVALID");
   }
+  return compileTerrainLosBundle(dataset);
+}
+
+export function createOfficialTerrainLosDataBundleV2({ context } = {}) {
+  const manifest = assertOfficialReleaseSourceV2(context, context || {});
+  if (manifest.source.references?.core?.byteHash !== OFFICIAL_TERRAIN_LOS_CORE_RULEBOOK_HASH) {
+    fail("TERRAIN_LOS_CORE_SOURCE_MISMATCH");
+  }
+  return compileTerrainLosBundle(context.dataset, manifest);
+}
+
+function compileTerrainLosBundle(dataset, manifest = null) {
   const recordKeys = dataset.recordIndex.filter((entry) => (
     entry.collectionId === "army_units"
       && entry.authorityDisposition === "official_current_product_candidate"
@@ -94,10 +112,13 @@ export function createOfficialTerrainLosDataBundleV1(input = {}) {
     };
   });
   const body = {
-    schema: OFFICIAL_TERRAIN_LOS_DATA_BUNDLE_SCHEMA,
-    sourceLockHash: OFFICIAL_DEVELOPMENT_TRANCHE_SOURCE_LOCK_HASH,
-    sourceSnapshotHash: OFFICIAL_DEVELOPMENT_TRANCHE_SNAPSHOT_HASH,
-    normalizedDatasetHash: OFFICIAL_DEVELOPMENT_TRANCHE_DATASET_HASH,
+    schema: manifest ? "starcraft_tmg_official_terrain_los_data_bundle_v2"
+      : OFFICIAL_TERRAIN_LOS_DATA_BUNDLE_SCHEMA,
+    sourceLockHash: manifest?.source.sourceRevisionHash || OFFICIAL_DEVELOPMENT_TRANCHE_SOURCE_LOCK_HASH,
+    sourceSnapshotHash: dataset.sourceSnapshotHash,
+    normalizedDatasetHash: dataset.datasetHash,
+    ...(manifest ? { sourceBinding: { releaseId: manifest.releaseId,
+      sourceSnapshotHash: dataset.sourceSnapshotHash, normalizedDatasetHash: dataset.datasetHash } } : {}),
     coreRulebookHash: OFFICIAL_TERRAIN_LOS_CORE_RULEBOOK_HASH,
     sourceLocators: [
       { section: "7.1", printedPages: [45, 46], scope: "line_of_sight_and_cover" },

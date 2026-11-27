@@ -1,3 +1,4 @@
+import { ARMY_BUILDER_RELEASE_SCHEMAS_V2, verifyOfficialArmyBuilderReleaseBundleV2 } from './official-army-builder-release-bundle-v2.mjs';
 import { hashStarcraftTmgContract } from
   "../authoritative-engine/referee-crypto-v1.mjs";
 import {
@@ -176,7 +177,7 @@ function exactRuleSectionRecords(dataset) {
       sourceVersion: dataset.dataVersions?.rulesVersion };
   });
 }
-function compileProfiles(dataset, cardBundle, unitBundle) {
+export function compileOfficialFactionArmyProfilesV2(dataset, cardBundle, unitBundle, expectedSubFactionCount = 3) {
   const factionCards = cardBundle.cardProfiles.filter((entry) => entry.isFactionCard);
   const subFactionRace = new Map();
   for (const profile of factionCards) {
@@ -188,7 +189,7 @@ function compileProfiles(dataset, cardBundle, unitBundle) {
       subFactionRace.set(tag, profile.raceTag);
     }
   }
-  if (subFactionRace.size !== 3) fail("FACTION_ARMY_SUB_FACTION_DENOMINATOR_DRIFT");
+  if (expectedSubFactionCount !== null && subFactionRace.size !== expectedSubFactionCount) fail("FACTION_ARMY_SUB_FACTION_DENOMINATOR_DRIFT");
   const factionProfiles = factionCards.map((profile) => {
     const body = { schema: "starcraft_tmg_official_faction_profile_v1",
       recordKey: profile.recordKey, cardId: profile.cardId, factionName: profile.cardName,
@@ -215,7 +216,7 @@ function compileProfiles(dataset, cardBundle, unitBundle) {
     });
   const unitProfiles = unitBundle.unitProfiles.map((profile) => {
     const record = getOfficialCurrentProductRecord(dataset, profile.recordKey);
-    const subFactionTags = splitKeywords(record.payload.keywords);
+    const subFactionTags = splitKeywords(record.payload.keywords).filter(tag => !RACE_SET.has(tag));
     if (subFactionTags.some((tag) => subFactionRace.get(tag) !== profile.factionTag)) {
       fail("FACTION_ARMY_UNIT_SUB_FACTION_INVALID", profile.recordKey);
     }
@@ -226,6 +227,7 @@ function compileProfiles(dataset, cardBundle, unitBundle) {
       sourceProfileHash: profile.profileHash, raceTag: profile.factionTag,
       subFactionTags, factionTags: uniqueStrings([profile.factionTag, ...subFactionTags]),
       sourceKeywordText: String(record.payload.keywords || ""),
+      ...(unitBundle.usageScope === 'army_building' ? { isUnique: profile.isUnique } : {}),
       armySlotType: profile.armySlotType,
       compositionSlots: profile.compositions.map((entry) => ({
         compositionKind: entry.kind, startingModels: entry.startingModels,
@@ -268,7 +270,7 @@ export function createOfficialFactionArmyEligibilityDataBundleV1(input = {}) {
     || !object(dataset.recordsByKey)) fail("FACTION_ARMY_ELIGIBILITY_DATASET_INVALID");
   const cardDataBundle = createOfficialCardBuildPaymentDataBundleV1({ dataset });
   const unitDataBundle = createOfficialUnitCardSupplyDataBundleV1({ dataset });
-  const compiled = compileProfiles(dataset, cardDataBundle, unitDataBundle);
+  const compiled = compileOfficialFactionArmyProfilesV2(dataset, cardDataBundle, unitDataBundle);
   const eligibleCountsByFaction = Object.fromEntries(compiled.factionProfiles.map((faction) => [
     faction.factionName, compiled.eligibilityMatrix.filter((entry) => (
       entry.factionRecordKey === faction.recordKey && entry.eligible)).length,
@@ -335,6 +337,7 @@ export function createOfficialFactionArmyEligibilityDataBundleV1(input = {}) {
 }
 
 export function verifyOfficialFactionArmyEligibilityDataBundleV1(bundle) {
+  if (bundle?.schema === ARMY_BUILDER_RELEASE_SCHEMAS_V2.factions) return verifyOfficialArmyBuilderReleaseBundleV2(bundle, 'factions');
   if (!object(bundle) || bundle.schema !== OFFICIAL_FACTION_ARMY_ELIGIBILITY_DATA_BUNDLE_SCHEMA
     || bundle.sourceLockHash !== OFFICIAL_DEVELOPMENT_TRANCHE_SOURCE_LOCK_HASH
     || bundle.sourceSnapshotHash !== OFFICIAL_DEVELOPMENT_TRANCHE_SNAPSHOT_HASH

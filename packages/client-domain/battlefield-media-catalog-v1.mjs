@@ -1,3 +1,5 @@
+import { wave3UnitMedia, wave3VoiceEvents } from "./wave3-battlefield-media-v1.mjs";
+
 const PUBLIC_ROOT = "/assets/client/battlefield/unit-comms/public-fallback";
 const INTERNAL_PORTRAIT_ROOT =
   "/assets/client/battlefield/unit-comms/development-internal";
@@ -54,11 +56,11 @@ const INTERNAL_PREFIXES = Object.freeze({
 
 function normalizeUnitKey(value) {
   const candidate = String(value || "").trim().toLowerCase();
-  if (UNIT_KEYS.includes(candidate)) return candidate;
-  if (candidate.includes("marine")) return "marine";
-  if (candidate.includes("zergling")) return "zergling";
-  if (candidate.includes("roach")) return "roach";
-  return null;
+  const officialId = candidate.replace(/^army_units:/, "");
+  if (Object.hasOwn(wave3UnitMedia, officialId)) return officialId;
+  // Saved rooms before catalogue keys used simple seat and copy suffixes.
+  const legacyId = officialId.match(/^(?:(?:player[12]|p[12]|terran|zerg|protoss)[-_ ])?(marine|zergling|roach|medic|goliath|marauder|queen|hydralisk)(?:[-_ ]\d+)?$/)?.[1];
+  return legacyId ?? null;
 }
 
 function voicePaths(unitKey) {
@@ -94,18 +96,30 @@ export function resolveStarcraftTmgBattlefieldUnitMediaV1(unitId, options = {}) 
   const developmentInternal = options.releaseChannel === "development_internal";
   const userAuthorizedPublic = options.releaseChannel === "public_user_authorized";
   const originalMedia = developmentInternal || userAuthorizedPublic;
-  const internalPrefix = INTERNAL_PREFIXES[unitKey];
+  if (!originalMedia && !UNIT_KEYS.includes(unitKey)) return null;
+  const binding = wave3UnitMedia[unitKey];
+  const clip = INTERNAL_PREFIXES[binding.channel]
+    ? `${INTERNAL_PORTRAIT_ROOT}/${binding.channel}-animated.webp`
+    : `/assets/client/battlefield/wave3/comms/${binding.channel}.webp`;
+  const artwork = `/assets/client/battlefield/wave3/units/${unitKey}`;
+  const sounds = wave3VoiceEvents[binding.voice];
+  const voice = sounds ? Object.fromEntries(
+    ["selected", "confirm", "damaged", "destroyed"].map(intent => [
+      intent, Object.freeze((sounds[intent] ?? []).map(name => `/assets/client/battlefield/wave3/voice/${name}`)),
+    ])
+  ) : voicePaths(binding.voice);
   return Object.freeze({
     schemaVersion: "starcraft_tmg_battlefield_unit_media_v1",
     unitKey,
-    neutralPortraitPath: originalMedia && internalPrefix
-      ? `${INTERNAL_PORTRAIT_ROOT}/${unitKey}-animated.webp`
-      : `${PUBLIC_ROOT}/${unitKey}-neutral.webp`,
-    activePortraitPath: originalMedia && internalPrefix
-      ? `${INTERNAL_PORTRAIT_ROOT}/${unitKey}-animated.webp`
-      : `${PUBLIC_ROOT}/${unitKey}-active.webp`,
-    portraitAnimated: Boolean(originalMedia && internalPrefix),
-    voice: originalMedia ? voicePaths(unitKey) : null,
+    neutralPortraitPath: originalMedia ? clip : `${PUBLIC_ROOT}/${unitKey}-neutral.webp`,
+    activePortraitPath: originalMedia ? clip : `${PUBLIC_ROOT}/${unitKey}-active.webp`,
+    identityPortraitPath: originalMedia ? artwork + ".webp" : null,
+    unitCardPath: originalMedia ? artwork + "-card.webp" : null,
+    communicationChannel: originalMedia ? binding.channel : null,
+    voiceChannel: originalMedia ? binding.voice : null,
+    sharedCommunication: originalMedia && binding.channel !== unitKey,
+    portraitAnimated: originalMedia,
+    voice: originalMedia ? voice : null,
     releaseChannel: developmentInternal
       ? "development_internal" : userAuthorizedPublic ? "public_user_authorized" : "public",
     rightsGatePassedForPublicDistribution: !developmentInternal,
@@ -113,7 +127,7 @@ export function resolveStarcraftTmgBattlefieldUnitMediaV1(unitId, options = {}) 
       ? "user_authorized_project_publication_2026-09-03"
       : developmentInternal ? "development_internal_only" : "generated_original_public_fallback",
     independentThirdPartyRightsReviewCompleted: false,
-    fallbackGeneratedOriginal: !(originalMedia && internalPrefix),
+    fallbackGeneratedOriginal: !originalMedia,
     trainingTruth: false,
   });
 }

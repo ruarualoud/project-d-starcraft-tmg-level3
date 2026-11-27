@@ -1,3 +1,4 @@
+import {projectOfficialMatchHorizonV1} from '../rule-atoms/official-match-horizon-projection-v1.mjs';
 import { hashStarcraftTmgContract } from
   "../authoritative-engine/transition-v1.mjs";
 import { projectStarcraftTmgViewerStateShapeV3 } from
@@ -107,6 +108,14 @@ function modelObservation(piece, model, dataBundle, board, seatKey, state) {
       rotationDegrees: finite(model.baseRotationDegrees) || 0,
     },
     elevation: model.elevation ?? piece.elevation ?? 0,
+    // Viewer-scoped Native condition; a model casualty is not one damage point.
+    // Missing values remain unknown rather than implying full health or one HP.
+    condition: {
+      remainingWounds: finite(model.remainingWounds),
+      damage: finite(model.damage),
+      shield: finite(model.shield),
+      unitDamageMarker: finite(piece.damageMarker),
+    },
     status: {
       activatedPhases: clone(piece.activatedPhases || {}),
       combatEngaged: piece.combatEngaged === true,
@@ -482,6 +491,7 @@ export function createStarcraftTmgPlayerSpatialObservationV1(input = {}) {
       unreviewedSourceFieldsDiscarded: sourceWasExactViewerShape ? 0 : 1,
     },
     board,
+    matchHorizon: projectOfficialMatchHorizonV1(state),
     units,
     models,
     offTableUnits,

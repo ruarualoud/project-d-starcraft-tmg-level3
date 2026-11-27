@@ -45,6 +45,7 @@ function isFlying(piece) {
   return String(piece?.combatTag || "").toLowerCase() === "flying"
     || (piece?.combatTags || []).some((tag) => String(tag).toLowerCase() === "flying");
 }
+export { isFlying as isOfficialFlyingUnitV1 };
 function measurementBase(model) {
   const kind = String(model?.measurementBaseKind || "model_base");
   if (!new Set(["model_base", "flight_stand_bottom"]).has(kind)) {

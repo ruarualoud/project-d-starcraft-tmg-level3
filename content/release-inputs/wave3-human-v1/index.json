@@ -1,0 +1,72 @@
+{
+  "build/ticket-28-wave3-source-candidate-20261112-v1/compiled/snapshot.json": {
+    "file": "d2cb1d9cdd55-snapshot.json.gz",
+    "length": 123473,
+    "sha256": "d2cb1d9cdd55ef915abe3330a4739518df8ac5781862dacbcc4d91030ced3b40"
+  },
+  "build/ticket-28-wave3-source-candidate-20261112-v1/compiled/dataset.json": {
+    "file": "aef2899a3b10-dataset.json.gz",
+    "length": 1092972,
+    "sha256": "aef2899a3b10c50f8de4d1126df35ec6e8bd347d5155a6578b9d83ab5f7c42fd"
+  },
+  "build/ticket-28-wave3-source-candidate-20261112-v1/compiled/candidate-revision.json": {
+    "file": "90d7788ac722-candidate-revision.json.gz",
+    "length": 181791,
+    "sha256": "90d7788ac722ddc67e1711a59bc6870eeabc0dbc7675f46487e1ef8dda4c2576"
+  },
+  "build/ticket-28-wave3-source-candidate-20261112-v1/raw/StarCraft-TMG_EN.pdf": {
+    "file": "27639c562e6d-StarCraft-TMG_EN.pdf",
+    "length": 15688406,
+    "sha256": "27639c562e6db9777dd9ba984d0c9f9b581841ec30166848e021f893cd00ea54"
+  },
+  "build/ticket-28-wave3-source-candidate-20261112-v1/raw/StarCraft-TMG-Cost-Table-10.2026_EN.pdf": {
+    "file": "5b1e3adf0c12-StarCraft-TMG-Cost-Table-10.2026_EN.pdf",
+    "length": 3169269,
+    "sha256": "5b1e3adf0c12128d5184b1926b25889a46833cbe1f7b2886d9857e1f15f7b350"
+  },
+  "build/ticket-28-wave3-assessment-20261112/faq-v1.3.pdf": {
+    "file": "65cb2399c44e-faq-v1.3.pdf",
+    "length": 936781,
+    "sha256": "65cb2399c44e29b45d65faddbade7c72a46726e7b9c812e2c4af57c1704cc213"
+  },
+  "build/ticket-28-terran-wave3-20261117-v1/raven-detection-railguns/official-geometry-lookup-20261117/wave3-bases-official-news.json": {
+    "file": "c5fe1cf4b776-wave3-bases-official-news.json.gz",
+    "length": 53268,
+    "sha256": "c5fe1cf4b776d445a392c0a9b09f81c137f018913dcf87c9609f18741044a5cb"
+  },
+  "build/ticket-28-wave3-release-context-20261112-v1/ability-identities-v2.json": {
+    "file": "1e0529990848-ability-identities-v2.json.gz",
+    "length": 403130,
+    "sha256": "1e05299908487fcbf315675d40ceaac80f410181aa4afc3f2297d1fb96427900"
+  },
+  "build/ticket-28-terran-wave3-20261117-v1/raven-detection-railguns/tabletop-assembly-v1/battlefield-components.json": {
+    "file": "85ffe65391f3-battlefield-components.json.gz",
+    "length": 9516,
+    "sha256": "85ffe65391f309d85b435f7c8a423c93507a6550a6cf22ce5db5529ae640883f"
+  },
+  "build/ticket-28-terran-wave3-20261117-v1/raven-detection-railguns/tabletop-assembly-v1/catalogue.json": {
+    "file": "03b205863aef-catalogue.json.gz",
+    "length": 42619,
+    "sha256": "03b205863aefd7e1513bca5924fbe19b5847822c2b9a77c723a6864ed06d9efb"
+  },
+  "build/ticket-28-terran-wave3-20261117-v1/raven-detection-railguns/tabletop-assembly-v1/unit-characteristics.json": {
+    "file": "da2821b3be36-unit-characteristics.json.gz",
+    "length": 182132,
+    "sha256": "da2821b3be36c58ccd877c31b5fc44a7b829730b9fc715e0d207be8e8a5b118f"
+  },
+  "build/ticket-28-terran-wave3-20261117-v1/raven-detection-railguns/tabletop-assembly-v1/profile.json": {
+    "file": "58219dfc8448-profile.json.gz",
+    "length": 4644,
+    "sha256": "58219dfc84486190efdf0b505c11efc16f93e9d3bd0396c93d36c863103ba3ce"
+  },
+  "build/ticket-28-wave3-mission-source-20261121-v1/release-room-integration/tabletop-raven-m01-v1/mission-source.json": {
+    "file": "0c71c3514535-mission-source.json.gz",
+    "length": 21367,
+    "sha256": "0c71c351453568b48f17e2a66fb1cc08ecb96ecb5faaf86eedb150794930adaa"
+  },
+  "../scripts/starcraft-tmg-rules-v0.mjs": {
+    "file": "f0862e4a8d33-starcraft-tmg-rules-v0.mjs.gz",
+    "length": 132233,
+    "sha256": "f0862e4a8d3322be56155ca2d7c44ade8fef2531acd17d964f1e464857179453"
+  }
+}

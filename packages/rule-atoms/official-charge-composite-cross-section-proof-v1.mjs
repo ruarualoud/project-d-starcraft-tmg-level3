@@ -1,3 +1,5 @@
+import { projectOfficialRaptorStrainTerrainPermissionV13 } from './official-movement-clearance-contract-v13.mjs';
+import { createOfficialGroundEngagementShadowCoverV2 } from './official-engagement-graph-v2.mjs';
 // Sufficient Rules proof, not a finite formation search. Every continuous ground
 // path crosses a certified occupied horizontal interval. A complete integer
 // endpoint cover excludes every target-engaging endpoint on the start side.
@@ -6,7 +8,7 @@ import { evaluateOfficialChargeMultiCutDistanceProofV1 } from
   './official-charge-multi-cut-distance-proof-v1.mjs';
 const SAFETY = 2;
 const MAX_COVER_CELLS = 200000;
-const ALGORITHM = "flat_composite_cross_section_v1";
+const ALGORITHM = "flat_composite_cross_section_v2";
 const milli = value => Math.round(Number(value) * 1000);
 const active = piece => piece?.isOnField === true && piece.isDestroyed !== true;
 const models = piece => (piece?.models || []).filter(model =>
@@ -31,9 +33,10 @@ function farthestDistance(point, cell) {
   return Math.hypot(Math.max(Math.abs(cell.minX - point.x), Math.abs(cell.maxX - point.x)),
     Math.max(Math.abs(cell.minY - point.y), Math.abs(cell.maxY - point.y)));
 }
-function terrainBlockers(state, leader) {
+function terrainBlockers(state, leader, unconditionalOnly = false) {
   return (state.board?.terrain || []).filter(t => t.isRemoved !== true && t.isDestroyed !== true
-    && t.terrainKind === "ordinary" && Number(t.size) >= 2
+    && (unconditionalOnly ? t.terrainKind === "impassable"
+      : t.terrainKind === "ordinary" && Number(t.size) >= 2)
     && t.standableHorizontalSurface !== true && !(t.openings || []).length
     && !(t.setupAgreement?.openings || []).length && !(t.accessPoints || []).length)
     .flatMap(t => {
@@ -75,7 +78,7 @@ function cellBlocked(cell, blockers) {
   }
   return false;
 }
-function coverStartSide(target, radius, y, above, blockers, movement = null) {
+function coverStartSide(target, radius, y, above, blockers, movement = null, shadowCover = null) {
   const initial = { minX: Math.floor(target.x - radius), maxX: Math.ceil(target.x + radius),
     minY: Math.floor(target.y - radius), maxY: Math.ceil(target.y + radius) };
   if (Number.isFinite(y)) {
@@ -89,21 +92,24 @@ function coverStartSide(target, radius, y, above, blockers, movement = null) {
     : nearestDistance(b.center, initial) <= b.clearance);
   const queue = [initial];
   let examinedCells = 0;
+  const engagementOccluderIds = new Set();
   while (queue.length && examinedCells < MAX_COVER_CELLS) {
     const cell = queue.pop(); examinedCells++;
     if (nearestDistance(target, cell) > radius + 0.1
       || (movement && nearestDistance(movement.start, cell) > movement.limit)
       || cellBlocked(cell, nearby)) continue;
+    const occluder = shadowCover?.(cell);
+    if (occluder) { engagementOccluderIds.add(occluder); continue; }
     if (cell.minX === cell.maxX && cell.minY === cell.maxY) return { complete: false, examinedCells };
     const axis = cell.maxX - cell.minX >= cell.maxY - cell.minY ? "X" : "Y";
     const middle = Math.floor((cell[`min${axis}`] + cell[`max${axis}`]) / 2);
     queue.push({ ...cell, [`min${axis}`]: middle + 1 }, { ...cell, [`max${axis}`]: middle });
   }
-  return { complete: queue.length === 0, examinedCells };
+  return { complete: queue.length === 0, examinedCells, engagementOccluderIds: [...engagementOccluderIds].sort() };
 }
 
-export function evaluateOfficialChargeCompositeCrossSectionProofV1(state, pending = state?.pendingAction) {
-  const unresolved = reason => ({ allLegalChargePathsExcluded: false, reason });
+function createChargeProofGeometry(state, pending, unconditionalOnly, endpointOnly = false) {
+  const unresolved = reason => ({ ok: false, reason });
   if (pending?.stage !== "resolve_charge_after_roll" || pending.chargePlan?.targets?.length !== 1)
     return unresolved("unsupported_pending_or_target_count");
   const actor = (state.pieces || []).find(p => p.id === pending.pieceId);
@@ -112,24 +118,87 @@ export function evaluateOfficialChargeCompositeCrossSectionProofV1(state, pendin
   const maximum = pending.maxDistanceMilliInches;
   if (!active(actor) || !active(enemy) || actor.sideKey === enemy.sideKey || !leader
     || !Number.isSafeInteger(maximum) || maximum <= 0
-    || (actor.combatTags || []).some(t => String(t).toLowerCase() === "flying")
-    || actor.officialUnitRecordKey === "army_units:kerrigan_swarm_raptor__zergling_")
+    || (actor.combatTags || []).some(t => String(t).toLowerCase() === "flying"))
     return unresolved("unsupported_leader_or_distance");
   // This proof is only for a flat no-port board. A route over/through a surface
   // must not be falsely excluded by its ground projection.
-  if ((state.board?.accessPoints || []).length || (state.board?.surfaces || []).length
+  // Raptor Strain crosses IMPASSABLE terrain and changes elevation without an
+  // access point. Neither is excluded here: terrainBlockers admits only ordinary
+  // non-standable terrain, and the guard below rejects alternate elevations.
+  // Excluding Raptor by name therefore hid valid flat-board proofs from both
+  // pre-declaration queries and the identical post-roll resolution evaluator.
+  if (!unconditionalOnly && ((state.board?.accessPoints || []).length || (state.board?.surfaces || []).length
     || (state.board?.terrain || []).some(t => t.isRemoved !== true && t.isDestroyed !== true
-      && (t.standableHorizontalSurface === true || (t.accessPoints || []).length)))
+      && (t.standableHorizontalSurface === true || (t.accessPoints || []).length))))
     return unresolved("alternate_elevation_routes_not_covered");
+  // Native specialTerrainResult always rejects a swept impassable footprint,
+  // at every elevation, except Raptor Strain. Omit ALL ordinary terrain and
+  // access restrictions here: their removal only enlarges the path domain.
+  // This is a distinct relaxed cover, not permission to flatten a high surface.
+  if (unconditionalOnly && !endpointOnly && projectOfficialRaptorStrainTerrainPermissionV13(state, actor))
+    return unresolved("impassable_crossing_ability_not_covered");
   const targets = models(enemy).map(round);
   if (!targets.length || targets.some(t => !t)) return unresolved("unsupported_target_geometry");
   const blockers = (state.pieces || []).filter(p => p.id !== actor.id && active(p)
     && !(p.combatTags || []).some(t => String(t).toLowerCase() === "flying"))
     .flatMap(models).map(round).filter(Boolean).map(m => ({ id: m.id, center: m,
       clearance: leader.radiusFloor + m.radiusFloor - SAFETY }))
-    .concat(terrainBlockers(state, leader));
+    .concat(terrainBlockers(state, leader, unconditionalOnly)
+      // A composite contour's outer rectangle may contain passable holes; a
+      // logical surface can support endpoints across member cells. Omit those
+      // terrains in the endpoint-only relaxation, never turn their hull into
+      // a collision fact. Individual native rectangles remain exact blockers.
+      .filter(b => !endpointOnly || !(state.board?.terrain || []).some(t =>
+        t.id === b.id && ((t.footprintCells || []).length || t.terrainGroupId))));
+  return {ok:true,actor,enemy,leader,maximum,targets,blockers,pending};
+}
+
+export function createOfficialChargeFlatProofGeometryV1(state, pending = state?.pendingAction) {
+  return createChargeProofGeometry(state, pending, false);
+}
+
+export function createOfficialChargeUnconditionalProofGeometryV1(state, pending = state?.pendingAction) {
+  return createChargeProofGeometry(state, pending, true);
+}
+
+// Raptor can CROSS an impassable feature, but Native still rejects an endpoint
+// base overlapping an unsupported feature. Prove only the endpoint domain:
+// omit every route restriction, ordinary/high surface, elevation cost and LOS.
+// If even this enlarged domain is covered, no legal path can finish in range.
+export function evaluateOfficialChargeEndpointCoverProofV1(state, pending = state?.pendingAction) {
+  const geometry = createChargeProofGeometry(state, pending, true, true);
+  if (!geometry.ok) return { allLegalChargePathsExcluded: false, reason: geometry.reason };
+  const { enemy, leader, maximum, targets, blockers } = geometry;
+  const targetCertificates = [];
+  for (const target of targets) {
+    const cover = coverStartSide(target, leader.radiusCeil + target.radiusCeil + 1002,
+      null, false, blockers, { start: leader, limit: maximum + SAFETY });
+    if (!cover.complete) return { allLegalChargePathsExcluded: false,
+      reason: `unresolved_endpoint:${target.id}`, examinedEndpointCells: cover.examinedCells };
+    targetCertificates.push({ targetModelId: target.id,
+      proof: 'occupied_reachable_endpoint_cover',
+      lowerBoundMilliInches: maximum + SAFETY,
+      reachableEngagementIntegerEndpointCoverComplete: true,
+      endpointCoverMoveLimitMilliInches: maximum + SAFETY,
+      examinedEndpointCells: cover.examinedCells });
+  }
+  return { allLegalChargePathsExcluded: true, algorithmVersion: 'endpoint_complete_cover_v1',
+    certificateKind: 'occupied_cross_section_distance_shortfall', leadingModelId: leader.id,
+    declaredTargetUnitId: enemy.id, declaredTargetModelId: pending.chargePlan.targets[0].modelId,
+    allActiveTargetModelsCovered: true, targetCertificates,
+    maximumChargeDistanceMilliInches: maximum, integerEndpointContract: true,
+    terrainTraversalRestricted: false, omittedConstraintsCanOnlyEnlargeDomain: true,
+    rulesTruth: 'official_charge_endpoint_base_collision_and_distance', trainingTruth: false };
+}
+
+export function evaluateOfficialChargeCompositeCrossSectionProofV1(state,pending=state?.pendingAction) {
+  const geometry=createOfficialChargeFlatProofGeometryV1(state,pending);
+  if(!geometry.ok)return {allLegalChargePathsExcluded:false,reason:geometry.reason};
+  const {actor,enemy,leader,maximum,targets,blockers}=geometry;
+  const unresolved=reason=>({allLegalChargePathsExcluded:false,reason});
   const certificates = [];
   for (const target of targets) {
+    const shadowCover = createOfficialGroundEngagementShadowCoverV2(state, target.id);
     const radius = leader.radiusCeil + target.radiusCeil + 1002;
     const direct = Math.floor(distance(leader, target) - radius - SAFETY);
     if (direct > maximum + 2) {
@@ -149,12 +218,13 @@ export function evaluateOfficialChargeCompositeCrossSectionProofV1(state, pendin
           + Math.max(0, Math.hypot(x - target.x, y - target.y) - radius);
         const bound = Math.floor(Math.min(at(interval.left), at(interval.right)) - SAFETY);
         if (bound <= maximum + 2) continue;
-        const cover = coverStartSide(target, radius, y, leader.y > y, blockers);
+        const cover = coverStartSide(target, radius, y, leader.y > y, blockers, null, shadowCover);
         if (!cover.complete) continue;
         certificate = { targetModelId: target.id, proof: "composite_occupied_cross_section",
           cutYMilliInches: y, conservativeForbiddenXMilliInches: [interval.left, interval.right],
           blockerIds: [...new Set(interval.ids)].sort(), lowerBoundMilliInches: bound,
-          startSideIntegerEndpointCoverComplete: true, examinedEndpointCells: cover.examinedCells };
+          startSideIntegerEndpointCoverComplete: true, examinedEndpointCells: cover.examinedCells,
+          engagementOccluderIds: cover.engagementOccluderIds || [] };
         break;
       }
       if (certificate) break;
@@ -166,14 +236,15 @@ export function evaluateOfficialChargeCompositeCrossSectionProofV1(state, pendin
       // maximum+2 disk contains every path accepted by rounded max+1 Rules;
       // shrunk blocker interiors and omitted constraints only enlarge it.
       const cover = coverStartSide(target, radius, null, false, blockers,
-        { start: leader, limit: maximum + SAFETY });
+        { start: leader, limit: maximum + SAFETY }, shadowCover);
       if (cover.complete) {
         certificate = { targetModelId: target.id,
           proof: "occupied_reachable_endpoint_cover",
           lowerBoundMilliInches: maximum + SAFETY,
           reachableEngagementIntegerEndpointCoverComplete: true,
           endpointCoverMoveLimitMilliInches: maximum + SAFETY,
-          examinedEndpointCells: cover.examinedCells };
+          examinedEndpointCells: cover.examinedCells,
+          engagementOccluderIds: cover.engagementOccluderIds || [] };
       } else {
         const multiCut = evaluateOfficialChargeMultiCutDistanceProofV1({
           leader, target, blockers, maximum });

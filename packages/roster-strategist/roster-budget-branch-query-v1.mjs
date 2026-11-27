@@ -1,3 +1,4 @@
+import {generateRosterMixedBudgetCandidatesV1} from './roster-budget-mixed-candidates-v1.mjs';
 import { hashStarcraftTmgContract } from
   "../authoritative-engine/referee-crypto-v1.mjs";
 import { ARMY_BUILDER_ROSTER_VERDICT_SCHEMA,ARMY_BUILDER_CANDIDATE_INPUT_CONTRACT_V1 } from
@@ -5,7 +6,45 @@ import { ARMY_BUILDER_ROSTER_VERDICT_SCHEMA,ARMY_BUILDER_CANDIDATE_INPUT_CONTRAC
 
 export const ROSTER_BUDGET_BRANCH_QUERY_V1_SCHEMA =
   "starcraft_tmg_roster_budget_branch_query_v1";
-export const ROSTER_BUDGET_CURRENT_GENERATION_POLICY = 'breadth_first_v3';
+export const ROSTER_BUDGET_CURRENT_GENERATION_POLICY = 'mixed_breadth_first_v4';
+export const ROSTER_BUDGET_BRANCH_QUERY_VERSION = '1.1.0';
+export const ROSTER_BUDGET_GENERATION_DESCRIPTION_V1 = 'mixed_breadth_first_v4 for new finite searches: combines existing-unit size changes and optional upgrades with new units and their dependent upgrades, within maximumMutationDepth and a bounded 20000-path beam. Menu costs/slots order inspection only; every returned branch is Native-audited. It does not rank strategy or prove impossibility. v1/v2/v3 preserve their old candidate populations; omitted policy retains legacy_depth_first_v1. Start a new policy at offset0; continue only its own nextPage. Use candidateEdits for explicit removals/replacements before this finite fill query. preserveUnitIds freezes specified baseline units; excludedNewUnitRecordKeys prevents replenishing specified unit types. These user/model choices restrict search, not Rules legality or strategy rank.';
+
+export const ROSTER_BUDGET_BRANCH_BOUNDS_SCHEMA_V1=Object.freeze({type:'object',required:[],properties:{
+ preserveUnitIds:{type:'array',items:{type:'string',minLength:1}},excludedNewUnitRecordKeys:{type:'array',items:{type:'string',minLength:1}},
+ maximumEvaluations:{type:'integer',minimum:1,maximum:256},startOffset:{type:'integer',minimum:0,maximum:Number.MAX_SAFE_INTEGER},
+ maximumMutationDepth:{type:'integer',minimum:1,maximum:6},generationPolicy:{type:'string',enum:['legacy_depth_first_v1','breadth_first_v2','breadth_first_v3','mixed_breadth_first_v4']}
+}});
+
+// Execution, capability projection and observation reuse share these defaults.
+// No parameter or prose purpose adds another mutation family to this search.
+export function normalizeRosterBudgetBranchBoundsV1(input={}) {
+  const maximumEvaluations=input.maximumEvaluations===undefined?24:Number(input.maximumEvaluations);
+  const startOffset=input.startOffset===undefined?0:Number(input.startOffset);
+  const maximumMutationDepth=input.maximumMutationDepth===undefined?5:Number(input.maximumMutationDepth);
+  const generationPolicy=input.generationPolicy??'legacy_depth_first_v1';
+  if(!ROSTER_BUDGET_BRANCH_BOUNDS_SCHEMA_V1.properties.generationPolicy.enum.includes(generationPolicy))
+    fail('ROSTER_BUDGET_BRANCH_GENERATION_POLICY_INVALID');
+  if(!Number.isSafeInteger(maximumEvaluations)||maximumEvaluations<1||maximumEvaluations>256
+    ||!Number.isSafeInteger(startOffset)||startOffset<0
+    ||!Number.isSafeInteger(maximumMutationDepth)||maximumMutationDepth<1||maximumMutationDepth>6)
+    fail('ROSTER_BUDGET_BRANCH_LIMIT_INVALID');
+  const selections={};
+  for(const key of ['preserveUnitIds','excludedNewUnitRecordKeys']){
+    const values=input[key]??[];if(!Array.isArray(values)||values.some(v=>typeof v!=='string'||!v.trim()))fail('ROSTER_BUDGET_BRANCH_SEARCH_SELECTION_INVALID');
+    selections[key]=[...new Set(values)].sort();
+  }
+  return {maximumEvaluations,startOffset,maximumMutationDepth,generationPolicy,...selections};
+}
+export function rosterBudgetBranchSearchScopeV1(input={}) {
+  const {generationPolicy,...bounds}=normalizeRosterBudgetBranchBoundsV1(input);
+  return {kind:'bounded_mutation_page',
+    includedOperations:['change_composition','add_upgrade','add_unit'],
+    compoundOperations:generationPolicy==='mixed_breadth_first_v4'?'size_changes_and_dependent_additions':'positive_cost_additions_only',
+    excludedOperations:['remove_unit','remove_upgrade','replace_tactical_card'],
+    cardCapacityDirectionsAreNotCertifiedBranches:true,bounds,
+    emptyResultMeaning:'No legal branch in this evaluated page; other pages and complete roster redesign remain possible.'};
+}
 
 function fail(code) { throw new Error(code); }
 function clone(value) { return structuredClone(value); }
@@ -55,23 +94,10 @@ export function queryRosterBudgetBranchesV1(input = {}) {
   }
   // A page is deliberately bounded; the cursor exposes every later mutation.
   // The menu cost orders inspection, but only the full Builder can admit one.
-  const limit = input.maximumEvaluations === undefined ? 24
-    : Number(input.maximumEvaluations);
-  const startOffset = input.startOffset === undefined ? 0
-    : Number(input.startOffset);
-  const maximumMutationDepth = input.maximumMutationDepth === undefined ? 5
-    : Number(input.maximumMutationDepth);
   // Retained unversioned cursors keep their original candidate population.
   // New product discovery opts into breadth-first coverage explicitly.
-  const generationPolicy = input.generationPolicy ?? 'legacy_depth_first_v1';
-  if (!['legacy_depth_first_v1', 'breadth_first_v2', 'breadth_first_v3'].includes(generationPolicy))
-    fail('ROSTER_BUDGET_BRANCH_GENERATION_POLICY_INVALID');
-  if (!Number.isSafeInteger(limit) || limit < 1 || limit > 256
-    || !Number.isSafeInteger(startOffset) || startOffset < 0
-    || !Number.isSafeInteger(maximumMutationDepth)
-    || maximumMutationDepth < 1 || maximumMutationDepth > 6) {
-    fail("ROSTER_BUDGET_BRANCH_LIMIT_INVALID");
-  }
+  const {maximumEvaluations:limit,startOffset,maximumMutationDepth,generationPolicy,preserveUnitIds,excludedNewUnitRecordKeys}=
+    normalizeRosterBudgetBranchBoundsV1(input);
   const baseline = port.evaluateRosterCandidate(current);
   if (baseline.schema !== ARMY_BUILDER_ROSTER_VERDICT_SCHEMA) {
     const code='ROSTER_BUDGET_BRANCH_BASELINE_NOT_RULES_LEGAL';
@@ -88,6 +114,8 @@ export function queryRosterBudgetBranchesV1(input = {}) {
     && input.expectedMenuReceiptHash !== menu.receiptHash) {
     fail("ROSTER_BUDGET_BRANCH_STALE_MENU");
   }
+  if(preserveUnitIds.some(id=>!current.units.some(u=>u.unitInstanceId===id))
+    ||excludedNewUnitRecordKeys.some(key=>!menu.unitCandidates.some(u=>u.recordKey===key)))fail('ROSTER_BUDGET_BRANCH_SEARCH_SELECTION_UNKNOWN');
   const unitByKey = new Map(menu.unitCandidates.map((entry) => (
     [entry.recordKey, entry])));
   const tacticalByKey = new Map(menu.tacticalCandidates.map((entry) => (
@@ -95,7 +123,7 @@ export function queryRosterBudgetBranchesV1(input = {}) {
   // v3 consumes the SAME complete Native audit that admitted the baseline.
   // Profile-ID and name input forms must not become different selections.
   // Old explicit policies retain their population/cursors; no saved page moves.
-  const nativeSelections = generationPolicy === 'breadth_first_v3'
+  const nativeSelections = ['breadth_first_v3','mixed_breadth_first_v4'].includes(generationPolicy)
     ? new Map((baseline.audit?.units ?? []).map(unit => [unit.unitInstanceId, unit])) : null;
   if (nativeSelections && (nativeSelections.size !== current.units.length
     || current.units.some(unit => {
@@ -143,7 +171,7 @@ export function queryRosterBudgetBranchesV1(input = {}) {
   if (baselineSlots) {
     const chosenCards = new Set(current.tacticalCardRecordKeys);
     const fits = (available, unit, option) =>
-      baselineSlots.used[unit.armySlotType] + option.occupiedArmySlots
+      (baselineSlots.used[unit.armySlotType] ?? 0) + option.occupiedArmySlots
         <= (available[unit.armySlotType] || 0);
     for (const tactical of menu.tacticalCandidates) {
       if (chosenCards.has(tactical.recordKey)) continue;
@@ -221,6 +249,7 @@ export function queryRosterBudgetBranchesV1(input = {}) {
   };
   for (const unit of [...current.units].sort((a, b) => (
     a.unitInstanceId.localeCompare(b.unitInstanceId)))) {
+    if(preserveUnitIds.includes(unit.unitInstanceId))continue;
     const menuUnit = unitByKey.get(unit.recordKey);
     if (!menuUnit) continue;
     const presentComposition = selectedComposition(unit, menuUnit);
@@ -256,6 +285,7 @@ export function queryRosterBudgetBranchesV1(input = {}) {
     }
   }
   for (const menuUnit of menu.unitCandidates) {
+    if(excludedNewUnitRecordKeys.includes(menuUnit.recordKey))continue;
     for (const option of menuUnit.compositionOptions) {
       const suffix = hashStarcraftTmgContract({ recordKey: menuUnit.recordKey,
         compositionProfileId: option.compositionProfileId }).slice(0, 12);
@@ -273,7 +303,7 @@ export function queryRosterBudgetBranchesV1(input = {}) {
         });
     }
   }
-  const singleStepCount = candidates.length;
+  let singleStepCount = candidates.length;
   // The arithmetic generator explores only additive, positive-cost menu
   // mutations. Composition replacements and unknown-price operations remain
   // available as single steps and can be queried again after an Agent choice.
@@ -307,7 +337,7 @@ export function queryRosterBudgetBranchesV1(input = {}) {
       if (combinationGenerationTruncated) return;
     }
   };
-  if (maximumMutationDepth > 1 && shortfall > 0) {
+  if (generationPolicy!=='mixed_breadth_first_v4' && maximumMutationDepth > 1 && shortfall > 0) {
     if (generationPolicy === 'legacy_depth_first_v1') addCombinations(0, [], 0);
     else {
       // Cover every affordable shallow combination before spending the finite
@@ -330,6 +360,13 @@ export function queryRosterBudgetBranchesV1(input = {}) {
         frontier = nextFrontier;
       }
     }
+  }
+  let mixedGenerationScope=null;
+  if(generationPolicy==='mixed_breadth_first_v4'){
+    const mixed=generateRosterMixedBudgetCandidatesV1({current,menu,nativeSelections,maximumMutationDepth,shortfall,
+      slotOverflowAdvisory,menuCost,upgradeCost,maximumPopulation:MAX_COMBINATION_PATHS,preserveUnitIds,excludedNewUnitRecordKeys});
+    candidates.splice(0,candidates.length,...mixed.candidates);singleStepCount=mixed.oneStepCount;
+    combinationGenerationTruncated=mixed.truncated;mixedGenerationScope=mixed.scope;
   }
   const generationCoverage = { compoundCount: 0, upgradeOnlyCompounds: 0, byDepth: {} };
   for (const candidate of candidates.slice(singleStepCount)) {
@@ -401,6 +438,9 @@ export function queryRosterBudgetBranchesV1(input = {}) {
   const nextOffset = startOffset + evaluated;
   return seal({
     schema: ROSTER_BUDGET_BRANCH_QUERY_V1_SCHEMA,
+    queryImplementationVersion:ROSTER_BUDGET_BRANCH_QUERY_VERSION,
+    portVersion:baseline.portVersion,
+    builderBundleHash:baseline.unitCompositionUpgradeDataBundleHash,
     sourceCandidateHash,
     sourceRulesAuditResultHash: baseline.auditResultHash,
     menuReceiptHash: menu.receiptHash,
@@ -409,13 +449,8 @@ export function queryRosterBudgetBranchesV1(input = {}) {
     sourceMineralShortfall: shortfall,
     generationPolicy,
     generationCoverage,
-    searchScope: { kind: 'bounded_mutation_page',
-      includedOperations: ['change_composition', 'add_upgrade', 'add_unit'],
-      compoundOperations: 'positive_cost_additions_only',
-      excludedOperations: ['remove_unit', 'remove_upgrade', 'replace_tactical_card'],
-      cardCapacityDirectionsAreNotCertifiedBranches: true,
-      bounds: { maximumMutationDepth, maximumEvaluations: limit, startOffset },
-      emptyResultMeaning: 'No legal branch in this evaluated page; other pages and complete roster redesign remain possible.' },
+    ...(mixedGenerationScope?{mixedGenerationScope}:{}),
+    searchScope:rosterBudgetBranchSearchScopeV1({maximumEvaluations:limit,startOffset,maximumMutationDepth,generationPolicy,preserveUnitIds,excludedNewUnitRecordKeys}),
     branches,
     rejectedBranches,
     rejectionSummary: { total: rejectedBranches.length, byReason: [...rejectionGroups.values()],
@@ -429,13 +464,13 @@ export function queryRosterBudgetBranchesV1(input = {}) {
     startOffset,
     nextOffset: nextOffset < candidates.length ? nextOffset : null,
     nextPage: nextOffset < candidates.length ? {
-      startOffset: nextOffset,
+      startOffset: nextOffset,preserveUnitIds:clone(preserveUnitIds),excludedNewUnitRecordKeys:clone(excludedNewUnitRecordKeys),
       expectedSourceCandidateHash: sourceCandidateHash,
       expectedMenuReceiptHash: menu.receiptHash,
       ...(generationPolicy !== 'legacy_depth_first_v1' ? { generationPolicy, maximumMutationDepth, maximumEvaluations: limit } : {}),
     } : null,
     alternateGenerationQueries: generationPolicy === 'legacy_depth_first_v1' && combinationGenerationTruncated
-      ? [{ generationPolicy: ROSTER_BUDGET_CURRENT_GENERATION_POLICY, startOffset: 0, maximumMutationDepth, maximumEvaluations: limit,
+      ? [{ generationPolicy: ROSTER_BUDGET_CURRENT_GENERATION_POLICY, preserveUnitIds:clone(preserveUnitIds),excludedNewUnitRecordKeys:clone(excludedNewUnitRecordKeys),startOffset: 0, maximumMutationDepth, maximumEvaluations: limit,
         expectedSourceCandidateHash: sourceCandidateHash, expectedMenuReceiptHash: menu.receiptHash,
         meaning: 'A NEW finite population with shallow mutation-family coverage, not continuation of the old cursor, a strategy ranking or exhaustive proof.' }] : [],
     evaluatedMutationCount: evaluated,

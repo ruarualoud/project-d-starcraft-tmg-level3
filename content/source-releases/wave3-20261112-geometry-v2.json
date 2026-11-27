@@ -1,0 +1,988 @@
+{
+  "schema": "starcraft_tmg_official_model_base_geometry_data_bundle_v2",
+  "version": "2.0.0",
+  "sourceLockHash": "e001b54ee2789bb184b6770c2004153213ae92e378bbb758ff69174b3cb13573",
+  "sourceSnapshotHash": "4412c17faaebaff04b117d1ddc666d1cdd939eca420a22f861c7c944f1179c8c",
+  "normalizedDatasetHash": "718057e86ac4f93a72c06b8e4d8f4d851ba33ee04c9dddea33e966eda9fe6685",
+  "coreRulebookHash": "27639c562e6db9777dd9ba984d0c9f9b581841ec30166848e021f893cd00ea54",
+  "legacyGeometryBundleHash": "ab3bc0022fd977a17fa37eb5da29f5f126c66bfcf6d16190842e4263e44c0ffc",
+  "geometryReferenceManifestHash": "819f5ef61875945c887374264630abffcbf4addc357b75a2b6afc2042cb5fdb7",
+  "p2pSourceHashes": {
+    "protoss_p2p": "4e8547b2df8d545df3d0ebb7d7821521a888dc0437d6f4dde21d82145337a212",
+    "terran_p2p": "afa3f229db61444d0673dea35e31772530a4c39dadaa0e281ba1bae0d271109c",
+    "zerg_p2p": "6810f46ee422ac5d8f3cc169c3eda3ccb9551f01ab71a1f7e4ac8c266817b364",
+    "protoss_w3": "c5ef1d1e2c953a8c5c376464dff46a51878d8e5ae0c3e8260684afbf1dd5f0aa",
+    "protoss_w2": "09f6b940a7582719f1527574e22047529e3629d078e479e3baf06c552c99f7fe",
+    "terran_w2": "63126ddbe922457f21a903ce186a6257aa5f20a932ba35f484f759b2ac62608e",
+    "terran_w3": "9632f91cdf1b152aca4d7b27aaf54655fe48e10138c73338393b8a62ce1cd154",
+    "zerg_w2": "b62e9bba04cb54df2a77c36378fc8113f10acf528ae2f8b1ad884a81c0f75045",
+    "zerg_w3": "ebc05eeea6456538b57e3b417bb1defc87159bd560fed81e0342e6119e85d6eb"
+  },
+  "unitRecordKeys": [
+    "army_units:adept",
+    "army_units:artanis",
+    "army_units:auto_turret",
+    "army_units:bile_launcher",
+    "army_units:corpser__roach_",
+    "army_units:defiler",
+    "army_units:goliath",
+    "army_units:high_templar",
+    "army_units:holo_decoy",
+    "army_units:hydralisk",
+    "army_units:immortal",
+    "army_units:jim_raynor",
+    "army_units:kerrigan",
+    "army_units:kerrigan_swarm_raptor__zergling_",
+    "army_units:marauder",
+    "army_units:marine",
+    "army_units:medic",
+    "army_units:nerazim_watchers__adept_",
+    "army_units:nova_assault_mode",
+    "army_units:nova_stealth_mode",
+    "army_units:omega_worm",
+    "army_units:point_defense_drone",
+    "army_units:praetor_guard__zealot_",
+    "army_units:pylon",
+    "army_units:queen",
+    "army_units:raptor__zergling_",
+    "army_units:ravager",
+    "army_units:raven",
+    "army_units:raynor_s_raider__marine_",
+    "army_units:roach",
+    "army_units:roachling",
+    "army_units:sabotage_drone",
+    "army_units:sentry",
+    "army_units:siege_tank",
+    "army_units:spec_ops_marauder__marauder_",
+    "army_units:stalker",
+    "army_units:swarmling__zergling_",
+    "army_units:tassadar",
+    "army_units:twilight_templar__high_templar_",
+    "army_units:vile__roach_",
+    "army_units:vileling__zergling_",
+    "army_units:zagara",
+    "army_units:zealot",
+    "army_units:zeratul",
+    "army_units:zergling"
+  ],
+  "profiles": [
+    {
+      "recordKey": "army_units:adept",
+      "unitName": "Adept",
+      "sourceRecordHash": "e17a52a8c4b31e989190b95e60bf793d6da7fcc7b77b8b9421fc4620ccf7b431",
+      "payloadHash": "587133eef84b6620f9e4c61b95e865655b89f12fad2b67b22fcfd03eb9fb8fc6",
+      "baseShape": "round",
+      "baseWidthMillimetres": 40,
+      "baseDepthMillimetres": 40,
+      "baseWidthMilliInches": 1575,
+      "baseDepthMilliInches": 1575,
+      "printedBase": "Ø 40MM",
+      "p2pSource": {
+        "sourceId": "protoss_p2p",
+        "sourceContentHash": "4e8547b2df8d545df3d0ebb7d7821521a888dc0437d6f4dde21d82145337a212",
+        "sourceFileVersion": "May 2026 v1.0",
+        "pdfPage": 1,
+        "field": "printed_base_footprint",
+        "commandCenterEquivalentFieldPresent": false
+      }
+    },
+    {
+      "recordKey": "army_units:artanis",
+      "unitName": "Artanis",
+      "sourceRecordHash": "40176eeecd7936a20d0a333666515a2972186d1f7a285fbd241fe039bb8450df",
+      "payloadHash": "75cad844983ae0ca7a7947ad24c7d46ba0ca04a6b4f7ff5d22db7d549eae2325",
+      "baseShape": "round",
+      "baseWidthMillimetres": 40,
+      "baseDepthMillimetres": 40,
+      "baseWidthMilliInches": 1575,
+      "baseDepthMilliInches": 1575,
+      "printedBase": "Ø 40MM",
+      "p2pSource": {
+        "sourceId": "protoss_p2p",
+        "sourceContentHash": "4e8547b2df8d545df3d0ebb7d7821521a888dc0437d6f4dde21d82145337a212",
+        "sourceFileVersion": "May 2026 v1.0",
+        "pdfPage": 2,
+        "field": "printed_base_footprint",
+        "commandCenterEquivalentFieldPresent": false
+      }
+    },
+    {
+      "recordKey": "army_units:auto_turret",
+      "unitName": "Auto-Turret",
+      "sourceRecordHash": "92ca23dbf7ea8d5673bbbc0a15d153faaef123aecfa40779baeee6dd726c2d5a",
+      "payloadHash": "cf20dd26caecb180529786eb41092188ea247b93ae269361fff0c779e7e236b4",
+      "baseShape": "round",
+      "baseWidthMillimetres": 40,
+      "baseDepthMillimetres": 40,
+      "baseWidthMilliInches": 1575,
+      "baseDepthMilliInches": 1575,
+      "printedBase": "Ø 40MM",
+      "p2pSource": {
+        "sourceId": "terran_w3",
+        "sourceContentHash": "9632f91cdf1b152aca4d7b27aaf54655fe48e10138c73338393b8a62ce1cd154",
+        "sourceFileVersion": "September 2026 v1.0",
+        "pdfPage": 7,
+        "field": "printed_base_footprint",
+        "commandCenterEquivalentFieldPresent": false
+      }
+    },
+    {
+      "recordKey": "army_units:bile_launcher",
+      "unitName": "Bile Launcher",
+      "sourceRecordHash": "b7d2cd52bb018700f8a1421731fb5ef52179118f9f48f164285351f6aad0bdc8",
+      "payloadHash": "0500ec3df44a14df74de7f35dce149bbdc076bcd243aefc438d09f75312ea8b2",
+      "baseShape": "round",
+      "baseWidthMillimetres": 100,
+      "baseDepthMillimetres": 100,
+      "baseWidthMilliInches": 3937,
+      "baseDepthMilliInches": 3937,
+      "printedBase": "Ø 100MM",
+      "p2pSource": {
+        "sourceId": "zerg_w3",
+        "sourceContentHash": "ebc05eeea6456538b57e3b417bb1defc87159bd560fed81e0342e6119e85d6eb",
+        "sourceFileVersion": "September 2026 v1.0",
+        "pdfPage": 4,
+        "field": "printed_base_footprint",
+        "commandCenterEquivalentFieldPresent": false
+      }
+    },
+    {
+      "recordKey": "army_units:corpser__roach_",
+      "unitName": "Corpser (Roach)",
+      "sourceRecordHash": "99187cec6bf55738ad6114fbdc4c2a5fa44ca76d020732300d1c6552e0c61ea9",
+      "payloadHash": "b1cdd9fa6911f48853e4c7dbec14046c11dfcb6634c5d0bf7e1dbb4031187e53",
+      "baseShape": "round",
+      "baseWidthMillimetres": 50,
+      "baseDepthMillimetres": 50,
+      "baseWidthMilliInches": 1969,
+      "baseDepthMilliInches": 1969,
+      "printedBase": "Ø 50MM",
+      "p2pSource": {
+        "sourceId": "zerg_p2p",
+        "sourceContentHash": "6810f46ee422ac5d8f3cc169c3eda3ccb9551f01ab71a1f7e4ac8c266817b364",
+        "sourceFileVersion": "May 2026 v1.0",
+        "pdfPage": 7,
+        "field": "printed_base_footprint",
+        "commandCenterEquivalentFieldPresent": false
+      }
+    },
+    {
+      "recordKey": "army_units:defiler",
+      "unitName": "Defiler",
+      "sourceRecordHash": "4a31693409c8d3d8a647ee91943277fc2bc84e7ff6e811f39b54ea83873ddb7c",
+      "payloadHash": "d61341180186819bdc920ee3670f5221bc74f5f2271dc88b0ae44ece8e163d31",
+      "baseShape": "round",
+      "baseWidthMillimetres": 80,
+      "baseDepthMillimetres": 80,
+      "baseWidthMilliInches": 3150,
+      "baseDepthMilliInches": 3150,
+      "printedBase": "Ø 80MM",
+      "p2pSource": {
+        "sourceId": "zerg_w3",
+        "sourceContentHash": "ebc05eeea6456538b57e3b417bb1defc87159bd560fed81e0342e6119e85d6eb",
+        "sourceFileVersion": "September 2026 v1.0",
+        "pdfPage": 2,
+        "field": "printed_base_footprint",
+        "commandCenterEquivalentFieldPresent": false
+      }
+    },
+    {
+      "recordKey": "army_units:goliath",
+      "unitName": "Goliath",
+      "sourceRecordHash": "3284a8c430a3e5925df9dced1af47817b5500cf85e0ae1b293de437a8a27dad9",
+      "payloadHash": "5984c7f157dc34477032cd03da9f1a2afea261343c19eec3a3b789b072bda518",
+      "baseShape": "round",
+      "baseWidthMillimetres": 80,
+      "baseDepthMillimetres": 80,
+      "baseWidthMilliInches": 3150,
+      "baseDepthMilliInches": 3150,
+      "printedBase": "Ø 80MM",
+      "p2pSource": {
+        "sourceId": "terran_p2p",
+        "sourceContentHash": "afa3f229db61444d0673dea35e31772530a4c39dadaa0e281ba1bae0d271109c",
+        "sourceFileVersion": "May 2026 v1.0",
+        "pdfPage": 7,
+        "field": "printed_base_footprint",
+        "commandCenterEquivalentFieldPresent": false
+      }
+    },
+    {
+      "recordKey": "army_units:high_templar",
+      "unitName": "High Templar",
+      "sourceRecordHash": "d71f1185838f3b1979767aeabd2b631b51f036e5714ceca2b6d7bd709ad56d29",
+      "payloadHash": "b8995f45f3188d72e89e7b83b704af56fe2f7b4a407903540d9ebe9de09289e5",
+      "baseShape": "round",
+      "baseWidthMillimetres": 40,
+      "baseDepthMillimetres": 40,
+      "baseWidthMilliInches": 1575,
+      "baseDepthMilliInches": 1575,
+      "printedBase": "Ø 40MM",
+      "p2pSource": {
+        "sourceId": "protoss_w3",
+        "sourceContentHash": "c5ef1d1e2c953a8c5c376464dff46a51878d8e5ae0c3e8260684afbf1dd5f0aa",
+        "sourceFileVersion": "September 2026 v1.0",
+        "pdfPage": 3,
+        "field": "printed_base_footprint",
+        "commandCenterEquivalentFieldPresent": false
+      }
+    },
+    {
+      "recordKey": "army_units:holo_decoy",
+      "unitName": "Holo Decoy",
+      "sourceRecordHash": "f7cacc3cfbf8060d3c3703266a4085f0355f541665fb16693807c4d8d460b12c",
+      "payloadHash": "519a89cd6da3b1aa30fb51759ffabd35e9c0a203fcc467f000ab4d82e93652cc",
+      "baseShape": "round",
+      "baseWidthMillimetres": 32,
+      "baseDepthMillimetres": 32,
+      "baseWidthMilliInches": 1260,
+      "baseDepthMilliInches": 1260,
+      "printedBase": "Ø 32MM",
+      "p2pSource": {
+        "sourceId": "terran_w3",
+        "sourceContentHash": "9632f91cdf1b152aca4d7b27aaf54655fe48e10138c73338393b8a62ce1cd154",
+        "sourceFileVersion": "September 2026 v1.0",
+        "pdfPage": 3,
+        "field": "printed_base_footprint",
+        "commandCenterEquivalentFieldPresent": false
+      }
+    },
+    {
+      "recordKey": "army_units:hydralisk",
+      "unitName": "Hydralisk",
+      "sourceRecordHash": "9803bc91e7c8ca7c2e108e5f2e0b3134a6357904aa8070c5ffc6f59e35937680",
+      "payloadHash": "6da875d545cd93b75122b6b082ad1497ecfefcf47a65fcb5822636776c7cce26",
+      "baseShape": "rectangle",
+      "baseWidthMillimetres": 40,
+      "baseDepthMillimetres": 100,
+      "baseWidthMilliInches": 1575,
+      "baseDepthMilliInches": 3937,
+      "printedBase": "40×100MM",
+      "p2pSource": {
+        "sourceId": "zerg_p2p",
+        "sourceContentHash": "6810f46ee422ac5d8f3cc169c3eda3ccb9551f01ab71a1f7e4ac8c266817b364",
+        "sourceFileVersion": "May 2026 v1.0",
+        "pdfPage": 1,
+        "field": "printed_base_footprint",
+        "commandCenterEquivalentFieldPresent": false
+      }
+    },
+    {
+      "recordKey": "army_units:immortal",
+      "unitName": "Immortal",
+      "sourceRecordHash": "940a1e3e874b9c69d09823a2a833ff22bff6baac538df16aa60bff1adb1f1a92",
+      "payloadHash": "ece87fbd83a1a5f995963734dbde2c4d9cf6b799742f1cf48ef58a9b273ef5f5",
+      "baseShape": "round",
+      "baseWidthMillimetres": 100,
+      "baseDepthMillimetres": 100,
+      "baseWidthMilliInches": 3937,
+      "baseDepthMilliInches": 3937,
+      "printedBase": "Ø 100MM",
+      "p2pSource": {
+        "sourceId": "protoss_w2",
+        "sourceContentHash": "09f6b940a7582719f1527574e22047529e3629d078e479e3baf06c552c99f7fe",
+        "sourceFileVersion": "September 2026 v1.0",
+        "pdfPage": 1,
+        "field": "printed_base_footprint",
+        "commandCenterEquivalentFieldPresent": false
+      }
+    },
+    {
+      "recordKey": "army_units:jim_raynor",
+      "unitName": "Jim Raynor",
+      "sourceRecordHash": "7ebb93e74361e2a6d90a42aa46b812d67e122d3c83a85bf40ee765a99f55cdaf",
+      "payloadHash": "3f6e5817706c4ecb431036f778ca2ac8d9db46fcf6a023835cf099917762c065",
+      "baseShape": "round",
+      "baseWidthMillimetres": 40,
+      "baseDepthMillimetres": 40,
+      "baseWidthMilliInches": 1575,
+      "baseDepthMilliInches": 1575,
+      "printedBase": "Ø 40MM",
+      "p2pSource": {
+        "sourceId": "terran_p2p",
+        "sourceContentHash": "afa3f229db61444d0673dea35e31772530a4c39dadaa0e281ba1bae0d271109c",
+        "sourceFileVersion": "May 2026 v1.0",
+        "pdfPage": 4,
+        "field": "printed_base_footprint",
+        "commandCenterEquivalentFieldPresent": false
+      }
+    },
+    {
+      "recordKey": "army_units:kerrigan",
+      "unitName": "Kerrigan",
+      "sourceRecordHash": "9555e809c6f8f6a764a6469ba8911fa76224f4fc4147e637a9146f8f9de7c7b0",
+      "payloadHash": "58903583a0e4b4a99603e4ea8d1455d8b76c62b464685e4762dc61647992fe69",
+      "baseShape": "round",
+      "baseWidthMillimetres": 40,
+      "baseDepthMillimetres": 40,
+      "baseWidthMilliInches": 1575,
+      "baseDepthMilliInches": 1575,
+      "printedBase": "Ø 40MM",
+      "p2pSource": {
+        "sourceId": "zerg_p2p",
+        "sourceContentHash": "6810f46ee422ac5d8f3cc169c3eda3ccb9551f01ab71a1f7e4ac8c266817b364",
+        "sourceFileVersion": "May 2026 v1.0",
+        "pdfPage": 2,
+        "field": "printed_base_footprint",
+        "commandCenterEquivalentFieldPresent": false
+      }
+    },
+    {
+      "recordKey": "army_units:kerrigan_swarm_raptor__zergling_",
+      "unitName": "Kerrigan Swarm Raptor (Zergling)",
+      "sourceRecordHash": "c72d5ba03f901c1e8a9b7154c7ba9d3477a76f3d23805b743a2cba4923deb11c",
+      "payloadHash": "5b2c2a97e443c3889d1c1b3243421ddfa4afe1affd8f23f3e20b6fa4a1aa62cf",
+      "baseShape": "round",
+      "baseWidthMillimetres": 32,
+      "baseDepthMillimetres": 32,
+      "baseWidthMilliInches": 1260,
+      "baseDepthMilliInches": 1260,
+      "printedBase": "Ø 32MM",
+      "p2pSource": {
+        "sourceId": "zerg_p2p",
+        "sourceContentHash": "6810f46ee422ac5d8f3cc169c3eda3ccb9551f01ab71a1f7e4ac8c266817b364",
+        "sourceFileVersion": "May 2026 v1.0",
+        "pdfPage": 4,
+        "field": "printed_base_footprint",
+        "commandCenterEquivalentFieldPresent": false
+      }
+    },
+    {
+      "recordKey": "army_units:marauder",
+      "unitName": "Marauder",
+      "sourceRecordHash": "f08a3908ca02cc6ecf5f168280079b3442edd1f99189f2dc89fe534e73cba6ee",
+      "payloadHash": "ea1aa6b4e542adafb20637b1ac5727f92e43501d4109150e88e3531fe190c823",
+      "baseShape": "round",
+      "baseWidthMillimetres": 50,
+      "baseDepthMillimetres": 50,
+      "baseWidthMilliInches": 1969,
+      "baseDepthMilliInches": 1969,
+      "printedBase": "Ø 50MM",
+      "p2pSource": {
+        "sourceId": "terran_p2p",
+        "sourceContentHash": "afa3f229db61444d0673dea35e31772530a4c39dadaa0e281ba1bae0d271109c",
+        "sourceFileVersion": "May 2026 v1.0",
+        "pdfPage": 2,
+        "field": "printed_base_footprint",
+        "commandCenterEquivalentFieldPresent": false
+      }
+    },
+    {
+      "recordKey": "army_units:marine",
+      "unitName": "Marine",
+      "sourceRecordHash": "ced0fdbd3b7c847e87980bcd1af6aa2ba4d8325cf39aca25131698bc06c331aa",
+      "payloadHash": "c615595f9b21f08bdd25b6f2b50a3d96d38177b98e5544572d086bee46a2c87b",
+      "baseShape": "round",
+      "baseWidthMillimetres": 32,
+      "baseDepthMillimetres": 32,
+      "baseWidthMilliInches": 1260,
+      "baseDepthMilliInches": 1260,
+      "printedBase": "Ø 32MM",
+      "p2pSource": {
+        "sourceId": "terran_p2p",
+        "sourceContentHash": "afa3f229db61444d0673dea35e31772530a4c39dadaa0e281ba1bae0d271109c",
+        "sourceFileVersion": "May 2026 v1.0",
+        "pdfPage": 1,
+        "field": "printed_base_footprint",
+        "commandCenterEquivalentFieldPresent": false
+      }
+    },
+    {
+      "recordKey": "army_units:medic",
+      "unitName": "Medic",
+      "sourceRecordHash": "f695baada89edd02b6f7672438aff75817e54851356dfb76680744c1db809852",
+      "payloadHash": "c25d62a7add008b2ffef818e713a3ea21e6842d8a1a8bd2901f74808d9a5e977",
+      "baseShape": "round",
+      "baseWidthMillimetres": 32,
+      "baseDepthMillimetres": 32,
+      "baseWidthMilliInches": 1260,
+      "baseDepthMilliInches": 1260,
+      "printedBase": "Ø 32MM",
+      "p2pSource": {
+        "sourceId": "terran_p2p",
+        "sourceContentHash": "afa3f229db61444d0673dea35e31772530a4c39dadaa0e281ba1bae0d271109c",
+        "sourceFileVersion": "May 2026 v1.0",
+        "pdfPage": 3,
+        "field": "printed_base_footprint",
+        "commandCenterEquivalentFieldPresent": false
+      }
+    },
+    {
+      "recordKey": "army_units:nerazim_watchers__adept_",
+      "unitName": "Nerazim Watchers (Adept)",
+      "sourceRecordHash": "2c6e60f4902a61d9e511389c4116ea5458faafe6861a1bd08ab9d22ddda3a924",
+      "payloadHash": "beb547d7a25de1f96ecc92cc7ee78324b946ffce9b74492adab6160f619e8b2f",
+      "baseShape": "round",
+      "baseWidthMillimetres": 40,
+      "baseDepthMillimetres": 40,
+      "baseWidthMilliInches": 1575,
+      "baseDepthMilliInches": 1575,
+      "printedBase": "Ø 40MM",
+      "p2pSource": {
+        "sourceId": "protoss_w2",
+        "sourceContentHash": "09f6b940a7582719f1527574e22047529e3629d078e479e3baf06c552c99f7fe",
+        "sourceFileVersion": "September 2026 v1.0",
+        "pdfPage": 3,
+        "field": "printed_base_footprint",
+        "commandCenterEquivalentFieldPresent": false
+      }
+    },
+    {
+      "recordKey": "army_units:nova_assault_mode",
+      "unitName": "Nova Assault Mode",
+      "sourceRecordHash": "853987b789d39084bce81c4fd188ec2eda5fa5eb0aca9b8f8f28342ae992aa8e",
+      "payloadHash": "bfd82337e27118315d26810ca9958f346326cb5ae1e8d9da2cf7f7a42ffefe86",
+      "baseShape": "round",
+      "baseWidthMillimetres": 40,
+      "baseDepthMillimetres": 40,
+      "baseWidthMilliInches": 1575,
+      "baseDepthMilliInches": 1575,
+      "printedBase": "Ø 40MM",
+      "p2pSource": {
+        "sourceId": "terran_w3",
+        "sourceContentHash": "9632f91cdf1b152aca4d7b27aaf54655fe48e10138c73338393b8a62ce1cd154",
+        "sourceFileVersion": "September 2026 v1.0",
+        "pdfPage": 2,
+        "field": "printed_base_footprint",
+        "commandCenterEquivalentFieldPresent": false
+      }
+    },
+    {
+      "recordKey": "army_units:nova_stealth_mode",
+      "unitName": "Nova Stealth Mode",
+      "sourceRecordHash": "ed23c7ee0770d35e764085781ff374151014bd37bc3f309a5c3e40014cc2ceec",
+      "payloadHash": "a495361277530076371ba40c5e6af4bdb4faab7cbf8d3af1c792d80f87684e31",
+      "baseShape": "round",
+      "baseWidthMillimetres": 40,
+      "baseDepthMillimetres": 40,
+      "baseWidthMilliInches": 1575,
+      "baseDepthMilliInches": 1575,
+      "printedBase": "Ø 40MM",
+      "p2pSource": {
+        "sourceId": "terran_w3",
+        "sourceContentHash": "9632f91cdf1b152aca4d7b27aaf54655fe48e10138c73338393b8a62ce1cd154",
+        "sourceFileVersion": "September 2026 v1.0",
+        "pdfPage": 1,
+        "field": "printed_base_footprint",
+        "commandCenterEquivalentFieldPresent": false
+      }
+    },
+    {
+      "recordKey": "army_units:omega_worm",
+      "unitName": "Omega Worm",
+      "sourceRecordHash": "349b6dc6e3fead1ec361f2bd687acf21880a1c4c03ef9afd7f8d89344def1d70",
+      "payloadHash": "0486fa81efbaeddee60a365bc051aa0a71957b3308c8e955bc689705bc50e812",
+      "baseShape": "round",
+      "baseWidthMillimetres": 80,
+      "baseDepthMillimetres": 80,
+      "baseWidthMilliInches": 3150,
+      "baseDepthMilliInches": 3150,
+      "printedBase": "Ø 80MM",
+      "p2pSource": {
+        "sourceId": "zerg_p2p",
+        "sourceContentHash": "6810f46ee422ac5d8f3cc169c3eda3ccb9551f01ab71a1f7e4ac8c266817b364",
+        "sourceFileVersion": "May 2026 v1.0",
+        "pdfPage": 3,
+        "field": "printed_base_footprint",
+        "commandCenterEquivalentFieldPresent": false
+      }
+    },
+    {
+      "recordKey": "army_units:point_defense_drone",
+      "unitName": "Point Defense Drone",
+      "sourceRecordHash": "e8c9a2fb937375b2c33c508c79f5253c7c465179aca2b28b97febc36f8d6c2dc",
+      "payloadHash": "d248d4d7fa6999a9c5c8eb001871c4256c1ee70e42bfbfaf67065ea011081ddf",
+      "baseShape": "round",
+      "baseWidthMillimetres": 32,
+      "baseDepthMillimetres": 32,
+      "baseWidthMilliInches": 1260,
+      "baseDepthMilliInches": 1260,
+      "printedBase": "Ø 32MM",
+      "p2pSource": {
+        "sourceId": "terran_p2p",
+        "sourceContentHash": "afa3f229db61444d0673dea35e31772530a4c39dadaa0e281ba1bae0d271109c",
+        "sourceFileVersion": "May 2026 v1.0",
+        "pdfPage": 5,
+        "field": "printed_base_footprint",
+        "commandCenterEquivalentFieldPresent": false
+      }
+    },
+    {
+      "recordKey": "army_units:praetor_guard__zealot_",
+      "unitName": "Praetor Guard (Zealot)",
+      "sourceRecordHash": "aaf0b7d625ba0b25fb70ebddf75673b84bb15bd7d7f8fab7012140f1fbd06797",
+      "payloadHash": "4f4723d03977f37824585144143533007e5f4bd47cc530e6b1dd314af70320ba",
+      "baseShape": "round",
+      "baseWidthMillimetres": 40,
+      "baseDepthMillimetres": 40,
+      "baseWidthMilliInches": 1575,
+      "baseDepthMilliInches": 1575,
+      "printedBase": "Ø 40MM",
+      "p2pSource": {
+        "sourceId": "protoss_p2p",
+        "sourceContentHash": "4e8547b2df8d545df3d0ebb7d7821521a888dc0437d6f4dde21d82145337a212",
+        "sourceFileVersion": "May 2026 v1.0",
+        "pdfPage": 3,
+        "field": "printed_base_footprint",
+        "commandCenterEquivalentFieldPresent": false
+      }
+    },
+    {
+      "recordKey": "army_units:pylon",
+      "unitName": "Pylon",
+      "sourceRecordHash": "ffc2e86f75c3e54731691c04e477c3841c44ade1e44955a592359eb5a3dfa687",
+      "payloadHash": "d9ecc9f442fc675c1c2ad6ebb6695e4f9982502e9b2b144f9f760735764d7630",
+      "baseShape": "round",
+      "baseWidthMillimetres": 80,
+      "baseDepthMillimetres": 80,
+      "baseWidthMilliInches": 3150,
+      "baseDepthMilliInches": 3150,
+      "printedBase": "Ø 80MM",
+      "p2pSource": {
+        "sourceId": "protoss_p2p",
+        "sourceContentHash": "4e8547b2df8d545df3d0ebb7d7821521a888dc0437d6f4dde21d82145337a212",
+        "sourceFileVersion": "May 2026 v1.0",
+        "pdfPage": 4,
+        "field": "printed_base_footprint",
+        "commandCenterEquivalentFieldPresent": false
+      }
+    },
+    {
+      "recordKey": "army_units:queen",
+      "unitName": "Queen",
+      "sourceRecordHash": "67d4658587990405d2ad969e1fad6d77e67f4c1f6552a3ffa216f859b3e19b18",
+      "payloadHash": "918c6954cee7eee015e03b61b1b360ad2c5ced73a58186a5d027b70eff65a31f",
+      "baseShape": "round",
+      "baseWidthMillimetres": 80,
+      "baseDepthMillimetres": 80,
+      "baseWidthMilliInches": 3150,
+      "baseDepthMilliInches": 3150,
+      "printedBase": "Ø 80MM",
+      "p2pSource": {
+        "sourceId": "zerg_p2p",
+        "sourceContentHash": "6810f46ee422ac5d8f3cc169c3eda3ccb9551f01ab71a1f7e4ac8c266817b364",
+        "sourceFileVersion": "May 2026 v1.0",
+        "pdfPage": 5,
+        "field": "printed_base_footprint",
+        "commandCenterEquivalentFieldPresent": false
+      }
+    },
+    {
+      "recordKey": "army_units:raptor__zergling_",
+      "unitName": "Raptor (Zergling)",
+      "sourceRecordHash": "4ff8fe3cef5800813b3b123eacf1c64830ae3604b5215b800ca8d210215efab6",
+      "payloadHash": "15fed892490beffb78c730059c149096676281902437580c792ba72f6fb6b99d",
+      "baseShape": "round",
+      "baseWidthMillimetres": 32,
+      "baseDepthMillimetres": 32,
+      "baseWidthMilliInches": 1260,
+      "baseDepthMilliInches": 1260,
+      "printedBase": "Ø 32MM",
+      "p2pSource": {
+        "sourceId": "zerg_p2p",
+        "sourceContentHash": "6810f46ee422ac5d8f3cc169c3eda3ccb9551f01ab71a1f7e4ac8c266817b364",
+        "sourceFileVersion": "May 2026 v1.0",
+        "pdfPage": 11,
+        "field": "printed_base_footprint",
+        "commandCenterEquivalentFieldPresent": false
+      }
+    },
+    {
+      "recordKey": "army_units:ravager",
+      "unitName": "Ravager",
+      "sourceRecordHash": "d5b2f67a2b7767dfa3d3849ccf0b2d45e70da1eb26027fe1519b149b9f318f58",
+      "payloadHash": "2a063a63dd3efa6dc29e2649d6f72afceb85864e87120c6dd3e5d93e2483dbc8",
+      "baseShape": "round",
+      "baseWidthMillimetres": 80,
+      "baseDepthMillimetres": 80,
+      "baseWidthMilliInches": 3150,
+      "baseDepthMilliInches": 3150,
+      "printedBase": "Ø 80MM",
+      "p2pSource": {
+        "sourceId": "zerg_w2",
+        "sourceContentHash": "b62e9bba04cb54df2a77c36378fc8113f10acf528ae2f8b1ad884a81c0f75045",
+        "sourceFileVersion": "September 2026 v1.0",
+        "pdfPage": 1,
+        "field": "printed_base_footprint",
+        "commandCenterEquivalentFieldPresent": false
+      }
+    },
+    {
+      "recordKey": "army_units:raynor_s_raider__marine_",
+      "unitName": "Raynor's Raider (Marine)",
+      "sourceRecordHash": "f293e94be33773a11bb8a7ca535c1ae62e0780f646842fd02f4fef43b190486e",
+      "payloadHash": "efaf829f4c56914d171a071b27e6743f4a3abf94f00645b1b90abd5d37a289ec",
+      "baseShape": "round",
+      "baseWidthMillimetres": 32,
+      "baseDepthMillimetres": 32,
+      "baseWidthMilliInches": 1260,
+      "baseDepthMilliInches": 1260,
+      "printedBase": "Ø 32MM",
+      "p2pSource": {
+        "sourceId": "terran_p2p",
+        "sourceContentHash": "afa3f229db61444d0673dea35e31772530a4c39dadaa0e281ba1bae0d271109c",
+        "sourceFileVersion": "May 2026 v1.0",
+        "pdfPage": 6,
+        "field": "printed_base_footprint",
+        "commandCenterEquivalentFieldPresent": false
+      }
+    },
+    {
+      "recordKey": "army_units:roach",
+      "unitName": "Roach",
+      "sourceRecordHash": "e899d2a7b5f1a65f2c356d5c38badcae1632fdc64b05f4761b3191e4b07a6d0c",
+      "payloadHash": "c0cdf85c665fe0ed5c0dc7786c3449f471c7666d28a4605cf8c332b7a3f82941",
+      "baseShape": "round",
+      "baseWidthMillimetres": 50,
+      "baseDepthMillimetres": 50,
+      "baseWidthMilliInches": 1969,
+      "baseDepthMilliInches": 1969,
+      "printedBase": "Ø 50MM",
+      "p2pSource": {
+        "sourceId": "zerg_p2p",
+        "sourceContentHash": "6810f46ee422ac5d8f3cc169c3eda3ccb9551f01ab71a1f7e4ac8c266817b364",
+        "sourceFileVersion": "May 2026 v1.0",
+        "pdfPage": 6,
+        "field": "printed_base_footprint",
+        "commandCenterEquivalentFieldPresent": false
+      }
+    },
+    {
+      "recordKey": "army_units:roachling",
+      "unitName": "Roachling",
+      "sourceRecordHash": "dad7c2a3e2d41c9b3548051528766315de0b3317f9c6c6dfb7a3c88adfa1aac6",
+      "payloadHash": "798f976c444281d665eebf4e2223a13f089a91e874a5c327f7bebfef1499a02f",
+      "baseShape": "round",
+      "baseWidthMillimetres": 32,
+      "baseDepthMillimetres": 32,
+      "baseWidthMilliInches": 1260,
+      "baseDepthMilliInches": 1260,
+      "printedBase": "Ø 32MM",
+      "p2pSource": {
+        "sourceId": "zerg_p2p",
+        "sourceContentHash": "6810f46ee422ac5d8f3cc169c3eda3ccb9551f01ab71a1f7e4ac8c266817b364",
+        "sourceFileVersion": "May 2026 v1.0",
+        "pdfPage": 8,
+        "field": "printed_base_footprint",
+        "commandCenterEquivalentFieldPresent": false
+      }
+    },
+    {
+      "recordKey": "army_units:sabotage_drone",
+      "unitName": "Sabotage Drone",
+      "sourceRecordHash": "dc0f4088847feea1afefc1866f790d7dea5cddc47922b1b185176a07625ff3cc",
+      "payloadHash": "09a68fdc2079dbc63b0fd560c9f7a3e267b137a2d1910a42be4f11bb0ff2f1c7",
+      "baseShape": "round",
+      "baseWidthMillimetres": 40,
+      "baseDepthMillimetres": 40,
+      "baseWidthMilliInches": 1575,
+      "baseDepthMilliInches": 1575,
+      "printedBase": "Ø 40MM",
+      "p2pSource": {
+        "sourceId": "terran_w3",
+        "sourceContentHash": "9632f91cdf1b152aca4d7b27aaf54655fe48e10138c73338393b8a62ce1cd154",
+        "sourceFileVersion": "September 2026 v1.0",
+        "pdfPage": 4,
+        "field": "printed_base_footprint",
+        "commandCenterEquivalentFieldPresent": false
+      }
+    },
+    {
+      "recordKey": "army_units:sentry",
+      "unitName": "Sentry",
+      "sourceRecordHash": "53a8abb9f5d7ae92d0dc6c230dadf73bc21b17af955e69a80685c6374f000269",
+      "payloadHash": "924d1af5180ed4faf5fc3140fbc1b697cbe7f4ad44e6f7554f2bdf1c6c877435",
+      "baseShape": "round",
+      "baseWidthMillimetres": 50,
+      "baseDepthMillimetres": 50,
+      "baseWidthMilliInches": 1969,
+      "baseDepthMilliInches": 1969,
+      "printedBase": "Ø 50MM",
+      "p2pSource": {
+        "sourceId": "protoss_p2p",
+        "sourceContentHash": "4e8547b2df8d545df3d0ebb7d7821521a888dc0437d6f4dde21d82145337a212",
+        "sourceFileVersion": "May 2026 v1.0",
+        "pdfPage": 5,
+        "field": "printed_base_footprint",
+        "commandCenterEquivalentFieldPresent": false
+      }
+    },
+    {
+      "recordKey": "army_units:siege_tank",
+      "unitName": "Siege Tank",
+      "sourceRecordHash": "89a0d3d97984b63d7cb3e81b0c3ddd2339a4176645f00249517b71100ddd7766",
+      "payloadHash": "f6c3e7b486b14df3cb3192ca65a5575cef45e04cbdc7b7f782b3623eceb5a0fd",
+      "baseShape": "round",
+      "baseWidthMillimetres": 150,
+      "baseDepthMillimetres": 150,
+      "baseWidthMilliInches": 5906,
+      "baseDepthMilliInches": 5906,
+      "printedBase": "Ø 150MM",
+      "p2pSource": {
+        "sourceId": "terran_w2",
+        "sourceContentHash": "63126ddbe922457f21a903ce186a6257aa5f20a932ba35f484f759b2ac62608e",
+        "sourceFileVersion": "September 2026 v1.0",
+        "pdfPage": 1,
+        "field": "printed_base_footprint",
+        "commandCenterEquivalentFieldPresent": false
+      }
+    },
+    {
+      "recordKey": "army_units:spec_ops_marauder__marauder_",
+      "unitName": "Spec Ops Marauder (Marauder)",
+      "sourceRecordHash": "4b57a66e3b3cc5d040d2f963fef8cdc8393c1a87ea763c9f0611a4c089c6a9c8",
+      "payloadHash": "a63453720c3dbd535659ca24a23da3d2cc0cbd4defb1b8b261da8c253142d91c",
+      "baseShape": "round",
+      "baseWidthMillimetres": 50,
+      "baseDepthMillimetres": 50,
+      "baseWidthMilliInches": 1969,
+      "baseDepthMilliInches": 1969,
+      "printedBase": "Ø 50MM",
+      "p2pSource": {
+        "sourceId": "terran_w3",
+        "sourceContentHash": "9632f91cdf1b152aca4d7b27aaf54655fe48e10138c73338393b8a62ce1cd154",
+        "sourceFileVersion": "September 2026 v1.0",
+        "pdfPage": 5,
+        "field": "printed_base_footprint",
+        "commandCenterEquivalentFieldPresent": false
+      }
+    },
+    {
+      "recordKey": "army_units:stalker",
+      "unitName": "Stalker",
+      "sourceRecordHash": "ff33aa26920de222908d1b46b3ae18477a5a8d573b03f27deed6fc4a52af18a9",
+      "payloadHash": "ced34a9dc9731b09e53395f80434bc52be8c1fef0847c68c373617a17b85ff72",
+      "baseShape": "round",
+      "baseWidthMillimetres": 80,
+      "baseDepthMillimetres": 80,
+      "baseWidthMilliInches": 3150,
+      "baseDepthMilliInches": 3150,
+      "printedBase": "Ø 80MM",
+      "p2pSource": {
+        "sourceId": "protoss_p2p",
+        "sourceContentHash": "4e8547b2df8d545df3d0ebb7d7821521a888dc0437d6f4dde21d82145337a212",
+        "sourceFileVersion": "May 2026 v1.0",
+        "pdfPage": 6,
+        "field": "printed_base_footprint",
+        "commandCenterEquivalentFieldPresent": false
+      }
+    },
+    {
+      "recordKey": "army_units:swarmling__zergling_",
+      "unitName": "Swarmling (Zergling)",
+      "sourceRecordHash": "3d7278b9d22d313a4946f5bd92e6d5ab6a5f4cf35af7a1d001ab7bdd552b5a9a",
+      "payloadHash": "8fd68ef8cf1a8a7950eba4d90e5104dcab52befedb75566ad804f60b6efdcf79",
+      "baseShape": "round",
+      "baseWidthMillimetres": 32,
+      "baseDepthMillimetres": 32,
+      "baseWidthMilliInches": 1260,
+      "baseDepthMilliInches": 1260,
+      "printedBase": "Ø 32MM",
+      "p2pSource": {
+        "sourceId": "zerg_p2p",
+        "sourceContentHash": "6810f46ee422ac5d8f3cc169c3eda3ccb9551f01ab71a1f7e4ac8c266817b364",
+        "sourceFileVersion": "May 2026 v1.0",
+        "pdfPage": 12,
+        "field": "printed_base_footprint",
+        "commandCenterEquivalentFieldPresent": false
+      }
+    },
+    {
+      "recordKey": "army_units:tassadar",
+      "unitName": "Tassadar",
+      "sourceRecordHash": "8aa312078caee932f092ffedefb01ab6e3a3deff011dbb62a84ffa5605d314eb",
+      "payloadHash": "d7f345bac75441cff80b8297376f75c2065ec56db224e622e147aba58842f5af",
+      "baseShape": "round",
+      "baseWidthMillimetres": 40,
+      "baseDepthMillimetres": 40,
+      "baseWidthMilliInches": 1575,
+      "baseDepthMilliInches": 1575,
+      "printedBase": "Ø 40MM",
+      "p2pSource": {
+        "sourceId": "protoss_w3",
+        "sourceContentHash": "c5ef1d1e2c953a8c5c376464dff46a51878d8e5ae0c3e8260684afbf1dd5f0aa",
+        "sourceFileVersion": "September 2026 v1.0",
+        "pdfPage": 1,
+        "field": "printed_base_footprint",
+        "commandCenterEquivalentFieldPresent": false
+      }
+    },
+    {
+      "recordKey": "army_units:twilight_templar__high_templar_",
+      "unitName": "Twilight Templar (High Templar)",
+      "sourceRecordHash": "5bc212dfb865fc3fba7f60e9f1e362c03b1d671c5bf11161504fd37f60c0994d",
+      "payloadHash": "46526238ce1d95888d4a3faec70cdeeba9f2f0bef356c37453ff2832a5416e47",
+      "baseShape": "round",
+      "baseWidthMillimetres": 40,
+      "baseDepthMillimetres": 40,
+      "baseWidthMilliInches": 1575,
+      "baseDepthMilliInches": 1575,
+      "printedBase": "Ø 40MM",
+      "p2pSource": {
+        "sourceId": "protoss_w3",
+        "sourceContentHash": "c5ef1d1e2c953a8c5c376464dff46a51878d8e5ae0c3e8260684afbf1dd5f0aa",
+        "sourceFileVersion": "September 2026 v1.0",
+        "pdfPage": 2,
+        "field": "printed_base_footprint",
+        "commandCenterEquivalentFieldPresent": false
+      }
+    },
+    {
+      "recordKey": "army_units:vile__roach_",
+      "unitName": "Vile (Roach)",
+      "sourceRecordHash": "e462009845a7337fedb910f8cb9291127ba4d2e11bcf1c994f8909e8e4d78b04",
+      "payloadHash": "1ddc8bb2fcf2435c1814daf3bfb0d00ffea085867f517832ae03609795a9063a",
+      "baseShape": "round",
+      "baseWidthMillimetres": 50,
+      "baseDepthMillimetres": 50,
+      "baseWidthMilliInches": 1969,
+      "baseDepthMilliInches": 1969,
+      "printedBase": "Ø 50MM",
+      "p2pSource": {
+        "sourceId": "zerg_p2p",
+        "sourceContentHash": "6810f46ee422ac5d8f3cc169c3eda3ccb9551f01ab71a1f7e4ac8c266817b364",
+        "sourceFileVersion": "May 2026 v1.0",
+        "pdfPage": 9,
+        "field": "printed_base_footprint",
+        "commandCenterEquivalentFieldPresent": false
+      }
+    },
+    {
+      "recordKey": "army_units:vileling__zergling_",
+      "unitName": "Vileling (Zergling)",
+      "sourceRecordHash": "df5ca8d83006366e75eba43c6eea018abedb89ff392d7f6d53c9e5eb100f2a9f",
+      "payloadHash": "e7e4bebf3a4493c2dd4e14b477488161968adbb230b242e9aa9bb7df28f38d96",
+      "baseShape": "round",
+      "baseWidthMillimetres": 32,
+      "baseDepthMillimetres": 32,
+      "baseWidthMilliInches": 1260,
+      "baseDepthMilliInches": 1260,
+      "printedBase": "Ø 32MM",
+      "p2pSource": {
+        "sourceId": "zerg_w3",
+        "sourceContentHash": "ebc05eeea6456538b57e3b417bb1defc87159bd560fed81e0342e6119e85d6eb",
+        "sourceFileVersion": "September 2026 v1.0",
+        "pdfPage": 3,
+        "field": "printed_base_footprint",
+        "commandCenterEquivalentFieldPresent": false
+      }
+    },
+    {
+      "recordKey": "army_units:zagara",
+      "unitName": "Zagara",
+      "sourceRecordHash": "5c85d80cc8d36c0ae7be92dabf95983a29c72d8ffb52c29188e943f12b6d982d",
+      "payloadHash": "0bb4dddcaefd80887f7df581c74641c021e3d8d01969460bc1f34b7d8ef6b90c",
+      "baseShape": "round",
+      "baseWidthMillimetres": 100,
+      "baseDepthMillimetres": 100,
+      "baseWidthMilliInches": 3937,
+      "baseDepthMilliInches": 3937,
+      "printedBase": "Ø 100MM",
+      "p2pSource": {
+        "sourceId": "zerg_w3",
+        "sourceContentHash": "ebc05eeea6456538b57e3b417bb1defc87159bd560fed81e0342e6119e85d6eb",
+        "sourceFileVersion": "September 2026 v1.0",
+        "pdfPage": 1,
+        "field": "printed_base_footprint",
+        "commandCenterEquivalentFieldPresent": false
+      }
+    },
+    {
+      "recordKey": "army_units:zealot",
+      "unitName": "Zealot",
+      "sourceRecordHash": "58acd8a81f3de33e0990280c62b93302635dbb59b8c01316ce43b122c7761506",
+      "payloadHash": "ec1bbc4f0a124efaf251903cda2f7be405533ec58b951498904643f29d2de2a0",
+      "baseShape": "round",
+      "baseWidthMillimetres": 40,
+      "baseDepthMillimetres": 40,
+      "baseWidthMilliInches": 1575,
+      "baseDepthMilliInches": 1575,
+      "printedBase": "Ø 40MM",
+      "p2pSource": {
+        "sourceId": "protoss_p2p",
+        "sourceContentHash": "4e8547b2df8d545df3d0ebb7d7821521a888dc0437d6f4dde21d82145337a212",
+        "sourceFileVersion": "May 2026 v1.0",
+        "pdfPage": 7,
+        "field": "printed_base_footprint",
+        "commandCenterEquivalentFieldPresent": false
+      }
+    },
+    {
+      "recordKey": "army_units:zeratul",
+      "unitName": "Zeratul",
+      "sourceRecordHash": "d452a07b3c3db5db5857a51e0fd613933e6d3cf378734b6fcb9046c37a1d67c4",
+      "payloadHash": "686f4412486b64184d6d02c1085171a6408b50ce6fc3a669070f74438feb1884",
+      "baseShape": "round",
+      "baseWidthMillimetres": 40,
+      "baseDepthMillimetres": 40,
+      "baseWidthMilliInches": 1575,
+      "baseDepthMilliInches": 1575,
+      "printedBase": "Ø 40MM",
+      "p2pSource": {
+        "sourceId": "protoss_w2",
+        "sourceContentHash": "09f6b940a7582719f1527574e22047529e3629d078e479e3baf06c552c99f7fe",
+        "sourceFileVersion": "September 2026 v1.0",
+        "pdfPage": 2,
+        "field": "printed_base_footprint",
+        "commandCenterEquivalentFieldPresent": false
+      }
+    },
+    {
+      "recordKey": "army_units:zergling",
+      "unitName": "Zergling",
+      "sourceRecordHash": "cb146bd5a44f3e0af8f0fd2cde2becb09f9fed920a661f6b9d8305b1c79edf73",
+      "payloadHash": "1f177d4116028dcf3a3bc3337fc4c4df5acb87093617832a26eb255f7e7a6c11",
+      "baseShape": "round",
+      "baseWidthMillimetres": 32,
+      "baseDepthMillimetres": 32,
+      "baseWidthMilliInches": 1260,
+      "baseDepthMilliInches": 1260,
+      "printedBase": "Ø 32MM",
+      "p2pSource": {
+        "sourceId": "zerg_p2p",
+        "sourceContentHash": "6810f46ee422ac5d8f3cc169c3eda3ccb9551f01ab71a1f7e4ac8c266817b364",
+        "sourceFileVersion": "May 2026 v1.0",
+        "pdfPage": 10,
+        "field": "printed_base_footprint",
+        "commandCenterEquivalentFieldPresent": false
+      }
+    }
+  ],
+  "missingProfiles": [
+    {
+      "recordKey": "army_units:raven",
+      "unitName": "Raven",
+      "reason": "FLIGHT_STAND_PHYSICAL_FOOTPRINT_UNSPECIFIED",
+      "sourceRefs": [
+        {
+          "sourceId": "terran_w3",
+          "pdfPage": 6,
+          "printedBase": "FLIGHT STAND"
+        },
+        {
+          "ref": "build/ticket-28-wave3-source-candidate-20261112-v1/raw/StarCraft-Terran-Raven_EN.pdf",
+          "byteHash": "1444373de1db0180388a19accc6643532a72e8ccd0883b0179e09ce2a5653cfd",
+          "pdfPage": 2,
+          "note": "base 40mm listed in shared kit; Auto-Turret final assembly page specifies 40mm. Raven flight stand footprint not dimensioned."
+        }
+      ],
+      "required": "Exact bottom-of-flight-stand outline and dimensions under core 2.3; no radius inferred from paired Auto-Turret."
+    }
+  ],
+  "profileDenominatorComplete": false,
+  "supportedOfficialBaseShapes": [
+    "rectangle",
+    "round"
+  ],
+  "coordinateUnit": "milli-inch",
+  "sourcePolicy": {
+    "captureMode": "explicit_release_with_frozen_geometry_references",
+    "refreshDuringDevelopment": false,
+    "repositoryFallbackAllowed": false,
+    "commandCenterRole": "current_unit_identity_and_rules_authority",
+    "p2pRole": "physical_base_geometry_only"
+  },
+  "productionRoomEligible": false,
+  "rulesTruth": "official_release_identity_plus_verified_physical_geometry",
+  "trainingTruth": false,
+  "bundleHash": "0d8d362ba668624c83af65df1929aa279952fc08f4d9bc9bea382c7e3bdfb80e"
+}

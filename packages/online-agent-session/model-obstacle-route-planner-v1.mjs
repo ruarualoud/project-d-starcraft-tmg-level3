@@ -36,17 +36,25 @@ function circumscribedRadius(footprint) {
       distance(point, footprint.center)));
 }
 
+function separatedBounds(left, right) {
+  return left.maxX < right.minX - TOLERANCE
+    || left.minX > right.maxX + TOLERANCE
+    || left.maxY < right.minY - TOLERANCE
+    || left.minY > right.maxY + TOLERANCE;
+}
+
 // Candidate generation, NOT a new Rules implementation or impossibility proof.
 // The same swept-footprint kernel used by the executor validates every segment.
 // Elevation/access, engagement and followers still require the original
 // complete Rules instantiation. A finite graph with no route remains unknown.
 export function createStarcraftTmgModelObstacleRoutePlannerV1(input) {
   const start = structuredClone(input.start);
-  const moving = input.movingFootprint;
+  // A planner belongs to one immutable query snapshot, never to a live room.
+  const moving = structuredClone(input.movingFootprint);
   const blockers = input.modelBlockers
     .filter(entry => entry.kind === "model" || entry.kind === "terrain")
     .map(entry => ({ kind: entry.kind, terrainGroupId: entry.terrainGroupId,
-      footprint: entry.footprint,
+      footprint: structuredClone(entry.footprint),
       bounds: bounds(entry.footprint) }));
   const movingRadius = circumscribedRadius(moving);
   const width = Number(input.battlefieldWidthMilliInches);
@@ -60,6 +68,8 @@ export function createStarcraftTmgModelObstacleRoutePlannerV1(input) {
     rotationDegrees: moving.rotationDegrees,
   });
   const startFootprint = footprintAt(start);
+  const perimeterFootprints = new Map();
+  const segmentCollisions = new Map();
   const perimeterPoints = blockers.filter(entry => entry.kind === "model")
     .flatMap(({ footprint }) => {
     const radius = (circumscribedRadius(footprint) + movingRadius
@@ -108,6 +118,11 @@ export function createStarcraftTmgModelObstacleRoutePlannerV1(input) {
   }
 
   function collides(left, right) {
+    // Direction is retained: the Rules sweep may treat initial contact
+    // differently. Cache eviction only causes recomputation, not pruning.
+    const key = `${left.center.xMilliInches}:${left.center.yMilliInches}`
+      + `>${right.center.xMilliInches}:${right.center.yMilliInches}`;
+    if (segmentCollisions.has(key)) return segmentCollisions.get(key);
     const sweep = {
       minX: Math.min(left.center.xMilliInches, right.center.xMilliInches)
         - movingRadius,
@@ -118,19 +133,39 @@ export function createStarcraftTmgModelObstacleRoutePlannerV1(input) {
       maxY: Math.max(left.center.yMilliInches, right.center.yMilliInches)
         + movingRadius,
     };
-    return blockers.some(entry => {
+    const collision = blockers.some(entry => {
       const box = entry.bounds;
-      if (sweep.maxX < box.minX - TOLERANCE
-        || sweep.minX > box.maxX + TOLERANCE
-        || sweep.maxY < box.minY - TOLERANCE
-        || sweep.minY > box.maxY + TOLERANCE) return false;
+      if (separatedBounds(sweep, box)) return false;
       return evaluateOfficialSweptPhysicalFootprintCollisionV1({
         movingStart: left, movingEnd: right, blocker: entry.footprint,
       }).collides;
     });
+    if (segmentCollisions.size >= 20000) {
+      segmentCollisions.delete(segmentCollisions.keys().next().value);
+    }
+    segmentCollisions.set(key, collision);
+    return collision;
   }
 
-  function routeTo({ endpoint, maxDistanceMilliInches }) {
+  let contourPoints = null;
+  function terrainContourPoints() {
+    if (contourPoints) return contourPoints;
+    contourPoints = [];
+    // Region envelopes alone hide concave passages between a wall and models.
+    // Keep cell corners as additional candidates only after the coarse graph
+    // fails. They never replace any exact footprint or swept collision check.
+    for (const entry of blockers.filter(row => row.kind === "terrain")) {
+      const box = entry.bounds;
+      for (const x of [box.minX - clearance, box.maxX + clearance]) {
+        for (const y of [box.minY - clearance, box.maxY + clearance]) {
+          contourPoints.push({xMilliInches: Math.round(x), yMilliInches: Math.round(y)});
+        }
+      }
+    }
+    return contourPoints;
+  }
+
+  function routeTo({ endpoint, maxDistanceMilliInches }, includeContours = false) {
     const maximum = Number(maxDistanceMilliInches);
     const unknown = reason => ({ status: "unknown", reason, path: null,
       finiteSearchDoesNotProveImpossibility: true, rulesAuthority: false,
@@ -170,17 +205,25 @@ export function createStarcraftTmgModelObstacleRoutePlannerV1(input) {
     const footprints = [startFootprint, endFootprint];
     const pointKeys = new Set(points.map(point =>
       `${point.xMilliInches}:${point.yMilliInches}`));
-    for (const point of perimeterPoints) {
+    for (const point of includeContours
+      ? [...perimeterPoints, ...terrainContourPoints()] : perimeterPoints) {
       if (distance(start, point) + distance(point, endpoint)
         > maximum + TOLERANCE) continue;
       const key = `${point.xMilliInches}:${point.yMilliInches}`;
       if (pointKeys.has(key)) continue;
       pointKeys.add(key);
-      const footprint = footprintAt(point);
-      if (!insideBoard(footprint) || blockers.some(entry =>
-        evaluateOfficialPhysicalFootprintRelationV1({
-          left: footprint, right: entry.footprint,
-        }).overlappingInteriors)) continue;
+      if (!perimeterFootprints.has(key)) {
+        const footprint = footprintAt(point);
+        const box = bounds(footprint);
+        const allowed = insideBoard(footprint) && !blockers.some(entry =>
+          !separatedBounds(box, entry.bounds)
+          && evaluateOfficialPhysicalFootprintRelationV1({
+            left: footprint, right: entry.footprint,
+          }).overlappingInteriors);
+        perimeterFootprints.set(key, allowed ? footprint : null);
+      }
+      const footprint = perimeterFootprints.get(key);
+      if (!footprint) continue;
       points.push(point);
       footprints.push(footprint);
     }
@@ -216,6 +259,9 @@ export function createStarcraftTmgModelObstacleRoutePlannerV1(input) {
         costs[next] = cost;
         previous[next] = current;
       }
+    }
+    if (!includeContours && blockers.some(entry => entry.kind === "terrain")) {
+      return routeTo({endpoint, maxDistanceMilliInches}, true);
     }
     return unknown("finite_model_and_terrain_obstacle_graph_exhausted");
   }

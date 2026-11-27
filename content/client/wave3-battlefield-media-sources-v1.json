@@ -1,0 +1,904 @@
+{
+  "sheets": {
+    "StarCraft-Protoss-P2P-Card-Sheets-A4_EN.pdf": {
+      "source": "https://starcraft-tmg.com/files/downloads/StarCraft-Protoss-P2P-Card-Sheets-A4_EN.pdf",
+      "sha256": "4e8547b2df8d545df3d0ebb7d7821521a888dc0437d6f4dde21d82145337a212"
+    },
+    "StarCraft-Terran-P2P-W3-Card-Sheets-A4_EN.pdf": {
+      "source": "https://starcraft-tmg.com/files/downloads/StarCraft-Terran-P2P-W3-Card-Sheets-A4_EN.pdf",
+      "sha256": "9632f91cdf1b152aca4d7b27aaf54655fe48e10138c73338393b8a62ce1cd154"
+    },
+    "StarCraft-Zerg-P2P-W3-Card-Sheets-A4_EN.pdf": {
+      "source": "https://starcraft-tmg.com/files/downloads/StarCraft-Zerg-P2P-W3-Card-Sheets-A4_EN.pdf",
+      "sha256": "ebc05eeea6456538b57e3b417bb1defc87159bd560fed81e0342e6119e85d6eb"
+    },
+    "StarCraft-Zerg-P2P-Card-Sheets-A4_EN.pdf": {
+      "source": "https://starcraft-tmg.com/files/downloads/StarCraft-Zerg-P2P-Card-Sheets-A4_EN.pdf",
+      "sha256": "6810f46ee422ac5d8f3cc169c3eda3ccb9551f01ab71a1f7e4ac8c266817b364"
+    },
+    "StarCraft-Terran-P2P-Card-Sheets-A4_EN.pdf": {
+      "source": "https://starcraft-tmg.com/files/downloads/StarCraft-Terran-P2P-Card-Sheets-A4_EN.pdf",
+      "sha256": "afa3f229db61444d0673dea35e31772530a4c39dadaa0e281ba1bae0d271109c"
+    },
+    "StarCraft-Protoss-P2P-W3-Card-Sheets-A4_EN.pdf": {
+      "source": "https://starcraft-tmg.com/files/downloads/StarCraft-Protoss-P2P-W3-Card-Sheets-A4_EN.pdf",
+      "sha256": "c5ef1d1e2c953a8c5c376464dff46a51878d8e5ae0c3e8260684afbf1dd5f0aa"
+    },
+    "StarCraft-Protoss-P2P-W2-Card-Sheets-A4_EN.pdf": {
+      "source": "https://starcraft-tmg.com/files/downloads/StarCraft-Protoss-P2P-W2-Card-Sheets-A4_EN.pdf",
+      "sha256": "09f6b940a7582719f1527574e22047529e3629d078e479e3baf06c552c99f7fe"
+    },
+    "StarCraft-Zerg-P2P-W2-Card-Sheets-A4_EN.pdf": {
+      "source": "https://starcraft-tmg.com/files/downloads/StarCraft-Zerg-P2P-W2-Card-Sheets-A4_EN.pdf",
+      "sha256": "b62e9bba04cb54df2a77c36378fc8113f10acf528ae2f8b1ad884a81c0f75045"
+    },
+    "StarCraft-Terran-P2P-W2-Card-Sheets-A4_EN.pdf": {
+      "source": "https://starcraft-tmg.com/files/downloads/StarCraft-Terran-P2P-W2-Card-Sheets-A4_EN.pdf",
+      "sha256": "63126ddbe922457f21a903ce186a6257aa5f20a932ba35f484f759b2ac62608e"
+    }
+  },
+  "units": {
+    "adept": {
+      "page": 1,
+      "title": "ADEPT",
+      "sheet": "StarCraft-Protoss-P2P-Card-Sheets-A4_EN.pdf",
+      "cardSha256": "74ecabb60c45a3f58cffe23b9a7e654e576f684ca862e496320d4120a08d05e8",
+      "portraitSha256": "b97b74b1f2340ed9e5dd309e6956c5f77200e346531512de1a879ecce803f093"
+    },
+    "artanis": {
+      "page": 2,
+      "title": "ARTANIS",
+      "sheet": "StarCraft-Protoss-P2P-Card-Sheets-A4_EN.pdf",
+      "cardSha256": "89f2deef8727e27a34e948d934c78ff7dbbb26afc8781e2bf7ba9d0c834f679b",
+      "portraitSha256": "5b100aaece1d5884890c2e3f1ed1b4e36a90644abe0dc81db6a2b8f8e7a52955"
+    },
+    "auto_turret": {
+      "page": 7,
+      "title": "AUTO-TURRET",
+      "sheet": "StarCraft-Terran-P2P-W3-Card-Sheets-A4_EN.pdf",
+      "cardSha256": "2c4aa8f9b6464a7c7b15fbb6b769b3a6a5133e28dcc0f85eba455376d769cfc2",
+      "portraitSha256": "46316129087149b618f0cba104c035595fd2b0c5e2ef644155fe7b1a3e910859"
+    },
+    "bile_launcher": {
+      "page": 4,
+      "title": "BILE LAUNCHER",
+      "sheet": "StarCraft-Zerg-P2P-W3-Card-Sheets-A4_EN.pdf",
+      "cardSha256": "9a2a10c7875d774a2d378dd424c2b3b6e1967a6c89dfaa8943b8ca07b648ef58",
+      "portraitSha256": "12d0c1be09dedb28f5efa838b390c1e5076a6c8bc576df09d55c624d676d5fce"
+    },
+    "corpser__roach_": {
+      "page": 7,
+      "title": "CORPSER (ROACH)",
+      "sheet": "StarCraft-Zerg-P2P-Card-Sheets-A4_EN.pdf",
+      "cardSha256": "d13ae2acb2124c681431e38bb97df47e5de026edf1a82edb2b330272e61ef8c0",
+      "portraitSha256": "912d5ed7473a51a8b476028ba4c7299bec08261013e0dd3bc5d1104d6eb68d18"
+    },
+    "defiler": {
+      "page": 2,
+      "title": "DEFILER",
+      "sheet": "StarCraft-Zerg-P2P-W3-Card-Sheets-A4_EN.pdf",
+      "cardSha256": "d72ce642a799008710d5bc9b9739d394fafe6f0189333b79e274766147da3ea3",
+      "portraitSha256": "08a881d041b624d79bde015403434bc17b0fb1d160b2e546530838199776a8bf"
+    },
+    "goliath": {
+      "page": 7,
+      "title": "GOLIATH",
+      "sheet": "StarCraft-Terran-P2P-Card-Sheets-A4_EN.pdf",
+      "cardSha256": "b66b109baaef7819a850d40fa13d57224e348a7ef123d0e184c2d88bc53fabf0",
+      "portraitSha256": "9528b169a1e4561b4838d901b4bfd80ca466c19bd75bbbb7b883b7a4449dc000"
+    },
+    "high_templar": {
+      "page": 3,
+      "title": "HIGH TEMPLAR",
+      "sheet": "StarCraft-Protoss-P2P-W3-Card-Sheets-A4_EN.pdf",
+      "cardSha256": "864fca80d7150f0c35bd7290b31adaedfa41cfced830a74c7bd3568b1554f359",
+      "portraitSha256": "b13afb553a0953f6b297b85743250836ba4b5023f44dda321fe78218f4fa9c77"
+    },
+    "holo_decoy": {
+      "page": 3,
+      "title": "HOLO DECOY",
+      "sheet": "StarCraft-Terran-P2P-W3-Card-Sheets-A4_EN.pdf",
+      "cardSha256": "1c0aad40f56d9c7bf1c39f097e65e070fe0d2a07387a8db1d97706c3a2244b1f",
+      "portraitSha256": "3a11913085965467b6daf234a520202666e989712e82436a020f6760df9bd52e"
+    },
+    "hydralisk": {
+      "page": 1,
+      "title": "HYDRALISK",
+      "sheet": "StarCraft-Zerg-P2P-Card-Sheets-A4_EN.pdf",
+      "cardSha256": "5ed9123fcdd57c138b122e5af544162fdf2e2fe4cb6fa7d6a4ad1cadb8b5fbdc",
+      "portraitSha256": "380fab8b1b0c7d86f0b3148d316932225ea9a01dd8def4038eacf982f8b7da10"
+    },
+    "immortal": {
+      "page": 1,
+      "title": "IMMORTAL",
+      "sheet": "StarCraft-Protoss-P2P-W2-Card-Sheets-A4_EN.pdf",
+      "cardSha256": "a330d6820d6e0bf23fdcc3b41c942fde9fe149fb1908934409eaa67537726731",
+      "portraitSha256": "21665e48c1a87761b5c3af184f843bab015055c62ca1421d135f068b147c0e3d"
+    },
+    "jim_raynor": {
+      "page": 4,
+      "title": "JIM RAYNOR",
+      "sheet": "StarCraft-Terran-P2P-Card-Sheets-A4_EN.pdf",
+      "cardSha256": "7cdf46ee06ed3152e717d69dad721bc8dd816dcddd3f80cb4fe356a7e36df2d2",
+      "portraitSha256": "a63fbbda274a2389f31d8c2411d64aaf6f612f794fb8643e501729ff19aab92e"
+    },
+    "kerrigan": {
+      "page": 2,
+      "title": "KERRIGAN",
+      "sheet": "StarCraft-Zerg-P2P-Card-Sheets-A4_EN.pdf",
+      "cardSha256": "8b842202a7c5e62561ae19189ce2055a120c7fbc26613812578d0a5974f28240",
+      "portraitSha256": "d0ef7d611e15e211106cb82e6ff5ecc8fad63a4dc68bc176dedd9416ea35bf2a"
+    },
+    "kerrigan_swarm_raptor__zergling_": {
+      "page": 4,
+      "title": "KERRIGAN SWARM RAPTOR (ZERGLING)",
+      "sheet": "StarCraft-Zerg-P2P-Card-Sheets-A4_EN.pdf",
+      "cardSha256": "89303621682cfb458747058fa5756c9681a3e91e2c949253da761265336175f5",
+      "portraitSha256": "750adf5a07c052311fc57a9ae1728a603b57f676b3bd698919adaf295954ca10"
+    },
+    "marauder": {
+      "page": 2,
+      "title": "MARAUDER",
+      "sheet": "StarCraft-Terran-P2P-Card-Sheets-A4_EN.pdf",
+      "cardSha256": "1f402f4c1a24b1c6a86ee27b1db642435dcf91007e96a03105c6c39c869f2b57",
+      "portraitSha256": "e624abdb6da0eb082c6c9c0d597286862afae29bcb40bfaff040462eadbe8b51"
+    },
+    "marine": {
+      "page": 1,
+      "title": "MARINE",
+      "sheet": "StarCraft-Terran-P2P-Card-Sheets-A4_EN.pdf",
+      "cardSha256": "8a7b95fab1ff3696b46250b4246de50a6ae3e13121176f3000ded4cbed2c9ebf",
+      "portraitSha256": "e5928f7ec3edda7b863ac31cc3565d7c433155337a138fd62406ac14841ce403"
+    },
+    "medic": {
+      "page": 3,
+      "title": "MEDIC",
+      "sheet": "StarCraft-Terran-P2P-Card-Sheets-A4_EN.pdf",
+      "cardSha256": "9276dc48228d2c2679d9ba72ffeaf494f5fa97bc8efc1e0ef699b81ab76118c6",
+      "portraitSha256": "25f04c5c24496f02d1df26a8a913f03a5c09a5544d01ada0ea465c9eb1d56457"
+    },
+    "nerazim_watchers__adept_": {
+      "page": 3,
+      "title": "NERAZIM WATCHERS (ADEPT)",
+      "sheet": "StarCraft-Protoss-P2P-W2-Card-Sheets-A4_EN.pdf",
+      "cardSha256": "eb1c8e5555184adaebf6f7c69bd6106785ae9debbce28d37ae8346c983fc53c6",
+      "portraitSha256": "5b35d1ab8f01723f2bd2d5682b391f6d252ab3415d4a8bfaeaa98bd1e5e316fa"
+    },
+    "nova_assault_mode": {
+      "page": 2,
+      "title": "NOVA ASSAULT MODE",
+      "sheet": "StarCraft-Terran-P2P-W3-Card-Sheets-A4_EN.pdf",
+      "cardSha256": "a8b2674491d24ca51115e9757155ff393a4c7fcc22a2eb96b65beb5062245faa",
+      "portraitSha256": "f161972cc934f79cdaf47420928af90c9be3de1b6659b8179e2d41004aa12616"
+    },
+    "nova_stealth_mode": {
+      "page": 1,
+      "title": "NOVA STEALTH MODE",
+      "sheet": "StarCraft-Terran-P2P-W3-Card-Sheets-A4_EN.pdf",
+      "cardSha256": "1af5141c0040a3ebce08da96731b623aeed28e796b991d3e760049baf012399e",
+      "portraitSha256": "186fa1a4fdadf36e17e11888990367c71f96f48241e5589ff6a4de5b98f001b1"
+    },
+    "omega_worm": {
+      "page": 3,
+      "title": "OMEGA WORM",
+      "sheet": "StarCraft-Zerg-P2P-Card-Sheets-A4_EN.pdf",
+      "cardSha256": "1374c27b3f64ce3633a36502d3ce42094d41ed4e69e22569b1fa6aefa796891d",
+      "portraitSha256": "7291832ca2e615529740a7bdff901b0e8c260d1ffd7a4e6f35400468525fc6ec"
+    },
+    "point_defense_drone": {
+      "page": 5,
+      "title": "POINT DEFENSE DRONE",
+      "sheet": "StarCraft-Terran-P2P-Card-Sheets-A4_EN.pdf",
+      "cardSha256": "371884dae72db95798fb33c862c76ac9832ee1840861a74695225263d5c7b02d",
+      "portraitSha256": "8d5d6cba5a92956b4012db92cfc18c73a077fea58d24e957605fce4a524d875e"
+    },
+    "praetor_guard__zealot_": {
+      "page": 3,
+      "title": "PRAETOR GUARD (ZEALOT)",
+      "sheet": "StarCraft-Protoss-P2P-Card-Sheets-A4_EN.pdf",
+      "cardSha256": "a6ab8e1501bcaaac19c0c3a04f29abf82edec94d3d6702a7fc27f6d96e0bc4bf",
+      "portraitSha256": "cd143921cd8dad7247e61f238f82f4b848011d04f0c3a095eda71a4038961ea6"
+    },
+    "pylon": {
+      "page": 4,
+      "title": "PYLON",
+      "sheet": "StarCraft-Protoss-P2P-Card-Sheets-A4_EN.pdf",
+      "cardSha256": "b88994cabeee9bd9b70fef84222c388c165e742cfd5d0828dcb61cf16ca540a9",
+      "portraitSha256": "93932950a4524148b33dbdec2887d9cc1e632065bb77975cd16db584e005cf07"
+    },
+    "queen": {
+      "page": 5,
+      "title": "QUEEN",
+      "sheet": "StarCraft-Zerg-P2P-Card-Sheets-A4_EN.pdf",
+      "cardSha256": "029a52dd954ee7dc3a8702309d1b607d09d80224210cf2eaf2753089d9f76550",
+      "portraitSha256": "5ec7caa10c856dbd2bfad613c1766de53cce9814ae2fa19869868ad5365d4829"
+    },
+    "raptor__zergling_": {
+      "page": 11,
+      "title": "RAPTOR (ZERGLING)",
+      "sheet": "StarCraft-Zerg-P2P-Card-Sheets-A4_EN.pdf",
+      "cardSha256": "e5f82c08fadc71b0fe6240f7308de4837ce55e2956f2223370efc04977a4ca85",
+      "portraitSha256": "5344f4625a797d57c1c4ca529bcf11ba5dffcbb03f37e71a7848aa381aa21a5d"
+    },
+    "ravager": {
+      "page": 1,
+      "title": "RAVAGER",
+      "sheet": "StarCraft-Zerg-P2P-W2-Card-Sheets-A4_EN.pdf",
+      "cardSha256": "0170ae750bab19989cfc27b95808cce1ea3a34058f5f3c3d9e015c46458056aa",
+      "portraitSha256": "2694a4e6f31dcad341112d1a957a4ab9d3e20a07a80d65e79a6275196319bce2"
+    },
+    "raven": {
+      "page": 6,
+      "title": "RAVEN",
+      "sheet": "StarCraft-Terran-P2P-W3-Card-Sheets-A4_EN.pdf",
+      "cardSha256": "d6d5d30bc2d63b456987a2c44bdc6b98a30e5092e12ec07e8b74150c922cfef5",
+      "portraitSha256": "2ccab8ff552e359afda6999cf6123a7bc11cb9b4c9bbcbf863187b70dec5d902"
+    },
+    "raynor_s_raider__marine_": {
+      "page": 6,
+      "title": "RAYNOR'S RAIDER (MARINE)",
+      "sheet": "StarCraft-Terran-P2P-Card-Sheets-A4_EN.pdf",
+      "cardSha256": "3af4bb85e87eef6ea1c4032aa45137ef052a729d6507e99c41da45336b05336d",
+      "portraitSha256": "05878b55cc2b7dbaed9c605aa6d9766a0ae9703c060a3a7cd3d8df182f161de2"
+    },
+    "roach": {
+      "page": 6,
+      "title": "ROACH",
+      "sheet": "StarCraft-Zerg-P2P-Card-Sheets-A4_EN.pdf",
+      "cardSha256": "aa31a06b4a4dc2cd93cdc50fd81de48c4562cee93ab581f0158990ffdd2efd75",
+      "portraitSha256": "8e55a7531cc0a4b316a09106d7130b71a3e921e290c5d3b46cf17056cc7ceff6"
+    },
+    "roachling": {
+      "page": 8,
+      "title": "ROACHLING",
+      "sheet": "StarCraft-Zerg-P2P-Card-Sheets-A4_EN.pdf",
+      "cardSha256": "f8f1174ef353055e366e443ddce3e24273c95a6ff5112f58310527fbba34e8f7",
+      "portraitSha256": "6103810799a1358227473d4f523a74447b37f29e758e53490d897df6b02f76f4"
+    },
+    "sabotage_drone": {
+      "page": 4,
+      "title": "SABOTAGE DRONE",
+      "sheet": "StarCraft-Terran-P2P-W3-Card-Sheets-A4_EN.pdf",
+      "cardSha256": "88ec77e8dd588104fd77bf694d050e02e4053612b87251e6f4c24ac3387b1c4b",
+      "portraitSha256": "a81fafc3741ca733de3b1ff4dd46678c20cea8d521ed5b715f1c72aa1c9e2534"
+    },
+    "sentry": {
+      "page": 5,
+      "title": "SENTRY",
+      "sheet": "StarCraft-Protoss-P2P-Card-Sheets-A4_EN.pdf",
+      "cardSha256": "1ef4e9a04f90efa1c04e1b0386765b4adf7568d0b7f0fb48f9f21f78c96b83d9",
+      "portraitSha256": "ea1fba5f3d70d75ccfdc7f4f4516b5af65cd5657b2a587f062a7c5acb2d496af"
+    },
+    "siege_tank": {
+      "page": 1,
+      "title": "SIEGE TANK",
+      "sheet": "StarCraft-Terran-P2P-W2-Card-Sheets-A4_EN.pdf",
+      "cardSha256": "74843a507bf2bc22df3fa2d6f69aa660dc37a40c2a4742296bc8c3c72c9e8c75",
+      "portraitSha256": "b17fd32730f13e98a6d638dd96f571eef8d4b55303ade3da48a49a48ec77c821"
+    },
+    "spec_ops_marauder__marauder_": {
+      "page": 5,
+      "title": "SPEC OPS MARAUDER (MARAUDER)",
+      "sheet": "StarCraft-Terran-P2P-W3-Card-Sheets-A4_EN.pdf",
+      "cardSha256": "c413826080c849d453e218621dcab2b8833e687079607a072828dd4c76e8f4d4",
+      "portraitSha256": "09e510fd1d4906759335804f336977c8c430fb39e62d65db115f2a33f5020659"
+    },
+    "stalker": {
+      "page": 6,
+      "title": "STALKER",
+      "sheet": "StarCraft-Protoss-P2P-Card-Sheets-A4_EN.pdf",
+      "cardSha256": "d6e76d915d29283fdba562507799e758f97f3c928a500e297ba3968f9684a231",
+      "portraitSha256": "5e0b8c01dcf32838cd8407f85ad995f8e76c0c1b2ac9b4af2fc36445b96afdfc"
+    },
+    "swarmling__zergling_": {
+      "page": 12,
+      "title": "SWARMLING (ZERGLING)",
+      "sheet": "StarCraft-Zerg-P2P-Card-Sheets-A4_EN.pdf",
+      "cardSha256": "0e2e04505a3e1a74f8b8a0fc21b928c192a859218ff507474fc8f71e2eadc26e",
+      "portraitSha256": "505ff00616ca5c5f821ff46fd799ca0fe48714ccb88ddb720feb71f4796e2639"
+    },
+    "tassadar": {
+      "page": 1,
+      "title": "TASSADAR",
+      "sheet": "StarCraft-Protoss-P2P-W3-Card-Sheets-A4_EN.pdf",
+      "cardSha256": "517e3d70e9ce128d9c294a4f49551399b8c2b156f36e9132718f26ed0d71c307",
+      "portraitSha256": "f53bf71e45baf9ba6e054c9ae18cb0b4eb171d827789c99e0258572f269c903b"
+    },
+    "twilight_templar__high_templar_": {
+      "page": 2,
+      "title": "TWILIGHT TEMPLAR (HIGH TEMPLAR)",
+      "sheet": "StarCraft-Protoss-P2P-W3-Card-Sheets-A4_EN.pdf",
+      "cardSha256": "6c7be7678ce28517a8356eb82ecf0e3601e6a235ed613525afb3a8b5df49083e",
+      "portraitSha256": "97857728f85ca950af0cf6da4e0f29a3c4e1e15212bfd1d36255a4f0abe36dc1"
+    },
+    "vile__roach_": {
+      "page": 9,
+      "title": "VILE (ROACH)",
+      "sheet": "StarCraft-Zerg-P2P-Card-Sheets-A4_EN.pdf",
+      "cardSha256": "e4be801411af3a01f652e38272e225d576a4657a25002552d1a8fb49f3375d0c",
+      "portraitSha256": "fc268fde993b79481211c5d5a53c81f3a3b7e64e41b348871a1db57e0c6e957a"
+    },
+    "vileling__zergling_": {
+      "page": 3,
+      "title": "VILELING (ZERGLING)",
+      "sheet": "StarCraft-Zerg-P2P-W3-Card-Sheets-A4_EN.pdf",
+      "cardSha256": "8966d212d30b542ddf2303468a830351ba69c175e3ba22d4f006f10ac21f3594",
+      "portraitSha256": "4e61d9cdfe8c2e5ed212bb06206f18cb0cf8bcab58b67d20467eb2416e24a785"
+    },
+    "zagara": {
+      "page": 1,
+      "title": "ZAGARA",
+      "sheet": "StarCraft-Zerg-P2P-W3-Card-Sheets-A4_EN.pdf",
+      "cardSha256": "29b0dda46da6494ac9fe2f6a49e4be89b3b53e4f4a2a21554d2ed91541716b0c",
+      "portraitSha256": "8cdf2fb2f90022896beb5ac00ed54c91d80e3dd43d4a5ff8d165a6a5283e8a61"
+    },
+    "zealot": {
+      "page": 7,
+      "title": "ZEALOT",
+      "sheet": "StarCraft-Protoss-P2P-Card-Sheets-A4_EN.pdf",
+      "cardSha256": "160af6f026e5d72f34e891a976056d81328312bd604c066d9cbfce142e97c20a",
+      "portraitSha256": "6f541b44384ce0b8941a865a0c36d74aa44f060d09b75dc7b782894e18466d4e"
+    },
+    "zeratul": {
+      "page": 2,
+      "title": "ZERATUL",
+      "sheet": "StarCraft-Protoss-P2P-W2-Card-Sheets-A4_EN.pdf",
+      "cardSha256": "4f4c7ffde18a956472e3fd7332a084a5a0f3f9d6a7075520eb12e9fc1411bf3f",
+      "portraitSha256": "3801b824d74252ed2659c7084abb3783055691d014328ab56fafd93605dd53e4"
+    },
+    "zergling": {
+      "page": 10,
+      "title": "ZERGLING",
+      "sheet": "StarCraft-Zerg-P2P-Card-Sheets-A4_EN.pdf",
+      "cardSha256": "5452b0c3054ebf63fe099031f5be63ed1f16015b84e73fff48dff1a5e0a3fd33",
+      "portraitSha256": "677f4d2e3ff07ced4d9a55492c834b2d0638d003beab4b261b7400d33b748fe1"
+    }
+  },
+  "animations": {
+    "defiler": {
+      "file": "Defiler_SCR_HeadAnim.gif",
+      "source": "https://static.wikia.nocookie.net/starcraft/images/8/83/Defiler_SCR_HeadAnim.gif/revision/latest?cb=20170729151946",
+      "sourceSha256": "ab054e548e9764eee86f8608a93388e931ee83365401b15804c6965618bc36c5",
+      "frames": 60,
+      "sha256": "ab054e548e9764eee86f8608a93388e931ee83365401b15804c6965618bc36c5"
+    },
+    "high_templar": {
+      "file": "HighTemplar_SCR_HeadAnim.gif",
+      "source": "https://static.wikia.nocookie.net/starcraft/images/8/80/HighTemplar_SCR_HeadAnim.gif/revision/latest?cb=20170729041806",
+      "sourceSha256": "721a25585e6bb8e27af73c1452d570b64edcea9cb38960ed4b23951e61bd1009",
+      "frames": 76,
+      "sha256": "721a25585e6bb8e27af73c1452d570b64edcea9cb38960ed4b23951e61bd1009"
+    },
+    "tassadar": {
+      "file": "Tassadar_SCR_HeadAnim.gif",
+      "source": "https://static.wikia.nocookie.net/starcraft/images/e/ea/Tassadar_SCR_HeadAnim.gif/revision/latest?cb=20170728155911",
+      "sourceSha256": "094288aa320959a8c6b6464bd2ecd51f16a7a779704678ce0091a7e403a1a004",
+      "frames": 55,
+      "sha256": "094288aa320959a8c6b6464bd2ecd51f16a7a779704678ce0091a7e403a1a004"
+    },
+    "zeratul": {
+      "file": "Zeratul_SCR_HeadAnim.gif",
+      "source": "https://static.wikia.nocookie.net/starcraft/images/f/fb/Zeratul_SCR_HeadAnim.gif/revision/latest?cb=20170728155913",
+      "sourceSha256": "47e059cd1db0eceec1b984d06c2accdb8f9985562336990a5e0e4cc740f38e64",
+      "frames": 76,
+      "sha256": "47e059cd1db0eceec1b984d06c2accdb8f9985562336990a5e0e4cc740f38e64"
+    },
+    "siege_tank": {
+      "file": "SiegeTank_SCR_HeadAnim.gif",
+      "source": "https://static.wikia.nocookie.net/starcraft/images/c/ce/SiegeTank_SCR_HeadAnim.gif/revision/latest?cb=20170728220048",
+      "sourceSha256": "e6954a6451db7f70662b53971ae374f57555ebbd5ff6a7c4dcd6f9cb46ca1ef5",
+      "frames": 76,
+      "sha256": "e6954a6451db7f70662b53971ae374f57555ebbd5ff6a7c4dcd6f9cb46ca1ef5"
+    },
+    "nova": {
+      "file": "Nova_SC2_Head1.gif",
+      "source": "https://static.wikia.nocookie.net/starcraft/images/9/95/Nova_SC2_Head1.gif/revision/latest?cb=20110212145926",
+      "sourceSha256": "3abfbac5c3e631a2f16d3b7948079c54d9ca3bffe60c2a6259bf29d2e8e476b6",
+      "frames": 80,
+      "sha256": "3abfbac5c3e631a2f16d3b7948079c54d9ca3bffe60c2a6259bf29d2e8e476b6"
+    },
+    "roach": {
+      "file": "Roach_SC2_Head1.gif",
+      "source": "https://static.wikia.nocookie.net/starcraft/images/4/4f/Roach_SC2_Head1.gif/revision/latest?cb=20170515032119",
+      "sourceSha256": "c1466fb2955684f1f000e4b63bba0bcbf9d6a02290dafaa507d82cd2963295a1",
+      "frames": 64,
+      "sha256": "c1466fb2955684f1f000e4b63bba0bcbf9d6a02290dafaa507d82cd2963295a1"
+    },
+    "stalker": {
+      "file": "Stalker_SC2_Head1.gif",
+      "source": "https://static.wikia.nocookie.net/starcraft/images/9/9b/Stalker_SC2_Head1.gif/revision/latest?cb=20110213204045",
+      "sourceSha256": "81eb2248292f228a048f0f17e09e62242c6725adad130f5c62189dd4ab577281",
+      "frames": 68,
+      "sha256": "81eb2248292f228a048f0f17e09e62242c6725adad130f5c62189dd4ab577281"
+    },
+    "sentry": {
+      "file": "Sentry_SC2_Head1.gif",
+      "source": "https://static.wikia.nocookie.net/starcraft/images/9/94/Sentry_SC2_Head1.gif/revision/latest?cb=20110213151953",
+      "sourceSha256": "6c6598c3eca6021a41d990af887f92f4fb6282631a3ff9de60ffa5a9e29a1829",
+      "frames": 136,
+      "sha256": "6c6598c3eca6021a41d990af887f92f4fb6282631a3ff9de60ffa5a9e29a1829"
+    },
+    "zealot": {
+      "file": "Zealot_SCR_HeadAnim.gif",
+      "source": "https://static.wikia.nocookie.net/starcraft/images/5/58/Zealot_SCR_HeadAnim.gif/revision/latest?cb=20170729040505",
+      "sourceSha256": "98be5da379ccc521c1da7e4db69a239efa846162c83a7cb760ca7634d636732f",
+      "frames": 50,
+      "sha256": "98be5da379ccc521c1da7e4db69a239efa846162c83a7cb760ca7634d636732f"
+    },
+    "artanis": {
+      "file": "Artanis_SCR_HeadAnim.gif",
+      "source": "https://static.wikia.nocookie.net/starcraft/images/e/e5/Artanis_SCR_HeadAnim.gif/revision/latest?cb=20170728155911",
+      "sourceSha256": "6b6b92edcdd2da5618f897811cbf39444cba08f1021620513df9a5fa1d388811",
+      "frames": 70,
+      "sha256": "6b6b92edcdd2da5618f897811cbf39444cba08f1021620513df9a5fa1d388811"
+    },
+    "raven": {
+      "file": "LP-Raven.gif",
+      "source": "https://liquipedia.net/commons/images/7/7b/Raven.gif",
+      "sourceSha256": "674763b32d4e29eba03dba19c6666f2cfcf8d396ffd03f9bd99f95e411bb6d41",
+      "frames": 126,
+      "sha256": "5a61c4a70030b12a3e2f06c7dd562ec7a9b3565ac388d43f55b2eab27e9df7e3"
+    },
+    "marauder": {
+      "file": "LP-Marauder.gif",
+      "source": "https://liquipedia.net/commons/images/9/97/Marauder.gif",
+      "sourceSha256": "395b15c8ac7bfe2473a5f1306dbb9ee83416a8880f83516546e3c8a19afb0935",
+      "frames": 6,
+      "sha256": "8b002364077e9577e0201ca4a789d96ef31c55ba57f63d539892ecbe565a988c"
+    },
+    "jim_raynor": {
+      "file": "JimRaynor_SCR_HeadAnim.gif",
+      "source": "https://static.wikia.nocookie.net/starcraft/images/4/44/JimRaynor_SCR_HeadAnim.gif/revision/latest?cb=20170728152035",
+      "sourceSha256": "7dfed89521705a20412bbbceca678b6873a7c2ee382130372640bbf178022f1a",
+      "frames": 70,
+      "sha256": "7dfed89521705a20412bbbceca678b6873a7c2ee382130372640bbf178022f1a"
+    },
+    "kerrigan": {
+      "file": "InfestedKerrigan_SCR_HeadAnim.gif",
+      "source": "https://static.wikia.nocookie.net/starcraft/images/b/b5/InfestedKerrigan_SCR_HeadAnim.gif/revision/latest?cb=20170728122850",
+      "sourceSha256": "96c34545d6d9bea1b36a8e5c24760ddc5f2ef801c98f6c04cfdd6e18b6681fb5",
+      "frames": 60,
+      "sha256": "96c34545d6d9bea1b36a8e5c24760ddc5f2ef801c98f6c04cfdd6e18b6681fb5"
+    },
+    "nydus_worm": {
+      "file": "NydusWorm_SC2_Head2.gif",
+      "source": "https://static.wikia.nocookie.net/starcraft/images/6/6a/NydusWorm_SC2_Head2.gif/revision/latest?cb=20110213203109",
+      "sourceSha256": "f0268efac07d68168de6beb80b01f7dd81be7eb6d65bb014d1a3dcd78f4de25a",
+      "frames": 109,
+      "sha256": "f0268efac07d68168de6beb80b01f7dd81be7eb6d65bb014d1a3dcd78f4de25a"
+    },
+    "swarm_queen": {
+      "file": "Queen_SC2_Head1.gif",
+      "source": "https://static.wikia.nocookie.net/starcraft/images/f/f8/Queen_SC2_Head1.gif/revision/latest?cb=20110213204701",
+      "sourceSha256": "5b6d28042cc6b06bba11c9311b3669bf36638b2e060c3c47b0cd8b781352bf6f",
+      "frames": 62,
+      "sha256": "5b6d28042cc6b06bba11c9311b3669bf36638b2e060c3c47b0cd8b781352bf6f"
+    },
+    "dragoon": {
+      "file": "Dragoon_SCR_HeadAnim.gif",
+      "source": "https://static.wikia.nocookie.net/starcraft/images/2/2e/Dragoon_SCR_HeadAnim.gif/revision/latest?cb=20170729041232",
+      "sourceSha256": "81b58d8a6aa405deb161989b4806fb1483a6362122481d7a47ebb689fd105ad0",
+      "frames": 76,
+      "sha256": "81b58d8a6aa405deb161989b4806fb1483a6362122481d7a47ebb689fd105ad0"
+    },
+    "probe": {
+      "file": "Probe_SCR_HeadAnim.gif",
+      "source": "https://static.wikia.nocookie.net/starcraft/images/1/1e/Probe_SCR_HeadAnim.gif/revision/latest?cb=20170729040216",
+      "sourceSha256": "a2a5abc61e063f3c4a6d5021caf775b6b403fcf9e0617a3b237f4a1a2b0e7ebf",
+      "frames": 76,
+      "sha256": "a2a5abc61e063f3c4a6d5021caf775b6b403fcf9e0617a3b237f4a1a2b0e7ebf"
+    },
+    "marine": {
+      "existing": "assets/client/battlefield/unit-comms/development-internal/marine-animated.webp",
+      "frames": 76,
+      "sha256": "957aa32c9aaa80193b468a34710b3e33d90f1738f474783ac8a7c3a3cce7e686"
+    },
+    "medic": {
+      "existing": "assets/client/battlefield/unit-comms/development-internal/medic-animated.webp",
+      "frames": 75,
+      "sha256": "379b60b6b1f852f66596b285f877dd45e9fb10a0a1843f42af183b7ffd45ef69"
+    },
+    "goliath": {
+      "existing": "assets/client/battlefield/unit-comms/development-internal/goliath-animated.webp",
+      "frames": 50,
+      "sha256": "13122a3957c74a92eae992348652f3b638692178c64343bc880eff06e13cfba7"
+    },
+    "zergling": {
+      "existing": "assets/client/battlefield/unit-comms/development-internal/zergling-animated.webp",
+      "frames": 75,
+      "sha256": "46350650bd6747b5f58c46233f95441f060fd6e56de99818ff8fdb15d8baf1f8"
+    },
+    "hydralisk": {
+      "existing": "assets/client/battlefield/unit-comms/development-internal/hydralisk-animated.webp",
+      "frames": 75,
+      "sha256": "4a5b44ed418d3bb866dba258d893445c6ff1d9ddd23e0d6c96990f61e9bbb309"
+    },
+    "queen": {
+      "existing": "assets/client/battlefield/unit-comms/development-internal/queen-animated.webp",
+      "frames": 55,
+      "sha256": "ae1038ed831c4d3ae0d142020bcc7f2efbe591967ba6a504515f8dd9ba6dd724"
+    }
+  },
+  "audio": {
+    "Marauder_What00.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/8/89/Marauder_What00.ogg/revision/latest?cb=20211007132716",
+      "sha256": "dd65c2f642844eba98459533e1c0a62991d018d5704e9ed2ca5aa93deff4c379"
+    },
+    "Marauder_What01.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/c/c3/Marauder_What01.ogg/revision/latest?cb=20211007132718",
+      "sha256": "d8c0ec33180870c7e8df8702f0753185acfb7ad67d3485ab525c57040f7e2ff4"
+    },
+    "Marauder_Yes00.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/1/15/Marauder_Yes00.ogg/revision/latest?cb=20211007132724",
+      "sha256": "eaefd3ff6c9a0576e460a1f6e026d1c088a4af4489b4aa6b85dd71f0ed55b6d4"
+    },
+    "Marauder_Yes01.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/2/2d/Marauder_Yes01.ogg/revision/latest?cb=20211007132725",
+      "sha256": "58ae71bbef6bab9e7c1db1e6586cef04ee07a1892662fff5eefbac94f3c338cb"
+    },
+    "Marauder_Help00.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/1/12/Marauder_Help00.ogg/revision/latest?cb=20211007132704",
+      "sha256": "54413dffbbd4081d12525f225ad9c6fb27cb8c3162671ab095d66d7e14a0a5e0"
+    },
+    "Marauder_Death00.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/c/cb/Marauder_Death00.ogg/revision/latest?cb=20211007132651",
+      "sha256": "f7e7d022e61392fd8f03b5ea45fe3534a11fadc8bc80d8c82deb8289a6689a54"
+    },
+    "Marauder_Death01.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/9/9f/Marauder_Death01.ogg/revision/latest?cb=20211007132653",
+      "sha256": "319ec5a4084e53488c27c2ead18a98b7898af8ff233a7033b3cd56fe06bcaa43"
+    },
+    "Adept_What00.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/e/e5/Adept_What00.ogg/revision/latest?cb=20211012014809",
+      "sha256": "5ef1558d67951798d6042e24f7232530f20a1a86ea15fb66d1424ec40da96c6c"
+    },
+    "Adept_What01.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/b/bf/Adept_What01.ogg/revision/latest?cb=20211012014810",
+      "sha256": "376153695c4dbe9de94cd2272e4b13c5159bf49dde3d1d02d499fa0023d27f2c"
+    },
+    "Adept_Yes00.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/f/f5/Adept_Yes00.ogg/revision/latest?cb=20211012014819",
+      "sha256": "7df21754067e5c7852c4710c6f67c20552fa7de13e03f26b77fbd9f30193ed7d"
+    },
+    "Adept_Yes01.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/5/58/Adept_Yes01.ogg/revision/latest?cb=20211012014820",
+      "sha256": "18a2cfb1e696f01b2437be807d1d58c265044b4d86fa7903e2b831cfb96baa72"
+    },
+    "Adept_Help00.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/4/4f/Adept_Help00.ogg/revision/latest?cb=20211012014749",
+      "sha256": "711087b824669d09ab72f54d4fe0ae9b5e790be2af28add1810b0ea2dc01c73a"
+    },
+    "Adept_Help01.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/4/41/Adept_Help01.ogg/revision/latest?cb=20211012014750",
+      "sha256": "16dd509e8c5fe5e02b3a6b620a1cbc92f325c68cb5c5a9c15b50c05769626047"
+    },
+    "Adept_Death00.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/4/46/Adept_Death00.ogg/revision/latest?cb=20211012014744",
+      "sha256": "af8d556928b8289353a15928a8f177a99070e4c84e45213d2cd713884bf4db20"
+    },
+    "Adept_Death01.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/2/2f/Adept_Death01.ogg/revision/latest?cb=20211012014745",
+      "sha256": "74d2b166a9919e50ffbb576f50dbdb9076e5eb7c9d7cba0ac78bd0ab635e0328"
+    },
+    "Raven_What00.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/8/81/Raven_What00.ogg/revision/latest?cb=20211007173914",
+      "sha256": "3dd32018715cef77a23f4128069d9abb2865ea6ed8d40129793b59b49188e9f9"
+    },
+    "Raven_What01.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/c/ce/Raven_What01.ogg/revision/latest?cb=20211007173917",
+      "sha256": "1aa88c781167c183d3c39b03f45fb615d0f5daa3365ab45759fce24317c452fe"
+    },
+    "Raven_Yes00.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/7/7a/Raven_Yes00.ogg/revision/latest?cb=20211007173925",
+      "sha256": "7f9944e368b91d43bf0cd0f1020e38634b5359163c4fad691cbf3b9de28af4b7"
+    },
+    "Raven_Yes01.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/f/f8/Raven_Yes01.ogg/revision/latest?cb=20211007173926",
+      "sha256": "eef117c6f7750030282911a236ab056e66737fd4769ce4b3e38f2dfc0b234b7a"
+    },
+    "Raven_Help00.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/e/e2/Raven_Help00.ogg/revision/latest?cb=20211007173846",
+      "sha256": "e1f05e214cc43be8c4e2b6aee302615b027a223d39ee51462ebf8591f78cdb27"
+    },
+    "Immortal_What00.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/d/d7/Immortal_What00.ogg/revision/latest?cb=20211021130857",
+      "sha256": "f0405e6ec6c4d8fd0368c4fdbf643e48c162ad2b9fe3ae1a08e6bba29cdc7484"
+    },
+    "Immortal_What01.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/0/06/Immortal_What01.ogg/revision/latest?cb=20211021130858",
+      "sha256": "21750be6cdcc99ce2676a2693eed65af133a2f7be9676e7774a3b03648844612"
+    },
+    "Immortal_Yes00.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/8/80/Immortal_Yes00.ogg/revision/latest?cb=20211021130907",
+      "sha256": "ce45bb3ad2fcf1935c9df25d859139d72ce17653ddcae5823e0da22138de4cf6"
+    },
+    "Immortal_Yes01.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/7/7c/Immortal_Yes01.ogg/revision/latest?cb=20211021130908",
+      "sha256": "7a1ef15b76f6d7f9f9a847fd5081c7c81ed13eb2a5baffbc169d49d17032cc48"
+    },
+    "Immortal_Help00.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/3/30/Immortal_Help00.ogg/revision/latest?cb=20211021130840",
+      "sha256": "9d895b87c4cd885b11b50aa7dc27412ce98ab50b640fddcd2d5cf272014881a0"
+    },
+    "Nova_What00.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/5/5f/Nova_What00.ogg/revision/latest?cb=20211011155508",
+      "sha256": "a32cbfc3bb461e13c12c50222e054acc53a566df912693e2f50daaebc3d9b797"
+    },
+    "Nova_What01.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/4/49/Nova_What01.ogg/revision/latest?cb=20211011155510",
+      "sha256": "8ae4f8d6fca69b600709410e6ef164e134924a537a7c5c716902054fb918470d"
+    },
+    "Nova_Yes00.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/5/55/Nova_Yes00.ogg/revision/latest?cb=20211011155515",
+      "sha256": "adb8554de10cdd93dfca7171c724a1ac7345b171f586409092ae149a925360c4"
+    },
+    "Nova_Yes01.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/d/dd/Nova_Yes01.ogg/revision/latest?cb=20211011155516",
+      "sha256": "3474a5b3d1d1915a47ff09a1799fc64dbec9690e6013c89f2ccbff263b9cc014"
+    },
+    "Nova_Help00.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/0/01/Nova_Help00.ogg/revision/latest?cb=20211011155453",
+      "sha256": "8159a365a89cbba18502d4d333505ac2de57de8127320cd94b4964cb6b030ee6"
+    },
+    "Nova_Death00.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/3/37/Nova_Death00.ogg/revision/latest?cb=20211011155441",
+      "sha256": "8b168bbd1128deda8529ad51fe47f37abc97862842d4b7783e05395a6bad2513"
+    },
+    "Nova_Death01.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/9/93/Nova_Death01.ogg/revision/latest?cb=20211011155442",
+      "sha256": "e5e633601fe30396254861b2b22da5470eab96831ea3a072cac16f4d5380b87f"
+    },
+    "Sentry_What00.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/e/e2/Sentry_What00.ogg/revision/latest?cb=20211026191117",
+      "sha256": "48f2c31a9c753d0ea578e687ce0506219b4efa881e9647777210364289af61f6"
+    },
+    "Sentry_What01.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/e/e8/Sentry_What01.ogg/revision/latest?cb=20211026191118",
+      "sha256": "a0fd79454dbb542fbe9692f279e9883843b69137e422f8e987ac5f5ba45570aa"
+    },
+    "Sentry_Yes00.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/7/7d/Sentry_Yes00.ogg/revision/latest?cb=20211026191124",
+      "sha256": "7efdc136d739f51c37415ada1a893a37a25fceb428103c9467d16a20772af73d"
+    },
+    "Sentry_Yes01.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/e/e6/Sentry_Yes01.ogg/revision/latest?cb=20211026191125",
+      "sha256": "7b626bb530dd8a4c53eab3df2ae457afc7659768360e6542b5a68632a9f11d6b"
+    },
+    "Sentry_Death00.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/3/30/Sentry_Death00.ogg/revision/latest?cb=20211026191106",
+      "sha256": "d68b7a818c888733d0d0f66f9acc0662b44db9b4d91a164208e47f958158042c"
+    },
+    "Sentry_Death01.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/b/ba/Sentry_Death01.ogg/revision/latest?cb=20211026191107",
+      "sha256": "094200e347834e25ed008e3a5917b2dd2fa558d93fd5fe276fa94b491b10da17"
+    },
+    "Stalker_What00.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/9/90/Stalker_What00.ogg/revision/latest?cb=20211021141908",
+      "sha256": "24639f450f0bb4ffd5ca98534d5e7e76203757eb4032f82fefa83d2026f721cc"
+    },
+    "Stalker_What01.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/7/72/Stalker_What01.ogg/revision/latest?cb=20211021141910",
+      "sha256": "6be3f580e7c1816485c74ba60aa28ca07275233e1febe651b01e8b0cc0bfb7d5"
+    },
+    "Stalker_Yes00.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/d/d9/Stalker_Yes00.ogg/revision/latest?cb=20211021141919",
+      "sha256": "a292e070aae3f69de98a18cbc5a2e9fe420af5bf5b87957a97d0521967df4681"
+    },
+    "Stalker_Yes01.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/b/b9/Stalker_Yes01.ogg/revision/latest?cb=20211021141920",
+      "sha256": "38c8c360b5392dfbce7a4c30de4b658cb6d8d0480ede70a7535bacd01267455f"
+    },
+    "Stalker_Help00.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/d/db/Stalker_Help00.ogg/revision/latest?cb=20211021141838",
+      "sha256": "6b12fde0a5cdef75366b96cd775ca4b92c8131e98dd406a1b0ba300359223db3"
+    },
+    "Stalker_Death00.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/2/28/Stalker_Death00.ogg/revision/latest?cb=20211021141835",
+      "sha256": "4883eea997381eb8872048d4e7385bcfd4b4ab1bf4099670799871ee552c42ce"
+    },
+    "Pylon_What.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/0/05/Pylon_What.ogg/revision/latest?cb=20211026210813",
+      "sha256": "9c512563f6e07b6ea9d00a57673ec266af41997ebbd38dbfd4d49bb4064cac79"
+    },
+    "ProtossProbeWhat00SC1.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/e/e3/ProtossProbeWhat00SC1.ogg/revision/latest?cb=20170513142143",
+      "sha256": "1d7b658c5d38bcfe88b64e2d3ca461e1a860d7b2e6278d9498394e30669827b8"
+    },
+    "ProtossProbeWhat01SC1.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/2/25/ProtossProbeWhat01SC1.ogg/revision/latest?cb=20170513142157",
+      "sha256": "e5f6aa1c89def6135a3fbbd0623fdad40be052516f678ee3d2b4423cbf93c544"
+    },
+    "ProtossProbeYes00SC1.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/7/7e/ProtossProbeYes00SC1.ogg/revision/latest?cb=20170513142328",
+      "sha256": "a258dee301915c0ce13b12cbe7811e5ca5fa513206c4fc73860630064a2f01ba"
+    },
+    "ProtossProbeYes01SC1.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/a/a6/ProtossProbeYes01SC1.ogg/revision/latest?cb=20170513142345",
+      "sha256": "13ccdc83dc19674e8f49a00a0c899a4bcd5b51e849009393688074d50620b580"
+    },
+    "ProtossProbeDeath00SC1.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/f/fd/ProtossProbeDeath00SC1.ogg/revision/latest?cb=20170513141929",
+      "sha256": "357e26d1a936b37cc9c1c9a296e121a69d7a8e1ccfeba68df4abfe4640b8e414"
+    },
+    "ZergDefilerWhat00SC1.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/9/9a/ZergDefilerWhat00SC1.ogg/revision/latest?cb=20170520132123",
+      "sha256": "896d859d76c53a657441a37b00005faa52ad52bcce78d17825e650443aeabfa0"
+    },
+    "ZergDefilerWhat01SC1.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/2/26/ZergDefilerWhat01SC1.ogg/revision/latest?cb=20170520132135",
+      "sha256": "40fa0aa78ed3d172c98c683ac6db2a526b5f32e2e87adc43815324148f37fd39"
+    },
+    "ZergDefilerYes00SC1.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/5/5d/ZergDefilerYes00SC1.ogg/revision/latest?cb=20170520132224",
+      "sha256": "24750c527b914c9a042fddd866f06ed8acf68a567337b2c6976da1b1da45b43d"
+    },
+    "ZergDefilerYes01SC1.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/8/84/ZergDefilerYes01SC1.ogg/revision/latest?cb=20170520132235",
+      "sha256": "bb9676b1c68a49dc89e15ba78a3a28867181d012ab8c7049fa5db278bb6109c6"
+    },
+    "ZergDefilerDeath00SC1.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/c/c9/ZergDefilerDeath00SC1.ogg/revision/latest?cb=20170520131828",
+      "sha256": "ccd3618599e197f6c87b0cc763543c116a73a8e8e29f35674017eb6251896f64"
+    },
+    "ProtossHighTemplarWhat00SC1.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/3/3e/ProtossHighTemplarWhat00SC1.ogg/revision/latest?cb=20170513141208",
+      "sha256": "4288a0ed067dba8a8f1691c0cb378fd8192bad880da433b995169f8d6bfb0f4b"
+    },
+    "ProtossHighTemplarWhat01SC1.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/b/b3/ProtossHighTemplarWhat01SC1.ogg/revision/latest?cb=20170513141223",
+      "sha256": "7b04209a441fc8ed6581f795b97a2407399d7a7060e4b592a6840777655d2c61"
+    },
+    "ProtossHighTemplarYes00SC1.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/a/aa/ProtossHighTemplarYes00SC1.ogg/revision/latest?cb=20170513141312",
+      "sha256": "344da8138c1078eb668d07ed3c6ced40aa0e35b3374e4e9fc543934369f9c803"
+    },
+    "ProtossHighTemplarYes01SC1.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/2/2a/ProtossHighTemplarYes01SC1.ogg/revision/latest?cb=20170513141328",
+      "sha256": "c8807a347044365b4d1cc26575ef92fd8053155f2ea74ac6482c1e5e4c7f42b6"
+    },
+    "ProtossHighTemplarDeath00SC1.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/d/dd/ProtossHighTemplarDeath00SC1.ogg/revision/latest?cb=20170513140817",
+      "sha256": "73f35d079f527c0f481a60980192771afea1127f79958926a5675ce803857daa"
+    },
+    "ProtossTassadarHighTemplarWhat00SC1.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/b/b8/ProtossTassadarHighTemplarWhat00SC1.ogg/revision/latest?cb=20170513144440",
+      "sha256": "a884379bf4826b88a1df3a945c28403bf789bef6f52a760af89b00bb6649b723"
+    },
+    "ProtossTassadarHighTemplarWhat01SC1.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/1/16/ProtossTassadarHighTemplarWhat01SC1.ogg/revision/latest?cb=20170513144454",
+      "sha256": "ac6ef1d282d09db0d3173ec28f668a723d8f23bdcb238f9830d30183de8b77d3"
+    },
+    "ProtossTassadarHighTemplarYes00SC1.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/2/26/ProtossTassadarHighTemplarYes00SC1.ogg/revision/latest?cb=20170513144535",
+      "sha256": "351795a82c8621b550b06049308d568cc79357adb5b90e34e2adb0d6736d0ed9"
+    },
+    "ProtossTassadarHighTemplarYes01SC1.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/6/6b/ProtossTassadarHighTemplarYes01SC1.ogg/revision/latest?cb=20170513144545",
+      "sha256": "e90755690c80d58cd5cf71698987b05f33390e5b4929f7da38eb305ee6f48a49"
+    },
+    "ProtossTassadarHighTemplarDeath00SC1.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/0/0a/ProtossTassadarHighTemplarDeath00SC1.ogg/revision/latest?cb=20170513144327",
+      "sha256": "aff73f2a9acd56982dac6360e9efc19222383219b639191739f29dd4da5cd4df"
+    },
+    "ProtossZeratulWhat00SC1.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/7/74/ProtossZeratulWhat00SC1.ogg/revision/latest?cb=20170513145659",
+      "sha256": "f2325c932ca199a5ff4314c7b5f3d4973e321dd0c33e9e3b5c276e3114dc4856"
+    },
+    "ProtossZeratulWhat01SC1.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/5/5d/ProtossZeratulWhat01SC1.ogg/revision/latest?cb=20170513145710",
+      "sha256": "46046a47668856f548566a8a2533d00018768fa7ab477da4380caab299d1af59"
+    },
+    "ProtossZeratulYes00SC1.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/8/81/ProtossZeratulYes00SC1.ogg/revision/latest?cb=20170513145750",
+      "sha256": "8e8b4db5b4f9617fdb4b172e1a8f5404d88448e4e91a6e8854dfe2b0615a76cf"
+    },
+    "ProtossZeratulYes01SC1.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/1/1d/ProtossZeratulYes01SC1.ogg/revision/latest?cb=20170513145801",
+      "sha256": "1381ae130d56d1fb87c46399576743692836fdad2ec3db42f03074d534208fc7"
+    },
+    "ProtossZeratulDeath00SC1.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/d/d7/ProtossZeratulDeath00SC1.ogg/revision/latest?cb=20170513145536",
+      "sha256": "84eb8f8f793e5bc361826f7a3e25c4313dd457c6168e964318ef40acdcb2a51e"
+    },
+    "ProtossZealotWhat00SC1.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/8/84/ProtossZealotWhat00SC1.ogg/revision/latest?cb=20170513145313",
+      "sha256": "853db47f5712b678f94d725f0decd660ce4dfd59aa1628f913031c6bb7ffdb6a"
+    },
+    "ProtossZealotWhat01SC1.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/1/11/ProtossZealotWhat01SC1.ogg/revision/latest?cb=20170513145328",
+      "sha256": "1a820dd82c7ae058283254d4606f33d228fd25ef91a353c7c4efc8f608b04961"
+    },
+    "ProtossZealotYes00SC1.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/6/66/ProtossZealotYes00SC1.ogg/revision/latest?cb=20170513145432",
+      "sha256": "1f8db3d7f99c743fedcb57ec763fc114e519e58f80ae0bb6d51a90669f3c49f7"
+    },
+    "ProtossZealotYes01SC1.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/3/34/ProtossZealotYes01SC1.ogg/revision/latest?cb=20170513145442",
+      "sha256": "34cef6235f71ea254bace329a9a57b2f6cb90eb147268e2d409b56cda35e4cb8"
+    },
+    "ProtossZealotDeath00SC1.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/3/32/ProtossZealotDeath00SC1.ogg/revision/latest?cb=20170513145103",
+      "sha256": "e8e6609a424a093522921f2ba2021243eeea75fc7dc8c8f4994872eb69ac09ba"
+    },
+    "ProtossArtanisWhat00SC1.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/5/53/ProtossArtanisWhat00SC1.ogg/revision/latest?cb=20170525173720",
+      "sha256": "330d6d1146d6d37eb5dec2e819c49d603f158bb069be56d1f20161d950690787"
+    },
+    "ProtossArtanisWhat01SC1.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/3/3d/ProtossArtanisWhat01SC1.ogg/revision/latest?cb=20170525173732",
+      "sha256": "7592752344bdeeb7090ebf04bf880853f86f42c9de1f580feb6c166bec245c2f"
+    },
+    "ProtossArtanisYes00SC1.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/2/20/ProtossArtanisYes00SC1.ogg/revision/latest?cb=20170525173807",
+      "sha256": "33f345a69c6d35daf92effcd05453ae0cef083601267a09b27b4818e1c06129e"
+    },
+    "ProtossArtanisYes01SC1.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/7/73/ProtossArtanisYes01SC1.ogg/revision/latest?cb=20170525173818",
+      "sha256": "f648c20b5c1eee6488f6b9536c82c28b72a8d8c342ef52b494fd47045d2224ad"
+    },
+    "TerranSiegeTankWhat00SC1.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/2/2f/TerranSiegeTankWhat00SC1.ogg/revision/latest?cb=20170514122836",
+      "sha256": "52b4c134538c22591571dae910f64bf1b887aa1da81d17b33b9aaf4f180bf9b8"
+    },
+    "TerranSiegeTankWhat01SC1.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/d/d2/TerranSiegeTankWhat01SC1.ogg/revision/latest?cb=20170514122851",
+      "sha256": "4cea102bf4b299e735ceb6a816ad5449df766f653aec321ae5d9121eade8c785"
+    },
+    "TerranSiegeTankYes00SC1.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/7/75/TerranSiegeTankYes00SC1.ogg/revision/latest?cb=20170514122957",
+      "sha256": "ad07e4fdbc36b7f4cb3e46baccb269513f7e82f674e0ade104c6ff8ddafe9bfc"
+    },
+    "TerranSiegeTankYes01SC1.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/4/44/TerranSiegeTankYes01SC1.ogg/revision/latest?cb=20170514123010",
+      "sha256": "cf0bb8922f1c2e903def01db1f9fd76d968b20e9ff65c6073cf78dfe8e2e6ed2"
+    },
+    "TerranSiegeTankDeath00SC1.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/6/63/TerranSiegeTankDeath00SC1.ogg/revision/latest?cb=20170514122616",
+      "sha256": "3f45a3b6c6422036ff1bd94ec3929b509769bb95a139879edbc1b88491131f4c"
+    },
+    "TerranRaynorMarineWhat00SC1.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/1/1d/TerranRaynorMarineWhat00SC1.ogg/revision/latest?cb=20170514120143",
+      "sha256": "b6e758a0cbb25b098586afeea5d54caa96e681824466d1e133e6a71285538a8f"
+    },
+    "TerranRaynorMarineWhat01SC1.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/6/61/TerranRaynorMarineWhat01SC1.ogg/revision/latest?cb=20170514120156",
+      "sha256": "7995ce449ee6c0758d65899cc59859ccd1be9ae3fc8c1e4c5c216583cda15a81"
+    },
+    "TerranRaynorMarineYes00SC1.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/c/cd/TerranRaynorMarineYes00SC1.ogg/revision/latest?cb=20170514120237",
+      "sha256": "fbe474e067a672f8a56705ef5ce2e983e5ea62a385552810c55c8f0cc246f237"
+    },
+    "TerranRaynorMarineYes01SC1.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/7/7a/TerranRaynorMarineYes01SC1.ogg/revision/latest?cb=20170514120257",
+      "sha256": "af862180ec40a2d33a461ec818b1cc169affa13523f760f0488b8a4fc0e731eb"
+    },
+    "TerranRaynorMarineDeath00SC1.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/2/21/TerranRaynorMarineDeath00SC1.ogg/revision/latest?cb=20170514120009",
+      "sha256": "068086a55136f455506204bd63786a77c58f4d68054ca558e49c64b6c75e222f"
+    },
+    "TerranRaynorMarineDeath01SC1.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/8/89/TerranRaynorMarineDeath01SC1.ogg/revision/latest?cb=20170514120021",
+      "sha256": "bc6aca8761a2f0c30022b12971a0b0f2c7d3764527d974586f37f0d29ce45f18"
+    },
+    "ZergInfestedKerriganWhat00SC1.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/7/76/ZergInfestedKerriganWhat00SC1.ogg/revision/latest?cb=20170520133730",
+      "sha256": "e34c61bcf4932300a50cbdb78e0523aa4a76f9dbcfa36077e2e4542e073a89f6"
+    },
+    "ZergInfestedKerriganWhat01SC1.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/8/85/ZergInfestedKerriganWhat01SC1.ogg/revision/latest?cb=20170520133745",
+      "sha256": "2a40721dfbc8e7c18fc94ca6697e8ac9390a9afdf1ec1a3335e6bf11e21f7029"
+    },
+    "ZergInfestedKerriganYes00SC1.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/3/3b/ZergInfestedKerriganYes00SC1.ogg/revision/latest?cb=20170520133828",
+      "sha256": "59de0f9da3b20df4f64e7c413cc85b9caf65b4a8f8dc8107173f9a7b48083374"
+    },
+    "ZergInfestedKerriganYes01SC1.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/c/c5/ZergInfestedKerriganYes01SC1.ogg/revision/latest?cb=20170520133843",
+      "sha256": "c69f66cbf4387cbe212da8539d81c555558ffa845e300ffae98c29568b9b978c"
+    },
+    "ZergInfestedKerriganDeath00SC1.ogg": {
+      "source": "https://static.wikia.nocookie.net/starcraft/images/5/5a/ZergInfestedKerriganDeath00SC1.ogg/revision/latest?cb=20170520133618",
+      "sha256": "077c00214106fe40994178012781b69ae5ab0c5eec4b0c518c018711c51a8d38"
+    }
+  }
+}

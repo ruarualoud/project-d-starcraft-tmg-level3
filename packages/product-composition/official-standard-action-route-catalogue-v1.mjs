@@ -169,20 +169,32 @@ export function createOfficialStandardActionRouteCatalogueV1(input = {}) {
           : "OFFICIAL_CARD_FEATURE_ROUTE_NOT_IMPLEMENTED",
       };
     });
+    const structureFeature = fielded.find(entry => entry.featureName === 'Structure');
+    const prohibitsCoreActions = Boolean(structureFeature && (record.payload.upgrades || []).some(feature =>
+      feature.name === 'Structure' && /cannot be Activated in any Phase and cannot perform actions/iu.test(feature.description)));
+    if (prohibitsCoreActions && piece.isStructure !== true) {
+      fail('STANDARD_ACTION_STRUCTURE_IDENTITY_MISMATCH', piece.id);
+    }
     const squadron = fielded.some((entry) => entry.featureName === "Squadron");
-    const routes = [...coreRoutes(piece), ...fielded]
+    const nullSpeed = String(record.payload.stats?.speed || '').trim() === '-';
+    const core = prohibitsCoreActions ? [] : coreRoutes(piece).filter(route => !nullSpeed
+      || !['Deploy', 'Move', 'Run', 'Charge'].includes(route.featureName));
+    const routes = [...core, ...fielded]
       .sort((left, right) => left.routeId.localeCompare(right.routeId));
     const body = {
       pieceId: piece.id, sideKey: piece.sideKey,
       recordKey: record.recordKey, unitName: String(record.payload.name || piece.name),
       sourceRecordHash: record.sourceRecordHash, payloadHash: record.payloadHash,
       modelCount: Number(piece.currentModels),
-      movementProfile: {
+      movementProfile: prohibitsCoreActions || nullSpeed ? null : {
         ...speedProfile(record.payload, Number(piece.currentModels)),
         horizontalCoherencyInches: squadron ? 4 : 3,
         horizontalCoherencySource: squadron
           ? "fielded_official_squadron_feature" : "core_rule_4_4",
       },
+      ...(prohibitsCoreActions ? { coreActionsProhibitedByStructure: true,
+        structureFeatureHash: structureFeature.sourceFeatureHash } : {}),
+      ...(nullSpeed && !prohibitsCoreActions ? { coreMovementProhibitedByNullSpeed: true, nullSpeedSourceValue: '-' } : {}),
       routes,
       allFieldedFeaturesAccounted: true,
       trainingTruth: false,
@@ -248,7 +260,15 @@ export function verifyOfficialStandardActionRouteCatalogueV1(catalogue) {
       || unit.trainingTruth !== false
       || unit.unitRouteHash !== hashStarcraftTmgContract(
         without(unit, ["unitRouteHash"])))
-    || catalogue.units.some((unit) => !unit.routes.some((route) => (
+    || catalogue.units.some((unit) => unit.coreActionsProhibitedByStructure === true
+      ? unit.movementProfile !== null || unit.routes.some(route => route.sourceKind === 'core_action')
+        || !unit.routes.some(route => route.featureName === 'Structure'
+          && route.sourceFeatureHash === unit.structureFeatureHash)
+       : unit.coreMovementProhibitedByNullSpeed === true
+         ? unit.movementProfile !== null || unit.nullSpeedSourceValue !== '-'
+           || unit.routes.some(route => route.sourceKind === 'core_action'
+             && ['Deploy', 'Move', 'Run', 'Charge'].includes(route.featureName))
+       : !unit.routes.some((route) => (
       route.featureName === "Deploy"
         && route.routeStatus === "executable_exact"
         && route.executorId === "authority.reserve-deploy-v5"

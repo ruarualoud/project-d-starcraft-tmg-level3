@@ -3,13 +3,14 @@ import { hashStarcraftTmgContract } from
 import { officialTerrainBlocksModelPlacementV1 } from
   "./official-model-base-geometry-rules-kernel-v1.mjs";
 
+import { getOfficialGroundSizeClearanceDiameterV13 } from
+  "./official-movement-clearance-contract-v13.mjs";
+
 export const OFFICIAL_GAP_PLACE_GEOMETRY_KERNEL_SCHEMA =
   "starcraft_tmg_official_gap_place_geometry_kernel_v1";
 export const OFFICIAL_GAP_PLACE_GEOMETRY_KERNEL_VERSION = "1.0.0";
 
 const TOLERANCE = 1;
-const SMALL_GAP_MILLI_INCHES = 1000;
-const LARGE_GAP_MILLI_INCHES = 3000;
 const ENGAGEMENT_RANGE_MILLI_INCHES = 1000;
 const COHERENCY_RANGE_MILLI_INCHES = 3000;
 const MOVEMENT_TYPES = Object.freeze([
@@ -124,21 +125,76 @@ function terrainFootprint(terrain) {
   }
   fail("GAP_PLACE_TERRAIN_FOOTPRINT_UNSUPPORTED", objectId);
 }
-function footprints(state) {
+function footprints(state, selectedObjectIds = null) {
   const rows = [];
   for (const piece of (state.pieces || []).filter(activePiece)) {
     for (const model of activeModels(piece)) {
+      if (selectedObjectIds && !selectedObjectIds.has(model.id)) continue;
       rows.push({ ...roundFootprint(model.id, modelPoint(model), modelRadius(model), "model"),
         unitId: piece.id, sideKey: piece.sideKey });
     }
   }
   for (const token of state.board?.tokens || []) {
+    if (selectedObjectIds && !selectedObjectIds.has(String(token.tokenId || token.id || ""))) continue;
     if (token?.isRemoved === true || token?.isDestroyed === true) continue;
     rows.push(roundFootprint(String(token.tokenId || token.id || ""), tokenPoint(token),
       tokenRadius(token), "token", token));
   }
-  for (const terrain of state.board?.terrain || []) rows.push(terrainFootprint(terrain));
+  for (const terrain of state.board?.terrain || []) {
+    if (selectedObjectIds && !selectedObjectIds.has(terrain.id)) continue;
+    rows.push(terrainFootprint(terrain));
+  }
   return rows;
+}
+
+// Host constructs the witnesses from current geometry. The caller supplies
+// only which actual round-model collisions need investigation, never widths,
+// Size thresholds, identities of new objects or a synthetic state snapshot.
+export function deriveOfficialRoundModelGapMouthsV1({ state, actor, path, boundaryModelIds } = {}) {
+  const size = Number(actor?.sizeCharacteristic);
+  if (!activePiece(actor) || !Number.isSafeInteger(size) || size < 0
+    || !Array.isArray(path) || path.length < 2 || !Array.isArray(boundaryModelIds)) {
+    fail("GAP_PLACE_MODEL_MOUTH_INPUT_INVALID");
+  }
+  const ownIds = new Set(activeModels(actor).map(model => model.id));
+  const selected = new Set(boundaryModelIds.filter(id => !ownIds.has(id)));
+  const boundaries = footprints(state, selected).filter(row => row.kind === "model")
+    .sort((a, b) => a.objectId.localeCompare(b.objectId));
+  const byId = new Map(boundaries.map(row => [row.objectId, row]));
+  const points = path.map(value => point(value));
+  const mouths = [];
+  for (let leftIndex = 0; leftIndex < boundaries.length; leftIndex += 1) {
+    for (let rightIndex = leftIndex + 1; rightIndex < boundaries.length; rightIndex += 1) {
+      const left = boundaries[leftIndex];
+      const right = boundaries[rightIndex];
+      const centreDistance = distance(left.center, right.center);
+      if (centreDistance <= left.radius + right.radius) continue;
+      const x = (right.center.xMilliInches - left.center.xMilliInches) / centreDistance;
+      const y = (right.center.yMilliInches - left.center.yMilliInches) / centreDistance;
+      const raw = {
+        gapId: `model-gap-${hashStarcraftTmgContract([left.objectId, right.objectId]).slice(0, 20)}`,
+        kind: "physical_gap",
+        leftBoundary: { objectId: left.objectId, point: {
+          xMilliInches: Math.round(left.center.xMilliInches + x * left.radius),
+          yMilliInches: Math.round(left.center.yMilliInches + y * left.radius) } },
+        rightBoundary: { objectId: right.objectId, point: {
+          xMilliInches: Math.round(right.center.xMilliInches - x * right.radius),
+          yMilliInches: Math.round(right.center.yMilliInches - y * right.radius) } },
+      };
+      try {
+        const gap = canonicalGap(raw, byId, points, getOfficialGroundSizeClearanceDiameterV13(actor), false);
+        const body = { schema: "starcraft_tmg_host_derived_round_model_gap_v1", ...gap,
+          actorUnitId: actor.id, actorSizeCharacteristic: size,
+          boundaryGeometryHash: hashStarcraftTmgContract([left, right]),
+          rulesTruth: "official_current_geometry_gap_mouth", trainingTruth: false };
+        mouths.push(Object.freeze({ ...body, certificateHash: hashStarcraftTmgContract(body) }));
+      } catch (error) {
+        if (!String(error.message).startsWith("GAP_PLACE_PATH_DOES_NOT_CROSS_DECLARED_GAP")
+          && !String(error.message).startsWith("GAP_PLACE_CLEARANCE_INSUFFICIENT")) throw error;
+      }
+    }
+  }
+  return Object.freeze(mouths);
 }
 function pointOnBoundary(value, footprint) {
   if (footprint.shape === "round") {
@@ -252,7 +308,7 @@ function minimumFootprintSeparation(left, right) {
     ? roundRectangleSeparation(left, right)
     : roundRectangleSeparation(right, left);
 }
-function canonicalGap(raw, byId, path, size, flying) {
+function canonicalGap(raw, byId, path, requiredWidthMilliInches, flying) {
   const gapId = String(raw?.gapId || "").trim();
   const left = { objectId: String(raw?.leftBoundary?.objectId || "").trim(),
     point: point(raw?.leftBoundary?.point, "GAP_PLACE_GAP_BOUNDARY_INVALID", gapId) };
@@ -287,8 +343,6 @@ function canonicalGap(raw, byId, path, size, flying) {
       fail("GAP_PLACE_GAP_NOT_MINIMUM_PHYSICAL_SPACE", gapId);
     }
   }
-  const requiredWidthMilliInches = size <= 2
-    ? SMALL_GAP_MILLI_INCHES : LARGE_GAP_MILLI_INCHES;
   if (!flying && opening && openingAgreedPassable !== true) {
     fail("GAP_PLACE_OPENING_AGREEMENT_REQUIRED", gapId);
   }
@@ -346,7 +400,7 @@ function legalEndpoints(state, actor, rows, { assaultException }) {
   }
   return blockers;
 }
-function coherencyValid(rows, leading, blockers, flying, gapInputs, byId, size) {
+function coherencyValid(rows, leading, blockers, flying, gapInputs, byId, requiredWidthMilliInches) {
   for (const row of rows) {
     if (row.modelId === leading.modelId) continue;
     if (distance(leading.point, row.point) + row.radius
@@ -370,7 +424,7 @@ function coherencyValid(rows, leading, blockers, flying, gapInputs, byId, size) 
           const rawRight = point(raw?.rightBoundary?.point,
             "GAP_PLACE_GAP_BOUNDARY_INVALID", String(raw?.gapId || ""));
           if (!pathCrossesMouth([a.point, b.point], rawLeft, rawRight)) continue;
-          const gap = canonicalGap(raw, byId, [a.point, b.point], size, false);
+          const gap = canonicalGap(raw, byId, [a.point, b.point], requiredWidthMilliInches, false);
           if (gap.widthMilliInches < gap.requiredWidthMilliInches) gapBlocked = true;
         }
       }
@@ -425,7 +479,7 @@ export function certifyOfficialGapPlaceGeometryPlanV1(input = {}) {
       || distance(path.at(-1), leading.point) > TOLERANCE) {
       fail("GAP_PLACE_PATH_INVALID", planId);
     }
-    gaps = (raw.gapMouths || []).map((gap) => canonicalGap(gap, byId, path, size, flying));
+    gaps = (raw.gapMouths || []).map((gap) => canonicalGap(gap, byId, path, getOfficialGroundSizeClearanceDiameterV13(actor), flying));
   } else {
     maxDistanceMilliInches = Number(input.maxDistanceMilliInches);
     if (!Number.isSafeInteger(maxDistanceMilliInches) || maxDistanceMilliInches <= 0
@@ -434,7 +488,7 @@ export function certifyOfficialGapPlaceGeometryPlanV1(input = {}) {
     }
   }
   coherencyValid(rows, leading, blockers, flying,
-    raw.coherencyGapMouths || [], byId, size);
+    raw.coherencyGapMouths || [], byId, getOfficialGroundSizeClearanceDiameterV13(actor));
   const body = {
     schema: OFFICIAL_GAP_PLACE_GEOMETRY_KERNEL_SCHEMA,
     kernelVersion: OFFICIAL_GAP_PLACE_GEOMETRY_KERNEL_VERSION,

@@ -79,6 +79,7 @@ export function projectStarcraftTmgRosterPlanAttachmentV1(prepared) {
 export function projectStarcraftTmgTurnPlanReflectionInputV1(decision) {
   return {
     assessment: clone(decision.assessment),
+    ...(decision.intent?.queryReceipts?.length ? { queryReceipts: decision.intent.queryReceipts } : {}),
     ...(decision.plannerResult?.opponentModelSnapshot ? {
       opponentModelSnapshot: clone(decision.plannerResult.opponentModelSnapshot),
     } : {}),
@@ -634,6 +635,11 @@ export function createStarcraftTmgHostedBotSeatRuntimeV1(options = {}) {
           `${STARCRAFT_TMG_HOSTED_BOT_SEAT_RUNTIME_VERSION}.fallback-action-space`,
         authority: {
           roomId: record.scope.roomId,
+          ...(projection.matchBinding.releaseBinding ? {
+            matchBindingHash: projection.matchBinding.bindingHash,
+            seatKey: projection.viewer.seatKey,
+            releaseBinding: projection.matchBinding.releaseBinding,
+          } : {}),
           stateRevision: projection.room.stateRevision,
           stateHash: projection.room.stateHash,
           legalSpaceHash: legalSpace.legalSpaceHash,

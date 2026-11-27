@@ -1,12 +1,14 @@
 // Workflow authority, not game strategy. Shared by design, preflight and method;
 // a delegation authorizes selection within declared bounds, never its result.
 export function rosterComparisonStageOwnershipV1(){
-  return {version:1,
+  return {version:1,decisionTestVersion:2,
     design:{owner:'comparison_design_author',owns:['decision_question','arms_and_change_factors','participants',
       'scenario_conditions_and_bounds','metrics','effect_endpoint','decision_consequences'],
     missingBounds:'Return a concrete missing strategic assumption to the design author; method must not change the hypothesis or invent an unbounded scenario.'},
     preflight:{owner:'comparison_preflight_reviewer',executionApproved:false,
-      checks:['frozen_facts','current_arm_and_observation_identity','bounded_method_capability'],
+      checks:['frozen_facts','current_arm_and_observation_identity','bounded_method_capability','decision_value_of_each_result'],
+      decisionTest:'Approve one explicit hypothesis -> measurable predicate -> support/refutation/no-difference decision table before execution. Different wording with identical strategic consequences is not information value. Result review checks this same table; invalid setup or missing data is not a successful comparison. A known design defect must be named, not silently waived or widened into another experiment.',
+      knownMethodRequirement:'A known requirement to select an existing tool with a particular proof scope is authored_choice/method responsibility, NOT necessary_fact. Cite the actual capability and preserve the constraint. Only an actually missing source or unsupported capability is a factual/capability gap. Do not investigate a contract already read. Capability exclusions are binding: no tool may be credited with a metric explicitly excluded by its proof scope.',
       instruction:'Assess whether the declared bounded comparison CAN be realized with the available tools, not whether an unrun method already succeeded. If the design explicitly delegates exact realization within meaningful stated bounds, cite that declaration as authored_choice and preserve its conditions; delegation is NOT answered_fact or a measured legal position. Missing strategic bounds remain author_decision, missing Native capabilities/sources remain necessary_fact. An optional tool setting with a documented default is not automatically a missing design choice. Read the actual tool contract before requiring a parameter. No classification is changed by Host.'},
     realization:{owner:'experiment_method',requiresExplicitWorkOrder:true,mayChangeDesign:false,
       owns:['exact_legal_coordinates_within_declared_region_or_range','native_phase_and_attack_domain_matching_the_declared_endpoint',

@@ -1,0 +1,140 @@
+[
+  {
+    "id": "wave3-standard-v1",
+    "scale": "Standard",
+    "minerals": 2000,
+    "seedId": "standard-d6-1",
+    "mission": "Fire in the Sky",
+    "missionRecordKey": "faction_cards:mission_fire_in_the_sky",
+    "deployment": "One Bridge Too Close",
+    "deploymentRecordKey": "faction_cards:gWudxJ1dMPAF8vP6UghB",
+    "version": "2.84.0",
+    "releaseRef": "content/source-releases/wave3-20261125-human-match-v1.json",
+    "sourceHash": "696469a39ae3083f6d0af5253aff4ac768ee6d9800abefcef376ea6d2b4f1b4c",
+    "presets": [
+      {
+        "id": "standard-player1",
+        "label": "High Templar / Adept",
+        "recipe": {
+          "factionRecordKey": "tactical_cards:templar_caste",
+          "tacticalCardRecordKeys": [
+            "tactical_cards:templar_archives"
+          ],
+          "units": [
+            {
+              "unitInstanceId": "high_templar",
+              "recordKey": "army_units:high_templar",
+              "compositionKind": "small",
+              "upgradeNames": []
+            },
+            {
+              "unitInstanceId": "adept",
+              "recordKey": "army_units:adept",
+              "compositionKind": "small",
+              "upgradeNames": []
+            }
+          ]
+        }
+      },
+      {
+        "id": "standard-player2",
+        "label": "Twilight Templar / Zealot",
+        "recipe": {
+          "factionRecordKey": "tactical_cards:templar_caste",
+          "tacticalCardRecordKeys": [
+            "tactical_cards:templar_archives",
+            "tactical_cards:gateway"
+          ],
+          "units": [
+            {
+              "unitInstanceId": "twilight_templar__high_templar_",
+              "recordKey": "army_units:twilight_templar__high_templar_",
+              "compositionKind": "small",
+              "upgradeNames": []
+            },
+            {
+              "unitInstanceId": "zealot",
+              "recordKey": "army_units:zealot",
+              "compositionKind": "small",
+              "upgradeNames": []
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "wave3-skirmish-v1",
+    "scale": "Skirmish",
+    "minerals": 500,
+    "seedId": "skirmish-d3-1",
+    "mission": "Gather the Resources",
+    "missionRecordKey": "faction_cards:mission_gather_the_resources__skirmish_",
+    "deployment": "Power Lines",
+    "deploymentRecordKey": "faction_cards:EyCV5SmTPXTrpqS6iy3e",
+    "version": "2.84.0",
+    "releaseRef": "content/source-releases/wave3-20261125-human-match-v1.json",
+    "sourceHash": "696469a39ae3083f6d0af5253aff4ac768ee6d9800abefcef376ea6d2b4f1b4c",
+    "presets": [
+      {
+        "id": "skirmish-player1",
+        "label": "Marine / Medic",
+        "recipe": {
+          "factionRecordKey": "tactical_cards:terran_armed_forces",
+          "tacticalCardRecordKeys": [],
+          "units": [
+            {
+              "unitInstanceId": "player1-marine-1",
+              "recordKey": "army_units:marine",
+              "compositionKind": "small",
+              "upgradeNames": [
+                "Combat Shield"
+              ]
+            },
+            {
+              "unitInstanceId": "player1-marine-2",
+              "recordKey": "army_units:marine",
+              "compositionKind": "small",
+              "upgradeNames": []
+            },
+            {
+              "unitInstanceId": "player1-medic",
+              "recordKey": "army_units:medic",
+              "compositionKind": "small",
+              "upgradeNames": [
+                "Stabilizer Medpacks"
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": "skirmish-player2",
+        "label": "Corpser / Kerrigan",
+        "recipe": {
+          "factionRecordKey": "tactical_cards:kerrigan_s_swarm",
+          "tacticalCardRecordKeys": [
+            "tactical_cards:accelerating_creep"
+          ],
+          "units": [
+            {
+              "unitInstanceId": "player2-corpser",
+              "recordKey": "army_units:corpser__roach_",
+              "compositionKind": "small",
+              "upgradeNames": [
+                "Burrow Ambush",
+                "Glial Reconstitution"
+              ]
+            },
+            {
+              "unitInstanceId": "player2-kerrigan",
+              "recordKey": "army_units:kerrigan",
+              "compositionKind": "small",
+              "upgradeNames": []
+            }
+          ]
+        }
+      }
+    ]
+  }
+]

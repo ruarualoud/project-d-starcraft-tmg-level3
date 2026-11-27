@@ -1,0 +1,316 @@
+{
+  "sourceRef": "coordination/wave3/faq-implementation-worklist.json",
+  "scope": "按冻结工作清单逐条核实。confirmed 指具名断言有原件，partial 指已有部分证据，unverified 指未确认。各消费者和发布验收另计。",
+  "counts": {
+    "confirmed": 33,
+    "partial": 0,
+    "unverified": 0
+  },
+  "rows": [
+    {
+      "entryId": "faq-v1.3:15",
+      "title": "高地最终摆放可悬边",
+      "level": "confirmed",
+      "records": [
+        "build/ticket-28-wave3-geometry-20261112-v1/high-ground/consume.json",
+        "build/ticket-28-wave3-human-lobby-v1/high-ground-286/result.public.json"
+      ]
+    },
+    {
+      "entryId": "faq-v1.3:16",
+      "title": "跨高度禁止俯视底盘重叠",
+      "level": "confirmed",
+      "records": [
+        "build/ticket-28-wave3-geometry-20261112-v1/high-ground/consume.json"
+      ]
+    },
+    {
+      "entryId": "faq-v1.3:22",
+      "title": "Supply Drop先激活标记再掷先手",
+      "level": "confirmed",
+      "records": [
+        "build/ticket-28-wave3-faq-runtime-20261112-v1/supply-drop/verification/boundary.json"
+      ]
+    },
+    {
+      "entryId": "faq-v1.3:23",
+      "title": "高地闪避资格看全队每个底盘",
+      "level": "confirmed",
+      "records": [
+        "scripts/verify-official-elevation-effective-size-rules-rule-slice-v1.mjs",
+        "build/ticket-28-wave3-faq23-elevation/result.public.json"
+      ],
+      "scope": "签名 r4 防守队形，三个只读几何对照：六个底盘同在高处且攻击者低时可闪避，五高一低或同高攻击均不可。"
+    },
+    {
+      "entryId": "faq-v1.3:25",
+      "title": "Worm/Pylon进场与源同高度",
+      "level": "confirmed",
+      "records": [
+        "build/ticket-28-wave3-mission-source-20261121-v1/release-room-integration/wave3-pylon-native-entry-signed-cold.public.json",
+        "build/ticket-28-wave3-final-faq-ten/entry-height/result.public.json"
+      ]
+    },
+    {
+      "entryId": "faq-v1.3:39",
+      "title": "Blast批次顺序可选",
+      "level": "confirmed",
+      "records": [
+        "build/ticket-28-wave2-capabilities-20261113-v1/template-adaptive-order/verification/boundary.json",
+        "build/ticket-28-wave2-capabilities-20261113-v1/template-target-reaction/target-integrity/boundary.json"
+      ]
+    },
+    {
+      "entryId": "faq-v1.3:55",
+      "title": "激活外反应每阶段一次",
+      "level": "confirmed",
+      "records": [
+        "build/ticket-28-wave3-faq-runtime-20261112-v1/reaction-verification/boundary.json",
+        "build/ticket-28-zerg-wave3-20261117-v1/dark-swarm-reaction/numeric-boundary-closure.json"
+      ]
+    },
+    {
+      "entryId": "faq-v1.3:56",
+      "title": "Structure普通能力须area范围",
+      "level": "confirmed",
+      "records": [
+        "build/ticket-28-wave3-faq-runtime-20261112-v1/structure/verification/boundary.json",
+        "build/ticket-28-wave3-faq-runtime-20261112-v1/impact-structure/verification/boundary.json"
+      ]
+    },
+    {
+      "entryId": "faq-v1.3:58",
+      "title": "携带遗物传送先丢标记",
+      "level": "confirmed",
+      "records": [
+        "build/ticket-28-wave3-faq58-current/matched-deployment/result.public.json"
+      ]
+    },
+    {
+      "entryId": "faq-v1.3:59",
+      "title": "Raider增援不能从Structure来源PLACE",
+      "level": "confirmed",
+      "records": [
+        "build/ticket-28-wave3-rapid-reinforcements-turret/origins.public.json",
+        "build/ticket-28-wave3-rapid-reinforcements-turret/result.public.json"
+      ]
+    },
+    {
+      "entryId": "faq-v1.3:60",
+      "title": "Combat Shield对具名伤害可闪避",
+      "level": "confirmed",
+      "records": [
+        "build/ticket-28-wave3-faq-runtime-20261112-v1/nonlethal/verification/boundary.json",
+        "build/ticket-28-zerg-wave3-20261118-v1/plague-cast/shield-cast/cast.json",
+        "build/ticket-28-protoss-wave3-20261120-v1/psionic-storm/phase-end-defence-v3201/result.public.json",
+        "build/ticket-28-protoss-wave3-20261120-v1/psionic-storm/phase-end-assault-v3202/result.public.json"
+      ]
+    },
+    {
+      "entryId": "faq-v1.3:61",
+      "title": "Nerazim失去HIDDEN立即反应",
+      "level": "confirmed",
+      "records": [
+        "build/ticket-28-wave3-mission-source-20261121-v1/release-room-integration/nerazim-standard-hidden-loss-2.81/result.json",
+        "build/ticket-28-wave2-capabilities-20261113-v1/nerazim-hidden-loss/consume.json"
+      ]
+    },
+    {
+      "entryId": "faq-v1.3:62",
+      "title": "Corrosive Bile位置伤害不查LOS",
+      "level": "confirmed",
+      "records": [
+        "build/ticket-28-wave2-capabilities-20261113-v1/corrosive-bile-resolution/cold-recovery.json",
+        "build/ticket-28-wave3-final-faq-ten/faq62-bile-behind-terrain/result.public.json"
+      ]
+    },
+    {
+      "entryId": "faq-v1.3:63",
+      "title": "Dodge在有效池封顶之后减转移",
+      "level": "confirmed",
+      "records": [
+        "build/ticket-28-wave2-capabilities-20261113-v1/robotics-plasma-shields/REPORT.zh-CN.md",
+        "build/ticket-28-wave2-capabilities-20261113-v1/robotics-plasma-shields/cold-recovery.json"
+      ]
+    },
+    {
+      "entryId": "faq-v1.3:64",
+      "title": "Burrow部署计入源Entry能力使用",
+      "level": "confirmed",
+      "records": [
+        "build/ticket-28-zerg-wave3-20261118-v1/zagara-infested-drop/result.json",
+        "build/ticket-28-wave3-mission-source-20261121-v1/release-room-integration/wave3-roach-relocation-ambush-summary.public.json",
+        "build/ticket-28-wave3-final-faq-ten/faq64-burrow-omega/result.public.json",
+        "build/ticket-28-wave3-final-faq-ten/faq64-burrow-zagara/result.public.json"
+      ]
+    },
+    {
+      "entryId": "faq-v1.3:65",
+      "title": "借行动不等于目标单位激活",
+      "level": "confirmed",
+      "records": [
+        "build/ticket-28-wave3-khassar-melee-supply/zealot-engagement/result.public.json",
+        "build/ticket-28-wave3-final-faq-ten/khassar-activation/result.public.json"
+      ]
+    },
+    {
+      "entryId": "faq-v1.3:66",
+      "title": "战术卡不默认要求LOS",
+      "level": "confirmed",
+      "records": [
+        "build/ticket-28-wave3-faq-runtime-20261112-v1/ability-references/verification/boundary.json"
+      ]
+    },
+    {
+      "entryId": "faq-v1.3:67",
+      "title": "距离资格检查不等于选择目标",
+      "level": "confirmed",
+      "records": [
+        "build/ticket-28-wave3-faq-runtime-20261112-v1/ability-references/verification/boundary.json",
+        "build/ticket-28-wave3-griffin-holo-anchor/across-west-wall/result.public.json"
+      ]
+    },
+    {
+      "entryId": "faq-v1.3:68",
+      "title": "Hold会触发action结束效果",
+      "level": "confirmed",
+      "records": [
+        "build/ticket-28-wave3-hold-faq68/purchased/2.99.3/result.public.json",
+        "build/ticket-28-wave3-hold-faq68/purchased/2.99.4/result.public.json",
+        "build/ticket-28-wave3-hold-faq68/pass-control/result.public.json"
+      ],
+      "scope": "同配装 Standard 两个版本各四步签名并冷恢复；旧版隐式 Hold 留下已支付的 Hidden，2.99.4 正确移除。移动与突击两种显式 Hold 另经各自执行器核对。"
+    },
+    {
+      "entryId": "faq-v1.3:69",
+      "title": "Pass补标记不产生action或activation",
+      "level": "confirmed",
+      "records": [
+        "build/ticket-28-wave3-hold-faq68/pass-control/result.public.json"
+      ],
+      "scope": "从已支付 Hidden 的 r3 建隔离突击阶段场景。公开 Pass 签名交给对手，只产生 pass 事件，补激活标记并完整保留同一状态效果；冷恢复一致。"
+    },
+    {
+      "entryId": "faq-v1.3:70",
+      "title": "Token范围跨高度默认生效",
+      "level": "confirmed",
+      "records": [
+        "build/ticket-28-zerg-wave3-20261118-v1/reactive-creep-tokens/result.json",
+        "build/ticket-28-zerg-wave3-20261118-v1/plague-coverage/REPORT.zh-CN.md",
+        "build/ticket-28-wave3-final-faq-ten/creep-elevation/result.public.json",
+        "build/ticket-28-wave3-final-faq-ten/bile-elevation/result.public.json"
+      ]
+    },
+    {
+      "entryId": "faq-v1.3:71",
+      "title": "Creep token可跨高度设置",
+      "level": "confirmed",
+      "records": [
+        "build/ticket-28-wave3-faq71-creep-elevation/result.public.json"
+      ],
+      "scope": "冻结 Standard 地形原布局。依次从签名虫苔扩散，两次地面后一次落在 std-centre-large 高地；独立条件回合，各房间签名并冷恢复，同一高地稍远处因来源距离超过 6 英寸被拒绝。"
+    },
+    {
+      "entryId": "faq-v1.3:72",
+      "title": "Griffin距离来源可为Holo Decoy",
+      "level": "confirmed",
+      "records": [
+        "build/ticket-28-wave3-griffin-holo-anchor/tactical-payment/query.public.json",
+        "build/ticket-28-wave3-griffin-holo-anchor/tactical-payment/result.public.json"
+      ]
+    },
+    {
+      "entryId": "faq-v1.3:73",
+      "title": "IMPACT不target所以可伤Structure",
+      "level": "confirmed",
+      "records": [
+        "build/ticket-28-wave3-faq-runtime-20261112-v1/impact-structure/verification/boundary.json"
+      ]
+    },
+    {
+      "entryId": "faq-v1.3:74",
+      "title": "相同武器再攻击继续享受武器Buff",
+      "level": "confirmed",
+      "records": [
+        "build/ticket-28-wave3-human-lobby-v1/khassar-supply-287/result.public.json",
+        "build/ticket-28-wave3-final-faq-ten/repeat-weapon/r12.public.json",
+        "build/ticket-28-wave3-final-faq-ten/other-weapon-grants/result.public.json",
+        "build/ticket-28-wave3-final-faq-ten/repeat-weapon/result.public.json"
+      ]
+    },
+    {
+      "entryId": "faq-v1.3:75",
+      "title": "Bile Launcher不受Drone额外HITS",
+      "level": "confirmed",
+      "records": [
+        "build/ticket-28-terran-wave3-20261117-v1/sabotage-drone-phase-end/REPORT.zh-CN.md",
+        "build/ticket-28-terran-wave3-20261117-v1/sabotage-drone-phase-end/cold-recovery.json"
+      ]
+    },
+    {
+      "entryId": "faq-v1.3:76",
+      "title": "Coordinated Strike同目标归属覆盖",
+      "level": "confirmed",
+      "records": [
+        "build/ticket-28-wave2-capabilities-20261113-v1/tank-coordinated-strike/REPORT.zh-CN.md",
+        "build/ticket-28-wave2-capabilities-20261113-v1/tank-coordinated-strike/controls/boundary.json"
+      ]
+    },
+    {
+      "entryId": "faq-v1.3:77",
+      "title": "借行动前后保留激活者主动能力",
+      "level": "confirmed",
+      "records": [
+        "build/ticket-28-wave3-human-lobby-v1/khassar-supply-287/result.public.json",
+        "build/ticket-28-wave3-khassar-melee-supply/zealot-engagement/result.public.json",
+        "build/ticket-28-wave3-final-faq-ten/khassar-owner/result.public.json"
+      ]
+    },
+    {
+      "entryId": "faq-v1.3:78",
+      "title": "Indomitable不连接不同交战",
+      "level": "confirmed",
+      "records": [
+        "build/ticket-28-wave3-mission-source-20261121-v1/release-room-integration/wave3-goliath-indomitable.public.json",
+        "build/ticket-28-wave2-capabilities-20261113-v1/immortal-indomitable/REPORT.zh-CN.md",
+        "build/ticket-28-wave3-final-faq-ten/indomitable-pair/result.public.json"
+      ]
+    },
+    {
+      "entryId": "faq-v1.3:79",
+      "title": "Raven死亡后具名延迟效果继续",
+      "level": "confirmed",
+      "records": [
+        "build/ticket-28-wave3-dead-raven/terran-acceptance.public.json"
+      ]
+    },
+    {
+      "entryId": "faq-v1.3:92",
+      "title": "Psionic Transfer允许SET接战",
+      "level": "confirmed",
+      "records": [
+        "build/ticket-28-wave3-mission-source-20261121-v1/release-room-integration/adept-own-shade-standard-2.84/result.json",
+        "build/ticket-28-wave3-final-faq-ten/faq92-paid-shade-artefact-v2995/result.public.json"
+      ]
+    },
+    {
+      "entryId": "faq-v1.3:93",
+      "title": "Concentrated Fire达到上限清空全部旧伤",
+      "level": "confirmed",
+      "records": [
+        "build/ticket-28-wave2-capabilities-20261113-v1/immortal-photon-weapons/consume.json",
+        "build/ticket-28-wave3-final-faq-ten/concentrated-fire/result.public.json"
+      ]
+    },
+    {
+      "entryId": "faq-v1.3:98",
+      "title": "Storm模板与Token中心对齐",
+      "level": "confirmed",
+      "records": [
+        "build/ticket-28-wave3-mission-source-20261121-v1/release-room-integration/templar-storm-payment-standard-2.76/result.json",
+        "build/ticket-28-wave3-storm-seeker-owner-order/faq98-center.public.json"
+      ],
+      "scope": "从原房 r12 读取的覆盖查询与 r13 实际结算同一 planHash。模板与 r3 token 同中心，菜单无改选中心的参数。"
+    }
+  ]
+}

@@ -434,6 +434,14 @@ export function createSqliteStarcraftTmgRoomStore(options = {}) {
   // contract. A decorator replacing loadRoom must not accidentally retain
   // an internal reader bound to the undecorated database via object spread.
   // Direct owners (and deliberate instrumentation) opt in explicitly.
+  // An older product room may need its original roster to select its pinned
+  // executable. This read authenticates only the initial envelope, independent
+  // of the length of the match journal.
+  const selectInitialEnvelope = database.prepare("SELECT initial_envelope_cipher FROM sc_rooms WHERE room_id=?");
+  Object.defineProperty(port, "loadInitialEnvelope", {value: async roomId => {
+    const row = selectInitialEnvelope.get(roomId);
+    return row ? codec.decode(row.initial_envelope_cipher, `room:${roomId}:initial-envelope`) : null;
+  }, enumerable: false});
   Object.defineProperty(port, "loadOwnedRoom", { value: loadOwnedRoom,
     enumerable: false });
   Object.defineProperty(port, "loadOwnedReplayBundle", { value: loadOwnedReplayBundle,

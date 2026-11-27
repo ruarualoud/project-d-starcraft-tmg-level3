@@ -1,9 +1,21 @@
+import { officialSpatialRuleErrorV1 } from './official-spatial-proposal-error-v1.mjs';
 import { hashStarcraftTmgContract } from
   "../authoritative-engine/referee-crypto-v1.mjs";
 import {
   getOfficialModelBaseGeometryProfileV1,
   verifyOfficialModelBaseGeometryDataBundleV1,
+  OFFICIAL_RAVEN_CONTOUR_GEOMETRY_BUNDLE_VERSION,
 } from "../source-data/official-model-base-geometry-data-bundle-v1.mjs";
+import { isOfficialFlyingUnitV1 } from "./official-flying-rules-kernel-v1.mjs";
+import { OFFICIAL_BATTLEFIELD_TOKEN_SCHEMA, verifyOfficialBattlefieldTokenV1,
+  OFFICIAL_BATTLEFIELD_MARKER_SCHEMA, verifyOfficialBattlefieldMarkerV1 }
+  from './official-battlefield-token-marker-rules-kernel-v1.mjs';
+import { hasOfficialModelGapTransitPolicyV13, getOfficialGroundSizeClearanceDiameterV13,
+  isOfficialGroundTerrainTraversalBlockedV13, projectOfficialRaptorStrainTerrainPermissionV13 }
+  from './official-movement-clearance-contract-v13.mjs';
+import { isTargetWhollyWithinOrthogonalCrossRangeV1 } from './orthogonal-cross-range-coverage-v1.mjs';
+import { readMeasuredFootprintContourV1, isTargetWhollyWithinMeasuredContourRangeV1, centeredFootprintTrianglesV1 }
+  from './measured-footprint-contour-v1.mjs';
 
 export const OFFICIAL_MODEL_BASE_GEOMETRY_RULES_KERNEL_SCHEMA =
   "starcraft_tmg_official_model_base_geometry_rules_kernel_v1";
@@ -12,6 +24,8 @@ export const OFFICIAL_NO_LEGAL_COHERENCY_POSITION_CERTIFICATE_SCHEMA =
   "starcraft_tmg_no_legal_coherency_position_certificate_v1";
 
 const TOLERANCE = 1;
+const OVAL_CONTOUR_ERROR_MILLI_INCHES = 0.5;
+export const OFFICIAL_PHYSICAL_GEOMETRY_TOLERANCE_MILLI_INCHES_V1 = TOLERANCE;
 const COHERENCY_RANGE_MILLI_INCHES = 3000;
 const ENGAGEMENT_RANGE_MILLI_INCHES = 1000;
 
@@ -32,7 +46,7 @@ export function officialNonEngagedBaseSeparationAllowedV1(left, right) {
 }
 
 function fail(code, detail = "") {
-  throw new Error(detail ? `${code}:${detail}` : code);
+  throw officialSpatialRuleErrorV1(code, detail);
 }
 function object(value) {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
@@ -120,13 +134,83 @@ function polygonsIntersect(left, right) {
   )));
 }
 function rectangleVertices(center, width, depth, rotationDegrees) {
+  return orientVertices(center, rotationDegrees, [
+    [-width / 2, -depth / 2], [width / 2, -depth / 2],
+    [width / 2, depth / 2], [-width / 2, depth / 2],
+  ]);
+}
+function orientVertices(center, rotationDegrees, localVertices) {
   const angle = (rotationDegrees * Math.PI) / 180;
   const cosine = Math.cos(angle); const sine = Math.sin(angle);
-  return [[-width / 2, -depth / 2], [width / 2, -depth / 2],
-    [width / 2, depth / 2], [-width / 2, depth / 2]].map(([x, y]) => ({
+  return localVertices.map(([x, y]) => ({
     xMilliInches: Number((center.xMilliInches + (x * cosine) - (y * sine)).toFixed(6)),
     yMilliInches: Number((center.yMilliInches + (x * sine) + (y * cosine)).toFixed(6)),
   }));
+}
+function crossShapeBody(input, { objectId, kind, center, shape }) {
+  const { widthMilliInches, depthMilliInches, horizontalArmDepthMilliInches,
+    verticalArmWidthMilliInches } = input;
+  if (![widthMilliInches, depthMilliInches, horizontalArmDepthMilliInches,
+    verticalArmWidthMilliInches].every(value => Number.isSafeInteger(value) && value > 0)
+    || horizontalArmDepthMilliInches >= depthMilliInches
+    || verticalArmWidthMilliInches >= widthMilliInches) {
+    fail("MODEL_BASE_GEOMETRY_CROSS_ARMS_INVALID", objectId);
+  }
+  const rotationDegrees = canonicalRotation(input.rotationDegrees);
+  const x = widthMilliInches / 2; const y = depthMilliInches / 2;
+  const armX = verticalArmWidthMilliInches / 2; const armY = horizontalArmDepthMilliInches / 2;
+  return { schema: "starcraft_tmg_physical_footprint_v1", objectId, kind, shape, center,
+    widthMilliInches, depthMilliInches, horizontalArmDepthMilliInches, verticalArmWidthMilliInches,
+    rotationDegrees, radiusMilliInches: null, vertices: orientVertices(center, rotationDegrees, [
+      [-armX, -y], [armX, -y], [armX, -armY], [x, -armY], [x, armY], [armX, armY],
+      [armX, y], [-armX, y], [-armX, armY], [-x, armY], [-x, -armY], [-armX, -armY],
+    ]) };
+}
+function measuredContourBody(input, { objectId, kind, center, shape }) {
+  const { widthMilliInches, depthMilliInches } = input;
+  const rotationDegrees = canonicalRotation(input.rotationDegrees);
+  const localVerticesMilliInches = readMeasuredFootprintContourV1(
+    input.localVerticesMilliInches, widthMilliInches, depthMilliInches,
+  );
+  return { schema: "starcraft_tmg_physical_footprint_v1", objectId, kind, shape, center,
+    widthMilliInches, depthMilliInches, localVerticesMilliInches, rotationDegrees,
+    radiusMilliInches: null, vertices: orientVertices(center, rotationDegrees,
+      localVerticesMilliInches.map(({ xMilliInches, yMilliInches }) => [xMilliInches, yMilliInches])) };
+}
+function isConcaveFootprint(footprint) {
+  return footprint.shape === "orthogonal_cross" || footprint.shape === "measured_contour";
+}
+function convexFootprintParts(footprint) {
+  if (footprint.shape === "measured_contour") {
+    return centeredFootprintTrianglesV1(footprint);
+  }
+  if (footprint.shape !== "orthogonal_cross") return [footprint];
+  const { center, rotationDegrees, widthMilliInches, depthMilliInches,
+    horizontalArmDepthMilliInches, verticalArmWidthMilliInches } = footprint;
+  return [[widthMilliInches, horizontalArmDepthMilliInches],
+    [verticalArmWidthMilliInches, depthMilliInches]].map(([width, depth]) => ({
+    shape: "rectangle", center, vertices: rectangleVertices(center, width, depth, rotationDegrees),
+  }));
+}
+function ovalVertices(center, width, depth, rotationDegrees) {
+  const majorRadius = Math.max(width, depth) / 2;
+  // An inscribed ellipse polygon shares the existing convex predicates. The
+  // maximum chord error is bounded by the sagitta on the major-radius circle.
+  const halfSector = Math.acos(1 - OVAL_CONTOUR_ERROR_MILLI_INCHES / (majorRadius + 1));
+  const count = 4 * Math.ceil(Math.PI / (4 * halfSector));
+  if (!Number.isSafeInteger(count) || count > 512) fail("MODEL_BASE_GEOMETRY_OVAL_RESOLUTION_UNSUPPORTED");
+  const angle = rotationDegrees * Math.PI / 180;
+  const cosine = Math.cos(angle);
+  const sine = Math.sin(angle);
+  return Array.from({ length: count }, (_, index) => {
+    const phase = index * (2 * Math.PI / count);
+    const x = width / 2 * Math.cos(phase);
+    const y = depth / 2 * Math.sin(phase);
+    return {
+      xMilliInches: Number((center.xMilliInches + x * cosine - y * sine).toFixed(6)),
+      yMilliInches: Number((center.yMilliInches + x * sine + y * cosine).toFixed(6)),
+    };
+  });
 }
 function canonicalRotation(value) {
   const parsed = Number(value || 0);
@@ -154,25 +238,63 @@ function makeFootprint(input) {
       depthMilliInches: diameterMilliInches,
       rotationDegrees: 0, radiusMilliInches: Math.round(diameterMilliInches / 2),
       vertices: [] };
-  } else if (shape === "rectangle") {
+  } else if (shape === "rectangle" || shape === "oval") {
     const widthMilliInches = Number(input.widthMilliInches);
     const depthMilliInches = Number(input.depthMilliInches);
     const rotationDegrees = canonicalRotation(input.rotationDegrees);
     if (!Number.isSafeInteger(widthMilliInches) || !Number.isSafeInteger(depthMilliInches)
       || widthMilliInches <= 0 || depthMilliInches <= 0) {
-      fail("MODEL_BASE_GEOMETRY_RECTANGLE_BASE_INVALID", objectId);
+      fail(shape === "oval" ? "MODEL_BASE_GEOMETRY_OVAL_BASE_INVALID"
+        : "MODEL_BASE_GEOMETRY_RECTANGLE_BASE_INVALID", objectId);
     }
     body = { schema: "starcraft_tmg_physical_footprint_v1", objectId, kind,
       shape, center, widthMilliInches, depthMilliInches, rotationDegrees,
       radiusMilliInches: null,
-      vertices: rectangleVertices(center, widthMilliInches, depthMilliInches,
-        rotationDegrees) };
+      vertices: shape === "oval" ? ovalVertices(center, widthMilliInches, depthMilliInches, rotationDegrees)
+        : rectangleVertices(center, widthMilliInches, depthMilliInches, rotationDegrees),
+      ...(shape === "oval" ? { contour: "inscribed_ellipse",
+        maximumContourErrorMilliInches: OVAL_CONTOUR_ERROR_MILLI_INCHES } : {}) };
+  } else if (shape === "orthogonal_cross") {
+    body = crossShapeBody(input, { objectId, kind, center, shape });
+  } else if (shape === "measured_contour") {
+    body = measuredContourBody(input, { objectId, kind, center, shape });
   } else fail("MODEL_BASE_GEOMETRY_SHAPE_UNSUPPORTED", `${objectId}:${shape}`);
   return freezeDeep({ ...body, footprintHash: hashStarcraftTmgContract(body) });
 }
 
+export function readOfficialCrossArmDimensionsV1(model) {
+  return {
+    horizontalArmDepthMilliInches: milli(model?.baseHorizontalArmDepthInches, "MODEL_BASE_GEOMETRY_CROSS_ARMS_INVALID", model?.id),
+    verticalArmWidthMilliInches: milli(model?.baseVerticalArmWidthInches, "MODEL_BASE_GEOMETRY_CROSS_ARMS_INVALID", model?.id),
+  };
+}
+export function isOfficialProfileBoundOutlineV1(shape) {
+  return shape === "orthogonal_cross" || shape === "measured_contour";
+}
+
+export function readOfficialModelBaseOutlineV1(model) {
+  if (model.baseShape === "orthogonal_cross") return readOfficialCrossArmDimensionsV1(model);
+  if (model.baseShape === "measured_contour") {
+    return { localVerticesMilliInches: structuredClone(model.baseLocalVerticesMilliInches) };
+  }
+  return {};
+}
+
 export function createOfficialPhysicalFootprintV1(input = {}) {
   return makeFootprint(input);
+}
+// A template ability's Target Point has zero area. It is a measurement
+// endpoint, never a model, token or stand-in base. Physical constructors keep
+// their existing positive-size requirement.
+export function createOfficialTargetPointFootprintV1(input = {}) {
+  const objectId = String(input.objectId || '').trim();
+  const center = point(input.center, 'MODEL_BASE_GEOMETRY_TARGET_POINT_INVALID', objectId);
+  if (!objectId) fail('MODEL_BASE_GEOMETRY_OBJECT_ID_REQUIRED');
+  const body = { schema: 'starcraft_tmg_physical_footprint_v1', objectId,
+    kind: 'template_target_point', shape: 'round', center,
+    widthMilliInches: 0, depthMilliInches: 0, rotationDegrees: 0,
+    radiusMilliInches: 0, vertices: [] };
+  return freezeDeep({ ...body, footprintHash: hashStarcraftTmgContract(body) });
 }
 function activePiece(piece) {
   return piece?.isOnField === true && piece?.isDestroyed !== true
@@ -208,26 +330,47 @@ export function createOfficialModelBaseFootprintV1(input = {}) {
     || depth !== profile.baseDepthMilliInches) {
     fail("MODEL_BASE_GEOMETRY_CORRECT_BASE_REQUIRED", modelId);
   }
+  const cross = shape === 'orthogonal_cross' ? readOfficialCrossArmDimensionsV1(model) : null;
+  if (cross && Object.keys(cross).some(field => cross[field] !== profile[field])) {
+    fail('MODEL_BASE_GEOMETRY_CORRECT_BASE_REQUIRED', modelId);
+  }
+  const contour = shape === 'measured_contour' ? profile.localVerticesMilliInches : null;
+  if (contour && !sameMeasuredContour(contour, model?.baseLocalVerticesMilliInches)) {
+    fail('MODEL_BASE_GEOMETRY_CORRECT_BASE_REQUIRED', modelId);
+  }
+  const outline = contour ? { localVerticesMilliInches: contour } : cross;
   const position = input.position || {
     xMilliInches: milli(model.xInches), yMilliInches: milli(model.yInches),
     rotationDegrees: model.baseRotationDegrees || 0,
   };
   const footprint = makeFootprint({ objectId: modelId, kind: "model_base", shape,
-    center: position, widthMilliInches: width, depthMilliInches: depth,
+    center: position, widthMilliInches: width, depthMilliInches: depth, ...outline,
     rotationDegrees: position.rotationDegrees ?? model.baseRotationDegrees ?? 0 });
   return freezeDeep({ ...footprint, unitId: piece.id,
     officialUnitRecordKey: piece.officialUnitRecordKey,
     officialBaseProfile: { baseShape: profile.baseShape,
       baseWidthMillimetres: profile.baseWidthMillimetres,
       baseDepthMillimetres: profile.baseDepthMillimetres,
-      printedBase: profile.printedBase, p2pSource: profile.p2pSource },
+      printedBase: profile.printedBase, ...(outline ? { ...outline, ravenOutlineSource: profile.ravenOutlineSource }
+        : { p2pSource: profile.p2pSource }) },
     physicalMiniatureExcluded: true, scenicElementsExcluded: true,
     flightStandBottomUsed: (piece.combatTags || []).some((entry) => (
       String(entry).toLowerCase() === "flying"
     )), rulesInterface: "base_only" });
 }
 
+export function createOfficialBattlefieldTokenPhysicalFootprintV1(token, kind = "battlefield_token") {
+  return makeFootprint({ objectId: token.tokenId, kind,
+    shape: token.baseShape === 'square' ? 'rectangle' : token.baseShape ?? 'round',
+    center: { xMilliInches: milli(token.coordinate.x), yMilliInches: milli(token.coordinate.y) },
+    widthMilliInches: milli(token.baseWidthInches ?? token.baseDiameterInches),
+    depthMilliInches: milli(token.baseDepthInches ?? token.baseDiameterInches),
+    rotationDegrees: token.baseRotationDegrees || 0 });
+}
 function genericFootprint(value, kind) {
+  if (value?.schema === OFFICIAL_BATTLEFIELD_TOKEN_SCHEMA) {
+    return createOfficialBattlefieldTokenPhysicalFootprintV1(value, kind);
+  }
   const objectId = String(value?.id || "").trim();
   const shape = String(value?.baseShape || value?.shape
     || (value?.diameterMillimeters ? "round" : "")).toLowerCase();
@@ -250,9 +393,18 @@ function pointToFootprintDistance(value, footprint) {
   if (footprint.shape === "round") {
     return Math.max(0, distance(value, footprint.center) - footprint.radiusMilliInches);
   }
+  if (isConcaveFootprint(footprint)) {
+    return Math.min(...convexFootprintParts(footprint).map(part => pointPolygonDistance(value, part.vertices)));
+  }
   return pointPolygonDistance(value, footprint.vertices);
 }
 function minimumSeparation(left, right) {
+  if (isConcaveFootprint(left) || isConcaveFootprint(right)) {
+    const rightParts = convexFootprintParts(right);
+    return Math.min(...convexFootprintParts(left).flatMap(a => (
+      rightParts.map(b => minimumSeparation(a, b))
+    )));
+  }
   if (left.shape === "round" && right.shape === "round") {
     return Math.max(0, distance(left.center, right.center)
       - left.radiusMilliInches - right.radiusMilliInches);
@@ -286,6 +438,15 @@ function closestPointOnPolygon(value, vertices) {
     closestPointOnSegment(value, start, end)
   )).sort((left, right) => distance(value, left) - distance(value, right))[0];
 }
+export function measureOfficialFootprintBoundaryToPointV1(footprint, referencePoint) {
+  const target = point(referencePoint, 'MODEL_BASE_GEOMETRY_TARGET_POINT_INVALID');
+  if (footprint.shape === 'round') {
+    return Math.round(Math.abs(distance(target, footprint.center) - footprint.radiusMilliInches));
+  }
+  return Math.round(Math.min(...polygonEdges(footprint.vertices).map(([start, end]) =>
+    distance(target, closestPointOnSegment(target, start, end)))));
+}
+
 function circleBoundaryToward(circle, target) {
   const centreDistance = distance(circle.center, target);
   if (centreDistance <= TOLERANCE) return { ...circle.center };
@@ -297,7 +458,30 @@ function circleBoundaryToward(circle, target) {
       + ((target.yMilliInches - circle.center.yMilliInches) * ratio)).toFixed(6)),
   };
 }
-function nearestFootprintPoints(left, right) {
+function polygonContactPoint(left, right) {
+  const sharedVertex = left.find(vertex => pointInPolygon(vertex, right))
+    ?? right.find(vertex => pointInPolygon(vertex, left));
+  if (sharedVertex) return sharedVertex;
+  for (const [a, b] of polygonEdges(left)) {
+    for (const [c, d] of polygonEdges(right)) {
+      if (!segmentsIntersect(a, b, c, d)) continue;
+      const startSide = orientation(c, d, a); const endSide = orientation(c, d, b);
+      if (Math.abs(startSide - endSide) <= TOLERANCE) continue;
+      const ratio = startSide / (startSide - endSide);
+      return { xMilliInches: Number((a.xMilliInches + ratio * (b.xMilliInches - a.xMilliInches)).toFixed(6)),
+        yMilliInches: Number((a.yMilliInches + ratio * (b.yMilliInches - a.yMilliInches)).toFixed(6)) };
+    }
+  }
+  fail("MODEL_BASE_GEOMETRY_CROSS_CONTACT_UNRESOLVED");
+}
+function nearestFootprintPoints(left, right, requirePhysicalContact = false) {
+  if (isConcaveFootprint(left) || isConcaveFootprint(right)) {
+    const rightParts = convexFootprintParts(right);
+    const pairs = convexFootprintParts(left).flatMap(a => (
+      rightParts.map(b => nearestFootprintPoints(a, b, true))
+    ));
+    return pairs.reduce((best, next) => distance(next[0], next[1]) < distance(best[0], best[1]) ? next : best);
+  }
   if (left.shape === "round" && right.shape === "round") {
     const centreDistance = distance(left.center, right.center);
     if (centreDistance <= left.radiusMilliInches + right.radiusMilliInches + TOLERANCE) {
@@ -321,6 +505,10 @@ function nearestFootprintPoints(left, right) {
     return [onLeft, onRight];
   }
   if (polygonsIntersect(left.vertices, right.vertices)) {
+    if (requirePhysicalContact) {
+      const contact = polygonContactPoint(left.vertices, right.vertices);
+      return [contact, contact];
+    }
     const contact = {
       xMilliInches: Number(((left.center.xMilliInches
         + right.center.xMilliInches) / 2).toFixed(6)),
@@ -420,22 +608,40 @@ function sweepCircleAgainstFootprint(start, end, radius, blocker) {
     return pointSegmentDistance(blocker.center, start, end)
       < radius + blocker.radiusMilliInches - TOLERANCE;
   }
+  if (isConcaveFootprint(blocker)) {
+    return convexFootprintParts(blocker).some(part => sweepCircleAgainstFootprint(start, end, radius, part));
+  }
   return segmentPolygonDistance(start, end, blocker.vertices)
     < radius - TOLERANCE;
 }
 
 function exactConstantRotationSweepCollision(start, end, blocker) {
+  if (isConcaveFootprint(start)) {
+    const endParts = convexFootprintParts(end);
+    return convexFootprintParts(start).some((part, index) => (
+      exactConstantRotationSweepCollision(part, endParts[index], blocker)
+    ));
+  }
   if (start.shape === "round") {
     return sweepCircleAgainstFootprint(
       start.center, end.center, start.radiusMilliInches, blocker,
     );
+  }
+  if (isConcaveFootprint(blocker)) {
+    return convexFootprintParts(blocker).some(part => exactConstantRotationSweepCollision(start, end, part));
   }
   const sweptVertices = convexHull([...start.vertices, ...end.vertices]);
   if (blocker.shape === "round") {
     return pointPolygonDistance(blocker.center, sweptVertices)
       < blocker.radiusMilliInches - TOLERANCE;
   }
-  return overlaps({ shape: "rectangle", vertices: sweptVertices }, blocker);
+  return overlaps({ shape: start.shape, vertices: sweptVertices }, blocker);
+}
+
+function sameMeasuredContour(start, end) {
+  return Array.isArray(start) && Array.isArray(end) && start.length === end.length
+    && start.every((point, index) => point?.xMilliInches === end[index]?.xMilliInches
+      && point?.yMilliInches === end[index]?.yMilliInches);
 }
 
 export function evaluateOfficialSweptPhysicalFootprintCollisionV1(input = {}) {
@@ -450,14 +656,23 @@ export function evaluateOfficialSweptPhysicalFootprintCollisionV1(input = {}) {
   }
   if (movingStart.shape !== movingEnd.shape
     || movingStart.widthMilliInches !== movingEnd.widthMilliInches
-    || movingStart.depthMilliInches !== movingEnd.depthMilliInches) {
+    || movingStart.depthMilliInches !== movingEnd.depthMilliInches
+    || movingStart.horizontalArmDepthMilliInches !== movingEnd.horizontalArmDepthMilliInches
+    || movingStart.verticalArmWidthMilliInches !== movingEnd.verticalArmWidthMilliInches
+    || (movingStart.shape === "measured_contour"
+      && !sameMeasuredContour(movingStart.localVerticesMilliInches, movingEnd.localVerticesMilliInches))) {
     fail("MODEL_BASE_GEOMETRY_SWEPT_RIGID_BASE_MISMATCH");
   }
+  const usesOval = movingStart.shape === "oval" || blocker.shape === "oval";
+  const usesCross = movingStart.shape === "orthogonal_cross" || blocker.shape === "orthogonal_cross";
+  const usesContour = movingStart.shape === "measured_contour" || blocker.shape === "measured_contour";
   const constantRotation = movingStart.shape === "round"
     || Math.abs(movingStart.rotationDegrees - movingEnd.rotationDegrees)
-      <= TOLERANCE;
+      <= (movingStart.shape === "oval" || isConcaveFootprint(movingStart) ? 0 : TOLERANCE);
   const precision = constantRotation
-    ? "exact_constant_rotation_convex_sweep"
+    ? usesOval ? "bounded_ellipse_contour_constant_rotation_sweep"
+      : usesContour ? "exact_constant_rotation_contour_sweep"
+        : usesCross ? "exact_constant_rotation_rectangle_union_sweep" : "exact_constant_rotation_convex_sweep"
     : "conservative_rotation_circumscribed_envelope";
   const collides = constantRotation
     ? exactConstantRotationSweepCollision(movingStart, movingEnd, blocker)
@@ -484,6 +699,10 @@ export function evaluateOfficialSweptPhysicalFootprintCollisionV1(input = {}) {
   return freezeDeep({ ...body, resultHash: hashStarcraftTmgContract(body) });
 }
 function overlaps(left, right) {
+  if (isConcaveFootprint(left) || isConcaveFootprint(right)) {
+    const rightParts = convexFootprintParts(right);
+    return convexFootprintParts(left).some(a => rightParts.some(b => overlaps(a, b)));
+  }
   if (left.shape === "round" && right.shape === "round") {
     return distance(left.center, right.center)
       < left.radiusMilliInches + right.radiusMilliInches - TOLERANCE;
@@ -494,6 +713,7 @@ function overlaps(left, right) {
   }
   if (right.shape === "round") return overlaps(right, left);
   if (!polygonsIntersect(left.vertices, right.vertices)) return false;
+  const usesOval = left.shape === "oval" || right.shape === "oval";
   const axes = [...polygonEdges(left.vertices), ...polygonEdges(right.vertices)]
     .map(([a, b]) => ({ x: -(b.yMilliInches - a.yMilliInches),
       y: b.xMilliInches - a.xMilliInches }));
@@ -505,10 +725,37 @@ function overlaps(left, right) {
       (entry.xMilliInches * axis.x) + (entry.yMilliInches * axis.y)
     ));
     return Math.min(Math.max(...leftProjection), Math.max(...rightProjection))
-      - Math.max(Math.min(...leftProjection), Math.min(...rightProjection)) > TOLERANCE;
+      - Math.max(Math.min(...leftProjection), Math.min(...rightProjection))
+      > TOLERANCE * (usesOval ? Math.hypot(axis.x, axis.y) : 1);
   });
 }
+export function doOfficialPhysicalFootprintsOverlapV1(left, right) {
+  if (left?.schema !== "starcraft_tmg_physical_footprint_v1"
+    || right?.schema !== "starcraft_tmg_physical_footprint_v1") {
+    fail("MODEL_BASE_GEOMETRY_FOOTPRINT_RELATION_INVALID");
+  }
+  return distance(left.center, right.center) <= circumscribedRadius(left) + circumscribedRadius(right)
+    && overlaps(left, right);
+}
 function whollyWithinRange(source, target, range) {
+  if (source.shape === "measured_contour") {
+    const upper = range + TOLERANCE;
+    const covered = isTargetWhollyWithinMeasuredContourRangeV1(source, target, upper);
+    if (!covered || target.shape !== "oval") return covered;
+    if (isTargetWhollyWithinMeasuredContourRangeV1(source, target,
+      upper - target.maximumContourErrorMilliInches)) return true;
+    fail("MODEL_BASE_GEOMETRY_WHOLE_WITHIN_CONTOUR_ELLIPSE_TOLERANCE_UNRESOLVED");
+  }
+  if (source.shape === "orthogonal_cross") {
+    const upper = range + TOLERANCE;
+    const covered = isTargetWhollyWithinOrthogonalCrossRangeV1(source, target, upper);
+    if (!covered || target.shape !== "oval") return covered;
+    // The ellipse contour is inscribed. Its distance error can only affect
+    // decisions in the narrow band between these two coverage bounds.
+    if (isTargetWhollyWithinOrthogonalCrossRangeV1(source, target,
+      upper - target.maximumContourErrorMilliInches)) return true;
+    fail("MODEL_BASE_GEOMETRY_WHOLE_WITHIN_CROSS_ELLIPSE_TOLERANCE_UNRESOLVED");
+  }
   if (target.shape === "round") {
     return range >= target.radiusMilliInches
       && pointToFootprintDistance(target.center, source)
@@ -518,7 +765,22 @@ function whollyWithinRange(source, target, range) {
     pointToFootprintDistance(entry, source) <= range + TOLERANCE
   ));
 }
+// Share the exact Native predicate with read-only formation search.
+// A center/radius proxy is not equivalent for rotated rectangular bases.
+export function isOfficialPhysicalFootprintWhollyWithinRangeV1(input = {}) {
+  const { source, target, rangeMilliInches } = input;
+  if (source?.schema !== "starcraft_tmg_physical_footprint_v1"
+    || target?.schema !== "starcraft_tmg_physical_footprint_v1"
+    || !Number.isSafeInteger(rangeMilliInches) || rangeMilliInches < 0) {
+    fail("MODEL_BASE_GEOMETRY_RANGE_INVALID");
+  }
+  return whollyWithinRange(source, target, rangeMilliInches);
+}
+
 function segmentBlockedByFootprint(start, end, footprint) {
+  if (isConcaveFootprint(footprint)) {
+    return convexFootprintParts(footprint).some(part => segmentBlockedByFootprint(start, end, part));
+  }
   if (footprint.shape === "round") {
     return pointSegmentDistance(footprint.center, start, end)
       < footprint.radiusMilliInches - TOLERANCE;
@@ -536,6 +798,16 @@ function footprintInsideBoard(footprint, width, height) {
       && footprint.center.xMilliInches <= width - footprint.radiusMilliInches + TOLERANCE
       && footprint.center.yMilliInches >= footprint.radiusMilliInches - TOLERANCE
       && footprint.center.yMilliInches <= height - footprint.radiusMilliInches + TOLERANCE;
+  }
+  if (footprint.shape === "oval") {
+    const { center, widthMilliInches, depthMilliInches, rotationDegrees } = footprint;
+    const theta = rotationDegrees * Math.PI / 180;
+    const xRadius = Math.hypot(widthMilliInches / 2 * Math.cos(theta),
+      depthMilliInches / 2 * Math.sin(theta));
+    const yRadius = Math.hypot(widthMilliInches / 2 * Math.sin(theta),
+      depthMilliInches / 2 * Math.cos(theta));
+    return center.xMilliInches - xRadius >= -TOLERANCE && center.xMilliInches + xRadius <= width + TOLERANCE
+      && center.yMilliInches - yRadius >= -TOLERANCE && center.yMilliInches + yRadius <= height + TOLERANCE;
   }
   return footprint.vertices.every((entry) => (
     entry.xMilliInches >= -TOLERANCE && entry.xMilliInches <= width + TOLERANCE
@@ -563,31 +835,52 @@ function resolveReference(state, reference, dataBundle) {
     return { kind, unitId: piece.id, modelId: model.id,
       footprint: createOfficialModelBaseFootprintV1({ piece, model, dataBundle }) };
   }
+  if (kind === 'marker') {
+    const marker = (state.board?.markers || []).find(entry => entry.markerId === reference.id
+      && entry.schema === OFFICIAL_BATTLEFIELD_MARKER_SCHEMA);
+    if (marker) {
+      verifyOfficialBattlefieldMarkerV1(marker, state.officialBattlefieldTokenMarkerRegistry);
+      if (!marker.coordinate) fail('MODEL_BASE_GEOMETRY_MARKER_COORDINATE_REQUIRED', marker.markerId);
+      return { kind, objectId: marker.markerId, footprint: null,
+        measurementPoint: { xMilliInches: milli(marker.coordinate.x), yMilliInches: milli(marker.coordinate.y) } };
+    }
+  }
   const collection = kind === "mission_marker"
     ? state.board?.missionMarkers : state.board?.tokens;
-  const value = (collection || []).find((entry) => entry.id === reference.id
+  const value = (collection || []).find((entry) => (entry.schema === OFFICIAL_BATTLEFIELD_TOKEN_SCHEMA
+    ? entry.tokenId : entry.id) === reference.id
     && entry.isRemoved !== true && entry.isDestroyed !== true);
   if (!value || !["mission_marker", "token", "marker"].includes(kind)) {
     fail("MODEL_BASE_GEOMETRY_REFERENCE_INVALID", String(reference?.id || ""));
   }
-  return { kind, objectId: value.id, footprint: genericFootprint(value, kind) };
+  if (value.schema === OFFICIAL_BATTLEFIELD_TOKEN_SCHEMA) {
+    verifyOfficialBattlefieldTokenV1(value, state.officialBattlefieldTokenMarkerRegistry);
+  }
+  const identifiedToken = value.schema === OFFICIAL_BATTLEFIELD_TOKEN_SCHEMA && value.baseShape === "oval";
+  return { kind, objectId: identifiedToken ? value.tokenId : value.id, footprint: genericFootprint(value, kind) };
+}
+
+function referenceSeparation(left, right) {
+  if (left.measurementPoint && right.measurementPoint) return distance(left.measurementPoint, right.measurementPoint);
+  if (left.measurementPoint) return pointToFootprintDistance(left.measurementPoint, right.footprint);
+  if (right.measurementPoint) return pointToFootprintDistance(right.measurementPoint, left.footprint);
+  return minimumSeparation(left.footprint, right.footprint);
 }
 
 export function evaluateOfficialBaseMeasurementV1(input = {}) {
   verifyOfficialModelBaseGeometryDataBundleV1(input.dataBundle);
   const source = resolveReference(input.state, input.source, input.dataBundle);
   const target = resolveReference(input.state, input.target, input.dataBundle);
-  const distanceMilliInches = Math.round(minimumSeparation(
-    source.footprint, target.footprint,
-  ));
+  const distanceMilliInches = Math.round(referenceSeparation(source, target));
   const body = {
     schema: "starcraft_tmg_official_base_measurement_result_v1",
     source, target, coordinateUnit: "milli-inch", displayUnit: "inch",
     distanceMilliInches, distanceInches: Number((distanceMilliInches / 1000).toFixed(3)),
-    baseToBaseContact: distanceMilliInches <= TOLERANCE,
+    baseToBaseContact: !source.measurementPoint && !target.measurementPoint && distanceMilliInches <= TOLERANCE,
     nearestPhysicalEdgesUsed: true, miniatureOverhangIgnored: true,
-    tokenAndMarkerNearestEdgeUsed:
-      source.kind !== "model" || target.kind !== "model",
+    tokenAndMarkerNearestEdgeUsed: !source.measurementPoint && !target.measurementPoint
+      && (source.kind !== "model" || target.kind !== "model"),
+    ...(source.measurementPoint || target.measurementPoint ? { markerReferencePointUsed: true } : {}),
     unrestrictedPremeasurement: true,
     rulesTruth: "official_nearest_base_or_physical_edge_measurement",
     trainingTruth: false,
@@ -607,13 +900,16 @@ export function evaluateOfficialWithinWhollyWithinV1(input = {}) {
   const assessments = activeModels(targetPiece).map((model) => {
     const footprint = createOfficialModelBaseFootprintV1({ piece: targetPiece,
       model, dataBundle: input.dataBundle });
-    const minimumDistanceMilliInches = Math.round(minimumSeparation(
-      source.footprint, footprint,
-    ));
+    const minimumDistanceMilliInches = Math.round(referenceSeparation(source, { footprint }));
+    const whollyWithin = source.measurementPoint
+      ? (footprint.shape === 'round'
+        ? distance(source.measurementPoint, footprint.center) + footprint.radiusMilliInches
+        : Math.max(...footprint.vertices.map(vertex => distance(source.measurementPoint, vertex)))) <= rangeMilliInches + TOLERANCE
+      : whollyWithinRange(source.footprint, footprint, rangeMilliInches);
     return { modelId: model.id, footprintHash: footprint.footprintHash,
       minimumDistanceMilliInches,
       within: minimumDistanceMilliInches <= rangeMilliInches + TOLERANCE,
-      whollyWithin: whollyWithinRange(source.footprint, footprint, rangeMilliInches) };
+      whollyWithin };
   }).sort((left, right) => left.modelId.localeCompare(right.modelId));
   const body = {
     schema: "starcraft_tmg_official_within_wholly_within_result_v1",
@@ -696,6 +992,28 @@ function terrainFootprint(terrain) {
   return genericFootprint({ ...terrain, shape: shape === "round" ? "round" : shape },
     "terrain");
 }
+export function createOfficialTerrainCellFootprintsV1(terrain) {
+  if (terrain.footprintCells === undefined) return [terrainFootprint(terrain)];
+  if (!Array.isArray(terrain.footprintCells) || terrain.footprintCells.length === 0) {
+    fail("MODEL_BASE_GEOMETRY_TERRAIN_CELLS_INVALID", terrain.id);
+  }
+  return terrain.footprintCells.map((footprint, index) => (
+    terrainFootprint({ ...terrain, id: `${terrain.id}:cell-${index}`, footprint })
+  ));
+}
+function activeTerrainGeometry(state, actor) {
+  // Cell-based placement/link changes belong to this ground-clearance boundary.
+  // High/mixed surfaces retain their existing access/surface contract.
+  const flying = (actor.combatTags || []).some(value => String(value).toLowerCase() === "flying");
+  const actualCells = !flying && coherencyModelClearanceDiameter(state, actor) > 0;
+  return (state.board?.terrain || []).filter(entry =>
+    entry.isRemoved !== true && entry.isDestroyed !== true).flatMap(entry => {
+    if (!actualCells || entry.footprintCells === undefined) {
+      return [{ entry, footprint: terrainFootprint(entry) }];
+    }
+    return createOfficialTerrainCellFootprintsV1(entry).map(footprint => ({ entry, footprint }));
+  });
+}
 function accessPointAllowsLink(state, terrainId, start, end) {
   const entry = state.board?.specialTerrainAgreement?.terrainEntries?.find((candidate) => (
     candidate.terrainId === terrainId
@@ -715,8 +1033,15 @@ function accessPointAllowsLink(state, terrainId, start, end) {
   ));
 }
 
-function terrainBlocksCoherencyLink(state, blocker, start, end) {
+function terrainBlocksCoherencyLink(state, blocker, start, end, actor, clearanceDiameter, raptorStrain) {
   const { entry: terrain, footprint } = blocker;
+  if (clearanceDiameter > 0) {
+    return isOfficialGroundTerrainTraversalBlockedV13(actor, terrain, raptorStrain)
+      && sweepCircleAgainstFootprint(start, end, clearanceDiameter / 2, footprint)
+      && !accessPointAllowsLink(state, terrain.id, start, end);
+  }
+  if (raptorStrain?.sourceDefinitionId && terrain.terrainKind === 'impassable'
+    && !isOfficialGroundTerrainTraversalBlockedV13(actor, terrain, raptorStrain)) return false;
   if (!segmentBlockedByFootprint(start, end, footprint)) return false;
   if (!officialTerrainBlocksModelPlacementV1(terrain)
     && terrain.standableHorizontalSurface !== true) return false;
@@ -730,14 +1055,26 @@ function terrainBlocksCoherencyLink(state, blocker, start, end) {
   return !accessPointAllowsLink(state, terrain.id, start, end);
 }
 
+function coherencyModelClearanceDiameter(state, actor) {
+  if (!hasOfficialModelGapTransitPolicyV13(state)
+    || state.officialModelGapTransitPolicy.version !== "2.0.0") return 0;
+  const elevations = activeModels(actor).map(model => String(model.elevation || ""));
+  if (elevations.some(value => !value)) fail("MODEL_BASE_GEOMETRY_COHERENCY_ELEVATION_REQUIRED");
+  return elevations.every(value => value === "ground" || value === "ground_level")
+    ? getOfficialGroundSizeClearanceDiameterV13(actor) : 0;
+}
+
 function coherencyLinkClear(state, otherModels, terrain, flying,
-  engagedEnemyUnitIds, left, right) {
+  engagedEnemyUnitIds, left, right, modelClearanceDiameter = 0, actor, raptorStrain) {
   const otherModelBlocked = !flying && otherModels.some((blocker) => (
-    !engagedEnemyUnitIds.has(blocker.piece.id)
-      && segmentBlockedByFootprint(left.center, right.center, blocker.footprint)
+    blocker.footprint.objectId !== left.objectId && blocker.footprint.objectId !== right.objectId
+      && !engagedEnemyUnitIds.has(blocker.piece.id)
+      && (modelClearanceDiameter > 0
+        ? sweepCircleAgainstFootprint(left.center, right.center, modelClearanceDiameter / 2, blocker.footprint)
+        : segmentBlockedByFootprint(left.center, right.center, blocker.footprint))
   ));
   const terrainBlocked = !flying && terrain.some((blocker) => (
-    terrainBlocksCoherencyLink(state, blocker, left.center, right.center)
+    terrainBlocksCoherencyLink(state, blocker, left.center, right.center, actor, modelClearanceDiameter, raptorStrain)
   ));
   return !otherModelBlocked && !terrainBlocked;
 }
@@ -768,20 +1105,37 @@ function createCoherencyLinkEvaluator(input, snapshot) {
     activePiece(piece) && piece.id !== actor.id).flatMap(piece =>
     activeModels(piece).map(model => ({ piece, model,
       footprint: createOfficialModelBaseFootprintV1({ piece, model, dataBundle }) })));
-  const terrain = (state.board?.terrain || []).filter(entry =>
-    entry.isRemoved !== true && entry.isDestroyed !== true)
-    .map(entry => ({ entry, footprint: terrainFootprint(entry) }));
+  const terrain = activeTerrainGeometry(state, actor);
   const flying = (actor.combatTags || []).some(entry =>
     String(entry).toLowerCase() === "flying");
   const engagedEnemyUnitIds = new Set((input.currentlyEngagedEnemyUnitIds || [])
     .map(String));
+  const modelClearanceDiameter = flying ? 0 : coherencyModelClearanceDiameter(state, actor);
+  const raptorStrain = projectOfficialRaptorStrainTerrainPermissionV13(state, actor);
   return (left, right, selected = []) => coherencyLinkClear(state, otherModels, terrain,
     flying, snapshot ? snapshotEngagedEnemies(actor, otherModels,
-      [...selected.map(row => row.footprint), left, right]) : engagedEnemyUnitIds, left, right);
+      [...selected.map(row => row.footprint), left, right]) : engagedEnemyUnitIds, left, right, modelClearanceDiameter, actor, raptorStrain);
 }
 
 export function evaluateOfficialCoherencyPlacementV1(input = {}) {
   return evaluateCoherencyGeometry(input, false);
+}
+
+// The current-release Relocation compiler binds the actual PLACE source.
+// Part 11 permits an Assault PLACE to end engaged unless its source forbids it.
+export function evaluateOfficialAssaultPlaceCoherencyV1(input = {}) {
+  const bundle = input.state?.officialRelocationFamilySourceBundle;
+  const route = bundle?.routes?.find(row => row.definitionId === input.assaultPlaceSourceDefinitionId);
+  if (input.state?.phase !== 'assault'
+    || bundle?.schema !== 'starcraft_tmg_official_relocation_family_source_bundle_v2'
+    || bundle.bundleHash !== hashStarcraftTmgContract(without(bundle, ['bundleHash']))
+    || !route || route.phase !== 'assault' || route.effectKind !== 'direct_place'
+    || route.recordKey !== input.actor?.officialUnitRecordKey
+    || route.activationKind !== 'active' || route.minimumEnemyGapMilliInchesExclusive
+    || route.routeHash !== hashStarcraftTmgContract(without(route, ['routeHash']))) {
+    fail('MODEL_BASE_GEOMETRY_ASSAULT_PLACE_SOURCE_REQUIRED');
+  }
+  return evaluateCoherencyGeometry(input, false, route.routeHash);
 }
 
 // Separate proof type; this cannot certify a move, charge, deployment or Place.
@@ -791,7 +1145,18 @@ export function evaluateOfficialHypotheticalCoherencySnapshotV1(input = {}) {
   return evaluateCoherencyGeometry(input, true);
 }
 
-function evaluateCoherencyGeometry(input, snapshot) {
+export function evaluateOfficialPsionicTransferSetCoherencyV1(input) {
+  const tokenId = input.externalLeadingFootprint?.objectId;
+  const effect = input.state.pendingPsionicTransferEffects?.find(row => row.effectHash === input.shadeEffectHash);
+  if (!effect || effect.definitionId !== 'unit:adept/psionic-transfer-movement-phase@1'
+    || effect.sourcePieceId !== input.actor.id || effect.round !== input.state.round || effect.tokenId !== tokenId
+    || effect.sourceBundleHash !== input.state.officialPsionicTransferSourceBundle?.bundleHash
+    || effect.effectHash !== hashStarcraftTmgContract(without(effect,['effectHash']))) {
+    fail('MODEL_BASE_GEOMETRY_PSIONIC_TRANSFER_SOURCE_REQUIRED');
+  }
+  return evaluateCoherencyGeometry(input,false,null,effect.effectHash);
+}
+function evaluateCoherencyGeometry(input, snapshot, assaultPlaceSourceRouteHash = null, shadeEffectHash = null) {
   const { state, actor, plan, dataBundle } = input;
   verifyOfficialModelBaseGeometryDataBundleV1(dataBundle);
   if (!activePiece(actor) || !object(plan)) fail("MODEL_BASE_GEOMETRY_COHERENCY_INPUT_INVALID");
@@ -852,16 +1217,17 @@ function evaluateCoherencyGeometry(input, snapshot) {
     activePiece(piece) && piece.id !== actor.id
   )).flatMap((piece) => activeModels(piece).map((model) => ({ piece, model,
     footprint: createOfficialModelBaseFootprintV1({ piece, model, dataBundle }) })));
-  const terrain = (state.board?.terrain || []).filter((entry) => (
-    entry.isRemoved !== true && entry.isDestroyed !== true
-  )).map((entry) => ({ entry, footprint: terrainFootprint(entry) }));
+  const terrain = activeTerrainGeometry(state, actor);
+  const contourRelease = dataBundle.version === OFFICIAL_RAVEN_CONTOUR_GEOMETRY_BUNDLE_VERSION;
+  const actorFlying = contourRelease && isOfficialFlyingUnitV1(actor);
   for (const row of placed) {
     for (const blocker of otherModels) {
       if (overlaps(row.footprint, blocker.footprint)) {
         fail("MODEL_BASE_GEOMETRY_PLACEMENT_OVERLAP",
           `${row.modelId}/${blocker.model.id}`);
       }
-      if (!snapshot && blocker.piece.sideKey !== actor.sideKey
+      if (!snapshot && !assaultPlaceSourceRouteHash && !shadeEffectHash && blocker.piece.sideKey !== actor.sideKey
+        && (!contourRelease || actorFlying === isOfficialFlyingUnitV1(blocker.piece))
         && !officialNonEngagedBaseSeparationAllowedV1(row.footprint, blocker.footprint)) {
         fail("MODEL_BASE_GEOMETRY_ENEMY_SEPARATION_REQUIRED", row.modelId);
       }
@@ -874,30 +1240,39 @@ function evaluateCoherencyGeometry(input, snapshot) {
       }
     }
   }
+  // A Rules-owned token may be the temporary Leading Model (Psionic Transfer).
+  // It is not an extra unit model and does not change the placement denominator.
+  const externalLeader = input.externalLeadingFootprint
+    ? makeFootprint(input.externalLeadingFootprint) : null;
+  const anchor = externalLeader || leading.footprint;
   const assessments = placed.map((entry) => ({ modelId: entry.modelId,
-    whollyWithinLeading: entry.modelId === leadingModelId
-      || whollyWithinRange(leading.footprint, entry.footprint,
-        coherencyRangeMilliInches) }));
+    whollyWithinLeading: (!externalLeader && entry.modelId === leadingModelId)
+      || whollyWithinRange(anchor, entry.footprint, coherencyRangeMilliInches) }));
   const flying = (actor.combatTags || []).some((entry) => (
     String(entry).toLowerCase() === "flying"
   ));
-  const engagedEnemyUnitIds = snapshot
+  const engagedEnemyUnitIds = snapshot || assaultPlaceSourceRouteHash || shadeEffectHash
     ? snapshotEngagedEnemies(actor, otherModels, placed.map(row => row.footprint))
     : new Set((plan.currentlyEngagedEnemyUnitIds || []).map(String));
+  const modelClearanceDiameter = flying ? 0 : coherencyModelClearanceDiameter(state, actor);
+  const raptorStrain = projectOfficialRaptorStrainTerrainPermissionV13(state, actor);
   const adjacency = new Map(placed.map((entry) => [entry.modelId, []]));
   const linkEdges = [];
   for (let left = 0; left < placed.length; left += 1) {
     for (let right = left + 1; right < placed.length; right += 1) {
       const a = placed[left]; const b = placed[right];
       if (coherencyLinkClear(state, otherModels, terrain, flying,
-        engagedEnemyUnitIds, a.footprint, b.footprint)) {
+        engagedEnemyUnitIds, a.footprint, b.footprint, modelClearanceDiameter, actor, raptorStrain)) {
         adjacency.get(a.modelId).push(b.modelId);
         adjacency.get(b.modelId).push(a.modelId);
         linkEdges.push({ fromModelId: a.modelId, toModelId: b.modelId });
       }
     }
   }
-  const linked = new Set([leadingModelId]); const queue = [leadingModelId];
+  const roots = externalLeader ? placed.filter(entry => coherencyLinkClear(
+    state, otherModels, terrain, flying, engagedEnemyUnitIds,
+    externalLeader, entry.footprint, modelClearanceDiameter, actor, raptorStrain)).map(entry => entry.modelId) : [leadingModelId];
+  const linked = new Set(roots); const queue = [...roots];
   while (queue.length > 0) {
     for (const modelId of adjacency.get(queue.shift()) || []) {
       if (!linked.has(modelId)) { linked.add(modelId); queue.push(modelId); }
@@ -915,6 +1290,8 @@ function evaluateCoherencyGeometry(input, snapshot) {
       : "starcraft_tmg_official_coherency_placement_result_v1",
     planId: String(plan.planId || ""), actorUnitId: actor.id, leadingModelId,
     stateGeometryHash: geometryHash,
+    ...(externalLeader ? { externalLeadingObjectId: externalLeader.objectId,
+      externalLeadingFootprintHash: externalLeader.footprintHash } : {}),
     placements: placed.map((entry) => ({ modelId: entry.modelId,
       footprint: entry.footprint })),
     casualtyModelIds, assessments, linkEdges,
@@ -922,6 +1299,10 @@ function evaluateCoherencyGeometry(input, snapshot) {
     flyingLinkExceptionsApplied: flying,
     inCoherency, outOfCoherency: !inCoherency,
     canControlOrContestMissionMarkers: inCoherency,
+    ...(assaultPlaceSourceRouteHash ? { placementMode: 'source_bound_assault_place', assaultPlaceSourceRouteHash,
+      assaultPlaceEngagementPermitted: true, engagedEnemyUnitIds: [...engagedEnemyUnitIds].sort() } : {}),
+    ...(shadeEffectHash ? { placementMode: 'source_bound_adept_set', shadeEffectHash,
+      engagedEnemyUnitIds: [...engagedEnemyUnitIds].sort() } : {}),
     ...(snapshot ? { geometrySnapshotOnly: true, placementLegalityProven: false,
       arrivalOrMovementLegalityProven: false,
       engagedEnemyUnitIds: [...engagedEnemyUnitIds].sort() }

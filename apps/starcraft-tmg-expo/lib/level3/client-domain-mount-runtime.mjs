@@ -12,6 +12,7 @@ import {
 } from "../../../../packages/client-domain/lifecycle-adapters-v1.mjs";
 import {
   createAsyncStorageStarcraftTmgProjectionStoreAdapter,
+  createIndexedDbStarcraftTmgProjectionStoreAdapter,
 } from "../../../../packages/client-domain/projection-store-adapters-v1.mjs";
 import {
   createHttpStarcraftTmgSourceProjectionAdapterV1,
@@ -201,7 +202,11 @@ export function createStarcraftTmgExpoClientRuntime(options = {}) {
       timeoutMs: options.timeoutMs,
     })
     : null;
-  const projectionStore = createAsyncStorageStarcraftTmgProjectionStoreAdapter({
+  const projectionStore = platform === 'web' && options.windowRef?.indexedDB
+    ? createIndexedDbStarcraftTmgProjectionStoreAdapter({
+      indexedDB: options.windowRef.indexedDB,
+      namespace: options.projectionNamespace,
+    }) : createAsyncStorageStarcraftTmgProjectionStoreAdapter({
     asyncStorage: options.asyncStorage,
     namespace: options.projectionNamespace,
     maxBytes: options.maxProjectionBytes,

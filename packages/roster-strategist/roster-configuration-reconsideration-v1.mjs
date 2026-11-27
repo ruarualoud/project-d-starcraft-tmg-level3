@@ -5,9 +5,12 @@ import {needsRosterParticipantConfigurationV1,ROSTER_PARTICIPANT_CONFIGURATIONS_
 import {projectRosterAuthorQuestionReconsiderationV1} from './roster-author-question-contract-v1.mjs';
 import {projectRosterStrategyProgressReconsiderationV1} from './roster-strategy-progress-contract-v1.mjs';
 import {projectRosterActionAvailabilityReconsiderationV1} from './roster-action-availability-reconsideration-v1.mjs';
+import {projectRosterInquiryHandoffReconsiderationV1} from './roster-completed-inquiry-handoff-v1.mjs';
 const copy=structuredClone;
 export async function projectRosterConfigurationReconsiderationV1({state,readArtifact}){
   if(state.work.some(w=>w.status==='running'||w.status==='ready'||w.operationState?.pending))return null;
+  const inquiryHandoff=await projectRosterInquiryHandoffReconsiderationV1({state,readArtifact});
+  if(inquiryHandoff)return inquiryHandoff;
   const progressRepair=await projectRosterStrategyProgressReconsiderationV1({state,readArtifact});
   if(progressRepair)return progressRepair;
   const availabilityRepair=await projectRosterActionAvailabilityReconsiderationV1({state,readArtifact});

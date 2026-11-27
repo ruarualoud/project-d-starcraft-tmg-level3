@@ -1,8 +1,11 @@
+import {assertSameOfficialQueryReleaseV2} from '../source-data/official-release-context-v2.mjs';
+import {compileMeleeProbabilityQueryParametersV1} from './melee-probability-query-parameters-v1.mjs';
 import { hashStarcraftTmgContract } from
   "../authoritative-engine/transition-v1.mjs";
 import { projectStarcraftTmgViewerStateShapeV3 } from
   "../client-domain/viewer-projection-v3.mjs";
 import {projectNativeActionCapabilityReferenceV1} from "./native-action-capability-reference-v1.mjs";
+import {normalizeRangedActivationQueryArgumentsV1} from './ranged-activation-query-contract-v1.mjs';
 import {
   evaluateOfficialBaseMeasurementV1,
   evaluateOfficialWithinWhollyWithinV1,
@@ -87,12 +90,15 @@ export function createStarcraftTmgNativeSpatialQueryToolV1({ name, queryKinds })
           "Query meanings: " + JSON.stringify(Object.fromEntries(queryKinds.map(kind =>
             [kind, STARCRAFT_TMG_SPATIAL_QUERY_CONTRACTS_V1[kind]])))
           + ". mission_marker_control accepts {} or {markerIds:[id],unitIds:[id]} for current qualification/control; add {domainId,parameters} only for a supplied native spatial candidate. It does not award or predict VP. Direct geometry query contracts: " + JSON.stringify(DIRECT_ARGUMENT_CONTRACTS)
-          + ". Current-action queries bind {domainId:currentDomainId,parameters:{...actualDomainParameters}}. attack_probability uses a ranged domain OR an explicit single-target fight domain. Ranged parameters include targetUnitId; melee parameters must include all Native fight choices (closeRanksMode, allocations and required effect targets), plus targetUnitId as the measurement selector matching that one allocation. sampleBudget is optional. Baselines exclude optional reactions; melee does NOT accept damageReactionChoices. For ranged only, an explicit damage-reaction policy has exactly one choice per side: {sideKey,choiceKind:pass|reaction,definitionId,sourceInstanceId,paymentCardInstanceIds}. Pass uses null IDs and []; copy reaction definition/source/payment from reactionOpportunitySet damage_received choices. Native applies payment and damage effects, reporting resource/card costs; other reaction stages remain excluded. Keep scene/domain/parameters/sampleBudget identical when comparing policies and compare outcomeSampleHash. An enemy-response estimate requires explicitly chosen legal enemy scene/domain/parameters, never automatic future play. Use the selected domain's parameterSchema, not an attacker or weapon name; candidateId is an exact-ID compatibility alias. Never supply currentLegalSpaceDomain: the Host binds it. Formation and asset queries also bind domainId; intent/search arguments are query-specific. Use current visible IDs. base_edge_distance measures one physical pair; for unit matrices use space.inspect_relationships with {subjectUnitIds:[unitId],targetIds:[unitOrObjectiveId],intent:string}. Measurement does not prove charge/arrival legality." },
+          + ". Current-action queries bind {domainId:currentDomainId,parameters:{...actualDomainParameters}}. attack_probability uses a ranged domain OR an explicit single-target fight domain. Ranged parameters include targetUnitId; melee parameters must include all Native fight choices (closeRanksMode, allocations and required effect targets), the Host derives targetUnitId from that one allocation; if explicitly supplied it must match. sampleBudget is optional. Baselines exclude optional reactions; melee does NOT accept damageReactionChoices. For ranged only, an explicit damage-reaction policy has exactly one choice per side: {sideKey,choiceKind:pass|reaction,definitionId,sourceInstanceId,paymentCardInstanceIds}. Pass uses null IDs and []; copy reaction definition/source/payment from reactionOpportunitySet damage_received choices. Native applies payment and damage effects, reporting resource/card costs; other reaction stages remain excluded. Keep scene/domain/parameters/sampleBudget identical when comparing policies and compare outcomeSampleHash. An enemy-response estimate requires explicitly chosen legal enemy scene/domain/parameters, never automatic future play. Use the selected domain's parameterSchema, not an attacker or weapon name; candidateId is an exact-ID compatibility alias. Never supply currentLegalSpaceDomain: the Host binds it. Formation and asset queries also bind domainId; intent/search arguments are query-specific. Use current visible IDs. base_edge_distance measures one physical pair; for unit matrices use space.inspect_relationships with {subjectUnitIds:[unitId],targetIds:[unitOrObjectiveId],intent:string}. Measurement does not prove charge/arrival legality." },
       }, required: ["requestId", "queryKind", "argumentsJson"],
       additionalProperties: false },
     },
   };
 }
+
+// Export the same schema to additional clients instead of copying its fields.
+export { DIRECT_ARGUMENT_CONTRACTS as STARCRAFT_TMG_DIRECT_SPATIAL_ARGUMENT_CONTRACTS_V1 };
 
 function validReference(value) {
   if (!object(value)) return false;
@@ -184,7 +190,7 @@ function currentDomainArguments(args, legalSpace, seatKey) {
       domainId, parameters: clone(parameters) } } : {}) } };
 }
 
-function authority(input) {
+function authority(input, options) {
   const projection = input.roomProjection;
   const legalSpace = input.legalSpace;
   if (!object(projection?.room) || !object(projection?.matchBinding)
@@ -196,6 +202,11 @@ function authority(input) {
     || typeof legalSpace.legalSpaceHash !== "string") {
     throw new TypeError("spatial query requires one current viewer/LegalSpace authority");
   }
+  if (options.seatKey && options.seatKey !== projection.viewer.seatKey) {
+    throw new TypeError("SPATIAL_QUERY_VIEWER_SEAT_MISMATCH");
+  }
+  const releaseBinding = projection.matchBinding.releaseBinding;
+  if (options.rulesRuntime) assertSameOfficialQueryReleaseV2(options.rulesRuntime.releaseBinding, releaseBinding);
   if (input.spatialObservation
     && (input.spatialObservation.roomId !== projection.room.roomId
       || input.spatialObservation.matchBindingHash
@@ -208,6 +219,7 @@ function authority(input) {
     gameId: "starcraft-tmg",
     roomId: projection.room.roomId,
     matchBindingHash: projection.matchBinding.bindingHash,
+    ...(releaseBinding ? { releaseBinding: clone(releaseBinding) } : {}),
     stateRevision: projection.room.stateRevision,
     stateHash: projection.room.stateHash,
     legalSpaceHash: legalSpace.legalSpaceHash,
@@ -261,6 +273,7 @@ function delegatedResult(binding, queryKind, response, args) {
   if (response?.ok !== true
     || responseBinding.roomId !== binding.roomId
     || responseBinding.matchBindingHash !== binding.matchBindingHash
+    || hashStarcraftTmgContract(responseBinding.releaseBinding ?? null) !== hashStarcraftTmgContract(binding.releaseBinding ?? null)
     || responseBinding.stateRevision !== binding.stateRevision
     || responseBinding.stateHash !== binding.stateHash
     || responseBinding.legalSpaceHash !== binding.legalSpaceHash
@@ -287,6 +300,15 @@ function delegatedResult(binding, queryKind, response, args) {
         repairContext: clone(response.repairContext || null),
       });
   }
+  if (['token.creator_loss','unit.status_loss'].includes(queryKind) && response.result?.unitId !== args.unitId) {
+    return unknownResult(binding,queryKind,queryKind==='token.creator_loss'?'CREATOR_TOKEN_UNIT_MISMATCH':'STATUS_LOSS_UNIT_MISMATCH',
+      {findingSeverity:'High',adapterResponseRetained:false});
+  }
+  if (queryKind === 'ability.timing' && (response.result.recordKey !== args.recordKey ||
+      (binding.releaseBinding && (response.result.sourceSnapshotHash !== binding.releaseBinding.sourceSnapshotHash ||
+       response.result.normalizedDatasetHash !== binding.releaseBinding.normalizedDatasetHash)))) {
+    return unknownResult(binding,queryKind,'ABILITY_TIMING_SOURCE_MISMATCH',{findingSeverity:'High',adapterResponseRetained:false});
+  }
   const domain = args?.currentLegalSpaceDomain;
   if (domain && queryKind !== "mission_marker_control"
     && response.result?.domainId !== domain.domainId) {
@@ -294,6 +316,12 @@ function delegatedResult(binding, queryKind, response, args) {
       findingSeverity: "High", adapterResponseRetained: false,
     });
   }
+  const rejected = response.result?.proposalAccepted === false;
+  if (rejected && (!domain || response.result.proposalHash !== hashStarcraftTmgContract(args.proposal ?? {
+    kind: "parameterized", domainId: domain.domainId, parameters: args.parameters,
+  }))) return unknownResult(binding, queryKind, "rules_query_proposal_mismatch", {
+    findingSeverity: "High", adapterResponseRetained: false,
+  });
   if (queryKind === "attack_probability" && domain
     && (response.result?.attackerUnitId !== domain.pieceId
       || response.result?.targetUnitId !== args.parameters?.targetUnitId)) {
@@ -301,11 +329,32 @@ function delegatedResult(binding, queryKind, response, args) {
       findingSeverity: "High", adapterResponseRetained: false,
     });
   }
+  if (queryKind === 'battlefield_token_displacement'
+    && (response.result.tokenId !== args.tokenId || response.result.moverPieceId !== domain?.pieceId
+      || response.result.controllerSideKey !== binding.seatKey || response.result.stateHash !== binding.stateHash)) {
+    return unknownResult(binding, queryKind, 'battlefield_displacement_query_identity_mismatch', {
+      findingSeverity: 'High', adapterResponseRetained: false,
+    });
+  }
   if (queryKind==='attack_probability'&&args.damageReactionChoices!==undefined
     &&(response.result?.damageReactionPolicy?.status!=='native_explicit_policy_applied'
       ||JSON.stringify(response.result.damageReactionPolicy.choices)!==JSON.stringify(args.damageReactionChoices))) {
     return unknownResult(binding,queryKind,'rules_query_damage_reaction_policy_mismatch',{
       findingSeverity:'High',adapterResponseRetained:false});
+  }
+  if(queryKind==='ranged_activation_probability') {
+    const result=response.result;
+    const requested=normalizeRangedActivationQueryArgumentsV1(args);
+    const policy={steps:requested.steps,precisionPolicy:requested.precisionPolicy,reactionPolicy:requested.reactionPolicy,
+      casualtyPolicy:requested.casualtyPolicy,finishPolicy:requested.finishPolicy};
+    if(result?.pieceId!==args.pieceId||result?.sideKey!==binding.seatKey
+      ||result?.sourceStateHash!==binding.stateHash||result?.distribution?.seed!==args.seed
+      ||result?.distribution?.requestedSamples!==args.sampleCount
+      ||hashStarcraftTmgContract(result?.policy??null)!==hashStarcraftTmgContract(policy))
+      return unknownResult(binding,queryKind,'rules_query_activation_identity_mismatch',{
+        findingSeverity:'High',adapterResponseRetained:true,
+        repairContext:{expectedPolicy:clone(policy),unacceptedAdapterResponse:clone(response),
+          sourceApproved:false,measurementAccepted:false}});
   }
   if (!new Set(["exact", "advisory_estimate"]).has(precision)) {
     return unknownResult(binding, queryKind, "rules_query_precision_invalid", {
@@ -320,7 +369,10 @@ function delegatedResult(binding, queryKind, response, args) {
   return seal({
     schemaVersion: `${STARCRAFT_TMG_SPATIAL_ACTION_QUERY_RUNTIME_VERSION}.result`,
     ok: true,
-    status: precision,
+    status: rejected ? "rejected" : precision,
+    ...(rejected ? { reason: response.result.reason, mayRepairSameChoice: true, findingSeverity: "Medium",
+      safeFailureClass: "typed_rules_error",
+      failureStage: "instantiate_current_rules_domain", repairContext: clone(response.repairContext ?? null) } : {}),
     queryKind,
     authority: clone(binding),
     result: clone(response.result),
@@ -510,7 +562,7 @@ export function createStarcraftTmgSpatialActionQueryRuntimeV1(options = {}) {
   }
 
   function actionSpace(input = {}) {
-    const binding = authority(input);
+    const binding = authority(input, options);
     const legalSpace = input.legalSpace;
     const finite = finiteActions(legalSpace);
     const domains = projectStarcraftTmgSpatialParameterDomainsV1(legalSpace);
@@ -562,7 +614,7 @@ export function createStarcraftTmgSpatialActionQueryRuntimeV1(options = {}) {
   }
 
   async function queryWithDelegate(input = {}, delegate = rulesQuery) {
-    const binding = authority(input);
+    const binding = authority(input, options);
     const snapshot = rotateSnapshot(binding);
     const legalSpace = input.legalSpace;
     const request = object(input.request) ? input.request : {};
@@ -571,9 +623,22 @@ export function createStarcraftTmgSpatialActionQueryRuntimeV1(options = {}) {
     const cacheKey = hashStarcraftTmgContract({ binding, queryKind, args });
     const cacheable = DIRECT_QUERY_KINDS.has(queryKind)
       || (DELEGATED_QUERY_KINDS.has(queryKind) && Boolean(rulesQuery));
-    if (cacheable) {
+    // Delegated misses validate their owned room in the adapter. A cached
+    // result or local measurement has no such trip to the authoritative store.
+    const cached = cacheable && completed.get(cacheKey);
+    if (binding.releaseBinding && options.assertCurrentAuthority &&
+        (DIRECT_QUERY_KINDS.has(queryKind) || cached)) {
+      try {
+        await options.assertCurrentAuthority(binding);
+      } catch (error) {
+        return unknownResult(binding, queryKind, error.code || error.message, {
+          findingSeverity: "High", failureStage: "read_authoritative_room",
+        });
+      }
+    }
+    if (cached) return cached;
+    if (cacheable && snapshotIsCurrent(snapshot)) {
       cacheKeysByScope.get(snapshot.scopeKey).add(cacheKey);
-      if (completed.has(cacheKey)) return completed.get(cacheKey);
     }
 
     if (DIRECT_QUERY_KINDS.has(queryKind)) {
@@ -665,6 +730,10 @@ export function createStarcraftTmgSpatialActionQueryRuntimeV1(options = {}) {
               )) : null;
           if (currentDomain) {
             delegatedArguments.currentLegalSpaceDomain = clone(currentDomain);
+            if (queryKind === "attack_probability") {
+              delegatedArguments.parameters = compileMeleeProbabilityQueryParametersV1(
+                currentDomain, delegatedArguments.parameters);
+            }
           }
           if (queryKind === "fire_zone_exchange") {
             delegatedArguments.currentLegalSpaceDomains = clone(

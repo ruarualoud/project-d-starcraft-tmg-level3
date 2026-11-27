@@ -1,0 +1,108 @@
+{
+  "schema": "starcraft_tmg_release_manifest_v2",
+  "releaseId": "wave3-u83-c84-r50-force-wall-geometry-v1",
+  "status": "candidate",
+  "source": {
+    "snapshotRef": "build/ticket-28-wave3-source-candidate-20261112-v1/compiled/snapshot.json",
+    "datasetRef": "build/ticket-28-wave3-source-candidate-20261112-v1/compiled/dataset.json",
+    "sourceRevisionRef": "build/ticket-28-wave3-source-candidate-20261112-v1/compiled/candidate-revision.json",
+    "sourceRevisionHash": "e001b54ee2789bb184b6770c2004153213ae92e378bbb758ff69174b3cb13573",
+    "references": {
+      "core": {
+        "byteHash": "27639c562e6db9777dd9ba984d0c9f9b581841ec30166848e021f893cd00ea54",
+        "ref": "build/ticket-28-wave3-source-candidate-20261112-v1/raw/StarCraft-TMG_EN.pdf",
+        "role": "reference",
+        "version": "frozen-byte-version"
+      },
+      "costs": {
+        "byteHash": "5b1e3adf0c12128d5184b1926b25889a46833cbe1f7b2886d9857e1f15f7b350",
+        "ref": "build/ticket-28-wave3-source-candidate-20261112-v1/raw/StarCraft-TMG-Cost-Table-10.2026_EN.pdf",
+        "role": "reference",
+        "version": "10.2026"
+      },
+      "faq": {
+        "byteHash": "65cb2399c44e29b45d65faddbade7c72a46726e7b9c812e2c4af57c1704cc213",
+        "ref": "build/ticket-28-wave3-assessment-20261112/faq-v1.3.pdf",
+        "role": "reference",
+        "version": "1.3"
+      },
+      "forceWallAssembly": {
+        "ref": "build/ticket-28-wave3-source-candidate-20261112-v1/raw/StarCraft-Protoss-Tassadar_EN.pdf",
+        "byteHash": "4fd38c341f5873c23b5ae0f35719f426d303442715146afa6d3b58c097ac0686",
+        "role": "reference",
+        "version": "frozen-byte-version"
+      }
+    },
+    "snapshotHash": "4412c17faaebaff04b117d1ddc666d1cdd939eca420a22f861c7c944f1179c8c",
+    "datasetHash": "718057e86ac4f93a72c06b8e4d8f4d851ba33ee04c9dddea33e966eda9fe6685",
+    "versions": {
+      "cardsVersion": "84",
+      "rulesVersion": "50",
+      "unitsVersion": "83"
+    },
+    "policy": {
+      "collections": [
+        "army_units",
+        "tactical_cards",
+        "faction_cards",
+        "system_metadata_versions"
+      ],
+      "conflictAction": "preserve_builder_values_and_record_reference_discrepancy",
+      "explicitUserInstruction": "2026-11-12 官方写表器抓数据为主，PDF参考",
+      "freezePolicy": "reuse_existing_observed_payloads_no_background_refresh",
+      "pdfUse": "supplementary_reference_and_conflict_log",
+      "source": "official_command_center_army_builder_firestore"
+    }
+  },
+  "components": {
+    "abilityIdentities": {
+      "integrity": {
+        "field": "identityCatalogueHash",
+        "value": "5d97626c9596a71768a41c3a707f1a2900b8be9f7acbd52536767397e0c21004"
+      },
+      "ref": "build/ticket-28-wave3-release-context-20261112-v1/ability-identities-v2.json",
+      "version": "2"
+    },
+    "armyBuilder": {
+      "integrity": {
+        "field": "bundleHash",
+        "value": "277bcfcdb28920ea3b4ea0dc500df9b49ce5e77b08a1959c753ac0a9b339392b"
+      },
+      "ref": "content/source-releases/wave3-20261112-army-builder-v2.json",
+      "version": "2.0.0"
+    },
+    "battlefieldAssets": {
+      "ref": "content/source-releases/wave3-20261121-battlefield-components-v4.json",
+      "version": "2.2.0",
+      "integrity": {
+        "field": "profileHash",
+        "value": "02ad73bb83cce99641635797ce65f142344b4a3d30251f0c5b8051be5bb1bec9"
+      }
+    },
+    "geometry": {
+      "integrity": {
+        "field": "bundleHash",
+        "value": "0d8d362ba668624c83af65df1929aa279952fc08f4d9bc9bea382c7e3bdfb80e"
+      },
+      "ref": "content/source-releases/wave3-20261112-geometry-v2.json",
+      "version": "2.0.0"
+    },
+    "rulesRuntime": {
+      "integrity": {
+        "field": "runtimeHash",
+        "value": "d895c145916a7991a8701da45e9032668cb173b057df0bd050378ed801fadfac"
+      },
+      "ref": "build/ticket-28-wave2-capabilities-20261113-v1/corrosive-bile-producer/large/runtime.json",
+      "version": "3.27.0"
+    },
+    "unitCharacteristics": {
+      "integrity": {
+        "field": "bundleHash",
+        "value": "60365a02d0a97172392b509ec342aa8511d7aaea7def354351a64e5ba1dbc32d"
+      },
+      "ref": "content/source-releases/wave3-20261112-unit-characteristics-v2.json",
+      "version": "2.0.0"
+    }
+  },
+  "manifestHash": "ba339932c5f73c19d05e199337e0c0659272a2974dd00ec0548eda783dce09d9"
+}

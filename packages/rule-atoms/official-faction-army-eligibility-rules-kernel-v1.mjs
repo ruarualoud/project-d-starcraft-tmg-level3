@@ -18,7 +18,10 @@ const PROCEDURE_KINDS = new Set([
   "faction_tag_eligibility",
 ]);
 
-function fail(code, detail = "") { throw new Error(detail ? `${code}:${detail}` : code); }
+function fail(code, detail = "", constraintDiagnostics) {
+  throw Object.assign(new Error(detail ? `${code}:${detail}` : code),
+    constraintDiagnostics ? {constraintDiagnostics:structuredClone(constraintDiagnostics)} : {});
+}
 function object(value) { return Boolean(value) && typeof value === "object" && !Array.isArray(value); }
 function nonEmpty(value, code) {
   const text = String(value || "").trim();
@@ -249,6 +252,25 @@ export function resolveOfficialArmySlotAuditV1(input = {}) {
   });
   const sourceFactionCard = getOfficialCardBuildPaymentProfileV1(bundle.cardDataBundle,
     faction.recordKey);
+  if (bundle.usageScope === 'army_building') {
+    const recordKeys = units.map(entry => entry.profile.recordKey);
+    for (const entry of units) {
+      if (entry.profile.isUnique && recordKeys.filter(key => key === entry.profile.recordKey).length > 1) {
+        fail('UNIQUE_UNIT_COPY_LIMIT_EXCEEDED', entry.profile.recordKey);
+      }
+    }
+    for (const constraint of bundle.armyBuildingConstraints) {
+      if (constraint.kind === 'mutually_exclusive_units'
+        && constraint.recordKeys.every(key => recordKeys.includes(key))) {
+        fail('ARMY_MUTUALLY_EXCLUSIVE_UNITS', constraint.recordKeys.join('|'));
+      }
+      if (constraint.kind === 'exactly_one_tactical_group'
+        && constraint.factionRecordKey === faction.recordKey
+        && tactical.filter(entry => constraint.recordKeys.includes(entry.profile.recordKey)).length !== 1) {
+        fail('ARMY_EXACTLY_ONE_TACTICAL_GROUP_REQUIRED', constraint.recordKeys.join('|'));
+      }
+    }
+  }
   const uniqueAudit = resolveOfficialUniqueCardCopyLimitV1({
     cardDataBundle: bundle.cardDataBundle, armyCardInstanceSetComplete: true,
     cardInstances: [{ cardInstanceId: input.factionCard.cardInstanceId,
@@ -284,7 +306,12 @@ export function resolveOfficialArmySlotAuditV1(input = {}) {
       candidateProfileHash: entry.profile.profileHash };
   });
   const overCapacity = types.filter((type) => used[type] > available[type]);
-  if (overCapacity.length > 0) fail("ARMY_SLOT_CAPACITY_EXCEEDED", overCapacity[0]);
+  if (overCapacity.length > 0) fail("ARMY_SLOT_CAPACITY_EXCEEDED", overCapacity[0], {
+    version:1, source:'official-faction-army-eligibility-rules-kernel-v1:resolveOfficialArmySlotAuditV1',
+    constraintKind:'army_slot_capacity', overCapacityArmySlots:overCapacity,
+    initialArmySlots:faction.startingArmySlots, availableArmySlots:available, usedArmySlots:used,
+    tacticalCardRows:tacticalRows, unitRows, rulesOwnedSlotTotals:true,
+    completeArmyLegalityValidated:false, trainingTruth:false });
   const unused = Object.fromEntries(types.map((type) => [type, available[type] - used[type]]));
   return result({ schema: "starcraft_tmg_official_army_slot_audit_v1",
     procedureKind: "army_slot_audit", factionCard: factionLayout(faction),

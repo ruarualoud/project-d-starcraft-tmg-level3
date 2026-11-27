@@ -1,3 +1,11 @@
+import {chargeCriticalEndpointCandidatesV1} from './charge-critical-endpoints-v1.mjs';
+import {proveOfficialChargeClosestPositionV1} from '../rule-atoms/official-charge-closest-position-proof-v1.mjs';
+import {projectOfficialMatchHorizonV1,projectOfficialActionHorizonV1} from '../rule-atoms/official-match-horizon-projection-v1.mjs';
+import { projectFormationMetricsForDecisionV1 } from "./formation-decision-facts-v1.mjs";
+import { getOfficialDelegatedRosterSpatialDomainV1 } from
+  '../product-composition/official-selected-roster-spatial-parameter-contract-v1.mjs';
+import { isOfficialNonEntryEdgeGroundDeployDomainV1 } from
+  '../product-composition/official-relocation-parameter-contract-v1.mjs';
 import { hashStarcraftTmgContract } from
   "../authoritative-engine/transition-v1.mjs";
 import { getOfficialModelBaseGeometryProfileV1 } from
@@ -7,10 +15,12 @@ import {
   createOfficialCoherencyLinkEvaluatorV1,
   createOfficialHypotheticalCoherencyLinkEvaluatorV1,
   evaluateOfficialPhysicalFootprintRelationV1,
+  isOfficialPhysicalFootprintWhollyWithinRangeV1,
   officialTerrainBlocksModelPlacementV1,
   officialNonEngagedBaseSeparationAllowedV1,
 } from "../rule-atoms/official-model-base-geometry-rules-kernel-v1.mjs";
-import { deriveOfficialModelSurfacePlacementV2 } from
+import { deriveOfficialModelSurfacePlacementV2, deriveOfficialEngagementGraphV2,
+  OFFICIAL_ENGAGEMENT_RANGE_V2_MILLI_INCHES } from
   "../rule-atoms/official-engagement-graph-v2.mjs";
 import { projectOfficialHorizontalCoherencyV1 } from
   "../product-composition/official-characteristic-status-family-adapter-v1.mjs";
@@ -26,21 +36,23 @@ import { buildStarcraftTmgTacticalRelationshipGraphV1 } from
   "./tactical-relationship-graph-v1.mjs";
 import { createStarcraftTmgModelObstacleRoutePlannerV1 } from
   "./model-obstacle-route-planner-v1.mjs";
-import { applyOfficialSelectedRosterSpatialActionV1 } from
+import { applyOfficialSelectedRosterSpatialActionV1, checkOfficialSelectedRosterDeployLeaderPathV1,
+  resolveOfficialSelectedRosterDeployStartV1,
+  OFFICIAL_SELECTED_ROSTER_SPATIAL_ACTION_RUNTIME_ID } from
   "../product-composition/official-selected-roster-spatial-action-runtime-v1.mjs";
 import { STARCRAFT_TMG_FORMATION_OBJECTIVE_KINDS,
   normalizeExplicitStaticFormationObjectivesV1 } from './formation-intent-contract-v1.mjs';
 export { STARCRAFT_TMG_FORMATION_OBJECTIVE_KINDS } from './formation-intent-contract-v1.mjs';
 
 export const STARCRAFT_TMG_LEGAL_FORMATION_SEARCH_VERSION =
-  "starcraft_tmg_legal_formation_search_v4";
+  "starcraft_tmg_legal_formation_search_v13";
 
 export const STARCRAFT_TMG_FORMATION_SOLVER_TOOL_NAME =
   "space.solve_formation";
 
 const SUPPORTED_ACTION_TYPES = new Set([
   "deploy", "move", "run", "disengage", "resolve_charge",
-  "resolve_relocation_ability",
+  "resolve_relocation_ability", "resolve_protoss_unique_ability",
   "resolve_unit_lifecycle_ability", "resolve_unit_lifecycle_consumer",
   "use_active_ability",
 ]);
@@ -61,6 +73,7 @@ export const STARCRAFT_TMG_FORMATION_ACTION_FAMILY_COVERAGE_V1 = Object.freeze({
   ]),
   chargeResolutionActionTypes: Object.freeze(["resolve_charge"]),
   relocationEffects: Object.freeze([...RELOCATION_FORMATION_EFFECTS]),
+  protossUniqueEffects: Object.freeze(["non_entry_edge_ground_deploy"]),
   lifecycleAbilityEffects:
     Object.freeze([...LIFECYCLE_ABILITY_FORMATION_EFFECTS]),
   lifecycleConsumerEffects:
@@ -88,8 +101,16 @@ function freeze(value) {
   return Object.freeze(value);
 }
 
-function sourceDomain(domain) {
+function declaredDomain(domain) {
   return object(domain?.sourceDomain) ? domain.sourceDomain : domain;
+}
+
+function sourceDomain(domain) {
+  const declared = declaredDomain(domain);
+  if (declared?.actionType !== "resolve_khassar_movement") return declared;
+  const native = getOfficialDelegatedRosterSpatialDomainV1(declared);
+  if (!native) throw new TypeError("LEGAL_FORMATION_DELEGATION_DOMAIN_INVALID");
+  return native;
 }
 
 function dimension(profile, field, fallback) {
@@ -757,7 +778,7 @@ function placementObjectiveScore(input) {
   return score + (tie * 0.01);
 }
 
-function formationSolverMetrics(selected, input, solverScore) {
+function formationSolverMetrics(selected, input) {
   const pairwise = [];
   for (let left = 0; left < selected.length; left += 1) {
     for (let right = left + 1; right < selected.length; right += 1) {
@@ -805,8 +826,7 @@ function formationSolverMetrics(selected, input, solverScore) {
         : "not_applicable",
     };
   });
-  return {
-    solverScore: Number(solverScore.toFixed(6)),
+  return projectFormationMetricsForDecisionV1({
     modelCount: selected.length,
     packingProfileId: String(input.policy.packingProfileId
       || "legacy_minimum_spacing"),
@@ -828,110 +848,7 @@ function formationSolverMetrics(selected, input, solverScore) {
     objectiveMetrics,
     physicalGeometryMetricsExact: true,
     tacticalOutcomeIsAdvisoryUntilPreviewAndOpponentResponse: true,
-  };
-}
-
-function finiteOrFloor(value) {
-  if (value === null || value === undefined) return -Number.MAX_SAFE_INTEGER;
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : -Number.MAX_SAFE_INTEGER;
-}
-
-function negativeFiniteOrFloor(value) {
-  if (value === null || value === undefined) return -Number.MAX_SAFE_INTEGER;
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? -parsed : -Number.MAX_SAFE_INTEGER;
-}
-
-function paretoVector(option) {
-  const metrics = option.tacticalMetrics || {};
-  const axes = [{ name: "weighted_solver_score", maximize: true,
-    value: finiteOrFloor(metrics.solverScore) }];
-  const objectives = option.formationObjectives || [];
-  for (const objective of objectives) {
-    const metric = (metrics.objectiveMetrics || []).find((entry) =>
-      entry.kind === objective.kind
-        && hashStarcraftTmgContract(entry.targetIds || [])
-          === hashStarcraftTmgContract(objective.targetIds || []));
-    const prefix = `${objective.kind}:${(objective.targetIds || []).join("+")}`;
-    if (new Set(["control_objective", "advance", "maximize_engagement",
-      "surround_target", "screen"]).has(objective.kind)) {
-      axes.push({ name: `${prefix}:models_within_three_inches`, maximize: true,
-        value: finiteOrFloor(metric?.modelsWithinThreeInchesOfTarget) });
-      axes.push({ name: `${prefix}:negative_target_distance`, maximize: true,
-        value: negativeFiniteOrFloor(
-          metric?.minimumTargetBaseEdgeDistanceMilliInches) });
-    } else if (new Set(["avoid_threat", "preserve_lane"])
-      .has(objective.kind)) {
-      axes.push({ name: `${prefix}:target_clearance`, maximize: true,
-        value: finiteOrFloor(
-          metric?.minimumTargetBaseEdgeDistanceMilliInches) });
-    } else if (objective.kind === "compact") {
-      axes.push({ name: `${prefix}:negative_envelope_area`, maximize: true,
-        value: negativeFiniteOrFloor(
-          metrics.formationEnvelopeAreaSquareMilliInches) });
-    } else if (objective.kind === "disperse") {
-      axes.push({ name: `${prefix}:pairwise_clearance`, maximize: true,
-        value: finiteOrFloor(
-          metrics.minimumPairwiseBaseSeparationMilliInches) });
-      axes.push({ name: `${prefix}:envelope_area`, maximize: true,
-        value: finiteOrFloor(metrics.formationEnvelopeAreaSquareMilliInches) });
-    }
-  }
-  return axes;
-}
-
-function vectorDominates(left, right) {
-  if (left.length !== right.length
-    || left.some((entry, index) => entry.name !== right[index].name)) {
-    return false;
-  }
-  return left.every((entry, index) => entry.value >= right[index].value)
-    && left.some((entry, index) => entry.value > right[index].value);
-}
-
-function formationParetoDiversity(options) {
-  const groups = new Map();
-  for (const option of options) {
-    const signature = hashStarcraftTmgContract(
-      option.formationObjectives || []);
-    const rows = groups.get(signature) || [];
-    rows.push({ option, vector: paretoVector(option) });
-    groups.set(signature, rows);
-  }
-  const frontierOptionIds = [];
-  const dominatedOptionIds = [];
-  const objectiveGroups = [];
-  for (const [objectiveSignature, rows] of groups.entries()) {
-    const frontier = rows.filter((candidate, index) => !rows.some(
-      (other, otherIndex) => otherIndex !== index
-        && vectorDominates(other.vector, candidate.vector),
-    ));
-    const frontierIds = frontier.map((entry) => entry.option.formationOptionId);
-    const dominatedIds = rows.map((entry) => entry.option.formationOptionId)
-      .filter((optionId) => !frontierIds.includes(optionId));
-    frontierOptionIds.push(...frontierIds);
-    dominatedOptionIds.push(...dominatedIds);
-    objectiveGroups.push({
-      objectiveSignature,
-      formationObjectives: clone(rows[0]?.option.formationObjectives || []),
-      comparedOptionCount: rows.length,
-      frontierOptionIds: frontierIds,
-      dominatedOptionIds: dominatedIds,
-      axisNames: (rows[0]?.vector || []).map((entry) => entry.name),
-    });
-  }
-  return {
-    schemaVersion: "starcraft_tmg_formation_pareto_diversity_v1",
-    frontierOptionIds,
-    dominatedOptionIds,
-    objectiveGroups,
-    onlySameObjectiveContractsCompared: true,
-    exactOptionsHiddenByParetoAnalysis: 0,
-    agentMaySelectAnyExposedExactOption: true,
-    rulesAuthority: false,
-    trainingTruth: false,
-  };
+  });
 }
 
 function solveIntentFormationRows(input) {
@@ -953,7 +870,8 @@ function solveIntentFormationRows(input) {
       input.minimumEnemyGapMilliInchesExclusive,
   };
   if (!availablePackedFootprint(leaderFootprint, state, blockers, [],
-    hardConstraints)) {
+    hardConstraints) || input.placementAllowed?.({ profile: leaderProfile,
+      footprint: leaderFootprint, point: leaderPoint, rotationDegrees: 0 }) === false) {
     if (diagnostic) {
       diagnostic.leaderFootprintRejected += 1;
       if (!footprintInsideBattlefield(leaderFootprint, state)) {
@@ -1030,10 +948,36 @@ function solveIntentFormationRows(input) {
       });
     }
   }
+  // A largest-dimension lattice can miss a legal narrow-base arrangement.
+  // Include the unit's actual relative positions as additional samples; these
+  // still pass the same footprint/coherency checks and objective comparison.
+  // This does not prescribe a formation or claim that a translated path is legal.
+  const actorModels = state.pieces?.find(piece => piece.id === excludedPieceId)?.models || [];
+  const currentLeader = actorModels.find(model => model.id === leaderProfile.modelId);
+  if (currentLeader?.isOnField !== false && Number.isFinite(currentLeader?.xInches)
+    && Number.isFinite(currentLeader?.yInches)) {
+    const knownPoints = new Set(points.map(entry =>
+      JSON.stringify([entry.point.xMilliInches, entry.point.yMilliInches])));
+    for (const model of actorModels) {
+      if (model.id === leaderProfile.modelId || model.isDestroyed
+        || model.isOnField === false || !Number.isFinite(model.xInches)
+        || !Number.isFinite(model.yInches)) continue;
+      const x = Math.round((model.xInches - currentLeader.xInches) * 1000);
+      const y = Math.round((model.yInches - currentLeader.yInches) * 1000);
+      const point = { xMilliInches: anchor.xMilliInches + x,
+        yMilliInches: anchor.yMilliInches + y };
+      const key = JSON.stringify([point.xMilliInches, point.yMilliInches]);
+      if (knownPoints.has(key)) continue;
+      knownPoints.add(key);
+      points.push({ point, ring: Math.max(1, Math.ceil(Math.hypot(x, y) / spacing)),
+        distance: Math.hypot(x, y),
+        outwardProjection: x * outward.x + y * outward.y,
+        lateralProjection: x * lateral.x + y * lateral.y });
+    }
+  }
   points.sort((left, right) => left.point.xMilliInches - right.point.xMilliInches
     || left.point.yMilliInches - right.point.yMilliInches);
   const used = new Set();
-  let solverScore = 0;
   for (const profile of profiles.slice(1).sort((left, right) => (
     dimension(right, "baseWidthMilliInches", "widthMilliInches")
       * dimension(right, "baseDepthMilliInches", "depthMilliInches")
@@ -1041,17 +985,20 @@ function solveIntentFormationRows(input) {
     dimension(left, "baseWidthMilliInches", "widthMilliInches")
       * dimension(left, "baseDepthMilliInches", "depthMilliInches")
   ) || left.modelId.localeCompare(right.modelId))) {
-    const maximumCenterDistance = coherencyRangeMilliInches
-      + profileRadius(leaderProfile) - profileRadius(profile);
     const rotations = String(profile.baseShape || profile.shape) === "round"
       ? [0] : [0, 45, 90, 135];
     const candidates = [];
     for (const [index, entry] of points.entries()) {
-      if (used.has(index) || entry.distance > maximumCenterDistance + 1) continue;
+      if (used.has(index)) continue;
       for (const rotationDegrees of rotations) {
         const footprint = footprintAt(profile, entry.point, rotationDegrees);
+        if (!isOfficialPhysicalFootprintWhollyWithinRangeV1({
+          source: leaderFootprint, target: footprint,
+          rangeMilliInches: coherencyRangeMilliInches,
+        })) continue;
         if (!availablePackedFootprint(footprint, state, blockers, selected,
-          hardConstraints)) {
+          hardConstraints) || input.placementAllowed?.({ profile, footprint,
+            point: entry.point, rotationDegrees }) === false) {
           continue;
         }
         candidates.push({
@@ -1093,7 +1040,6 @@ function solveIntentFormationRows(input) {
       return null;
     }
     used.add(candidate.index);
-    solverScore += candidate.score;
     selected.push({ profile, footprint: candidate.footprint, point: candidate.point,
       bounds: footprintBounds(candidate.footprint),
       rotationDegrees: candidate.rotationDegrees });
@@ -1114,7 +1060,7 @@ function solveIntentFormationRows(input) {
       policy,
       targetIndex,
       sideKey,
-    }, solverScore),
+    }),
   };
 }
 
@@ -1226,13 +1172,85 @@ function candidatePlacementPrefilterFailure(candidate, profiles, blockers,
   return null;
 }
 
-function deployCandidates(domain, request) {
+// Additional search seeds use real footprint boundaries near the entry strip.
+// Only Native can certify the complete swept path and final formation.
+function deploymentBoundaryAxisSamples(constraints, segment, bounds, blockers) {
+  const horizontal = segment.side === "top" || segment.side === "bottom";
+  const minimum = horizontal ? bounds.minimumX : bounds.minimumY;
+  const maximum = horizontal ? bounds.maximumX : bounds.maximumY;
+  const halfAlong = horizontal ? bounds.halfWidths[0] : bounds.halfDepths[0];
+  const depth = Number(constraints.maxDistanceMilliInches);
+  const boardNormal = horizontal ? constraints.battlefieldHeightMilliInches
+    : constraints.battlefieldWidthMilliInches;
+  const farEdge = segment.side === "top" || segment.side === "right";
+  const values = new Set();
+  for (const blocker of blockers) {
+    const box = blocker.bounds;
+    const lowNormal = horizontal ? box.minimumY : box.minimumX;
+    const highNormal = horizontal ? box.maximumY : box.maximumX;
+    if (farEdge ? highNormal < boardNormal - depth || lowNormal > boardNormal
+      : lowNormal > depth || highNormal < 0) continue;
+    const lowAlong = horizontal ? box.minimumX : box.minimumY;
+    const highAlong = horizontal ? box.maximumX : box.maximumY;
+    for (const value of [Math.floor(lowAlong - halfAlong) - 1,
+      Math.ceil(highAlong + halfAlong) + 1]) {
+      if (value >= minimum && value <= maximum) values.add(value);
+    }
+  }
+  const edges = [minimum, ...values, maximum].sort((a, b) => a - b);
+  for (let i = 1; i < edges.length; i += 1) {
+    const midpoint = Math.round((edges[i - 1] + edges[i]) / 2);
+    if (midpoint >= minimum && midpoint <= maximum) values.add(midpoint);
+  }
+  return [...values];
+}
+
+function perimeterDeploymentCandidates(domain, segment, preferred) {
+  const { constraints } = domain;
+  const leader = constraints.modelProfiles[0];
+  const { center, radiusMilliInches: radius, maximumAlongEdgeMilliInches: circumference } = segment;
+  const allowance = constraints.maxDistanceMilliInches;
+  const fullTurn = 2 * Math.PI;
+  const towardPreferred = Math.atan2(preferred.yMilliInches - center.yMilliInches,
+    preferred.xMilliInches - center.xMilliInches);
+  const offsets = new Set(Array.from({ length: 16 }, (_, i) => Math.round(circumference * i / 16)));
+  offsets.add(Math.min(circumference, Math.round(((towardPreferred + fullTurn) % fullTurn) * radius)));
+  const candidates = [];
+  for (const along of offsets) {
+    const start = resolveOfficialSelectedRosterDeployStartV1(domain, segment, along, leader);
+    const angle = along / radius;
+    const anchors = [];
+    const distance = Math.hypot(preferred.xMilliInches - start.xMilliInches,
+      preferred.yMilliInches - start.yMilliInches);
+    if (distance > 1 && distance <= allowance) anchors.push(preferred);
+    for (const step of axisSamples(2, allowance, distance)) {
+      anchors.push({ xMilliInches: Math.round(start.xMilliInches + Math.cos(angle) * step),
+        yMilliInches: Math.round(start.yMilliInches + Math.sin(angle) * step) });
+    }
+    for (const anchor of anchors) {
+      if (anchor.xMilliInches < 0 || anchor.xMilliInches > constraints.battlefieldWidthMilliInches
+        || anchor.yMilliInches < 0 || anchor.yMilliInches > constraints.battlefieldHeightMilliInches) continue;
+      // The shared formation solver fills every follower before Native checks the candidate.
+      candidates.push({ anchor, patternId: 'perimeter-' + along,
+        parameters: { leadingModelId: leader.modelId, entrySegmentId: segment.segmentId,
+          entryAlongEdgeMilliInches: along, path: [anchor], placements: [] } });
+    }
+  }
+  return candidates;
+}
+
+function deployCandidates(domain, request, blockers = []) {
   const source = sourceDomain(domain);
   const constraints = source.constraints;
   const profiles = constraints.modelProfiles;
   const preferred = preferredAnchor(request, constraints);
   const candidates = [];
+  const boundaryCandidates = [];
   for (const segment of constraints.entrySegments || []) {
+    if (segment.kind === "unit_base_perimeter") {
+      candidates.push(...perimeterDeploymentCandidates(source, segment, preferred));
+      continue;
+    }
     for (const gap of [20, 60, 100]) {
       for (const transform of TRANSFORMS) {
         const offsets = formationOffsets(profiles, gap, transform.apply);
@@ -1271,10 +1289,11 @@ function deployCandidates(domain, request) {
           preferred.xMilliInches);
         const ys = axisSamples(bounds.minimumY, bounds.maximumY,
           preferred.yMilliInches);
-        for (const centerX of xs) {
-          for (const centerY of ys) {
+        const append = (xValues, yValues, output, suffix) => {
+        for (const centerX of xValues) {
+          for (const centerY of yValues) {
             const rows = rowsAt(profiles, offsets, centerX, centerY);
-            candidates.push({
+            output.push({
               parameters: {
                 leadingModelId: rows[0].modelId,
                 entrySegmentId: segment.segmentId,
@@ -1284,21 +1303,33 @@ function deployCandidates(domain, request) {
                 path: [rows[0]],
                 placements: rows.slice(1),
               },
-              patternId: `${transform.id}-gap-${gap}`,
+              patternId: `${transform.id}-gap-${gap}${suffix}`,
               anchor: { xMilliInches: centerX, yMilliInches: centerY },
             });
           }
         }
+        };
+        append(xs, ys, candidates, "");
+        const boundaryValues = deploymentBoundaryAxisSamples(
+          constraints, segment, bounds, blockers);
+        if (segment.side === "top" || segment.side === "bottom") {
+          append(boundaryValues.filter(x => !xs.includes(x)), ys,
+            boundaryCandidates, ":entry-boundary");
+        } else {
+          append(xs, boundaryValues.filter(y => !ys.includes(y)),
+            boundaryCandidates, ":entry-boundary");
+        }
       }
     }
   }
-  return candidates.sort((left, right) => Math.hypot(
+  const ordered = entries => entries.sort((left, right) => Math.hypot(
     left.anchor.xMilliInches - preferred.xMilliInches,
     left.anchor.yMilliInches - preferred.yMilliInches,
   ) - Math.hypot(
     right.anchor.xMilliInches - preferred.xMilliInches,
     right.anchor.yMilliInches - preferred.yMilliInches,
   ) || left.patternId.localeCompare(right.patternId));
+  return [...ordered(candidates), ...ordered(boundaryCandidates)];
 }
 
 function relocationModelProfiles(state, domain) {
@@ -1421,6 +1452,8 @@ function relocationAbilityConstraints(state, domain) {
   const source = sourceDomain(domain);
   return {
     ...source.constraints,
+    ...(isOfficialNonEntryEdgeGroundDeployDomainV1(source)
+      ? source.constraints.geometryDescription : {}),
     modelProfiles: relocationModelProfiles(state, domain),
     battlefieldWidthMilliInches:
       Math.round(Number(state.board.widthInches) * 1000),
@@ -1597,6 +1630,8 @@ function nonEntryEdgeRelocationCandidates(state, domain, request) {
         parameters: {
           leadingModelId: leading.modelId,
           edgeSide,
+          ...(isOfficialNonEntryEdgeGroundDeployDomainV1(source)
+            ? { activeUnitId: source.parameterSchema.activeUnitId.const } : {}),
           placements: [{ modelId: leading.modelId,
             xMilliInches, yMilliInches }],
         },
@@ -1667,6 +1702,27 @@ function relocationCandidates(domain, request) {
       }
     }
   }
+  // A coarse board lattice can miss every point in a narrow legal corridor.
+  // Add bounded local translations around the real leader; these carry no
+  // strategic preference and still require complete packing + Native routing.
+  const preferredAngle = Math.atan2(preferred.yMilliInches - start.yMilliInches,
+    preferred.xMilliInches - start.xMilliInches);
+  const localAnchors = new Set();
+  for (const radius of [100, 250, 500, 1000].filter(value => value <= maximum)) {
+    for (const angle of [preferredAngle, ...Array.from({ length: 8 },
+      (_, index) => index * Math.PI / 4)]) {
+      const anchor = {
+        xMilliInches: Math.round(start.xMilliInches + Math.cos(angle) * radius),
+        yMilliInches: Math.round(start.yMilliInches + Math.sin(angle) * radius),
+      };
+      const key = anchor.xMilliInches + ':' + anchor.yMilliInches;
+      if (localAnchors.has(key)) continue;
+      localAnchors.add(key);
+      candidates.push({ parameters: { leadingModelId: profiles[0].modelId,
+        path: [anchor], placements: [] }, anchor,
+        patternId: 'current-position-local-translation-' + key });
+    }
+  }
   return candidates.sort((left, right) => Math.hypot(
     left.anchor.xMilliInches - preferred.xMilliInches,
     left.anchor.yMilliInches - preferred.yMilliInches,
@@ -1674,6 +1730,66 @@ function relocationCandidates(domain, request) {
     right.anchor.xMilliInches - preferred.xMilliInches,
     right.anchor.yMilliInches - preferred.yMilliInches,
   ) || left.patternId.localeCompare(right.patternId));
+}
+
+// A long geometric route guides ONLY the current Native action. Future speed,
+// phase availability, formation legality and arrival time are not established
+// by this route. Recompute from each actual successor rather than teleporting
+// to the goal or assuming that subsequent actions will be legal.
+function guidedMovementCandidates(state, source, request, blockers) {
+  const horizon = request.routePlanningDistanceMilliInches;
+  if (horizon === undefined) return [];
+  if (!Number.isSafeInteger(horizon) || horizon < 1) {
+    throw new TypeError('LEGAL_FORMATION_ROUTE_PLANNING_DISTANCE_INVALID');
+  }
+  if (!['move', 'run', 'disengage'].includes(source.actionType)) return [];
+  const profiles = source.constraints.modelProfiles;
+  const profile = profiles[0], start = profile?.startPoint;
+  const maximum = Number(source.constraints.maxDistanceMilliInches);
+  const actor = (state.pieces || []).find(p => p.id === source.pieceId);
+  const model = actor?.models?.find(m => m.id === profile?.modelId);
+  if (!start || !Number.isSafeInteger(maximum) || maximum < 2
+    || horizon < maximum
+    || String(profile.startElevation || model?.elevation || 'ground') !== 'ground') return [];
+  const target = preferredAnchor(request, source.constraints);
+  const route = createStarcraftTmgModelObstacleRoutePlannerV1({
+    start, movingFootprint: footprintAt(profile, start, Number(model?.baseRotationDegrees || 0)),
+    modelBlockers: blockers,
+    battlefieldWidthMilliInches: Math.round(Number(state.board.widthInches) * 1000),
+    battlefieldHeightMilliInches: Math.round(Number(state.board.heightInches) * 1000),
+  }).routeTo({ endpoint: { ...target, elevation: 'ground' }, maxDistanceMilliInches: horizon });
+  if (route.status !== 'candidate_found') return [];
+  // Integer endpoint rounding must not increase the Native movement allowance.
+  let remaining = maximum - 2, previous = start;
+  const path = [];
+  for (const point of route.path) {
+    const length = Math.hypot(point.xMilliInches - previous.xMilliInches,
+      point.yMilliInches - previous.yMilliInches);
+    if (length < 1) continue;
+    if (length <= remaining) {
+      path.push(clone(point)); remaining -= length; previous = point;
+    } else {
+      if (remaining >= 1) path.push({ ...clone(point),
+        xMilliInches: Math.round(previous.xMilliInches
+          + (point.xMilliInches - previous.xMilliInches) * remaining / length),
+        yMilliInches: Math.round(previous.yMilliInches
+          + (point.yMilliInches - previous.yMilliInches) * remaining / length) });
+      break;
+    }
+  }
+  if (!path.length) return [];
+  const endpoint = path.at(-1);
+  return [{
+    parameters: { leadingModelId: profile.modelId, path, placements: [] },
+    anchor: { xMilliInches: endpoint.xMilliInches, yMilliInches: endpoint.yMilliInches },
+    patternId: 'bounded-geometric-route-prefix', modelProfiles: profiles,
+    routeGuidance: { kind: 'geometric_route_current_action_prefix', target,
+      routePlanningDistanceMilliInches: horizon,
+      geometricRouteDistanceMilliInches: route.distanceMilliInches,
+      geometricPath: clone(route.path), currentActionMaximumDistanceMilliInches: maximum,
+      futureActionsProven: false, arrivalRoundProven: false,
+      completeFutureFormationChecked: false, trainingTruth: false },
+  }];
 }
 
 function segmentCrossesAxisAlignedAccessPoint(start, end, footprint) {
@@ -1717,6 +1833,216 @@ function directChargeAccessTransitions(state, leadingProfile, endpoint) {
     })
     .map((accessPoint) => [{ segmentIndex: 0,
       accessPointId: accessPoint.accessPointId }]);
+}
+
+// Engagement is pairwise in the Native graph. A one-model read-only projection
+// can therefore reject an undeclared enemy edge while packing, without a second
+// distance/elevation/wall rule or a synthetic action receipt. The complete
+// formation and path still have to pass Native instantiate().
+function chargePlacementEligibility(state, actor, declaredUnitIds, blockers, diagnostic) {
+  const enemies = state.pieces.filter(piece => piece.sideKey !== actor.sideKey
+    && !declaredUnitIds.has(piece.id) && piece.isOnField === true
+    && piece.isDestroyed !== true && Number(piece.currentModels) > 0);
+  if (!enemies.length) return null;
+  const enemyIds = new Set(enemies.map(piece => piece.id));
+  const enemyBlockers = blockers.filter(blocker => enemyIds.has(blocker.pieceId));
+  const models = new Map(actor.models.map(model => [model.id, model]));
+  const cache = new Map();
+  return ({ profile, footprint, point, rotationDegrees }) => {
+    const key = `${profile.modelId}:${point.xMilliInches}:${point.yMilliInches}:${rotationDegrees}`;
+    if (!cache.has(key)) {
+      const nearby = enemyBlockers.some(blocker => evaluateOfficialPhysicalFootprintRelationV1({
+        left: footprint, right: blocker.footprint,
+      }).minimumSeparationMilliInches <= OFFICIAL_ENGAGEMENT_RANGE_V2_MILLI_INCHES);
+      if (!nearby) cache.set(key, true);
+      else {
+        const model = { ...models.get(profile.modelId),
+          xInches: point.xMilliInches / 1000, yInches: point.yMilliInches / 1000,
+          baseRotationDegrees: rotationDegrees };
+        const projected = { ...state, pieces: [
+          { ...actor, currentModels: 1, models: [model] }, ...enemies,
+        ] };
+        const surface = deriveOfficialModelSurfacePlacementV2(projected,
+          { pieceId: actor.id, modelId: model.id });
+        Object.assign(model, { elevation: surface.elevation,
+          supportTerrainIds: surface.supportTerrainIds,
+          adjacentAccessPointIds: surface.adjacentAccessPointIds });
+        const graph = deriveOfficialEngagementGraphV2(projected);
+        cache.set(key, !graph.modelEdges.some(edge =>
+          edge.leftUnitId === actor.id || edge.rightUnitId === actor.id));
+      }
+    }
+    const allowed = cache.get(key);
+    if (!allowed) diagnostic.undeclaredEngagementRejected += 1;
+    return allowed;
+  };
+}
+
+// Contact can require a detour longer than the roll while engagement is still
+// reachable by spending the whole roll along that route. Sample that prefix;
+// the extra inch is only a route-planning horizon, never a movement allowance.
+// Every yielded complete layout still goes through the ordinary Native check.
+function* routedChargePrefixCandidates(state, domain, request, progress) {
+  const source = sourceDomain(domain);
+  const constraints = source.constraints;
+  if (source.parameterSchema?.outcome?.length === 1
+    && source.parameterSchema.outcome[0] === "failure") return;
+  const actor = state.pieces.find(piece => piece.id === source.pieceId);
+  const allProfiles = relocationModelProfiles(state, domain);
+  const leader = allProfiles.find(profile =>
+    profile.modelId === constraints.leadingModelId);
+  if (!leader?.startPoint || String(leader.startElevation || "ground") !== "ground") return;
+  const profiles = [leader, ...allProfiles.filter(profile => profile !== leader)];
+  const blockers = blockingFootprints(state, source.pieceId);
+  const declaredTargets = constraints.declaredTargets || [];
+  const declaredUnitIds = new Set(declaredTargets.map(target => target.unitId));
+  const targetIds = [...new Set(declaredTargets.flatMap(target =>
+    [String(target.unitId), String(target.modelId)]))];
+  const targets = blockers.filter(blocker => blocker.kind === "model"
+    && declaredUnitIds.has(blocker.pieceId));
+  const objectives = normalizeFormationObjectives(request);
+  const policies = formationSolverPolicies([{kind: "maximize_engagement",
+    weight: 5, targetIds}, ...objectives.filter(objective =>
+    objective.kind !== "maximize_engagement"
+      || objective.targetIds.join("\u0000") !== targetIds.join("\u0000"))]);
+  const diagnostic = {leaderFootprintRejected: 0, leaderOutOfBounds: 0,
+    leaderNoSurface: 0, leaderBlockedByModelOrTerrain: 0,
+    followerUnplaceable: 0, maxFollowersPlaced: 0,
+    undeclaredEngagementRejected: 0, routeRequests: 0, routedPrefixes: 0};
+  const placementAllowed = constraints.undeclaredEnemyEngagementProhibited === true
+    ? chargePlacementEligibility(state, actor, declaredUnitIds, blockers, diagnostic) : null;
+  const coherencyLinkAllows = createOfficialCoherencyLinkEvaluatorV1({state, actor,
+    dataBundle: state.officialModelBaseGeometryDataBundle, currentlyEngagedEnemyUnitIds: []});
+  const targetIndex = formationIntentTargetIndex(state, blockers);
+  const model = actor.models.find(entry => entry.id === leader.modelId);
+  const router = createStarcraftTmgModelObstacleRoutePlannerV1({
+    start: leader.startPoint,
+    movingFootprint: footprintAt(leader, leader.startPoint, Number(model?.baseRotationDegrees || 0)),
+    modelBlockers: blockers,
+    battlefieldWidthMilliInches: Math.round(Number(state.board.widthInches) * 1000),
+    battlefieldHeightMilliInches: Math.round(Number(state.board.heightInches) * 1000),
+  });
+  const angleIndices = [];
+  for (const step of [24, 12, 6, 3, 1]) for (let index = 0; index < 48; index += step) {
+    if (!angleIndices.includes(index)) angleIndices.push(index);
+  }
+  const rotations = String(leader.baseShape || leader.shape) === "round" ? [0] : [0, 45, 90, 135];
+  const maxDistance = Number(constraints.maxDistanceMilliInches);
+  const seenPaths = new Set();
+  // A contact ring can be screened by friendly bases or terrain even though
+  // the outer engagement band remains reachable. Sample both, with the same
+  // full-distance and Native engagement obligations; this is not a new rule.
+  for (const engagementOffset of [0, 999, 750, 500, 250])
+  for (const target of targets) for (const rotation of rotations) for (const index of angleIndices) {
+    const angle = index * Math.PI / 24;
+    let endpoint = contactAnchor(leader, target.footprint, angle, rotation);
+    if (!endpoint) continue;
+    endpoint = {...endpoint,
+      xMilliInches: Math.round(endpoint.xMilliInches + Math.cos(angle) * engagementOffset),
+      yMilliInches: Math.round(endpoint.yMilliInches + Math.sin(angle) * engagementOffset)};
+    const endpointFootprint = footprintAt(leader, endpoint, rotation);
+    if (blockers.some(blocker => evaluateOfficialPhysicalFootprintRelationV1({
+      left: endpointFootprint, right: blocker.footprint}).overlappingInteriors)) continue;
+    diagnostic.routeRequests += 1;
+    const route = router.routeTo({endpoint, maxDistanceMilliInches: maxDistance + 1000});
+    if (route.status !== "candidate_found" || route.path.length < 2) continue;
+    let previous = leader.startPoint;
+    let remaining = maxDistance;
+    const path = [];
+    for (const point of route.path) {
+      const distance = Math.hypot(point.xMilliInches - previous.xMilliInches,
+        point.yMilliInches - previous.yMilliInches);
+      if (distance <= remaining) {
+        path.push(point); remaining -= distance; previous = point;
+      } else {
+        path.push({...point,
+          xMilliInches: Math.round(previous.xMilliInches + (point.xMilliInches - previous.xMilliInches) * remaining / distance),
+          yMilliInches: Math.round(previous.yMilliInches + (point.yMilliInches - previous.yMilliInches) * remaining / distance)});
+        break;
+      }
+    }
+    const key = JSON.stringify(path);
+    if (!path.length || seenPaths.has(key)) continue;
+    seenPaths.add(key);
+    diagnostic.routedPrefixes += 1;
+    const anchor = path.at(-1);
+    // A short route stopping in the engagement band cannot satisfy Native's
+    // closest-position obligation unless it actually reaches base contact.
+    if (route.distanceMilliInches < maxDistance - 1) {
+      const footprint = footprintAt(leader, anchor, rotation);
+      if (!targets.some(entry => evaluateOfficialPhysicalFootprintRelationV1({
+        left: footprint, right: entry.footprint}).minimumSeparationMilliInches <= 1)) continue;
+    }
+    for (const policy of policies) {
+      const solved = solveIntentFormationRows({state, profiles, anchor,
+        angle: Math.atan2(anchor.yMilliInches - leader.startPoint.yMilliInches,
+          anchor.xMilliInches - leader.startPoint.xMilliInches),
+        coherencyRangeMilliInches: Number(constraints.coherencyRangeMilliInches),
+        excludedPieceId: source.pieceId, sideKey: source.sideKey || actor.sideKey,
+        policy, diagnostic, coherencyLinkAllows, blockers, targetIndex, placementAllowed});
+      if (!solved) continue;
+      yield {parameters: {outcome: "success", path: clone(path), placements: solved.rows.slice(1)},
+        patternId: `intent-solver:${solved.policyId}:routed-charge-prefix`,
+        solverPolicyId: solved.policyId, formationObjectives: solved.objectives,
+        tacticalMetrics: solved.metrics, anchor, modelProfiles: profiles,
+        leadingModelId: leader.modelId,
+        requiredSpatialConstraints: {declaredTargets: clone(declaredTargets),
+          allDeclaredTargetsMustBeEngaged: constraints.allDeclaredTargetsMustBeEngaged === true,
+          undeclaredEnemyEngagementProhibited: constraints.undeclaredEnemyEngagementProhibited === true,
+          closestPositionRequiredUnlessBaseToBase: true,
+          remainingPlacementPriority: clone(constraints.remainingPlacementPriority || [])},
+        targetAnchor: {unitId: target.pieceId, modelId: target.modelId,
+          point: footprintCenter(target.footprint), seedKind: "routed_maximum_distance_closest_position"},
+        sameAnchorAlternativesMeaningful: true};
+    }
+  }
+  progress?.("charge_routed_prefix_diagnostic", diagnostic);
+}
+
+function* criticalChargeCandidates(state,domain,request,progress){
+  const source=sourceDomain(domain),constraints=source.constraints;
+  if(source.parameterSchema?.outcome?.length===1&&source.parameterSchema.outcome[0]==='failure')return;
+  const actor=state.pieces.find(p=>p.id===source.pieceId),allProfiles=relocationModelProfiles(state,domain),leader=allProfiles.find(p=>p.modelId===constraints.leadingModelId);
+  if(!leader?.startPoint||String(leader.startElevation||'ground')!=='ground')return;
+  const profiles=[leader,...allProfiles.filter(p=>p!==leader)],blockers=blockingFootprints(state,actor.id),declared=new Set((constraints.declaredTargets||[]).map(t=>t.unitId)),targets=blockers.filter(b=>b.kind==='model'&&declared.has(b.pieceId));
+  const moving=footprintAt(leader,leader.startPoint,0),anchors=chargeCriticalEndpointCandidatesV1(moving,targets,blockers);
+  if(!anchors.length)return;
+  const router=createStarcraftTmgModelObstacleRoutePlannerV1({start:leader.startPoint,movingFootprint:moving,modelBlockers:blockers,battlefieldWidthMilliInches:Math.round(state.board.widthInches*1000),battlefieldHeightMilliInches:Math.round(state.board.heightInches*1000)});
+  const targetIds=[...new Set((constraints.declaredTargets||[]).flatMap(t=>[String(t.unitId),String(t.modelId)]))],objectives=normalizeFormationObjectives(request),policies=formationSolverPolicies([{kind:'maximize_engagement',weight:5,targetIds},...objectives.filter(o=>o.kind!=='maximize_engagement')]);
+  const diagnostic={leaderFootprintRejected:0,leaderOutOfBounds:0,leaderNoSurface:0,leaderBlockedByModelOrTerrain:0,followerUnplaceable:0,maxFollowersPlaced:0,undeclaredEngagementRejected:0,anchors:anchors.length,routeRequests:0,closestProven:0};
+  const coherencyLinkAllows=createOfficialCoherencyLinkEvaluatorV1({state,actor,dataBundle:state.officialModelBaseGeometryDataBundle,currentlyEngagedEnemyUnitIds:[]}),placementAllowed=chargePlacementEligibility(state,actor,declared,blockers,diagnostic),targetIndex=formationIntentTargetIndex(state,blockers);
+  for(const anchor of anchors.slice(0,64)){
+    const fp=footprintAt(leader,anchor,0);
+    if(blockers.some(b=>evaluateOfficialPhysicalFootprintRelationV1({left:fp,right:b.footprint}).overlappingInteriors))continue;
+    diagnostic.routeRequests++;
+    const route=router.routeTo({endpoint:anchor,maxDistanceMilliInches:Number(constraints.maxDistanceMilliInches)});
+    if(route.status!=='candidate_found')continue;
+    const proof=proveOfficialChargeClosestPositionV1(state,anchor);
+    if(!proof.closestPositionProven)continue;
+    diagnostic.closestProven++;
+    for(const policy of policies){
+      const solved=solveIntentFormationRows({state,profiles,anchor,angle:Math.atan2(anchor.yMilliInches-leader.startPoint.yMilliInches,anchor.xMilliInches-leader.startPoint.xMilliInches),coherencyRangeMilliInches:Number(constraints.coherencyRangeMilliInches),excludedPieceId:actor.id,sideKey:source.sideKey||actor.sideKey,policy,diagnostic,coherencyLinkAllows,blockers,targetIndex,placementAllowed});
+      if(!solved)continue;
+      yield {parameters:{outcome:'success',path:clone(route.path),placements:solved.rows.slice(1)},patternId:'intent-solver:'+solved.policyId+':certified-closest-charge',solverPolicyId:solved.policyId,formationObjectives:solved.objectives,tacticalMetrics:solved.metrics,anchor,modelProfiles:profiles,leadingModelId:leader.modelId,requiredSpatialConstraints:{declaredTargets:clone(constraints.declaredTargets),closestPositionProof:proof},sameAnchorAlternativesMeaningful:true};
+    }
+  }
+  progress?.('charge_critical_endpoint_diagnostic',diagnostic);
+}
+
+function chargeCandidateStream(state, domain, request, progress) {
+  const stream = {length: 0, complete: false, *[Symbol.iterator]() {
+    for (const candidate of criticalChargeCandidates(state, domain, request, progress)) {
+      stream.length += 1; yield candidate;
+    }
+    for (const candidate of routedChargePrefixCandidates(state, domain, request, progress)) {
+      stream.length += 1; yield candidate;
+    }
+    for (const candidate of chargeResolutionCandidates(state, domain, request, progress)) {
+      stream.length += 1; yield candidate;
+    }
+    stream.complete = true;
+  }};
+  return stream;
 }
 
 function chargeResolutionCandidates(state, domain, request, progress = null) {
@@ -1862,7 +2188,8 @@ function chargeResolutionCandidates(state, domain, request, progress = null) {
     leaderNoSurface: 0, leaderBlockedByModelOrTerrain: 0,
     followerUnplaceable: 0, maxFollowersPlaced: 0,
     modelObstacleRouteRequests: 0, modelObstacleDetoursFound: 0,
-    modelObstacleRoutesUnknown: 0, additionalDetourCandidates: 0 };
+    modelObstacleRoutesUnknown: 0, additionalDetourCandidates: 0,
+    undeclaredEngagementRejected: 0 };
   const generationLimit = Math.max(24, Math.min(192,
     Number(request.maximumOptions || DEFAULT_MAX_OPTIONS) * 24));
   // Keep nominated-model seeds first. The execution kernel checks engagement
@@ -1871,6 +2198,9 @@ function chargeResolutionCandidates(state, domain, request, progress = null) {
   // that same Unit. All generated layouts still require full Rules validation;
   // declaration identity, target Units and distance-failure proofs stay intact.
   const declaredUnitIds = new Set(declaredTargets.map(target => target.unitId));
+  const placementAllowed = constraints.undeclaredEnemyEngagementProhibited === true
+    ? chargePlacementEligibility(state, actor, declaredUnitIds, blockers, diagnostic)
+    : null;
   const nominatedModelIds = new Set(declaredTargets.map(target => target.modelId));
   const contactTargets = [...declaredTargets, ...blockers.filter(blocker =>
     blocker.kind === "model" && declaredUnitIds.has(blocker.pieceId)
@@ -1936,6 +2266,7 @@ function chargeResolutionCandidates(state, domain, request, progress = null) {
             coherencyLinkAllows,
             blockers,
             targetIndex: intentTargetIndex,
+            placementAllowed,
           });
           if (!solved) {
             diagnostic.intentFormationUnsolved += 1;
@@ -2374,7 +2705,7 @@ function respawnCandidates(state, domain, request) {
           targetIndex: formationIntentTargetIndex(state,
             blockingFootprints(state, actor.id)),
           sideKey: actor.sideKey,
-        }, 0),
+        }),
         anchor: solved.actorCenter,
         modelProfiles: profiles,
         sameAnchorAlternativesMeaningful: true,
@@ -2419,7 +2750,7 @@ function reservePieceProfiles(piece) {
   return profiles;
 }
 
-function lifecycleConsumerCandidates(state, domain, request) {
+function lifecycleConsumerCandidates(state, domain, request, diagnostic) {
   const source = sourceDomain(domain);
   const effectKind = String(source.effectKind || "");
   if (!LIFECYCLE_CONSUMER_FORMATION_EFFECTS.has(effectKind)) {
@@ -2446,8 +2777,11 @@ function lifecycleConsumerCandidates(state, domain, request) {
     }
     const leaderRadius = profileRadius(profiles[0]);
     const tokenRadius = Math.round(diameter * 500);
+    const shadeFootprint = createOfficialPhysicalFootprintV1({ objectId: source.sourceInstanceId,
+      shape: "round", center: point, widthMilliInches: Math.round(diameter * 1000),
+      depthMilliInches: Math.round(diameter * 1000) });
     const anchors = [{ point, angle: 0, gap: "token_center" }];
-    for (const gapMilliInches of [0, 1_500, 3_000]) {
+    for (const gapMilliInches of [0, 1_500, Math.max(0, coherencyRangeMilliInches - 2 * leaderRadius)]) {
       for (let index = 0; index < 24; index += 1) {
         const angle = (Math.PI * 2 * index) / 24;
         anchors.push({
@@ -2462,6 +2796,7 @@ function lifecycleConsumerCandidates(state, domain, request) {
     for (const anchor of anchors) {
       for (const policy of policies) {
         const solved = solveIntentFormationRows({
+          diagnostic,
           state,
           profiles,
           anchor: anchor.point,
@@ -2472,6 +2807,12 @@ function lifecycleConsumerCandidates(state, domain, request) {
           policy,
         });
         if (!solved) continue;
+        if (!solved.rows.every(row => {
+          const profile = profiles.find(entry => entry.modelId === row.modelId);
+          return isOfficialPhysicalFootprintWhollyWithinRangeV1({ source: shadeFootprint,
+            target: footprintAt(profile, row, row.rotationDegrees || 0),
+            rangeMilliInches: coherencyRangeMilliInches });
+        })) { diagnostic.sourceRangeRejected += 1; continue; }
         candidates.push({
           parameters: {
             activeUnitId: source.pieceId,
@@ -2510,6 +2851,7 @@ function lifecycleConsumerCandidates(state, domain, request) {
     for (const angle of angles) {
       for (const policy of policies) {
             const solved = solveIntentFormationRows({
+          diagnostic,
               state,
               profiles,
               anchor,
@@ -2575,6 +2917,7 @@ function lifecycleConsumerCandidates(state, domain, request) {
       };
       for (const policy of policies) {
           const solved = solveIntentFormationRows({
+          diagnostic,
             state,
             profiles,
             anchor,
@@ -2650,6 +2993,7 @@ function generatedCandidateIntentKey(candidate, request) {
   return hashStarcraftTmgContract({
     anchor: candidate.anchor,
     policyId: policy.policyId,
+    ...(candidate.routeGuidance ? { guidedPath: candidate.parameters.path } : {}),
     nonSpatialParameters,
   });
 }
@@ -2683,13 +3027,18 @@ function solveGeneratedCandidateIntent(state, source, candidate, request,
     profiles,
     anchor: candidate.anchor,
     angle,
-    coherencyRangeMilliInches: source.actionType === "resolve_relocation_ability"
-      ? 3_000 : horizontalCoherencyRange(state, actor),
+    coherencyRangeMilliInches: isOfficialNonEntryEdgeGroundDeployDomainV1(source)
+      ? source.constraints.geometryDescription.coherencyRangeMilliInches
+      : source.actionType === "resolve_relocation_ability"
+        ? source.constraints?.coherencyRangeMilliInches
+          ?? horizontalCoherencyRange(state, actor)
+        : horizontalCoherencyRange(state, actor),
     excludedPieceId: source.pieceId,
     sideKey: source.sideKey || actor?.sideKey,
     policy,
     blockers: searchContext.blockers,
     targetIndex: searchContext.targetIndex,
+    diagnostic: searchContext.diagnostic,
     minimumEnemyGapMilliInchesExclusive:
       source.constraints?.minimumEnemyGapMilliInchesExclusive,
   });
@@ -2699,7 +3048,8 @@ function solveGeneratedCandidateIntent(state, source, candidate, request,
   if (object(parameters.placementPlan)) {
     parameters.placementPlan.leadingModelId = rows[0].modelId;
     parameters.placementPlan.placements = rows;
-  } else if (source.actionType === "resolve_relocation_ability") {
+  } else if (source.actionType === "resolve_relocation_ability"
+    || isOfficialNonEntryEdgeGroundDeployDomainV1(source)) {
     parameters.leadingModelId = rows[0].modelId;
     parameters.placements = rows;
     if (source.effectKind === "extra_move") parameters.path = [rows[0]];
@@ -2711,7 +3061,8 @@ function solveGeneratedCandidateIntent(state, source, candidate, request,
     }));
   } else {
     parameters.leadingModelId = rows[0].modelId;
-    parameters.path = [rows[0]];
+    parameters.path = candidate.routeGuidance
+      ? [...parameters.path.slice(0, -1), rows[0]] : [rows[0]];
     parameters.placements = rows.slice(1);
   }
   return {
@@ -2992,15 +3343,15 @@ export function projectStarcraftTmgIncomingStationaryFireEstimateV1(
         && (entry.threats?.toFrom?.currentRoundStationaryProfileKeys || [])
           .length > 0)
       .map((entry) => entry.toUnitId));
-    const estimates = domains.map((domain) => ({
+    const matchHorizon = projectOfficialMatchHorizonV1(projected);
+    const estimates = domains.filter(domain => currentRoundEnemyIds.has(domain.pieceId) || matchHorizon.nextRoundAvailable === true).map((domain) => ({
       ...probabilityBatch.estimate({
         domain,
         parameters: { targetUnitId: actorId },
         sampleBudget: Number(options.sampleBudget || 216),
       }),
       enemyUnitId: domain.pieceId || null,
-      earliestHorizon: currentRoundEnemyIds.has(domain.pieceId)
-        ? "current_round" : "next_round",
+      earliestHorizon: projectOfficialActionHorizonV1(projected, currentRoundEnemyIds.has(domain.pieceId)),
       currentRoundActionAvailable: currentRoundEnemyIds.has(domain.pieceId),
     })).sort((left, right) =>
       right.outcomes.expectedCasualties - left.outcomes.expectedCasualties
@@ -3012,7 +3363,10 @@ export function projectStarcraftTmgIncomingStationaryFireEstimateV1(
         ? "current_round_stationary_attacks_estimated"
         : estimates.length > 0
           ? "future_round_stationary_attacks_estimated"
-        : "no_current_position_stationary_attack_domain",
+        : matchHorizon.nextRoundAvailable === null && domains.length > 0
+          ? "unknown_match_horizon" : "no_attack_domain_within_remaining_match",
+      matchHorizon,
+      timingExcludedDomainCount: domains.length - estimates.length,
       opponentSideKey,
       opponentMovementIncluded: false,
       opponentMovementBoundedSeparately: true,
@@ -3057,6 +3411,7 @@ function incomingMoveThenFireEstimate(projected, actorId, graph) {
   if (!actor) return { status: "unknown", reason: "projected_actor_missing" };
   try {
     const rows = [];
+    const matchHorizon = projectOfficialMatchHorizonV1(projected);
     for (const relationship of (graph.relationships || []).filter((entry) =>
       new Set(["unit_spatial_relationship", "unit_relationship"])
         .has(entry.edgeKind) && entry.fromUnitId === actorId)) {
@@ -3128,11 +3483,10 @@ function incomingMoveThenFireEstimate(projected, actorId, graph) {
             profile?.phase === "combat"
               ? actionWindow.combatCurrentRoundAvailable === true
               : actionWindow.assaultCurrentRoundAvailable === true,
-          earliestHorizon: currentRoundReachable
-            ? "current_round" : "next_round",
+          earliestHorizon: reachable ? projectOfficialActionHorizonV1(projected, currentRoundReachable) : "outside_printed_move_then_fire_band",
           mustBeTreatedAsLiveThreatWhenReachable: currentRoundReachable,
           mustBeTreatedAsFutureThreatWhenReachable:
-            reachable && !currentRoundReachable,
+            reachable && !currentRoundReachable && matchHorizon.nextRoundAvailable === true,
         });
       }
     }
@@ -3150,10 +3504,11 @@ function incomingMoveThenFireEstimate(projected, actorId, graph) {
           ? "bounded_future_round_move_then_fire_threats"
         : "no_printed_move_then_fire_reach",
       opponentMovementRiskIncluded: true,
+      matchHorizon,
       exactCurrentDistanceAndPrintedReach: true,
       legalPathAndPostMoveLosResolved: false,
       reachableThreatCount: rows.filter((entry) =>
-        entry.canEnterMaximumRangeByPrintedMovement).length,
+        entry.mustBeTreatedAsLiveThreatWhenReachable || entry.mustBeTreatedAsFutureThreatWhenReachable).length,
       currentRoundReachableThreatCount: rows.filter((entry) =>
         entry.mustBeTreatedAsLiveThreatWhenReachable).length,
       futureRoundReachableThreatCount: rows.filter((entry) =>
@@ -3179,7 +3534,11 @@ export function projectStarcraftTmgFormationRelationshipComparisonV1({
   state, source, slots, objectives, baseline, instantiatedAction,
   comparisonObjectives = objectives,
   observeProgress,
+  delegatedProjection,
 }) {
+  if (delegatedProjection && !delegatedProjection.state) {
+    return { status: "unknown", reason: delegatedProjection.reason };
+  }
   const comparisonStartedAtMs = Date.now();
   const observe = (stage, detail = {}) => {
     try { observeProgress?.({ ...detail, stage, observedAtMs: Date.now(),
@@ -3194,10 +3553,10 @@ export function projectStarcraftTmgFormationRelationshipComparisonV1({
     entry.position]));
   try {
     observe("formation_projection_started");
-    let projected = clone(state);
+    let projected = clone(delegatedProjection?.state || state);
     const nativeSpatialAction = instantiatedAction?.sourceAction || instantiatedAction;
-    const nativeSpatialProjection = Boolean(nativeSpatialAction?.spatialPlan);
-    if (nativeSpatialProjection) {
+    const nativeSpatialProjection = Boolean(delegatedProjection?.state || nativeSpatialAction?.spatialPlan);
+    if (!delegatedProjection && nativeSpatialProjection) {
       // Use the actual pure transition, including surface/support, statuses,
       // grass and force-field removal. Coordinates alone are not a successor.
       projected = clone(applyOfficialSelectedRosterSpatialActionV1(
@@ -3303,6 +3662,8 @@ export function projectStarcraftTmgFormationRelationshipComparisonV1({
       hypotheticalProjection: true,
       ...(createsUnit ? { subjectUnitId, sourceActorUnitId: source.pieceId,
         subjectProjectionSource: "official_unit_lifecycle_pure_transition" } : {}),
+      ...(delegatedProjection ? { subjectUnitId, sourceActorUnitId: delegatedProjection.actorUnitId,
+        subjectProjectionSource: "official_delegated_movement_pure_transition" } : {}),
       baselineRelationshipGraphHash:
         baseline?.relationshipGraphHash || null,
       projectedRelationshipGraphHash: graph.relationshipGraphHash,
@@ -3343,7 +3704,13 @@ export function projectStarcraftTmgFormationRelationshipComparisonV1({
 
 function searchLegalFormationOptions(input, compareFormation) {
   const domain = input.domain;
+  const declared = declaredDomain(domain);
   const source = sourceDomain(domain);
+  const delegated = declared?.actionType === "resolve_khassar_movement";
+  const actionIdentity = delegated
+    ? { actionType: declared.actionType, pieceId: declared.pieceId,
+        geometrySubjectUnitId: source.pieceId, geometryActionType: source.actionType }
+    : { actionType: source?.actionType, pieceId: source?.pieceId };
   const state = input.state;
   const instantiate = input.instantiate;
   const request = object(input.request) ? input.request : {};
@@ -3377,7 +3744,9 @@ function searchLegalFormationOptions(input, compareFormation) {
     || typeof instantiate !== "function") {
     throw new TypeError("LEGAL_FORMATION_SEARCH_INPUT_INVALID");
   }
-  if (!SUPPORTED_ACTION_TYPES.has(String(source.actionType || ""))) {
+  if (!SUPPORTED_ACTION_TYPES.has(String(source.actionType || ""))
+    || source.actionType === "resolve_protoss_unique_ability"
+      && !isOfficialNonEntryEdgeGroundDeployDomainV1(source)) {
     throw new TypeError("LEGAL_FORMATION_ACTION_TYPE_UNSUPPORTED");
   }
   if (source.actionType === "use_active_ability"
@@ -3394,10 +3763,16 @@ function searchLegalFormationOptions(input, compareFormation) {
     ? Math.max(1, Math.min(20_000, requestedAttempts)) : DEFAULT_MAX_ATTEMPTS;
   const candidateRequest = source.actionType === "use_active_ability"
     ? selfPlaceSearchRequest(state, domain, request) : request;
+  const blockers = blockingFootprints(state, source.pieceId);
+  const packingDiagnostics = { leaderFootprintRejected: 0, leaderOutOfBounds: 0,
+    leaderNoSurface: 0, leaderBlockedByModelOrTerrain: 0, followerUnplaceable: 0,
+    maxFollowersPlaced: 0, sourceRangeRejected: 0 };
   const generated = source.actionType === "deploy"
-    ? deployCandidates(domain, request)
+    ? deployCandidates(domain, request, blockers)
     : source.actionType === "resolve_charge"
-      ? chargeResolutionCandidates(state, domain, request, progress)
+      ? chargeCandidateStream(state, domain, request, progress)
+    : isOfficialNonEntryEdgeGroundDeployDomainV1(source)
+      ? nonEntryEdgeRelocationCandidates(state, domain, request)
     : source.actionType === "resolve_relocation_ability"
       ? relocationAbilityCandidates(state, domain, request)
     : source.actionType === "use_active_ability"
@@ -3405,12 +3780,12 @@ function searchLegalFormationOptions(input, compareFormation) {
     : source.actionType === "resolve_unit_lifecycle_ability"
       ? lifecycleAbilityCandidates(state, domain, request)
       : source.actionType === "resolve_unit_lifecycle_consumer"
-        ? lifecycleConsumerCandidates(state, domain, request)
-        : relocationCandidates(domain, request);
-  progress("candidate_generation_complete", {
+        ? lifecycleConsumerCandidates(state, domain, request, packingDiagnostics)
+        : [...guidedMovementCandidates(state, source, request, blockers),
+          ...relocationCandidates(domain, request)];
+  progress(generated.complete === false ? "candidate_generation_started" : "candidate_generation_complete", {
     generatedCandidateCount: generated.length,
   });
-  const blockers = blockingFootprints(state, source.pieceId);
   const normalizedObjectives = normalizeFormationObjectives(request);
   const intentTargetIndex = formationIntentTargetIndex(state, blockers);
   const options = [];
@@ -3439,11 +3814,81 @@ function searchLegalFormationOptions(input, compareFormation) {
   let instantiatedCandidateCount = 0;
   let prefilteredCandidateCount = 0;
   let duplicateIntentCandidateCount = 0;
+  let duplicateExactActionCount = 0;
+  const attemptedGeometry = new Set();
+  const acceptedActionKeys = new Set();
+  const equivalentActionIntents = new Map();
   let examinedGeneratedCandidateCount = 0;
   const generatedIntentKeys = new Set();
-  for (const generatedCandidate of generated) {
-    if (attemptedCandidateCount >= maximumCandidateAttempts
-      || options.length >= maximumOptions) break;
+  // Query-local cache: a rejected leader entry path cannot be fixed by moving
+  // followers. Use Native's exact prefix before expensive full-squad packing.
+  const deployPathChecks = new Map();
+  let deployPathRejected = 0;
+
+  // Ordinary Move/Run used to try only a straight leader path. Reuse the
+  // existing obstacle router after a real path-collision rejection, then send
+  // its candidate through the SAME full Rules instantiation. Never replace a
+  // valid direct path, infer impossibility, or reinterpret a place as a move.
+  const movementRoutePlanners = new Map();
+  const movementRouting = { version: 'ordinary-movement-detour-v1',
+    directPathRejected: 0, routeRequests: 0, routedCandidates: 0,
+    acceptedDetours: 0, unknownReasons: {} };
+  function instantiateWithMovementDetour(candidate) {
+    attemptedGeometry.add(hashStarcraftTmgContract(candidate.parameters));
+    try {
+      return { candidate, instantiated: instantiate(state, domain,
+        candidate.parameters, clone(input.instantiateOptions || {})) };
+    } catch (directError) {
+      const code = String(directError?.message || directError).split(':')[0];
+      if (!['move', 'run', 'disengage'].includes(source.actionType)
+        || !['SELECTED_SPATIAL_TERRAIN_PATH_BLOCKED',
+          'SELECTED_SPATIAL_PATH_MODEL_COLLISION'].includes(code)) throw directError;
+      movementRouting.directPathRejected += 1;
+      const profiles = candidate.modelProfiles || source.constraints.modelProfiles;
+      const profile = profiles.find(p => p.modelId === candidate.parameters.leadingModelId);
+      const start = profile?.startPoint;
+      const endpoint = candidate.parameters.path?.at(-1);
+      const model = actor?.models?.find(m => m.id === profile?.modelId);
+      if (!start || !endpoint || candidate.parameters.path.length !== 1
+        || String(profile.startElevation || model?.elevation || 'ground') !== 'ground'
+        || String(endpoint.elevation || 'ground') !== 'ground'
+        || candidate.parameters.elevationTransitions?.length
+        || instantiatedCandidateCount >= maximumCandidateAttempts) throw directError;
+      const rotation = Number(model?.baseRotationDegrees || 0);
+      const key = JSON.stringify([profile, rotation]);
+      if (!movementRoutePlanners.has(key)) movementRoutePlanners.set(key,
+        createStarcraftTmgModelObstacleRoutePlannerV1({
+          start, movingFootprint: footprintAt(profile, start, rotation),
+          modelBlockers: blockers,
+          battlefieldWidthMilliInches: Math.round(Number(state.board.widthInches) * 1000),
+          battlefieldHeightMilliInches: Math.round(Number(state.board.heightInches) * 1000),
+        }));
+      movementRouting.routeRequests += 1;
+      const route = movementRoutePlanners.get(key).routeTo({ endpoint,
+        maxDistanceMilliInches: Number(source.constraints.maxDistanceMilliInches) });
+      if (route.status !== 'candidate_found' || route.path.length < 2) {
+        const reason = route.reason || 'no_additional_detour';
+        movementRouting.unknownReasons[reason] = (movementRouting.unknownReasons[reason] || 0) + 1;
+        throw directError;
+      }
+      movementRouting.routedCandidates += 1;
+      instantiatedCandidateCount += 1;
+      attemptedCandidateCount += 1;
+      const routed = { ...candidate,
+        parameters: { ...candidate.parameters, path: clone(route.path) },
+        patternId: candidate.patternId + ':obstacle-route' };
+      attemptedGeometry.add(hashStarcraftTmgContract(routed.parameters));
+      const instantiated = instantiate(state, domain, routed.parameters,
+        clone(input.instantiateOptions || {}));
+      movementRouting.acceptedDetours += 1;
+      return { candidate: routed, instantiated };
+    }
+  }
+  const candidateIterator = generated[Symbol.iterator]();
+  while (attemptedCandidateCount < maximumCandidateAttempts && options.length < maximumOptions) {
+    const next = candidateIterator.next();
+    if (next.done) break;
+    const generatedCandidate = next.value;
     examinedGeneratedCandidateCount += 1;
     if (examinedGeneratedCandidateCount <= 5
       || examinedGeneratedCandidateCount % 25 === 0) {
@@ -3462,11 +3907,32 @@ function searchLegalFormationOptions(input, compareFormation) {
       continue;
     }
     if (generatedIntentKey) generatedIntentKeys.add(generatedIntentKey);
-    const candidate = solveGeneratedCandidateIntent(
+    if (source.actionType === "deploy"
+      && source.executorId === OFFICIAL_SELECTED_ROSTER_SPATIAL_ACTION_RUNTIME_ID) {
+      const p = generatedCandidate.parameters;
+      const pathKey = JSON.stringify([p.leadingModelId, p.entrySegmentId,
+        p.entryAlongEdgeMilliInches, p.path]);
+      if (!deployPathChecks.has(pathKey)) {
+        try {
+          checkOfficialSelectedRosterDeployLeaderPathV1(state, source, p);
+          deployPathChecks.set(pathKey, null);
+        } catch (error) {
+          deployPathChecks.set(pathKey, String(error?.message || error).split(":")[0]);
+        }
+      }
+      const rejection = deployPathChecks.get(pathKey);
+      if (rejection) {
+        deployPathRejected += 1;
+        failureCounts.set(rejection, Number(failureCounts.get(rejection) || 0) + 1);
+        continue;
+      }
+    }
+    let candidate = solveGeneratedCandidateIntent(
       state, source, generatedCandidate, request, {
         blockers,
         targetIndex: intentTargetIndex,
         objectives: normalizedObjectives,
+        diagnostic: packingDiagnostics,
       });
     if (!candidate) continue;
     if (examinedGeneratedCandidateCount <= 5
@@ -3516,8 +3982,9 @@ function searchLegalFormationOptions(input, compareFormation) {
       patternId: candidate.patternId,
     });
     try {
-      const instantiated = instantiate(state, domain, candidate.parameters,
-        clone(input.instantiateOptions || {}));
+      const accepted = instantiateWithMovementDetour(candidate);
+      candidate = accepted.candidate;
+      const instantiated = accepted.instantiated;
       progress("rules_instantiation_completed", {
         examinedGeneratedCandidateCount,
         attemptedCandidateCount,
@@ -3530,10 +3997,22 @@ function searchLegalFormationOptions(input, compareFormation) {
       if (!object(canonicalParameters)) continue;
       const objectives = clone(candidate.formationObjectives
         || normalizeFormationObjectives(request));
+      const actionHash = hashStarcraftTmgContract(instantiated.action);
+      // Different policy weights do not make the SAME executable action a new
+      // choice. Preserve their advisory intent labels outside the option's
+      // sealed identity, without consuming a distinct-action slot.
+      const actionKey = actionHash;
+      if (acceptedActionKeys.has(actionKey)) {
+        duplicateExactActionCount += 1;
+        const intent = { solverPolicyId: candidate.solverPolicyId || null,
+          formationObjectives: objectives };
+        if (!equivalentActionIntents.has(actionHash)) equivalentActionIntents.set(actionHash, new Map());
+        equivalentActionIntents.get(actionHash).set(hashStarcraftTmgContract(intent), intent);
+        continue;
+      }
       const optionSeed = {
         domainId: domain.domainId,
-        actionType: source.actionType,
-        pieceId: source.pieceId,
+        ...actionIdentity,
         patternId: candidate.patternId,
         solverPolicyId: candidate.solverPolicyId || null,
         formationObjectives: objectives,
@@ -3544,9 +4023,12 @@ function searchLegalFormationOptions(input, compareFormation) {
           clone(candidate.requiredSpatialConstraints || null),
         anchor: clone(candidate.anchor),
         canonicalParameters,
-        actionHash: hashStarcraftTmgContract(instantiated.action),
+        actionHash,
+        ...(candidate.routeGuidance ? { routeGuidance: {
+          ...clone(candidate.routeGuidance), currentNativePath: clone(canonicalParameters.path),
+        } } : {}),
         completeFormationPlacementChecked: true,
-        abilityName: source.abilityName || null,
+        abilityName: declared.abilityName || null,
         effectKind: source.effectKind || null,
         paymentCardInstanceIds:
           clone(canonicalParameters.paymentCardInstanceIds || []),
@@ -3563,6 +4045,16 @@ function searchLegalFormationOptions(input, compareFormation) {
         optionCount: options.length,
         patternId: candidate.patternId,
       });
+      let delegatedProjection;
+      if (delegated) {
+        try {
+          const after = input.projectDelegatedFormation?.(state, instantiated.action);
+          delegatedProjection = after ? { state: after, actorUnitId: declared.pieceId }
+            : { reason: "delegated_formation_transition_unavailable" };
+        } catch (error) {
+          delegatedProjection = { reason: String(error?.message || error).split(":")[0] };
+        }
+      }
       const optionCore = {
         ...optionSeed,
         relationshipComparison: compareFormation({
@@ -3570,6 +4062,7 @@ function searchLegalFormationOptions(input, compareFormation) {
           baseline: baselineRelationshipGraph,
           instantiatedAction: instantiated.action,
           comparisonObjectives: normalizedObjectives,
+          ...(delegatedProjection ? { delegatedProjection } : {}),
         }),
       };
       progress("relationship_comparison_completed", {
@@ -3584,6 +4077,7 @@ function searchLegalFormationOptions(input, compareFormation) {
       option.slots = slotsFor(option,
         profiles);
       options.push(option);
+      acceptedActionKeys.add(actionKey);
     } catch (error) {
       const code = String(error?.message || error).split(":")[0];
       failureCounts.set(code, Number(failureCounts.get(code) || 0) + 1);
@@ -3612,8 +4106,7 @@ function searchLegalFormationOptions(input, compareFormation) {
     actionFamilyCoverageVersion: "starcraft_tmg_formation_action_family_coverage_v1",
     actionFamilyCoverage: clone(STARCRAFT_TMG_FORMATION_ACTION_FAMILY_COVERAGE_V1),
     domainId: domain.domainId,
-    actionType: source.actionType,
-    pieceId: source.pieceId,
+    ...actionIdentity,
     preferredAnchor: preferredAnchor(candidateRequest, {
       battlefieldWidthMilliInches: Math.round(Number(state.board.widthInches) * 1000),
       battlefieldHeightMilliInches: Math.round(Number(state.board.heightInches) * 1000),
@@ -3621,25 +4114,40 @@ function searchLegalFormationOptions(input, compareFormation) {
     }),
     ...projectStarcraftTmgFormationPaymentsV1(source.parameterSchema, options),
     formationOptions: options,
+    equivalentActionIntents: [...equivalentActionIntents].map(([actionHash, intents]) => ({
+      actionHash, intents: [...intents.values()], distinctExecutableAction: false,
+    })),
     optionCount: options.length,
     attemptedCandidateCount,
     instantiatedCandidateCount,
     prefilteredCandidateCount,
     duplicateIntentCandidateCount,
     searchCoverage: {
+      // Host telemetry of the ACTUAL Native inputs, independent of prose,
+      // policy labels and repeated copies of the same geometry. It is never
+      // an exhaustive-domain certificate or evidence of action illegality.
+      attemptedGeometrySetHash: attemptedGeometry.size ? hashStarcraftTmgContract({
+        solverVersion: STARCRAFT_TMG_LEGAL_FORMATION_SEARCH_VERSION,
+        domainId: domain.domainId, parameterHashes: [...attemptedGeometry].sort(),
+      }) : null,
+      uniqueAttemptedGeometryCount: attemptedGeometry.size,
       generatedCandidateCount: generated.length,
+      candidateGenerationComplete: generated.complete !== false,
       examinedGeneratedCandidateCount,
       exactInstantiationCount: instantiatedCandidateCount,
+      packingDiagnostics: clone(packingDiagnostics),
+      deployPathPrecheck: { uniquePaths: deployPathChecks.size, rejectedCandidates: deployPathRejected },
       maximumCandidateAttempts,
       maximumOptions,
       candidateGenerationDeterministic: true,
       exactInstantiationIsLazy: true,
+      movementRouting,
+      duplicateExactActionCount,
       greedyPerModelLocalImprovementUsed: true,
-      betterOptionMayExist:
-        examinedGeneratedCandidateCount < generated.length,
+      betterOptionMayExist: options.length === 0
+        || generated.complete === false || examinedGeneratedCandidateCount < generated.length,
       strategyObjectiveOrTokenBudgetReducedForPerformance: false,
     },
-    paretoDiversity: formationParetoDiversity(options),
     failureCounts: Object.fromEntries([...failureCounts.entries()]
       .sort(([left], [right]) => left.localeCompare(right))),
     assignmentContract: {
@@ -3703,6 +4211,5 @@ export async function searchStarcraftTmgLegalFormationOptionsAsyncV1(
     return { ...core, formationOptionId: hashStarcraftTmgContract(core),
       slots: clone(slots) };
   });
-  return freeze({ ...collected, formationOptions: options,
-    paretoDiversity: formationParetoDiversity(options) });
+  return freeze({ ...collected, formationOptions: options });
 }

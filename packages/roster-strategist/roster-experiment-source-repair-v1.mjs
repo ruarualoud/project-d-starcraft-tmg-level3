@@ -1,7 +1,7 @@
 // Source contradiction and missing measurement are different jobs. Preserve
 // the reviewers' actual classifications; do not infer facts or choose tactics.
 import {hashStarcraftTmgContract as hash} from '../authoritative-engine/referee-crypto-v1.mjs';
-export const ROSTER_SOURCE_REPAIR_STAGE_VERSION_V1=4;
+export const ROSTER_SOURCE_REPAIR_STAGE_VERSION_V1=5;
 export const ROSTER_SOURCE_REPAIR_ROUTING_CHANGE_V1='source-review-author-routing-v725';
 // A current, actually delivered strategic return may answer an author CHOICE,
 // never a factual predicate. Keep the immutable review and exact question;
@@ -25,16 +25,27 @@ function explicitReturnedChoices(inputs){
   return resolved;
 }
 export function rosterSourceReviewRepairStageV1(inputs={}){
-  const necessary=new Map(),authors=new Map(),answered=[],conditional=[],claimCorrections=[];let found=false;
+  const necessary=new Map(),authors=new Map(),answered=[],conditional=[],claimCorrections=[],classifications=new Map();let found=false;
   for(const [key,input]of Object.entries(inputs)){
     if(key!=='sourceReview'&&!/^failedSourceClaim\d+$/.test(key))continue;
     const body=input?.value?.value??input?.value;if(!Array.isArray(body?.checks))continue;found=true;
+    const aggregate=body.sourceFidelityAggregation;
+    if(key==='sourceReview'&&aggregate?.origin==='host_composed_completed_source_checks'
+      &&aggregate.coverageAssessed===false&&aggregate.planApproved===false
+      &&aggregate.failedSourceReviewIds?.length&&aggregate.failedSourceReviewIds.every(id=>
+        Object.entries(inputs).some(([name,detail])=>/^failedSourceClaim\d+$/u.test(name)
+          &&(detail.evidenceId??detail.id)==='role:'+id
+          &&(detail.value?.value??detail.value)?.checks?.some(c=>['requires_revision','needs_evidence'].includes(c.verdict)))))continue;
     for(const check of body.checks){
       const origin={reviewEvidenceId:input.evidenceId??input.id??null,checkId:check.checkId};
       const questions=Array.isArray(check.dataQuestions)?check.dataQuestions:[
         ...(check.requiredData??[]).map(question=>({question,classification:'necessary_fact',publicReason:check.publicReason,evidenceNumbers:[]})),
         ...(check.requiredDecisions??[]).map(question=>({question,classification:'author_decision',publicReason:check.publicReason,evidenceNumbers:[]}))];
       for(const q of questions){
+        if(typeof q.question==='string'&&q.classification){
+          const rows=classifications.get(q.question)??[];
+          rows.push({...structuredClone(q),...origin});classifications.set(q.question,rows);
+        }
         if(q.classification==='necessary_fact'){
           const prior=necessary.get(q.question);if(prior){prior.origins.push(origin);continue;}
           necessary.set(q.question,{...structuredClone(q),origins:[origin]});
@@ -78,7 +89,20 @@ export function rosterSourceReviewRepairStageV1(inputs={}){
       &&q.origins.every(origin=>request.origins?.some(prior=>prior.reviewEvidenceId===origin.reviewEvidenceId&&prior.checkId===origin.checkId))))
       recheckNecessaryQuestions.push(structuredClone(q));
   const sameSourceRecheck=necessary.size>0&&recheckNecessaryQuestions.length===necessary.size;
-  const phase=necessary.size&&!sameSourceRecheck?'missing_fact_investigation':authors.size?'author_decision_return':'source_claim_correction';
+  // Contradictory model classifications are not cumulative Rules obligations.
+  // Do not silently select the stricter or newer reviewer. Preserve BOTH views
+  // and ask the strategic owner to reconcile their exact scope first. An
+  // explicit same-source return permits source re-review, never fact approval.
+  const classificationConflicts=[];
+  for(const [question,rows]of classifications){
+    const kinds=new Set(rows.map(row=>row.classification));
+    const factualConflict=necessary.has(question)&&!recheckNecessaryQuestions.some(q=>q.question===question)
+      &&[...kinds].some(kind=>kind!=='necessary_fact');
+    const choiceConflict=authors.has(question)&&['authored_choice','decided_here'].some(kind=>kinds.has(kind));
+    if(factualConflict||choiceConflict)classificationConflicts.push({question,opinions:structuredClone(rows),
+      classificationResolved:false,factApproved:false});
+  }
+  const phase=classificationConflicts.length?'review_classification_conflict':necessary.size&&!sameSourceRecheck?'missing_fact_investigation':authors.size?'author_decision_return':'source_claim_correction';
   const localScope=inputs.localObligation?.value?.kind==='local_obligation_contract'?inputs.localObligation.value:null;
   const ownershipInstruction=localScope
     ?'First compare the reviewer-declared prerequisite with localObligation and the exact original question/reviewIssues. Other global obligations remain pending with their original owners; feedback alone cannot transfer them into this local job. If a disputed prerequisite is outside this job, preserve its exact wording/origin and return strategy_required with the explicit scope conflict and source references; do not start an unrelated experiment, assert that unknown is answered, or silently erase it. The missing-fact instructions below apply to genuinely necessary LOCAL prerequisites, not every item copied by a reviewer. Valid original authorized measurements cannot be narrowed by the proposed answer. Local completion does not approve the Plan. ':'';
@@ -86,12 +110,14 @@ export function rosterSourceReviewRepairStageV1(inputs={}){
     necessaryQuestions:[...necessary.values()],authorDecisions:[...authors.values()],originalAuthorDecisions,resolvedAuthorDecisions,
     originalNecessaryQuestions,reconciledNecessaryQuestions,
     recheckNecessaryQuestions,sameSourceRecheck,
-    answeredQuestions:answered,conditionalQuestions:conditional,
+    answeredQuestions:answered,conditionalQuestions:conditional,classificationConflicts,
     pendingClaimCorrections:claimCorrections,reviewIsRulesTruth:false,hostChoosesStrategy:false,
     questionProjectionIsNotAFullSourceRead:true,addsOutputFields:false,
     unchangedConsideredMaterialCannotCloseNecessaryFact:necessary.size>0&&!sameSourceRecheck,
     reconciliationInstruction:reconciledNecessaryQuestions.length?reconciliation.instruction:null,
-    instruction:ownershipInstruction+'Reviewer arithmetic and answered_fact classifications are fallible interpretations, not replacements for Native measurements. Match the named attacker/target/weapon and exact source operands, not row order or a reviewer\'s copied value. If feedback contradicts the originals, retain the feedback as history and explain the conflict; do not accept its numerical correction merely because it is a review. A genuine missing fact still requires evidence. Complete Native condition observations newly delivered with an existing measurement pair are additional material even when the cited measurement numbers are unchanged; the source_material_progress node identifies this against the actual reviewer requests. Use those actual conditions, not a fixed geometry proof-scope flag or hash inequality, to assess the comparison. This is not causal or strategy approval. When there is no additional material and the progress fence requires a challenge instead of an answered conclusion, use strategy_required with the exact source conflict; do not buy duplicate measurements or silently erase the obligation. '+(phase==='author_decision_return'
+    instruction:ownershipInstruction+'Reviewer arithmetic and answered_fact classifications are fallible interpretations, not replacements for Native measurements. Match the named attacker/target/weapon and exact source operands, not row order or a reviewer\'s copied value. If feedback contradicts the originals, retain the feedback as history and explain the conflict; do not accept its numerical correction merely because it is a review. A genuine missing fact still requires evidence. Complete Native condition observations newly delivered with an existing measurement pair are additional material even when the cited measurement numbers are unchanged; the source_material_progress node identifies this against the actual reviewer requests. Use those actual conditions, not a fixed geometry proof-scope flag or hash inequality, to assess the comparison. This is not causal or strategy approval. When there is no additional material and the progress fence requires a challenge instead of an answered conclusion, use strategy_required with the exact source conflict; do not buy duplicate measurements or silently erase the obligation. '+(phase==='review_classification_conflict'
+      ?'The saved reviews disagree on the EXACT same question: required measurement versus answered/conditional/optional, or missing author choice versus already-authored choice. No new experiment is authorized by taking the union of these opinions. Return this conflict, all originals and existing author/deferral evidence to the strategic owner. Do not choose a reviewer, erase a question, invent a fact, or treat the stricter opinion as Rules. The owner may explicitly request same-source reconciliation, a genuinely necessary bounded measurement, or revise/defer the dependent strategic claim; normal independent review still applies.'
+      :phase==='author_decision_return'
       ?'The reviewer explicitly classified these remaining obligations as author_decision. They remain unresolved, but a factual laboratory cannot choose them. Return to the strategic author without another query or source-prose correction. Preserve all questions, origins and public reasons. Do not fill Plan values, claim evidence approval, clear a missing fact, or approve release.'
       :phase==='missing_fact_investigation'
       ?'Your current job is the reviewer-declared NECESSARY FACT investigation, before prose correction. Keep answeredQuestions and valid saved facts; do not re-prove them merely to restate the answer. Read only missing existing evidence or select executable workOrders that can resolve necessaryQuestions through the normal Native tools. Rephrasing the rejected conclusion, calling the unmeasured value inconclusive, or moving it to conditions does not supply the missing measurement. An answered reply citing ONLY the same material originals already considered in this review/rejected answer is rejected; a new view/alias or model/review summary is not new material. You may use OTHER already-saved material, not necessarily buy a new query. This identity check does not prove any new material answers the question: independent source review still applies. A current-turn query being unable to predict a future opponent does not establish that a model-declared bounded counterfactual is unavailable: inspect the actual scenario/query contracts. Use only authorized fixed local scenarios, never a whole match or invented outcomes. If the reviewer must be challenged using the same originals, return strategy_required with exact reasons instead of falsely closing its missing measurement; a genuinely unavailable capability returns blocked. Once facts exist, give the scoped answer and address pendingClaimCorrections using the EXISTING output contract. No forced army edit, tactical preference or extra output fields.'

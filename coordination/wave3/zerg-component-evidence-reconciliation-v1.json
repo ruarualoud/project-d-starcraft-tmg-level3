@@ -1,0 +1,85 @@
+{
+  "scope": "existing component evidence, no new room attempts",
+  "verified": 40,
+  "total": 40,
+  "reconciledVerified": 9,
+  "reconciledPartial": 1,
+  "open": [],
+  "aligned": [
+    {
+      "sourceKey": "consumeFrozenSourceClosure",
+      "definitionId": "unit:defiler/consume-any-phase@1",
+      "status": "passed"
+    },
+    {
+      "sourceKey": "zagaraPsionicLinkBoundary",
+      "definitionId": "unit:zagara/psionic-link-any-phase@1",
+      "status": "passed"
+    },
+    {
+      "sourceKey": "zagaraBroodmotherBoundary",
+      "definitionId": "unit:zagara/broodmother-movement-phase@1",
+      "status": "passed"
+    },
+    {
+      "sourceKey": "zagaraInfestedDropBoundary",
+      "definitionId": "unit:zagara/infested-drop-movement-phase@1",
+      "status": "passed"
+    },
+    {
+      "sourceKey": "zagaraCreepArmyBuildingBoundary",
+      "definitionId": "card:zagara_s_swarm/zerg-creep-any@1",
+      "status": "passed"
+    },
+    {
+      "sourceKey": "reactiveCreepTokenBoundary",
+      "definitionId": "card:reactive_creep/living-glob-of-tissue-any@1",
+      "status": "passed"
+    },
+    {
+      "sourceKey": "reactiveCreepTokenBoundary",
+      "definitionId": "card:reactive_creep/creep-removal-any@1",
+      "status": "passed"
+    },
+    {
+      "sourceKey": "reactiveTissueBoundary",
+      "definitionId": "card:reactive_creep/reactive-tissue-any@1",
+      "status": "passed"
+    },
+    {
+      "sourceKey": "zagaraScourgeQueenBoundary",
+      "definitionId": "card:zagara_s_swarm/scourge-queen-any@1",
+      "status": "passed"
+    },
+    {
+      "sourceKey": "zagaraInstinctiveReactionBoundary",
+      "definitionId": "card:zagara_s_swarm/instinctive-reaction-any@1",
+      "status": "partial"
+    }
+  ],
+  "providerCalls": 0,
+  "currentBoundaryEvidence": [
+    {
+      "definitionId": "unit:zagara/transfusion-any-phase@1",
+      "proof": "build/ticket-28-zerg-wave3-20261118-v1/zagara-transfusion/phase-end-corrosive-bile/result.public.json",
+      "status": "passed",
+      "signedActions": 11
+    }
+  ],
+  "reconciledAfterSupplement": [
+    {
+      "definitionId": "unit:defiler/plague-assault-phase@1",
+      "evidenceRefs": [
+        "build/ticket-28-zerg-wave3-20261118-v1/plague-standard-damage/successor.json",
+        "build/ticket-28-zerg-wave3-20261118-v1/plague-standard-damage/cold-recovery.json"
+      ]
+    },
+    {
+      "definitionId": "card:zagara_s_swarm/instinctive-reaction-any@1",
+      "evidenceRefs": [
+        "build/ticket-28-zerg-wave3-20261118-v1/zagara-instinctive-reaction/supplement-result.public.json"
+      ],
+      "runtimeVersion": "3.136.0"
+    }
+  ]
+}

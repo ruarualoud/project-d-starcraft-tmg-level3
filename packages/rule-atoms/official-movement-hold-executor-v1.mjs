@@ -1,3 +1,5 @@
+import { consumeOfficialActionPerformedStatusesV1 } from './official-action-status-lifecycle-policy-v1.mjs';
+
 export const OFFICIAL_MOVEMENT_HOLD_EXECUTOR_ID = "authority.movement-hold-v1";
 export const OFFICIAL_MOVEMENT_HOLD_EXECUTOR_VERSION = "1.0.0";
 export const OFFICIAL_MOVEMENT_HOLD_TRANSITION_SCHEMA = "starcraft_tmg_authority_v2.receipt";
@@ -113,6 +115,7 @@ export function applyOfficialMovementHoldV1(stateInput, actionInput, options = {
   if (sideHasAvailableActivation(otherSideKey, state)) state.activeSideKey = otherSideKey;
   else if (sideHasAvailableActivation(action.sideKey, state)) state.activeSideKey = action.sideKey;
 
+  if (state.officialHoldActionFaq) consumeOfficialActionPerformedStatusesV1(state, piece.id, 'declared_hold');
   const events = [{ type: "hold", pieceId: piece.id, phase: "movement" }];
   state.log = Array.isArray(state.log) ? state.log : [];
   state.log.push({

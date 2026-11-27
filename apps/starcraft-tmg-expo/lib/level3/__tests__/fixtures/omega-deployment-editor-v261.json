@@ -1,0 +1,171 @@
+{
+  "source": "2.61.0 player2 public menu; display fields only",
+  "roomId": "omega-network-deployment-v261",
+  "revision": 0,
+  "stateHash": "b1ea0853071b752b3c62597255122d4103b08b13753da61a1ba6b29e856ad392",
+  "legalSpaceHash": "953425e5e9dfb300eb835f986e4c4b9f382179f6efa2d87657f2b31660ea994c",
+  "sourceNames": {
+    "player2-hydralisk": "Hydralisk",
+    "player2-omega-worm": "Omega Worm",
+    "player2-queen": "Queen"
+  },
+  "parameterDomains": [
+    {
+      "domainId": "sc-domain-fd2447dbe1c90a13d05c06df7eb8da1e5bc102dbb40b2e2d410801d0ab79c7c6",
+      "pieceId": "player2-hydralisk",
+      "parameterKind": "official_selected_roster_spatial_path_v1",
+      "actionType": "deploy",
+      "parameterSchema": {
+        "maxCanonicalPathPoints": 32,
+        "exactRemainingPlacementCount": 1
+      },
+      "constraints": {
+        "modelProfiles": [
+          {
+            "modelId": "player2-hydralisk-model-1",
+            "baseShape": "rectangle",
+            "baseWidthMilliInches": 1575,
+            "baseDepthMilliInches": 3937,
+            "startPoint": null,
+            "startElevation": "ground",
+            "supportTerrainIds": []
+          },
+          {
+            "modelId": "player2-hydralisk-model-2",
+            "baseShape": "rectangle",
+            "baseWidthMilliInches": 1575,
+            "baseDepthMilliInches": 3937,
+            "startPoint": null,
+            "startElevation": "ground",
+            "supportTerrainIds": []
+          }
+        ],
+        "entrySegments": [
+          {
+            "segmentId": "blue-entry-1",
+            "side": "bottom",
+            "startInches": 0,
+            "endInches": 54,
+            "fullTableEdge": true,
+            "startCoordinate": {
+              "x": 0,
+              "y": 0
+            },
+            "endCoordinate": {
+              "x": 54,
+              "y": 0
+            },
+            "zoneOfInfluenceDepthInches": 6,
+            "zoneRectangle": {
+              "xMin": 0,
+              "xMax": 54,
+              "yMin": 0,
+              "yMax": 6
+            }
+          },
+          {
+            "kind": "unit_base_perimeter",
+            "segmentId": "omega-worm:player2-omega-worm-model-1",
+            "sourcePieceId": "player2-omega-worm",
+            "sourceModelId": "player2-omega-worm-model-1",
+            "definitionId": "unit:omega_worm/omega-network-any-phase@1",
+            "sourceRouteHash": "1485aeea554d8a84efe2aa034fa49a58e121be27a156c7b3622893d312f9ac6a",
+            "sourceFootprintHash": "a6aa481e0a4ace56481c2ddb4ec9bc12ee0dcdcfa779a02862db3c2bcaa42879",
+            "center": {
+              "xMilliInches": 6000,
+              "yMilliInches": 12000
+            },
+            "radiusMilliInches": 1575,
+            "maximumAlongEdgeMilliInches": 9896,
+            "sourceElevation": "ground",
+            "supportTerrainIds": [],
+            "round": 2,
+            "supplyLimit": 2,
+            "usedSupply": 0,
+            "remainingSupply": 2,
+            "generatesZoneOfInfluence": false
+          }
+        ],
+        "supply": {
+          "mode": "finite",
+          "available": 7,
+          "requestedSupply": 2
+        }
+      }
+    },
+    {
+      "domainId": "sc-domain-5f613723311b24b717ced7cc9d9dde86ee82ae419e83d74e19d8fb9ead97aef3",
+      "pieceId": "player2-queen",
+      "parameterKind": "official_selected_roster_spatial_path_v1",
+      "actionType": "deploy",
+      "parameterSchema": {
+        "maxCanonicalPathPoints": 32,
+        "exactRemainingPlacementCount": 0
+      },
+      "constraints": {
+        "modelProfiles": [
+          {
+            "modelId": "player2-queen-model-1",
+            "baseShape": "round",
+            "baseWidthMilliInches": 3150,
+            "baseDepthMilliInches": 3150,
+            "startPoint": null,
+            "startElevation": "ground",
+            "supportTerrainIds": []
+          }
+        ],
+        "entrySegments": [
+          {
+            "segmentId": "blue-entry-1",
+            "side": "bottom",
+            "startInches": 0,
+            "endInches": 54,
+            "fullTableEdge": true,
+            "startCoordinate": {
+              "x": 0,
+              "y": 0
+            },
+            "endCoordinate": {
+              "x": 54,
+              "y": 0
+            },
+            "zoneOfInfluenceDepthInches": 6,
+            "zoneRectangle": {
+              "xMin": 0,
+              "xMax": 54,
+              "yMin": 0,
+              "yMax": 6
+            }
+          },
+          {
+            "kind": "unit_base_perimeter",
+            "segmentId": "omega-worm:player2-omega-worm-model-1",
+            "sourcePieceId": "player2-omega-worm",
+            "sourceModelId": "player2-omega-worm-model-1",
+            "definitionId": "unit:omega_worm/omega-network-any-phase@1",
+            "sourceRouteHash": "1485aeea554d8a84efe2aa034fa49a58e121be27a156c7b3622893d312f9ac6a",
+            "sourceFootprintHash": "a6aa481e0a4ace56481c2ddb4ec9bc12ee0dcdcfa779a02862db3c2bcaa42879",
+            "center": {
+              "xMilliInches": 6000,
+              "yMilliInches": 12000
+            },
+            "radiusMilliInches": 1575,
+            "maximumAlongEdgeMilliInches": 9896,
+            "sourceElevation": "ground",
+            "supportTerrainIds": [],
+            "round": 2,
+            "supplyLimit": 2,
+            "usedSupply": 0,
+            "remainingSupply": 2,
+            "generatesZoneOfInfluence": false
+          }
+        ],
+        "supply": {
+          "mode": "finite",
+          "available": 7,
+          "requestedSupply": 1
+        }
+      }
+    }
+  ]
+}

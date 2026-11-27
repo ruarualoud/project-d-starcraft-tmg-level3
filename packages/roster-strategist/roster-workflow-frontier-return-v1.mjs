@@ -5,8 +5,9 @@ import {rosterWorkflowBindingsMatchV1} from './roster-decision-workflow-v1.mjs';
 import {rosterExperimentLifecycleV1,assessRosterExperimentConclusionV1} from './roster-workflow-experiment-owner-v1.mjs';
 import {rosterSourceReviewRepairStageV1} from './roster-experiment-source-repair-v1.mjs';
 import {hashStarcraftTmgContract as hash} from '../authoritative-engine/referee-crypto-v1.mjs';
-import {rosterWorkflowFrontierResponseV1} from './roster-workflow-graph-v1.mjs';
+import {rosterWorkflowFrontierResponseV1,createRosterWorkflowGraphV1} from './roster-workflow-graph-v1.mjs';
 import {resolveRosterWorkflowFrontierSettlementV1} from './roster-workflow-frontier-settlement-v1.mjs';
+import {rosterWorkflowControlOwnerAvailableV1,rosterWorkflowHistoricalControlInputsV1} from './roster-workflow-control-history-v1.mjs';
 export {rosterWorkflowFrontierResponseV1 as rosterFrontierResponseRouteV1} from './roster-workflow-graph-v1.mjs';
 const clone=value=>structuredClone(value);
 // A new independent reconciliation can supersede the MATERIAL-IDENTITY fence,
@@ -41,13 +42,13 @@ async function sourceReconciliation({state,owner,frontier,route,readArtifact}){
   return null;
 }
 export async function createRosterWorkflowFrontierReturnsV1({state,readArtifact}){
-  const byId=new Map(state.work.map(w=>[w.id,w])),jobs=[];
+  const byId=new Map(state.work.map(w=>[w.id,w])),jobs=[],graph=createRosterWorkflowGraphV1(state);
   const current=w=>w&&w.status!=='superseded'&&rosterWorkflowBindingsMatchV1(w.bindings,state.scope);
   for(const goal of state.work){
     const frontier=byId.get(goal.investigationHandoff?.decisionId);
-    if(!current(goal)||!current(frontier)||frontier.investigationFrontierOf!==goal.id)continue;
+    if(!current(goal)||!rosterWorkflowControlOwnerAvailableV1({state,work:frontier})||frontier.investigationFrontierOf!==goal.id)continue;
     const owner=byId.get(frontier.investigationOwnerId);
-    if(!current(owner)||owner.experimentGoalId!==goal.id)continue;
+    if(!rosterWorkflowControlOwnerAvailableV1({state,work:owner})||graph.owner(owner.id)?.goalId!==goal.id)continue;
     const responses=state.work.filter(response=>rosterWorkflowFrontierResponseV1({state,frontier,response}));
     const response=responses.at(-1);
     if(response?.status!=='evidence_ready'||!response.resultRef||!response.draftOutcomeRef||response.operationState?.pending)continue;
@@ -62,7 +63,7 @@ export async function createRosterWorkflowFrontierReturnsV1({state,readArtifact}
     // These receipts authorize one specific control edge, not all descendants.
     // Carry the evidence, but derive each return's authority afresh. Otherwise an
     // old same-source recheck tag contradicts the new ordinary return at enqueue.
-    const inheritedInputs=clone(owner.inputs);
+    const inheritedInputs=rosterWorkflowHistoricalControlInputsV1({state,inputs:owner.inputs});
     delete inheritedInputs.sameSourceReviewRequest;
     delete inheritedInputs.scopedStrategyReturn;
     const inputs={...inheritedInputs,
@@ -72,6 +73,7 @@ export async function createRosterWorkflowFrontierReturnsV1({state,readArtifact}
       strategyResolution:{source:'evidence',id:`role:${response.id}`,pointer:''},
       returnedQuestionScope:{source:'literal',value:{version:1,originalGoalId:goal.id,
         frontierDecisionId:frontier.id,completedStrategicDecisionId:response.id,returnKind:route.kind,
+        ...(route.sourceCorrection?{sourceCorrection:clone(route.sourceCorrection)}:{}),
         instruction:'The strategic owner returned a direct decision or a child-investigation response. Reconcile these actual saved facts with YOUR ORIGINAL question/obligations. The strategic response is an interpretation, not Rules proof. Answer the original scope if its necessary facts are now covered, or identify the exact still-missing predicate and a meaningful next bounded method. Reuse completed sources; this control return does not approve facts, the parent question, the Plan or release. A direct retain decision is not a new measurement and does not make an unreviewed answer true.'}},
       experimentLifecycle:{source:'literal',value:rosterExperimentLifecycleV1(goal.id,owner.experimentBatchIndex??0)}};
     facts.forEach(([,input],i)=>{inputs[`returnedQuestionFact${i}`]=clone(input);});

@@ -21,7 +21,10 @@ const PROCEDURE_KINDS = new Set([
   "army_card_open_information", "army_resource_budget", "team_mineral_budget",
 ]);
 
-function fail(code, detail = "") { throw new Error(detail ? `${code}:${detail}` : code); }
+function fail(code, detail = "", constraintDiagnostics) {
+  throw Object.assign(new Error(detail ? `${code}:${detail}` : code),
+    constraintDiagnostics ? {constraintDiagnostics:structuredClone(constraintDiagnostics)} : {});
+}
 function object(value) { return Boolean(value) && typeof value === "object" && !Array.isArray(value); }
 function clone(value) { return structuredClone(value); }
 function nonEmpty(value, code) {
@@ -223,7 +226,12 @@ function resolveArmyResourceBudget(input = {}, options = {}) {
   const vespeneSpent = tacticalRows.reduce((sum, entry) => sum + entry.vespeneGasCost, 0);
   const { numerator, denominator } = scale.vespeneRatio;
   if (vespeneSpent * denominator > mineralBudget * numerator) {
-    fail("ARMY_VESPENE_BUDGET_EXCEEDED");
+    fail("ARMY_VESPENE_BUDGET_EXCEEDED", "", {
+      version:1, source:'official-army-resource-budget-rules-kernel-v1:resolveOfficialArmyResourceBudgetV1',
+      constraintKind:'vespene_budget', mineralBudget, vespeneSpent,
+      vespeneLimit:{numerator:mineralBudget*numerator,denominator}, tacticalCardRows:tacticalRows,
+      rulesOwnedCostsAndTotals:true, exactRationalVespeneComparison:true,
+      completeArmyLegalityValidated:false, trainingTruth:false });
   }
   const vespeneLimitNumerator = mineralBudget * numerator;
   const vespeneUnspentNumerator = vespeneLimitNumerator - vespeneSpent * denominator;

@@ -1,36 +1,65 @@
+import {hashStarcraftTmgContract as hash} from '../authoritative-engine/referee-crypto-v1.mjs';
+import {PREGAME_MAP_EVIDENCE_PORT_V1} from './pregame-map-evidence-port-v1.mjs';
+import {rosterImportedExperienceHasFrozenOpponentV1} from "./roster-opponent-knowledge-v1.mjs";
+import {projectRosterIncompleteOutputRecoveryV1} from './roster-incomplete-output-recovery-v1.mjs';
+import {projectRosterHostStepKindRecoveryV1,projectRosterSavedProposalRecoveryV1} from './roster-host-step-recovery-v1.mjs';
+import {projectRosterCommandEnvelopeRecoveryV1} from './roster-decision-envelope-v1.mjs';
+import {projectRosterEmptyCandidateRecoveryV1} from './roster-work-order-edit-command-v1.mjs';
+import {projectRosterObservedUnissuedRequestV1} from './roster-workflow-dispatch-control-v1.mjs';
+import {projectRosterDeliveredCitationRecoveryV1} from './roster-source-citation-delivery-v1.mjs';
+import {rosterSourceScopeRefreshMatchesV1} from './roster-source-scope-extension-v1.mjs';
+import {projectCompletedTemporalInvariantRecoveryV1} from './roster-temporal-invariant-recovery-v1.mjs';
+import {projectRosterUnissuedAuthorCoverageV1} from './roster-comparison-value-review-v1.mjs';
+import {projectRosterFrozenDesignReferenceRepairsV1} from './roster-comparison-participant-preflight-v1.mjs';
+import {projectRosterUnissuedReviewOwnerMergeV1} from './roster-review-owner-v1.mjs';
 // Shared P1/P2 state and dependency scheduler. The workspace owns one instance
 // per Run. Tool/model adapters own execution; this module neither invents Rules
 // facts nor ranks strategies, edits armies or grants final acceptance.
+import {rosterReviewUnissuedV1} from './roster-review-reuse-v1.mjs';
 import {parseRosterTeachEvidencePathV1} from './roster-teach-typed-evidence-v1.mjs';
+import {rosterBuilderFactRecheckMatchesV1} from './roster-builder-fact-review-recheck-v1.mjs';
+import {projectRosterCompletedComparisonNavigationV1} from './roster-comparison-navigation-settlement-v1.mjs';
 import {isDeepStrictEqual} from 'node:util';
+import {isExplicitlyRecoverableProviderDispatchV1,isExplicitlyRecoverableProviderFailureV1,isExplicitLatestProviderRetryV1,matchesReturnedRosterProviderReplyV1} from '../secure-provider-runtime/provider-dispatch-recovery-v1.mjs';
+import {isRosterReadOnlyObservationV1} from './roster-read-only-query-recovery-v1.mjs';
+import {ROSTER_INVENTORY_COMPARISON_VERSION,projectRosterInventoryClaimRecoveryV1} from './roster-inventory-claims-v1.mjs';
 import {projectRosterWorkflowStateReferenceV1,projectRosterWorkflowDelegatedScenesV1,
-  bindRosterWorkflowDelegatedSceneV1} from './roster-workflow-state-reference-v1.mjs';
+  bindRosterWorkflowDelegatedSceneV1,projectRosterWorkflowStateBindingFailureV1} from './roster-workflow-state-reference-v1.mjs';
 import {projectRosterWorkflowExecutionPrerequisitesV1} from './roster-workflow-execution-prerequisites-v1.mjs';
 import {createRosterWorkflowOwnershipIndexV1} from './roster-workflow-ownership-v1.mjs';
 import {createRosterWorkflowGraphV1,rosterWorkflowChoiceScopeReturnV1,rosterWorkflowChoiceContractV1,
-  rosterWorkflowWorkDependenciesV1 as dependencies,rosterWorkflowFrontierResponseV1} from './roster-workflow-graph-v1.mjs';
+  rosterWorkflowWorkDependenciesV1 as dependencies,rosterWorkflowFrontierResponseV1,currentRosterComparisonPurposeV1} from './roster-workflow-graph-v1.mjs';
 import {projectRosterWorkflowReceiptReadNavigationV1,projectRosterCurrentReceiptReadViewV1,resolveRosterReceiptViewPointerV1} from './roster-workflow-receipt-view-v1.mjs';
 import {rosterPendingQuestionWorkV1} from './roster-review-data-questions-v1.mjs';
-import {projectRosterWorkflowToolChoiceV1} from './roster-workflow-tool-choice-v1.mjs';
+import {projectRosterWorkflowToolChoiceV1,projectRosterEmptyFormationChoiceV1} from './roster-workflow-tool-choice-v1.mjs';
 import {rosterWorkflowCanReflowInputV1} from './roster-workflow-input-delivery-v1.mjs';
 import {recoverRosterWorkflowBatchSummaryOwnersV1} from './roster-workflow-batch-summary-v1.mjs';
-import {rosterSourceReviewRepairMembersV1,rosterSourceReviewCompletedRevisionV1,
+import {projectRosterSavedNativeSourceRepairsV1} from './roster-saved-native-source-v1.mjs';
+import {rosterSourceReviewRepairMembersV1,rosterSourceReviewRevisionBlocksRepairV1,
   projectRosterSourceReviewLineageRestorationV1} from './roster-source-review-repair-handoff-v1.mjs';
 import {rosterReviewRequestShapeRecoveryV1} from './roster-workflow-review-repair-v1.mjs';
 import {rosterRoleReplyCommunicationErrorsV1} from './roster-role-communication-v1.mjs';
+import {recordRosterWorkflowReadDeliveryV1} from './roster-workflow-read-context-v1.mjs';
 import {projectRosterLocalMethodScopeRepairsV1} from './roster-workflow-local-method-scope-v1.mjs';
 import {projectRosterCompetingMethodRecoveriesV1} from './roster-workflow-method-recovery-owner-v1.mjs';
+import {projectRosterReturnedMethodSettlementsV1} from './roster-workflow-returned-method-settlement-v1.mjs';
 import {resolveRosterWorkflowFrontierSettlementV1} from './roster-workflow-frontier-settlement-v1.mjs';
 import {rosterQueuedClosedMethodReturnV1,projectRosterStoppedOwnerDeliveryRepairV1,
   rosterVerifiedOwnerDeliveryRepairV1} from './roster-workflow-control-progress-v1.mjs';
 import {projectRosterConfigurationReconsiderationV1} from './roster-configuration-reconsideration-v1.mjs';
 import {projectRosterPlanRevisionReturnsV1} from './roster-plan-revision-return-v1.mjs';
 import {projectRosterComparisonClosureV1} from './roster-comparison-closure-v1.mjs';
+import {rosterUnissuedStaleComparisonDesignsV1,projectRosterCitationOnlyComparisonRecoveryV1,projectRosterDecisionUseRecoveryV1} from './roster-comparison-redesign-v1.mjs';
+import {projectRosterDeferredHypothesisV1} from './roster-deferred-hypothesis-v1.mjs';
+import {projectRosterCalculationRecoveryV1} from './roster-calculation-recovery-v1.mjs';
 import {verifyArmyBuilderRosterVerdictV1} from './army-builder-query-port-v1.mjs';
 import {projectRosterEvidencePathNavigationV1} from './roster-evidence-path-navigation-v1.mjs';
-import {projectRepeatedInspectionOnlyBatchV1} from './roster-experiment-progress-v1.mjs';
+import {projectRepeatedInspectionOnlyBatchV1,projectResolvedBatchProgressRecoveryV1} from './roster-experiment-progress-v1.mjs';
 import {createRosterExperimentOwnerContinuationV1} from './roster-workflow-experiment-owner-v1.mjs';
 const clone=v=>structuredClone(v);
+// File checkpoints use JSON. Compare their full persisted representation, not
+// object prototypes or optional own-undefined fields omitted by that transport.
+const persistedEqual=(a,b)=>isDeepStrictEqual(JSON.parse(JSON.stringify(a)),JSON.parse(JSON.stringify(b)));
 function freezeObservation(value,seen=new WeakSet()){
   if(value===null||typeof value!=='object'||seen.has(value))return value;
   seen.add(value);
@@ -51,6 +80,7 @@ const isHistoricalReferenceInput=(work,input)=>input.source==='evidence'
   &&input.scopeUsage==='historical_reference'&&historyReadRoles.has(work.role);
 const schema='roster_decision_workflow_v1';
 import {projectRosterAuthorDecisionHandoffV1,enterRosterAuthorDecisionHandoffV1} from './roster-workflow-author-handoff-v1.mjs';
+import {RosterWorkflowDispatchPause,assertRosterWorkflowDispatchAllowedV1} from './roster-workflow-dispatch-control-v1.mjs';
 const fail=(code,detail)=>{throw Object.assign(Error(`${code}:${JSON.stringify(detail??null)}`),{code,detail});};
 // Host-derived dependency paths grow with explicit continuations. They are map
 // keys, not filesystem paths or strategy prose; an arbitrary length threshold
@@ -145,35 +175,117 @@ function bindingsMatch(bindings,scope) {
   return Object.entries(bindings||{}).every(([key,value])=>Object.hasOwn(scope,key)&&scope[key]===value);
 }
 export const rosterWorkflowBindingsMatchV1=bindingsMatch;
+
+function validateCurrentMapReceipt(scope, value) {
+  if (!scope.releaseManifest || value?.schemaVersion !== PREGAME_MAP_EVIDENCE_PORT_V1) return;
+  if (value.releaseBinding?.manifestHash !== scope.releaseManifest) fail('ROSTER_MAP_EVIDENCE_RELEASE_MISMATCH');
+  const {receiptHash, ...body} = value;
+  if (receiptHash !== hash(body)) fail('ROSTER_MAP_EVIDENCE_HASH_MISMATCH');
+}
 function validateBindings(bindings,scope) {
   if(!bindings||Array.isArray(bindings)||typeof bindings!=='object'||!bindingsMatch(bindings,scope))
     fail('ROSTER_WORKFLOW_BINDINGS_INVALID',bindings);
 }
 export async function createRosterDecisionWorkflowV1({store,execute,
-  projectReconsideration=projectRosterConfigurationReconsiderationV1,reconcileReadOnlyInterruption=null}) {
+  projectReconsideration=projectRosterConfigurationReconsiderationV1,reconcileReadOnlyInterruption=null,
+  validateToolBindings=null,recoverSharedRoundOnePreparation=null,loadRetainedOfflineReply=null,shouldStop,blindOpponent=false}) {
   let state=await store.load();
+  // Older evidence rows identify the native map envelope through their saved outline.
+  // Check only those current facts on reopen, without scanning unrelated artifact bodies.
+  if (state?.scope?.releaseManifest) {
+    for (const entry of state.evidence) {
+      if (entry.outline?.some(field => field.pointer === '/mapBinding')
+          && entry.outline.some(field => field.pointer === '/receiptHash')) {
+        validateCurrentMapReceipt(state.scope, await store.get(entry.artifactRef));
+      }
+    }
+  }
+  const withheldImports=new Set();
+  if(blindOpponent)for(const entry of state?.evidence??[]){
+    if(!entry.id.startsWith('imported-experience:'))continue;
+    const stored=await store.get(entry.artifactRef).catch(()=>null);
+    if(!stored||rosterImportedExperienceHasFrozenOpponentV1(stored))withheldImports.add(entry.id);
+  }
   let writes=Promise.resolve(),commands=Promise.resolve();
+  let pendingDraftCommit=null;
   // Scheduler readers share only an immutable detached observation, never the
   // live state. Checkpoints invalidate it, including operation-only updates
   // with no new event. Ordinary inspect() keeps its independent mutable copy.
   const observations=new Map();
   const checkpoint=()=>{
     observations.clear();
-    const snapshot=clone(state);
-    writes=writes.then(()=>store.save(snapshot));
+    let persist;
+    if(typeof store.prepareCheckpoint==='function')persist=store.prepareCheckpoint(state);
+    else {
+      const snapshot=clone(state);
+      persist=()=>store.save(snapshot);
+    }
+    if(typeof persist!=='function')fail('ROSTER_WORKFLOW_CHECKPOINT_PREPARATION_INVALID');
+    writes=writes.then(persist);
     return writes;
   };
   function event(type,detail){state.events.push({sequence:state.events.length+1,type,...clone(detail)});}
+  async function reconcileDraftCommit(){
+    const pending=pendingDraftCommit;
+    let durable;
+    try{durable=await store.load();}catch(error){
+      fail('ROSTER_WORKFLOW_DRAFT_COMMIT_OUTCOME_UNKNOWN',{reason:'checkpoint_unreadable',
+        storageError:error.code??error.message,retrySameCommit:true});
+    }
+    const committed=persistedEqual(durable,pending.intended);
+    if(!committed&&!persistedEqual(durable,pending.before))
+      fail('ROSTER_WORKFLOW_DRAFT_COMMIT_OUTCOME_UNKNOWN',{reason:'checkpoint_changed',retrySameCommit:true});
+    // Only this serialized commit's failed write queue is discharged, after
+    // reading back either complete checkpoint. Other save failures stay closed.
+    state=durable;writes=Promise.resolve();pendingDraftCommit=null;observations.clear();
+    return committed;
+  }
+  async function committedDraftRetry(command){
+    const revision=state.draftRevision;
+    if(command.draft?.revision!==revision||command.expectedRevision!==(revision===0?null:revision-1))return null;
+    const prior=state.events.findLast(e=>e.type==='draft_committed');
+    if(!prior||prior.revision!==revision||prior.draftRef!==state.draftRef
+      ||prior.workId!==(command.workId??null)||!persistedEqual(prior.scope,command.scope??null)
+      ||!persistedEqual(state.scope,command.scope??null))return null;
+    const savedDraft=await store.get(prior.draftRef);
+    const savedReceipt=prior.receiptRef?await store.get(prior.receiptRef):null;
+    if(!persistedEqual(savedDraft,command.draft)||!persistedEqual(savedReceipt,command.receipt??null))return null;
+    return {draftRef:prior.draftRef,revision,receiptRef:prior.receiptRef,alreadyCommitted:true};
+  }
   if(state&&state.schema!==schema)fail('ROSTER_WORKFLOW_SCHEMA_INVALID');
   // Never infer that an interrupted paid/tool dispatch did not happen. P5
   // reconciles its dispatch key or saved reply, rather than silently re-buying.
-  const interrupted=w=>w.status==='running'||w.status==='needs_repair'
-    &&w.failure?.code==="Cannot read properties of undefined (reading 'originalOutput')"
-    &&w.failure?.dispatchOutcome==='unknown';
+  const interrupted=w=>w.status==='running'||w.status==='ready'&&w.operationState?.pending?.phase==='prepared'||w.status==='needs_repair'
+    // The supplied reconciler owns the precise saved-input/reply proof. Do not
+    // duplicate its exception allowlist here and silently suppress valid proof.
+    // No proof leaves a failed work item exactly stopped (below).
+    &&(w.operationState?.pending?.phase==='prepared'||w.failure?.dispatchOutcome==='unknown'||w.failure?.code==='DISPATCH_OUTCOME_UNKNOWN'
+      &&w.failure.dispatchKey===w.dispatchKey);
   if(state?.work.some(interrupted)){
     let changed=false;
     for(const w of state.work.filter(interrupted)){
       const recovery=reconcileReadOnlyInterruption?await reconcileReadOnlyInterruption({state:clone(state),work:clone(w),readArtifact:store.get}):null;
+      if(recovery?.version===1&&recovery.kind==='read_role_prepared_request'
+        &&recovery.workId===w.id&&recovery.dispatchKey===w.dispatchKey&&recovery.inputRef===w.inputRef
+        &&w.operationState?.pending?.phase==='prepared'&&w.operationState.pending.requestRef===recovery.requestRef){
+        w.failureHistory=[...(w.failureHistory??[]),{failure:clone(w.failure),originalPending:clone(w.operationState.pending),
+          recovery:clone(recovery),reason:recovery.reason}];
+        w.interruptionRecoveries=[...(w.interruptionRecoveries??[]),clone(recovery)];
+        w.operationState.pending=null;w.status='ready';w.failure=null;changed=true;
+        event('prepared_read_request_resumed',{workId:w.id,...clone(recovery)});continue;
+      }
+      if(recovery?.version===1&&recovery.kind==='read_role_saved_reply'
+        &&recovery.workId===w.id&&recovery.dispatchKey===w.dispatchKey&&recovery.inputRef===w.inputRef
+        &&!w.operationState?.pending&&w.operationState?.calls?.at(-1)?.replyRef===recovery.replyRef
+        &&w.operationState.calls.at(-1).requestRef===recovery.requestRef){
+        w.failureHistory=[...(w.failureHistory??[]),{failure:clone(w.failure),operationState:clone(w.operationState),
+          reason:recovery.engineeringChangeId}];
+        w.interruptionRecoveries=[...(w.interruptionRecoveries??[]),clone(recovery)];
+        w.operationState.revalidateReplyRef=recovery.replyRef;
+        w.operationState.savedRevalidationRequestRef=recovery.requestRef;
+        w.status='ready';w.failure=null;changed=true;
+        event('saved_read_role_reply_resumed',{workId:w.id,...clone(recovery)});continue;
+      }
       if(recovery?.version===1&&recovery.kind==='read_role_before_provider'
         &&recovery.workId===w.id&&recovery.dispatchKey===w.dispatchKey&&recovery.inputRef===w.inputRef){
         if(w.failure)w.failureHistory=[...(w.failureHistory??[]),{failure:clone(w.failure),inputRef:w.inputRef,
@@ -213,6 +325,21 @@ export async function createRosterDecisionWorkflowV1({store,execute,
         evidenceRetained:true,historyReset:false});retired++;
     }
     if(links.length||retired)await checkpoint();
+  }
+  if(state&&!state.work.some(w=>w.status==='running'||w.operationState?.pending)){
+    let recovered=0;
+    for(const work of state.work.filter(w=>w.status==='needs_repair')){
+      const proof=await projectResolvedBatchProgressRecoveryV1({state,workId:work.id,store});
+      if(!proof)continue;
+      work.failureHistory=[...(work.failureHistory??[]),{failure:clone(work.failure),
+        operationState:clone(work.operationState),reason:proof.reason,proof:clone(proof)}];
+      work.operationState.noProgressRecoveryHistory=[...(work.operationState.noProgressRecoveryHistory??[]),
+        {stop:clone(work.operationState.noProgressStop),reason:proof.reason,proof:clone(proof),historyReset:false}];
+      delete work.operationState.noProgressStop;
+      work.status='ready';work.failure=null;recovered++;
+      event('resolved_batch_progress_reconciled',proof);
+    }
+    if(recovered)await checkpoint();
   }
   // A Plan sentence is not a dependency of an already executed Native query.
   // Keep the original planning scope for audit; revive only completed factual
@@ -256,6 +383,26 @@ export async function createRosterDecisionWorkflowV1({store,execute,
     }
     if(normalized)await checkpoint();
   }
+  if(state&&!state.work.some(w=>w.status==='running'||w.operationState?.pending)){
+    const designRepairs=await projectRosterFrozenDesignReferenceRepairsV1({state,readArtifact:store.get});
+    for(const repair of designRepairs){
+      const work=state.work.find(w=>w.id===repair.workId);
+      work.inputs[repair.inputName]=clone(repair.after);
+      work.status='evidence_ready';
+      work.frozenDesignReferenceRecovery=clone(repair);
+      event('frozen_design_reference_retained',repair);
+    }
+    if(designRepairs.length)await checkpoint();
+    const repairs=await projectRosterSavedNativeSourceRepairsV1({state,readArtifact:store.get});
+    for(const repair of repairs){
+      const work=state.work.find(w=>w.id===repair.workId);
+      for(const change of repair.changes)work.inputs[change.name]=clone(change.after);
+      work.savedNativeSourceRecovery=clone(repair);work.status='waiting_dependency';
+      if(repair.originalFailure)work.failure=null; // Original rejection remains in the recovery record and event history.
+      event('saved_native_source_rebound',repair);
+    }
+    if(repairs.length)await checkpoint();
+  }
   function fresh(work,seen=new Set()) {
     return createRosterWorkflowGraphV1(state).isFresh(work.id,{visited:seen,throwOnCycle:true});
   }
@@ -266,6 +413,66 @@ export async function createRosterDecisionWorkflowV1({store,execute,
       if(!['ready','waiting_dependency'].includes(w.status))continue;
       w.status=graph.dependenciesReady(w.id)?'ready':'waiting_dependency';
     }
+  }
+  function retainCalculationControlOwners(){
+    let count=0;
+    for(const author of state.work.filter(work=>work.calculationRecoveryOf)){
+      const goal=state.work.find(work=>work.id===author.investigationFrontierOf);
+      if(!goal?.resultRef||goal.role!=='roster_workflow_experiment_planner'
+        ||goal.investigationHandoff?.decisionId!==author.id||!bindingsMatch(goal.bindings,state.scope))continue;
+      const changed=[];
+      for(const [name,input]of Object.entries(goal.inputs)){
+        if(input.source!=='evidence'||input.scopeUsage==='historical_reference')continue;
+        const evidence=state.evidence.find(row=>row.id===input.id);
+        if(!evidence?.calculationInvalidation)continue;
+        changed.push({inputName:name,originalInput:clone(input),invalidation:evidence.calculationInvalidation});
+        input.scopeUsage='historical_reference';
+      }
+      if(!changed.length)continue;
+      goal.calculationControlHistory=[...(goal.calculationControlHistory??[]),...changed];
+      // This completed goal only routes responsibility to its new author; its
+      // original method/result is retained history, never corrected evidence.
+      if(goal.status==='superseded')goal.status='evidence_ready';
+      event('calculation_control_owner_retained',{goalId:goal.id,authorWorkId:author.id,
+        inputNames:changed.map(row=>row.inputName),factApprovalGranted:false,nativeReplayed:false});count++;
+    }
+    return count;
+  }
+  async function restoreCalculationAuthorScope(){
+    if(state.work.some(work=>work.status==='running'||work.operationState?.pending))return 0;
+    let count=0;
+    for(const prior of [...state.work]){
+      if(!prior.calculationRecoveryOf||prior.calculationScopeRecovery||prior.inputs.investigationFrontier
+        ||prior.draftOutcomeRef||prior.status==='superseded'||!bindingsMatch(prior.bindings,state.scope))continue;
+      const source=state.work.find(work=>work.id===prior.calculationRecoveryOf);
+      const frontier=source?.inputs.investigationFrontier;
+      const goal=state.work.find(work=>work.id===prior.investigationFrontierOf);
+      if(!frontier?.value?.unresolvedQuestions?.length||goal?.investigationHandoff?.decisionId!==prior.id)continue;
+      const id=prior.id+':scope-v1';
+      if(state.work.some(work=>work.id===id))fail('ROSTER_WORKFLOW_CALCULATION_SCOPE_RECOVERY_CONFLICT');
+      const proof={version:1,reason:'Numeric source correction omitted the original delegated question scope.',
+        previousWorkId:prior.id,sourceWorkId:source.id,sourceResultRef:source.resultRef,
+        previousReplyRef:prior.operationState?.correction?.originalReplyRef??null,
+        assignedQuestions:clone(frontier.value.unresolvedQuestions),historyReset:false,
+        unrelatedGlobalQuestionsApproved:false,nativeReplayed:false,planApproved:false};
+      const reportRef=await store.put(proof),before=clone(state);
+      const next={id,role:prior.role,bindings:clone(prior.bindings),draftRevision:prior.draftRevision,
+        calculationRecoveryOf:prior.calculationRecoveryOf,calculationScopeRecoveryOf:prior.id,
+        investigationFrontierOf:prior.investigationFrontierOf,investigationOwnerId:prior.investigationOwnerId,
+        inputs:{...clone(prior.inputs),investigationFrontier:clone(frontier),
+          calculationScopeCorrection:{source:'literal',value:proof}},status:'waiting_dependency',resultRef:null,failure:null};
+      // New correctly scoped work, not a counter reset or a rewrite of any paid
+      // request. One source-owned migration only; normal correction limits apply.
+      prior.calculationScopeRecovery={reportRef,replacementWorkId:id};prior.status='superseded';
+      goal.investigationHandoff={...goal.investigationHandoff,decisionId:id,
+        previousDecisionIds:[...(goal.investigationHandoff.previousDecisionIds??[]),prior.id]};
+      state.work.push(next);refresh();
+      event('calculation_author_scope_restored',{reportRef,previousWorkId:prior.id,workId:id,
+        historyReset:false,nativeReplayed:false,planApproved:false});
+      try{await checkpoint();}catch(error){state=before;writes=Promise.resolve();observations.clear();throw error;}
+      count++;
+    }
+    return count;
   }
   // A deterministic index of ONE immutable source inherits that source's
   // dependencies, not the Plan of whichever reviewer first requested it.
@@ -345,6 +552,23 @@ export async function createRosterDecisionWorkflowV1({store,execute,
     return {returned:plans.length};
   }
   if(state)await reconcileMethodRecoveryOwners();
+  async function reconcileReturnedMethods({save=true}={}){
+    const plans=await projectRosterReturnedMethodSettlementsV1({state,readArtifact:store.get});
+    for(const plan of plans){
+      const members=plan.memberIds.map(id=>state.work.find(w=>w.id===id));
+      const reportRef=await store.put({kind:'delegated_method_control_return',...plan,
+        originalWork:members.map(w=>({id:w.id,status:w.status,resultRef:w.resultRef??null,
+          inputRef:w.inputRef??null,failure:w.failure??null,attempt:w.attempt??0})),
+        instruction:'This old delegated method has returned to the recorded question owner. Keep its failure and actual sources; no successful query receipt or factual/Plan approval is created.'});
+      for(const member of members){member.branchReturnRef=reportRef;member.status='returned_to_owner';}
+      state.work.find(w=>w.id===plan.stoppedWorkId).methodControlReturn={reportRef,
+        replacementOwnerId:plan.replacementOwnerId,responseWorkId:plan.responseWorkId};
+      event('delegated_method_return_settled',{...plan,reportRef});
+    }
+    if(plans.length&&save){refresh();await checkpoint();}
+    return {returned:plans.length};
+  }
+  if(state)await reconcileReturnedMethods();
   function directory(consumer) {
     // One read-history pass per observation, not one per evidence. Rebuild for
     // the requested consumer so newly read paths and scope changes stay exact.
@@ -355,6 +579,9 @@ export async function createRosterDecisionWorkflowV1({store,execute,
       pathsByEvidence.get(read.evidenceId).push(read.pointer);
     }
     return state.evidence.map(e=>{
+      if(withheldImports.has(e.id))return {id:e.id,kind:e.kind,title:'Historical experience withheld for opponent visibility',
+        bindings:clone(e.bindings),validity:'historical',availability:'missing',access:'missing',outline:[],readPaths:[],
+        conditions:['Source is unavailable under the current opponent information boundary.'],artifactRef:null};
       const readPaths=[...(pathsByEvidence.get(e.id)??[])];
       return {...clone(e),validity:bindingsMatch(e.bindings,state.scope)?'current':'historical',readPaths,
         access:e.availability==='missing'?'missing':e.availability==='unsupported'?'unsupported'
@@ -365,6 +592,7 @@ export async function createRosterDecisionWorkflowV1({store,execute,
     if(visited.has(evidenceId))return {status:'path_missing',evidenceId,pointer,reason:'receipt_view_reference_cycle'};
     const evidence=state.evidence.find(e=>e.id===evidenceId);
     if(!evidence)return {status:'missing',evidenceId,pointer,reason:'not_registered'};
+    if(withheldImports.has(evidenceId))return {status:'missing',evidenceId,pointer,reason:'opponent_visibility_boundary'};
     let body;
     try{body=await store.get(evidence.artifactRef);}
     catch(error){
@@ -450,7 +678,10 @@ export async function createRosterDecisionWorkflowV1({store,execute,
       state.reads.push({consumer,evidenceId,pointer});
     event('evidence_read',{consumer,evidenceId,pointer,artifactRef:evidence.artifactRef});
     await checkpoint();
-    return {status:'read',evidenceId,pointer,kind:evidence.kind,conditions:clone(evidence.conditions),
+    const conditions=clone(evidence.conditions);
+    if(body?.schema==='roster_imported_conditional_experience_v1')conditions.push(
+      'Source reference scope: '+body.origin.workflowId+'. All nested evidenceNumbers belong only to that source workflow, not this workflow. Read copied original proof through /sourceArtifacts on THIS evidence handle; do not use those source-local numbers as local reader handles. This read does not approve applicability or a strategy.');
+    return {status:'read',evidenceId,pointer,kind:evidence.kind,conditions,
       validity:bindingsMatch(evidence.bindings,state.scope)?'current':'historical',value:clone(selected.value)};
   }
   async function routeMissingInput(work,name){
@@ -472,6 +703,9 @@ export async function createRosterDecisionWorkflowV1({store,execute,
     await checkpoint();return true;
   }
   async function run(work) {
+    if(work.role!=='roster_workflow_tool'&&withheldImports.size&&state.reads.some(read=>withheldImports.has(read.evidenceId)))
+      fail('ROSTER_WORKFLOW_BLIND_EXPERIENCE_PREVIOUSLY_READ');
+    assertRosterWorkflowDispatchAllowedV1(shouldStop,'work_preparation');
     const closedCycle=await rosterQueuedClosedMethodReturnV1({state,work,readArtifact:ref=>store.get(ref)});
     if(closedCycle&&!await rosterVerifiedOwnerDeliveryRepairV1({state,work,readArtifact:ref=>store.get(ref)})){
       work.operationState={version:1,turn:0,reads:[],calls:[],correction:null,consecutiveCorrections:0,
@@ -508,6 +742,7 @@ export async function createRosterDecisionWorkflowV1({store,execute,
       inputs,evidenceDirectory:directory(work.id),acceptanceGranted:false,
       ...(requiredSceneProjection?{requiredSceneProjection:clone(requiredSceneProjection)}:{})};
     work.inputRef=await store.put(assignment);
+    assertRosterWorkflowDispatchAllowedV1(shouldStop,'assignment_prepared',{inputRef:work.inputRef});
     work.attempt=(work.attempt||0)+1;
     work.dispatchKey=`${work.id}:${work.attempt}`;
     work.status='running';event('dispatch',{workId:work.id,dispatchKey:work.dispatchKey,inputRef:work.inputRef});
@@ -540,7 +775,22 @@ export async function createRosterDecisionWorkflowV1({store,execute,
   }
   async function prepareEvidenceEntry({id,title,kind,conditions,bindings,value}){
     if(!idOK(id)||!idOK(title)||!kinds.has(kind)||!Array.isArray(conditions))fail('ROSTER_WORKFLOW_EVIDENCE_INVALID');
-    validateBindings(bindings,state.scope);
+    if(blindOpponent&&rosterImportedExperienceHasFrozenOpponentV1(value))fail('ROSTER_CONDITIONAL_EXPERIENCE_OPPONENT_DISCLOSURE');
+    // Imported conditional records describe an earlier context. Do not bind
+    // them to today's army just to satisfy the current-fact publisher. This
+    // exception is typed, hypothesis-only and preserves the original scope.
+    const historicalExperience=id.startsWith('imported-experience:')&&kind==='hypothesis'
+      &&value?.schema==='roster_imported_conditional_experience_v1'
+      &&value.advisorySkillEligible===false&&value.usableAsEstablishedFact===false
+      &&value.canAffectRules===false&&value.trainingTruth===false
+      &&idOK(value.origin?.workflowId)&&idOK(value.origin?.evidenceId)
+      &&bindings&&Object.keys(bindings).length>0
+      &&Object.entries(bindings).every(([key,v])=>['army','rules','map','source'].includes(key)&&idOK(v))
+      &&persistedEqual(bindings,factBindings(value.sourceBindings));
+    if(!historicalExperience){
+      validateBindings(bindings,state.scope);
+      validateCurrentMapReceipt(state.scope,value);
+    }
     const artifactRef=await store.put(value);
     const outline=value&&typeof value==='object'?Object.entries(value).map(([key,child])=>({
       pointer:'/'+key.replaceAll('~','~0').replaceAll('/','~1'),
@@ -557,9 +807,57 @@ export async function createRosterDecisionWorkflowV1({store,execute,
     if(JSON.stringify(prior)!==JSON.stringify(next))fail('ROSTER_WORKFLOW_EVIDENCE_ID_CONFLICT',entry.id);
   }
   async function dispatch(command) {
-    if(command.type==='reconcile_method_recovery_owners'){
+    if(command.type==='reconcile_review_dependency_reuse'){
       if(!state)fail('ROSTER_WORKFLOW_NOT_INITIALIZED');
-      return reconcileMethodRecoveryOwners();
+      const selected=new Map(command.reused.map(row=>[row.appliesToWorkId,row])),changed=[],before=clone(state);
+      const considered=command.consideredWorkIds?new Set(command.consideredWorkIds):null;
+      for(const work of state.work.filter(w=>w.draftRevision===state.draftRevision&&w.role==='roster_workflow_final_review')){
+        // Absence from a NEW round's selection is not a negative result for an older round.
+        if(considered&&!considered.has(work.id)||!rosterReviewUnissuedV1(work))continue;
+        const row=selected.get(work.id),proof=row?.reuseProof;
+        if(proof){
+          const prior=state.work.find(w=>w.id===proof.originWorkId);
+          if(proof.kind!=='unchanged_review_dependencies'||proof.appliesToDraftRef!==state.draftRef
+            ||proof.appliesToRevision!==state.draftRevision||proof.originResultRef!==prior?.resultRef
+            ||row.resultRef!==prior?.resultRef||proof.originRevision!==prior?.draftRevision
+            ||prior.draftRevision>=state.draftRevision||proof.newModelReview!==false
+            ||proof.originalResultRewritten!==false)fail('ROSTER_REVIEW_REUSE_PROOF_MISMATCH',{workId:work.id});
+          if(!persistedEqual(work.reviewDependencyReuse??null,proof)){
+            work.reviewDependencyReuse=clone(proof);work.resultRef=prior.resultRef;work.status='evidence_ready';changed.push(work.id);
+            event('unissued_review_dependency_reused',{workId:work.id,originWorkId:prior.id,
+              originResultRef:prior.resultRef,newModelReview:false,acceptanceGranted:false});
+          }
+        }else if(work.reviewDependencyReuse){
+          const old=work.reviewDependencyReuse;delete work.reviewDependencyReuse;
+          work.resultRef=null;work.status='waiting_dependency';changed.push(work.id);
+          event('review_dependency_reuse_invalidated',{workId:work.id,originResultRef:old.originResultRef,
+            reason:'dependencies_no_longer_equal',historyReset:false});
+        }
+      }
+      // A zero-model fan-in may contain a withdrawn derived child. Preserve its
+      // old artifact, invalidate only that deterministic aggregate and requeue it.
+      for(const parent of state.work.filter(w=>w.draftRevision===state.draftRevision
+        &&w.inputs.atomicReviewAggregate&&w.status==='evidence_ready'&&w.resultRef&&!w.operationState?.pending
+        &&!(w.operationState?.calls?.length))){
+        const body=await store.get(parent.resultRef),members=body.value?.atomicReviewAggregation?.members;
+        if(!members?.some(m=>m.reuseProof))continue;
+        const stale=members.some(m=>{const child=state.work.find(w=>w.id===m.workId);
+          return child?.status!=='evidence_ready'||child.resultRef!==m.resultRef
+            ||!persistedEqual(child.reviewDependencyReuse??null,m.reuseProof??null);});
+        if(stale){const old=parent.resultRef;
+          parent.reviewAggregationHistory=[...(parent.reviewAggregationHistory??[]),{resultRef:old,inputRef:parent.inputRef??null,dispatchKey:parent.dispatchKey??null,attempt:parent.attempt??null,reason:'child_reuse_invalidated'}];
+          parent.resultRef=null;parent.status='waiting_dependency';parent.inputRef=null;parent.dispatchKey=null;
+          changed.push(parent.id);event('review_aggregate_dependency_invalidated',{workId:parent.id,resultRef:old,historyReset:false});
+        }
+      }
+      if(changed.length){refresh();try{await checkpoint();}catch(error){state=before;writes=Promise.resolve();observations.clear();throw error;}}
+      return {changed};
+    }
+    if(command.type==='reconcile_method_recovery_owners'){
+
+      if(!state)fail('ROSTER_WORKFLOW_NOT_INITIALIZED');
+      const competing=await reconcileMethodRecoveryOwners(),delegated=await reconcileReturnedMethods();
+      return {returned:competing.returned+delegated.returned};
     }
     if(command.type==='initialize'){
       if(state)fail('ROSTER_WORKFLOW_ALREADY_INITIALIZED');
@@ -568,6 +866,77 @@ export async function createRosterDecisionWorkflowV1({store,execute,
       event('initialized',{scope:state.scope});await checkpoint();return clone(state);
     }
     if(!state)fail('ROSTER_WORKFLOW_NOT_INITIALIZED');
+    if(command.type==='settle_completed_comparison_navigation'){
+      const rows=await projectRosterCompletedComparisonNavigationV1({state,readArtifact:store.get});
+      if(!rows.length)return {retired:[]};
+      const before=clone(state);
+      for(const row of rows){
+        const work=state.work.find(w=>w.id===row.workId);
+        work.comparisonNavigationSettlement=clone(row);
+        work.supersededByWorkId=row.authorWorkId;work.status='superseded';
+        event('comparison_navigation_settled',{...row,originalArtifactsPreserved:true});
+      }
+      try{await checkpoint();}catch(error){state=before;writes=Promise.resolve();observations.clear();throw error;}
+      return {retired:rows.map(row=>row.workId)};
+    }
+    if(command.type==='reconcile_comparison_authorizations'){
+      const stale=await rosterUnissuedStaleComparisonDesignsV1({state,readArtifact:store.get});
+      if(!stale.length)return {retired:[]};
+      const before=clone(state);
+      for(const row of stale){
+        const work=state.work.find(w=>w.id===row.workId);
+        work.comparisonAuthorizationSuperseded=clone(row);work.status='superseded';
+        event('unissued_comparison_authorization_superseded',{...row,
+          originalArtifactsPreserved:true,providerReplay:false,experimentApproved:false});
+      }
+      try{await checkpoint();}catch(error){state=before;writes=Promise.resolve();observations.clear();throw error;}
+      return {retired:stale.map(row=>row.workId)};
+    }
+    if(command.type==='reconcile_calculation_results'){
+      const restoredAuthorScopes=await restoreCalculationAuthorScope();
+      const controlBefore=clone(state),controls=retainCalculationControlOwners();
+      if(controls){
+        refresh();
+        try{await checkpoint();}catch(error){state=controlBefore;writes=Promise.resolve();observations.clear();throw error;}
+      }
+      const recovery=await projectRosterCalculationRecoveryV1({state,readArtifact:store.get});
+      if(!recovery)return {scheduled:[],invalidated:[],retainedControlOwners:controls,restoredAuthorScopes};
+      const {report,queries,author}=recovery;
+      const jobs=[...queries,...(author?[author]:[])];
+      for(const job of jobs){
+        if(state.work.some(work=>work.id===job.id))fail('ROSTER_WORKFLOW_CALCULATION_RECOVERY_CONFLICT',job.id);
+        validateBindings(job.bindings,state.scope);job.status='waiting_dependency';job.resultRef=null;job.failure=null;
+      }
+      const heldGoal=author?.investigationFrontierOf?state.work.find(work=>work.id===author.investigationFrontierOf):null;
+      if(author?.investigationFrontierOf&&heldGoal?.investigationHandoff?.decisionId!==author.calculationRecoveryOf)
+        fail('ROSTER_WORKFLOW_CALCULATION_OWNER_CHANGED');
+      const before=clone(state),reportRef=await store.put(report);
+      const invalidEvidence=new Set(report.invalidEvidenceIds),obsolete=new Set(report.obsolete.map(row=>row.workId));
+      for(const evidence of state.evidence)if(invalidEvidence.has(evidence.id)){
+        evidence.preInvalidationBindings??=clone(evidence.bindings);
+        evidence.bindings={...evidence.bindings,invalidatedCalculation:reportRef};
+        evidence.calculationInvalidation={reportRef,reason:report.reason};
+      }
+      for(const work of state.work)if(obsolete.has(work.id)||report.affectedInterpretationIds.includes(work.id)){
+        work.calculationInvalidation={reportRef,reason:report.reason};
+        // A method's control ownership is not a factual approval. Keep its
+        // history/held-goal link; retire only numeric producers and interpreters.
+        if(work.role==='roster_workflow_experiment_planner')continue;
+        work.preInvalidationBindings??=clone(work.bindings);
+        work.bindings={...work.bindings,invalidatedCalculation:reportRef};work.status='superseded';
+      }
+      if(author?.investigationFrontierOf){
+        const goal=heldGoal;
+        goal.investigationHandoff={...goal.investigationHandoff,decisionId:author.id,
+          previousDecisionIds:[...(goal.investigationHandoff.previousDecisionIds??[]),author.calculationRecoveryOf]};
+      }
+      state.work.push(...jobs);retainCalculationControlOwners();refresh();
+      event('obsolete_calculations_retracted',{reportRef,workIds:report.obsolete.map(row=>row.workId),
+        replacementQueryIds:queries.map(work=>work.id),authorWorkId:author?.id??null,
+        originalArtifactsPreserved:true,planApproved:false});
+      try{await checkpoint();}catch(error){state=before;writes=Promise.resolve();observations.clear();throw error;}
+      return {scheduled:jobs.map(work=>work.id),invalidated:report.invalidEvidenceIds,reportRef};
+    }
     if(command.type==='reconcile_plan_revision_handoffs'){
       const returns=await projectRosterPlanRevisionReturnsV1({state,readArtifact:store.get});
       // Owner and held-goal release are one checkpoint. There is no caller-
@@ -637,6 +1006,12 @@ export async function createRosterDecisionWorkflowV1({store,execute,
     if(command.type==='reconcile_review_request_shapes'){
       const recovered=[];
       for(const work of state.work.filter(w=>fresh(w))){
+        const coverage=await projectRosterUnissuedAuthorCoverageV1({work,readArtifact:store.get});
+        if(coverage){
+          work.inputHistory=[...(work.inputHistory??[]),{inputs:clone(work.inputs),reason:'author_public_fact_coverage_v1',authorResultRef:coverage.authorResultRef}];
+          work.inputs=coverage.inputs;recovered.push(work.id);
+          event('comparison_author_public_coverage_bound',{workId:work.id,authorResultRef:coverage.authorResultRef,providerReplayed:false,historyReset:false});
+        }
         const recovery=await rosterReviewRequestShapeRecoveryV1({work,readArtifact:store.get});
         if(!recovery)continue;
         work.requestShapeRecoveries=[...(work.requestShapeRecoveries??[]),recovery];
@@ -648,6 +1023,51 @@ export async function createRosterDecisionWorkflowV1({store,execute,
     }
     if(command.type==='reconcile_unissued_bound_inputs'){
       const resumed=[];
+      // The old binder threw before its first operation checkpoint and lost
+      // the source-owned repair lane. Revalidate its EXACT saved assignment;
+      // do not infer safety merely from an error name or replay a Native call.
+      if(validateToolBindings)for(const work of state.work.filter(w=>w.role==='roster_workflow_tool'
+        &&w.status==='needs_repair'&&fresh(w)&&!w.operationState&&!w.resultRef&&w.inputRef
+        &&['ROSTER_WORKFLOW_STATE_REF_INVALID','ROSTER_WORKFLOW_STATE_REF_CONFLICT'].includes(w.failure?.code))){
+        const saved=await store.get(work.inputRef),selected=work.inputs.request?.value;
+        if(saved.workId!==work.id||saved.role!==work.role||!persistedEqual(saved.scope,state.scope)
+          ||!persistedEqual(saved.inputs?.request?.value,selected))continue;
+        let rejection;
+        try{validateToolBindings(selected,saved.inputs);}catch(error){
+          if(error.code===work.failure.code)rejection=projectRosterWorkflowStateBindingFailureV1({selected,error});
+        }
+        if(!rejection)continue;
+        work.failureHistory=[...(work.failureHistory??[]),{failure:clone(work.failure),inputRef:work.inputRef,
+          reason:'state_binding_input_return_v1',nativeExecuted:false}];
+        work.resultRef=await store.put(rejection);work.status='needs_model_choice';work.failure=null;
+        resumed.push(work.id);
+        event('unissued_state_binding_returned',{workId:work.id,resultRef:work.resultRef,
+          toolReplayed:false,countersReset:false,originalFailureRetained:true});
+      }
+      // A source-fixed transport failure is recoverable only if the real
+      // executor binder accepts every retained dependency. No model copying,
+      // Native replay, uncertain outcome, or counter reset is involved.
+      if(validateToolBindings)for(const work of state.work.filter(w=>w.role==='roster_workflow_tool'
+        &&w.status==='needs_repair'&&fresh(w)&&w.failure?.code==='ROSTER_WORKFLOW_TOOL_POINTER_MISSING'
+        &&w.failure.dispatchOutcome==='not_dispatched'&&!w.operationState?.pending&&!w.operationState?.completedRef)){
+        const request=work.inputs.request?.value,change='executor_bound_arguments_v1';
+        if(!request?.bindings?.some(b=>b.pointer===work.failure.detail)
+          ||work.failureHistory?.some(h=>h.reason===change))continue;
+        const inputs={};let complete=true;
+        for(const binding of request.bindings){
+          const source=work.inputs[binding.name],parent=source?.source==='work'&&state.work.find(w=>w.id===source.id);
+          if(parent?.status!=='evidence_ready'||!fresh(parent)||!parent.resultRef){complete=false;break;}
+          const result=select(await store.get(parent.resultRef),source.pointer);
+          if(!result.ok){complete=false;break;}
+          inputs[binding.name]={value:result.value,workId:parent.id,resultRef:parent.resultRef};
+        }
+        if(!complete)continue;
+        try{validateToolBindings(request,inputs);}catch{continue;}
+        work.failureHistory=[...(work.failureHistory??[]),{failure:clone(work.failure),inputRef:work.inputRef,
+          reason:change,sourceResultRefs:Object.values(inputs).map(i=>i.resultRef)}];
+        work.status='ready';work.failure=null;resumed.push(work.id);
+        event('unissued_bound_input_reconciled',{workId:work.id,reason:change,toolReplayed:false});
+      }
       for(const work of state.work.filter(w=>w.role==='roster_workflow_tool'&&w.status==='needs_repair'&&fresh(w)
         &&w.failure?.code==='ROSTER_WORKFLOW_TOOL_BINDING_CONFLICT'&&w.failure.dispatchOutcome==='not_dispatched'
         &&!w.operationState?.pending&&!w.operationState?.completedRef)){
@@ -778,7 +1198,8 @@ export async function createRosterDecisionWorkflowV1({store,execute,
         await checkpoint();return {decisionId:work.id,reportRef,planApproved:false};
       }
       const owner=state.work.find(w=>w.id===work?.experimentOwnerId);
-      const goal=state.work.find(w=>w.id===owner?.experimentGoalId);
+      const ownerRelation=owner&&graph.owner(owner.id);
+      const goal=state.work.find(w=>w.id===ownerRelation?.goalId);
       const invalid=()=>fail('ROSTER_WORKFLOW_NO_PROGRESS_HANDOFF_INVALID');
       if(!idOK(command.reason)||!idOK(command.engineeringChangeId)||!work||!fresh(work)
         ||!owner||owner.status!=='evidence_ready'||!fresh(owner)||!goal
@@ -792,7 +1213,7 @@ export async function createRosterDecisionWorkflowV1({store,execute,
       if(!['ready','needs_repair'].includes(work.status)||work.resultRef||goal.investigationHandoff
         ||work.operationState?.calls?.length||state.work.some(w=>w.status==='running'||w.operationState?.pending)
         ||work.status==='needs_repair'&&work.operationState?.noProgressStop?.reason!=='repeated_inspection_only_batch'
-        ||graph.latestExperimentOwners().find(w=>w.experimentGoalId===goal.id)?.id!==owner.id)invalid();
+        ||graph.latestExperimentOwners().find(w=>w.experimentGoalId===goal.id)?.id!==ownerRelation.ownerWorkId)invalid();
       const repeated=await projectRepeatedInspectionOnlyBatchV1({state,workId:work.id,store});
       if(!repeated)invalid();
       const result=await store.get(owner.resultRef),draft=await store.get(state.draftRef);
@@ -829,26 +1250,60 @@ export async function createRosterDecisionWorkflowV1({store,execute,
     if(command.type==='hold_experiment_for_strategy'){
       const goal=state.work.find(w=>w.id===command.goalId&&w.experimentGoalId===command.goalId);
       const decision=state.work.find(w=>w.id===command.decisionId);
+      // Facts deliberately omit Plan identity; their strategic successor must
+      // additionally own the CURRENT Plan. Preserve exact fact bindings and
+      // verify the actual delivered draft, rather than requiring equal scopes.
+      const draftInput=decision?.inputs?.wholeDraft;
+      const promotedOwner=goal&&decision&&!Object.hasOwn(goal.bindings,'plan')
+        &&isDeepStrictEqual(factBindings(goal.bindings),factBindings(decision.bindings))
+        &&decision.bindings.plan===state.scope.plan&&draftInput?.source==='literal'
+        &&draftInput.value?.revision===state.draftRevision
+        &&draftInput.value?.plan?.planHash===state.scope.plan;
+      const reviewGroupOwner=decision?.reviewResolutionOwnerVersion===1
+        &&decision.reviewResolutionGroupId===goal?.resolutionGroupId
+        &&decision.reviewResolutionGoalIds?.includes(goal?.id);
       if(!goal||goal.role!=='roster_workflow_experiment_planner'||!fresh(goal)||!command.reason
-        ||decision?.role!=='roster_workflow_strategy_decision'||decision.investigationFrontierOf!==goal.id
-        ||!fresh(decision)||!isDeepStrictEqual(goal.bindings,decision.bindings)
+        ||decision?.role!=='roster_workflow_strategy_decision'||decision.investigationFrontierOf!==goal.id&&!reviewGroupOwner
+        ||!fresh(decision)||!isDeepStrictEqual(goal.bindings,decision.bindings)&&!promotedOwner
         ||goal.investigationHandoff&&goal.investigationHandoff.decisionId!==decision.id)
         fail('ROSTER_WORKFLOW_INVESTIGATION_HANDOFF_INVALID');
       if(goal.investigationHandoff)return {...clone(goal.investigationHandoff),alreadyHeld:true,planApproved:false};
       const ownership=createRosterWorkflowOwnershipIndexV1(state);
       const members=state.work.filter(w=>ownership(w.id)?.goalId===goal.id);
-      if(members.some(w=>w.status==='running'||w.operationState?.pending))
-        fail('ROSTER_WORKFLOW_GOAL_HAS_UNRECONCILED_DISPATCH');
+      // Explicitly park only physically terminated, identity-bound transport
+      // failures. Their unknown costs and saved pending request remain history;
+      // this does not complete, cancel at Provider, or replay the request.
+      const park=command.parkFailedProviderRequests??[];
+      const pending=members.filter(w=>w.operationState?.pending);
+      if(!Array.isArray(park)||park.length!==pending.length||new Set(park.map(p=>p.workId)).size!==park.length
+        ||members.some(w=>w.status==='running')||pending.some(w=>{
+          const expected=park.find(p=>p.workId===w.id),op=w.operationState,d=w.failure?.providerDispatch;
+          return !expected||w.status!=='needs_repair'||op.retryProviderDispatch
+            ||!isExplicitlyRecoverableProviderFailureV1(w.failure)||!isExplicitlyRecoverableProviderDispatchV1(d)
+            ||d.contextHash!==op.pending.contextHash||expected.requestRef!==op.pending.requestRef
+            ||expected.requestId!==d.requestId||expected.contextHash!==d.contextHash;
+        }))fail('ROSTER_WORKFLOW_GOAL_HAS_UNRECONCILED_DISPATCH');
+      const originalWork=members.map(w=>({id:w.id,status:w.status,resultRef:w.resultRef??null,
+        ...(w.operationState?.pending?{pending:clone(w.operationState.pending),failure:clone(w.failure)}:{})}));
       const reportRef=await store.put({kind:'investigation_returned_to_strategy',goalId:goal.id,decisionId:decision.id,
-        reason:command.reason,originalWork:members.map(w=>({id:w.id,status:w.status,resultRef:w.resultRef??null})),
+        reason:command.reason,originalWork,
         evidenceRetained:true,historyReset:false,providerReplayed:false,planApproved:false,nativeQueryAutomaticallyResolved:false});
-      goal.investigationHandoff={decisionId:decision.id,reportRef};
-      event('investigation_returned_to_strategy',{goalId:goal.id,decisionId:decision.id,reportRef,
-        planApproved:false,evidenceRetained:true,historyReset:false});
-      await checkpoint();return {...clone(goal.investigationHandoff),planApproved:false};
+      const before=clone(state);
+      try{
+        for(const work of pending){const op=work.operationState;
+          op.parkedProviderRequests=[...(op.parkedProviderRequests??[]),{reportRef,decisionId:decision.id,
+            originalPending:clone(op.pending),failure:clone(work.failure),providerOutcomeUnknown:true,automaticRetryAllowed:false}];
+          op.pending=null;
+        }
+        goal.investigationHandoff={decisionId:decision.id,reportRef};
+        event('investigation_returned_to_strategy',{goalId:goal.id,decisionId:decision.id,reportRef,
+          parkedRequestCount:pending.length,planApproved:false,evidenceRetained:true,historyReset:false});
+        await checkpoint();
+      }catch(error){state=before;throw error;}
+      return {...clone(goal.investigationHandoff),planApproved:false};
     }
     if(command.type==='close_optional_comparison'){
-      const purpose=state.work.findLast(w=>w.strategyComparisonDesignCycleId===command.cycleId);
+      const purpose=currentRosterComparisonPurposeV1(state,command.cycleId);
       const cycle={id:command.cycleId,comparisonPurposeWorkId:purpose?.id,comparisonPurposeResultRef:purpose?.resultRef,
         comparisonExperimentId:purpose?.id+':study'};
       const proof=await projectRosterComparisonClosureV1({state,cycle,readArtifact:store.get});
@@ -861,11 +1316,24 @@ export async function createRosterDecisionWorkflowV1({store,execute,
       const reportRef=await store.put({kind:'reviewed_optional_comparison_closure',...proof,
         originalWork:members.map(w=>({id:w.id,status:w.status,resultRef:w.resultRef??null,attempt:w.attempt??0})),
         evidenceRetained:true,providerReplayed:false});
-      for(const member of members){member.comparisonClosureRef=reportRef;member.status='superseded';}
-      goal.comparisonClosure={authorWorkId:proof.authorWorkId,reviewId:proof.reviewId,reviewResultRef:proof.reviewResultRef,reportRef};
-      event('optional_comparison_closed',{goalId:goal.id,reportRef,reviewId:proof.reviewId,
-        comparisonResolutionKind:proof.comparisonResolutionKind,nativeQueryAutomaticallyResolved:false,planApproved:false});
-      refresh();await checkpoint();return {closed:true,reportRef,nativeQueryAutomaticallyResolved:false};
+      // Persist the unanswered asset and scheduling closure in one checkpoint.
+      const hypothesis=projectRosterDeferredHypothesisV1({proof,scope:state.scope});
+      const entry=hypothesis?await prepareEvidenceEntry(hypothesis):null;
+      const existing=entry&&state.evidence.find(e=>e.id===entry.id);
+      if(existing)verifyRetainedEvidence(existing,entry);
+      const before=clone(state);
+      try{
+        if(entry&&!existing){state.evidence.push(entry);event('evidence_published',{id:entry.id,artifactRef:entry.artifactRef,kind:entry.kind});}
+        for(const member of members){member.comparisonClosureRef=reportRef;member.status='superseded';}
+        goal.comparisonClosure={authorWorkId:proof.authorWorkId,reviewId:proof.reviewId,reviewResultRef:proof.reviewResultRef,reportRef,
+          ...(proof.reviewKind?{reviewKind:proof.reviewKind}:{}),
+          ...(entry?{deferredHypothesisRef:entry.artifactRef,deferredHypothesisId:entry.id}:{})};
+        event('optional_comparison_closed',{goalId:goal.id,reportRef,reviewId:proof.reviewId,
+          comparisonResolutionKind:proof.comparisonResolutionKind,nativeQueryAutomaticallyResolved:false,planApproved:false});
+        refresh();await checkpoint();
+      }catch(error){state=before;throw error;}
+      return {closed:true,reportRef,nativeQueryAutomaticallyResolved:false,
+        ...(entry?{deferredHypothesisRef:entry.artifactRef,knowledgeStatus:'unresolved'}:{})};
     }
     if(command.type==='supersede_experiment_goal'){
       const previous=state.work.find(w=>w.id===command.goalId&&w.experimentGoalId===command.goalId);
@@ -939,19 +1407,26 @@ export async function createRosterDecisionWorkflowV1({store,execute,
         nativeQueryAutomaticallyResolved:false,historyReset:false});
       refresh();await checkpoint();return {returned:true,...clone(work.choiceScopeReturn)};
     }
-    if(command.type==='return_experiment_branch'){
+    if(['return_experiment_branch','return_empty_formation_branch'].includes(command.type)){
       const work=state.work.find(w=>w.id===command.workId);
       if(work?.branchReturnRef){
         const report=await store.get(work.branchReturnRef);
         return {...report.control,reportRef:work.branchReturnRef,alreadyReturned:true};
       }
-      if(work?.role!=='roster_workflow_experiment_planner'||work.status!=='evidence_ready'||!fresh(work))
+      const toolReturn=command.type==='return_empty_formation_branch';
+      const controlSource=toolReturn?await projectRosterEmptyFormationChoiceV1({state,workId:command.workId,readArtifact:store.get}):null;
+      if(toolReturn?!controlSource:work?.role!=='roster_workflow_experiment_planner'||work.status!=='evidence_ready'||!fresh(work))
         fail('ROSTER_WORKFLOW_BRANCH_RETURN_INVALID');
-      const result=await store.get(work.resultRef),conclusion=result.value.experimentConclusion;
+      const result=await store.get(work.resultRef),conclusion=toolReturn?{
+        status:'blocked',answer:controlSource.instruction,
+        evidenceRefs:[{id:controlSource.sourceEvidenceId,pointer:controlSource.sourcePointer}],
+        conditions:['Tool-owned empty selection control return, not a model conclusion, Native action success, impossibility proof or strategic verdict.'],
+        unansweredQuestion:controlSource.originalQuestion
+      }:result.value.experimentConclusion;
       if(!conclusion)return {returned:false};
       const graph=createRosterWorkflowGraphV1(state);
       const pendingOwner=owner=>graph.pendingTarget(owner?.id)?.id??null;
-      let targetId=pendingOwner(work),rootTool,owner;const ancestors=new Set();
+      let targetId=toolReturn?work.id:pendingOwner(work),rootTool,owner;const ancestors=new Set();
       if(!targetId)return {returned:false}; // A whole-goal answer follows its existing source review.
       if(state.work.find(w=>w.id===targetId)?.status!=='needs_model_choice')return {returned:false,alreadyResolved:true};
       while(targetId){
@@ -971,22 +1446,28 @@ export async function createRosterDecisionWorkflowV1({store,execute,
       const existingSummary=state.work.find(w=>w.id===`${namespace}:summary`&&w.status==='evidence_ready');
       const summaryId=existingSummary?.id??`${namespace}:returned-summary`,control={returned:true,ownerWorkId:owner.id,orderIndex,summaryId};
       const stopped=members.filter(w=>['ready','waiting_dependency','needs_model_choice','needs_repair'].includes(w.status));
-      const report={kind:'model_branch_return_not_native_success',control,originalModelWorkId:work.id,
-        originalModelResultRef:work.resultRef,originalBatchResultRef:owner.resultRef,originalOrder:orders[orderIndex],
+      const report={kind:toolReturn?'tool_branch_return_not_native_success':'model_branch_return_not_native_success',control,
+        originalModelWorkId:toolReturn?null:work.id,originalModelResultRef:toolReturn?null:work.resultRef,
+        ...(toolReturn?{originalToolWorkId:work.id,originalToolResultRef:work.resultRef,controlSource}:{}),
+        originalBatchResultRef:owner.resultRef,originalOrder:orders[orderIndex],
         conclusion:clone(conclusion),nativeActionSucceeded:false,sourceReviewStillRequired:true,planApproved:false,
         stoppedWork:stopped.map(w=>({id:w.id,status:w.status,resultRef:w.resultRef??null,failure:w.failure??null})),
         completedToolSources:members.filter(w=>w.role==='roster_workflow_tool'&&w.status==='evidence_ready')
           .map(w=>({evidenceId:`tool-view:${w.id}`,resultRef:w.resultRef})),
-        instruction:'This is the model ending one experimental method, NOT a successful Native action or a whole-goal answer. Preserve negative/blocked findings and exact original facts. The parent question owner must decide the next method or a source-reviewed conclusion; it may not approve a Plan from this control report.'};
+        instruction:toolReturn?controlSource.instruction:'This is the model ending one experimental method, NOT a successful Native action or a whole-goal answer. Preserve negative/blocked findings and exact original facts. The parent question owner must decide the next method or a source-reviewed conclusion; it may not approve a Plan from this control report.'};
       const reportRef=await store.put(report);
       owner.returnedOrders={...owner.returnedOrders,[orderIndex]:{reportRef,summaryId}};
       for(const member of members){member.branchReturnRef=reportRef;if(stopped.includes(member))member.status='returned_to_owner';}
-      event('experiment_branch_returned',{...control,reportRef,modelWorkId:work.id,stoppedCount:stopped.length,
+      event('experiment_branch_returned',{...control,reportRef,modelWorkId:toolReturn?null:work.id,
+        ...(toolReturn?{toolWorkId:work.id,controlSourceKind:controlSource.kind}:{}),stoppedCount:stopped.length,
         originalRepliesRetained:true,toolReexecuted:false,nativeActionSucceeded:false});
       refresh();await checkpoint();return {...control,reportRef};
     }
     if(command.type==='commit_draft'){
+      if (command.scope?.releaseManifest !== state.scope.releaseManifest) fail('ROSTER_WORKFLOW_RELEASE_CHANGED');
       const currentRevision=state.draftRevision??null;
+      const retry=await committedDraftRetry(command);
+      if(retry)return retry;
       if(currentRevision!==command.expectedRevision)fail('ROSTER_WORKFLOW_DRAFT_COMMIT_CONFLICT',{currentRevision,expectedRevision:command.expectedRevision});
       if(state.work.some(w=>w.status==='running'))fail('ROSTER_WORKFLOW_DRAFT_COMMIT_WHILE_RUNNING');
       if(command.draft?.schema!=='roster_workflow_draft_v1'||command.draft.revision!==(currentRevision===null?0:currentRevision+1)
@@ -995,10 +1476,22 @@ export async function createRosterDecisionWorkflowV1({store,execute,
       const work=command.workId?state.work.find(w=>w.id===command.workId):null;
       if(command.workId&&(!work||work.status!=='evidence_ready'||work.draftOutcomeRef))fail('ROSTER_WORKFLOW_DRAFT_OWNER_INVALID');
       const draftRef=await store.put(command.draft),receiptRef=command.receipt?await store.put(command.receipt):null;
-      state.draftRef=draftRef;state.draftRevision=command.draft.revision;state.scope=clone(command.scope);
-      if(work)work.draftOutcomeRef=receiptRef;
-      event('draft_committed',{workId:command.workId??null,draftRef,revision:state.draftRevision,receiptRef,scope:state.scope});
-      refresh();await checkpoint();return {draftRef,revision:state.draftRevision,receiptRef};
+      const before=clone(state),result={draftRef,revision:command.draft.revision,receiptRef};
+      try{
+        state.draftRef=draftRef;state.draftRevision=command.draft.revision;state.scope=clone(command.scope);
+        if(work)work.draftOutcomeRef=receiptRef;
+        event('draft_committed',{workId:command.workId??null,draftRef,revision:state.draftRevision,receiptRef,scope:state.scope});
+        refresh();
+      }catch(error){state=before;observations.clear();throw error;}
+      const intended=clone(state);
+      try{await checkpoint();}catch(error){
+        pendingDraftCommit={before,intended,command:clone(command)};
+        state=before;observations.clear();
+        if(await reconcileDraftCommit())return {...result,reconciledAfterSaveError:true};
+        fail('ROSTER_WORKFLOW_DRAFT_COMMIT_NOT_PERSISTED',{storageError:error.code??error.message,
+          draftRevision:state.draftRevision,retrySameCommit:true});
+      }
+      return result;
     }
     if(command.type==='record_draft_outcome'){
       const work=state.work.find(w=>w.id===command.workId);
@@ -1064,9 +1557,76 @@ export async function createRosterDecisionWorkflowV1({store,execute,
         pointer:input.pointer,reason:command.reason,providerReplayed:false});
       refresh();await checkpoint();return {id:work.id,status:work.status};
     }
+    if(command.type==='reinterpret_inventory_claims'){
+      const work=state.work.find(w=>w.id===command.workId),parent=state.work.find(w=>w.id===work?.atomicReviewParentId);
+      if(work?.status!=='evidence_ready'||!fresh(work)||work.operationState?.pending||!command.reason?.trim()
+        ||work.resultRef!==command.expectedResultRef||work.operationState?.calls?.at(-1)?.replyRef!==command.expectedReplyRef
+        ||work.inputs?.atomicReviewItem?.value?.inventoryExtractionVersion!==1
+        ||!parent||!fresh(parent)||!['ready','waiting_dependency'].includes(parent.status)||parent.resultRef
+        ||parent.operationState?.pending||parent.operationState?.calls?.length)
+        fail('ROSTER_INVENTORY_REINTERPRETATION_TARGET_INVALID');
+      const prior=await store.get(work.resultRef),call=work.operationState.calls.at(-1),request=await store.get(call.requestRef);
+      if(prior.value?.inventoryVerification?.version!==1||(prior.value.inventoryVerification.comparisonVersion??1)>=ROSTER_INVENTORY_COMPARISON_VERSION
+        ||request.inventoryVerificationState?.version!==1||request.roleCommunication?.workId!==work.id)
+        fail('ROSTER_INVENTORY_REINTERPRETATION_PROTOCOL_INVALID');
+      work.inventoryInterpretationHistory=[...(work.inventoryInterpretationHistory??[]),{resultRef:work.resultRef,
+        requestRef:call.requestRef,replyRef:call.replyRef,reason:command.reason,targetComparisonVersion:ROSTER_INVENTORY_COMPARISON_VERSION}];
+      work.operationState.revalidateReplyRef=call.replyRef;
+      work.resultRef=null;work.failure=null;work.status='ready';
+      event('inventory_comparison_reinterpretation',{workId:work.id,originalResultRef:command.expectedResultRef,
+        originalReplyRef:call.replyRef,reason:command.reason,targetComparisonVersion:ROSTER_INVENTORY_COMPARISON_VERSION,providerReplay:false,historyReset:false});
+      refresh();await checkpoint();return {workId:work.id,providerReplay:false};
+    }
+    if(command.type==='recheck_inventory_claims'){
+      const old=state.work.find(w=>w.id===command.workId),parent=state.work.find(w=>w.id===old?.atomicReviewParentId);
+      const request={workId:command.workId,expectedResultRef:command.expectedResultRef,expectedRequestRef:command.expectedRequestRef,
+        authorizationId:command.authorizationId,reason:command.reason};
+      const nextId=old?.id+':inventory-extraction:v1',existing=state.work.find(w=>w.id===nextId);
+      if(existing){
+        if(!isDeepStrictEqual(existing.inventoryContractRecheck?.request,request))fail('ROSTER_INVENTORY_RECHECK_ALREADY_REQUESTED');
+        return {workId:existing.id,alreadyScheduled:true};
+      }
+      const item=old?.inputs?.atomicReviewItem?.value;
+      if(!idOK(command.authorizationId)||!command.reason?.trim()
+        ||old?.status!=='evidence_ready'||old.role!=='roster_workflow_final_review'||!fresh(old)
+        ||old.operationState?.pending||old.resultRef!==command.expectedResultRef
+        ||old.operationState?.calls?.at(-1)?.requestRef!==command.expectedRequestRef
+        ||item?.checkId!=='component_facts:selected_inventory'||item.inventoryExtractionVersion
+        ||!parent||!fresh(parent)||!['ready','waiting_dependency'].includes(parent.status)
+        ||parent.resultRef||parent.operationState?.pending||parent.operationState?.calls?.length
+        ||parent.draftRevision!==state.draftRevision||parent.reviewRound!==old.reviewRound)
+        fail('ROSTER_INVENTORY_RECHECK_TARGET_INVALID');
+      const spec=parent.inputs.atomicReviewAggregate?.value,index=spec?.members?.findIndex(m=>m.workId===old.id);
+      if(!(index>=0)||spec.members[index].checkId!==item.checkId||parent.inputs['atomicResult'+index]?.id!==old.id)
+        fail('ROSTER_INVENTORY_RECHECK_PARENT_INVALID');
+      const previousRequest=await store.get(command.expectedRequestRef),previousResult=await store.get(command.expectedResultRef);
+      if(previousRequest.inventoryVerificationState||previousRequest.roleCommunication?.workId!==old.id
+        ||previousResult.value?.inventoryVerification||previousResult.value?.checks?.length!==1
+        ||previousResult.value.checks[0].checkId!==item.checkId)
+        fail('ROSTER_INVENTORY_RECHECK_PROTOCOL_INVALID');
+      const inputs=clone(old.inputs);inputs.atomicReviewItem.value.inventoryExtractionVersion=1;
+      const successor={id:nextId,role:old.role,bindings:clone(old.bindings),draftRevision:old.draftRevision,
+        reviewRound:old.reviewRound,atomicReviewParentId:parent.id,inputs,status:'ready',resultRef:null,
+        inputRef:null,attempt:0,dispatchKey:null,failure:null,
+        operationState:{version:1,turn:0,reads:[],calls:[],correction:null,consecutiveCorrections:0,correctionLimit:1},
+        inventoryContractRecheck:{version:1,request,sourceWorkId:old.id,historyReset:false,acceptanceGranted:false}};
+      parent.inventoryContractHistory=[...(parent.inventoryContractHistory??[]),{request:clone(request),
+        originalInputs:clone(parent.inputs),successorWorkId:nextId}];
+      spec.members[index].workId=nextId;parent.inputs['atomicResult'+index].id=nextId;
+      state.work.push(successor);
+      event('inventory_claim_recheck_authorized',{...clone(request),successorWorkId:nextId,
+        parentWorkId:parent.id,reviewRound:old.reviewRound,historyReset:false,additionalInvalidResultsGranted:1});
+      refresh();await checkpoint();return {workId:nextId,alreadyScheduled:false};
+    }
     if(command.type==='enqueue'){
       if(!Array.isArray(command.work))fail('ROSTER_WORKFLOW_WORK_INVALID');
       const jobs=clone(command.work);
+      const reviewOwnerMerges=jobs.filter(w=>w.supersedesUnissuedReviewOwners);
+      if(reviewOwnerMerges.length){
+        const expected=projectRosterUnissuedReviewOwnerMergeV1({state});
+        if(jobs.length!==1||!expected||!persistedEqual(jobs[0],expected))
+          fail('ROSTER_REVIEW_OWNER_MERGE_INVALID');
+      }
       const reconsiderations=jobs.filter(w=>w.reconsidersFrontierOf||w.reconsidersDecisionOf);
       if(reconsiderations.length){
         const expected=await projectReconsideration({state,readArtifact:store.get});
@@ -1135,8 +1695,13 @@ export async function createRosterDecisionWorkflowV1({store,execute,
           fail('ROSTER_WORKFLOW_GOAL_HAS_UNRECONCILED_DISPATCH');
         strategyReturns.push({goal,next,response,settlement});
       }
-      const supersessions=jobs.filter(w=>w.supersedeUnissuedReview===true).map(next=>{
+      const supersessions=await Promise.all(jobs.filter(w=>w.supersedeUnissuedReview===true).map(async next=>{
         const previous=state.work.find(w=>w.id===next.sourceReviewRecheckOf);
+        const scopeDependencyUpgrade=Boolean(next.sourceClaimReuseRefresh&&!previous?.sourceScopeExtension
+          &&await rosterSourceScopeRefreshMatchesV1({state,next,jobs,readArtifact:store.get}));
+        const numericFactDeliveryUpgrade=Boolean(next.builderNumericFactDeliveryVersion===1
+          &&!previous?.builderNumericFactDeliveryVersion
+          &&await rosterBuilderFactRecheckMatchesV1({state,next,readArtifact:store.get}));
         const inquiryStageUpgrade=Boolean(next.sourceReviewRepairHandoff
           &&next.sourceInquiryStageVersion>(previous?.sourceInquiryStageVersion??0)
           &&next.sourceReviewRepairHandoff.currentInquiryStageVersion===next.sourceInquiryStageVersion
@@ -1164,7 +1729,7 @@ export async function createRosterDecisionWorkflowV1({store,execute,
           ||previous.experimentSourceReviewOf!==next.experimentSourceReviewOf
           ||previous.sourceFidelityMode!=='atomic_claims_v1'||next.sourceFidelityMode!==previous.sourceFidelityMode
           ||!(next.materialClaimContractVersion>previous.materialClaimContractVersion
-             ||(presentationUpgrade||obligationDeliveryUpgrade||proofCitationUpgrade||inquiryStageUpgrade||sceneDeliveryUpgrade)&&next.materialClaimContractVersion===previous.materialClaimContractVersion)
+             ||(presentationUpgrade||obligationDeliveryUpgrade||proofCitationUpgrade||inquiryStageUpgrade||sceneDeliveryUpgrade||numericFactDeliveryUpgrade||scopeDependencyUpgrade)&&next.materialClaimContractVersion===previous.materialClaimContractVersion)
           ||!bindingsMatch(previous.bindings,next.bindings))fail('ROSTER_SOURCE_REVIEW_SUPERSESSION_INVALID');
         if(previous.status==='running'||previous.operationState?.pending)fail('ROSTER_SOURCE_REVIEW_PENDING_DISPATCH');
         if(!['ready','waiting_dependency','needs_model_choice','evidence_ready','superseded'].includes(previous.status))
@@ -1172,13 +1737,14 @@ export async function createRosterDecisionWorkflowV1({store,execute,
         let repairMembers=[];
         if(next.sourceReviewRepairHandoff){
           const handoff=next.sourceReviewRepairHandoff;
-          if(rosterSourceReviewCompletedRevisionV1({state,review:previous}))
+          if(await rosterSourceReviewRevisionBlocksRepairV1({state,review:previous,
+            inquiryMismatch:handoff.staleRequests?.find(r=>r.unassignedPredicateErrors?.length),readArtifact:store.get}))
             fail('ROSTER_SOURCE_REPAIR_HAS_COMPLETED_REVISION');
           const found=rosterSourceReviewRepairMembersV1({state,review:previous,includeCoverageConsumers:inquiryStageUpgrade});
           if(handoff.reviewId!==previous.id||handoff.ownerId!==previous.experimentSourceReviewOf
             ||handoff.nativeReplay!==false||handoff.factsApproved!==false||handoff.historyReset!==false
             ||!isDeepStrictEqual(handoff.retiredRootIds,found.roots.map(w=>w.id))
-            ||!(next.comparisonValidityContractVersion>(previous.comparisonValidityContractVersion??0)||presentationUpgrade||obligationDeliveryUpgrade||proofCitationUpgrade||inquiryStageUpgrade||sceneDeliveryUpgrade))
+            ||!(next.comparisonValidityContractVersion>(previous.comparisonValidityContractVersion??0)||presentationUpgrade||obligationDeliveryUpgrade||proofCitationUpgrade||inquiryStageUpgrade||sceneDeliveryUpgrade||numericFactDeliveryUpgrade))
             fail('ROSTER_SOURCE_REPAIR_HANDOFF_INVALID');
           if(inquiryStageUpgrade&&found.roots.some(w=>w.role==='roster_workflow_strategy_decision'&&w.status==='evidence_ready'))
             fail('ROSTER_SOURCE_REPAIR_HAS_COMMITTED_CONSUMER');
@@ -1186,8 +1752,26 @@ export async function createRosterDecisionWorkflowV1({store,execute,
             fail('ROSTER_SOURCE_REPAIR_HANDOFF_PENDING_DISPATCH');
           repairMembers=found.members;
         }
-        return {previous,next,repairMembers};
-      });
+        let cacheRetireMembers=[];
+        if(next.sourceClaimReuseRefresh){
+          const refresh=next.sourceClaimReuseRefresh,owner=state.work.find(w=>w.id===next.experimentSourceReviewOf);
+          const oldIds=[...new Set([...(previous.materialClaimReviewIds??[]),...(previous.materialRuleFields??[]).map(c=>c.reviewId)])];
+          const oldMembers=oldIds.map(id=>state.work.find(w=>w.id===id));
+          const untouched=w=>w&&['ready','waiting_dependency'].includes(w.status)&&!w.resultRef
+            &&!w.operationState?.pending&&!w.operationState?.calls?.length;
+          const gained=next.materialClaims.filter(c=>c.reusedResultRef&&!previous.materialClaims.some(p=>
+            p.text===c.text&&p.reusedResultRef===c.reusedResultRef&&p.reviewId===c.reviewId));
+          if(refresh.version!==1||refresh.previousReviewId!==previous.id||refresh.ownerResultRef!==owner?.resultRef
+            ||refresh.historyReset!==false||refresh.providerReplayed!==false||refresh.planApproved!==false
+            ||!untouched(previous)||oldMembers.some(w=>!w||(w.status!=='evidence_ready'&&!untouched(w)))
+            ||!gained.length||refresh.reusedClaimCount!==gained.length)fail('ROSTER_SOURCE_CACHE_REFRESH_NOT_UNISSUED');
+          const retained=new Set([...(next.materialClaimReviewIds??[]),...(next.materialRuleFields??[]).map(c=>c.reviewId)]);
+          cacheRetireMembers=oldMembers.filter(w=>untouched(w)&&!retained.has(w.id)
+            &&!state.work.some(parent=>parent.id!==previous.id&&parent.status!=='superseded'
+              &&(parent.materialClaimReviewIds?.includes(w.id)||parent.materialRuleFields?.some(c=>c.reviewId===w.id))));
+        }
+        return {previous,next,repairMembers,cacheRetireMembers};
+      }));
       for(const {previous,next,repairMembers}of supersessions)if(repairMembers.length){
         const reportRef=await store.put({kind:'source_review_repair_handoff',...next.sourceReviewRepairHandoff,
           replacementReviewId:next.id,originalWork:repairMembers.map(w=>({id:w.id,status:w.status,
@@ -1195,6 +1779,11 @@ export async function createRosterDecisionWorkflowV1({store,execute,
         for(const member of repairMembers){member.reviewRepairSupersession={replacementReviewId:next.id,reportRef};member.status='superseded';}
         event('source_review_repair_returned',{reviewId:previous.id,replacementReviewId:next.id,reportRef,
           affectedCount:repairMembers.length,evidenceRetained:true,historyReset:false,nativeReplay:false});
+      }
+      for(const {next,cacheRetireMembers}of supersessions)for(const member of cacheRetireMembers){
+        const previousStatus=member.status;member.status='superseded';member.supersededByWorkId=next.id;
+        event('unissued_source_check_reused',{workId:member.id,replacementWorkId:next.id,
+          previousStatus,providerReplayed:false,historyReset:false});
       }
       for(const {previous,next}of supersessions)if(!['evidence_ready','superseded'].includes(previous.status)){
         const previousStatus=previous.status;previous.status='superseded';previous.supersededByWorkId=next.id;
@@ -1229,10 +1818,19 @@ export async function createRosterDecisionWorkflowV1({store,execute,
         event('configuration_contract_returned_to_author',{goalId:goal.id,previousDecisionId:previous,
           decisionId:next.id,historyReset:false,nativeReplayed:false,planApproved:false});
       }
-      state.work.push(...jobs);refresh();
+      for(const next of reviewOwnerMerges){
+        for(const id of next.supersedesUnissuedReviewOwners){
+          const old=state.work.find(w=>w.id===id);old.status='superseded';old.supersededBy=next.id;
+        }
+        event('unissued_review_owners_merged',{workId:next.id,sourceWorkIds:next.supersedesUnissuedReviewOwners,
+          reviewCountersReset:false,originalRecordsPreserved:true});
+      }
+      state.work.push(...jobs);
+      await reconcileReturnedMethods({save:false});refresh();
       event('work_enqueued',{workIds:jobs.map(w=>w.id)});await checkpoint();return clone(jobs);
     }
     if(command.type==='revise_scope'){
+      if (command.scope?.releaseManifest !== state.scope.releaseManifest) fail('ROSTER_WORKFLOW_RELEASE_CHANGED');
       if(!command.scope||Object.values(command.scope).some(v=>!idOK(v)))fail('ROSTER_WORKFLOW_SCOPE_INVALID');
       state.scope=clone(command.scope);refresh();event('scope_revised',{scope:state.scope});await checkpoint();return clone(state.scope);
     }
@@ -1241,7 +1839,133 @@ export async function createRosterDecisionWorkflowV1({store,execute,
       if(!createRosterWorkflowGraphV1(state).canContinue(command.workId))fail('ROSTER_WORKFLOW_NOT_CONTINUABLE',command.workId);
       work.status='ready';event('continued',{workId:work.id});await checkpoint();return {id:work.id,status:work.status};
     }
+    if(command.type==='reconcile_shared_round_one_preparations'){
+      if(!recoverSharedRoundOnePreparation||state.work.some(work=>work.status==='running'||work.operationState?.pending))return 0;
+      const graph=createRosterWorkflowGraphV1(state);
+      const recovered=[];
+      for(const work of state.work){
+        const selected=work.inputs.request?.value,sourceResultRef=work.resultRef;
+        if(work.role!=='roster_workflow_tool'||work.status!=='needs_model_choice'
+          ||selected?.operation!=='scenario'||selected.comparisonBinding?.arm!=='shared'
+          ||selected.comparisonBinding.stage!=='prerequisite'
+          ||!sourceResultRef||work.operationState?.completedRef!==sourceResultRef||!graph.isCurrent(work.id))continue;
+        const written=state.events.findLast(e=>e.type==='result_saved'&&e.workId===work.id);
+        if(written?.resultRef!==sourceResultRef||written.dispatchKey!==work.dispatchKey)continue;
+        if(state.work.some(other=>other.attempt&&(other.repairOf===work.id||dependencies(other).includes(work.id))))continue;
+        const result=await recoverSharedRoundOnePreparation({selected,result:await store.get(sourceResultRef),sourceResultRef});
+        if(result)recovered.push({work,sourceResultRef,resultRef:await store.put(result)});
+      }
+      if(!recovered.length)return 0;
+      const before=clone(state);
+      for(const {work,sourceResultRef,resultRef} of recovered){
+        work.resultHistory=[...(work.resultHistory??[]),{resultRef:sourceResultRef,status:work.status}];
+        work.resultRef=resultRef;work.status='evidence_ready';work.failure=null;
+        bindCompletedFact(work);
+        event('result_saved',{workId:work.id,dispatchKey:work.dispatchKey,resultRef,
+          kind:'tool_receipt',providerReplyRef:null,sourceResultRef,toolReexecuted:false});
+      }
+      refresh();
+      try{await checkpoint();}catch(error){state=before;writes=Promise.resolve();observations.clear();throw error;}
+      return recovered.length;
+    }
+    if(command.type==='recover_completed_temporal_invariant'){
+      const projected=await projectCompletedTemporalInvariantRecoveryV1({state,readArtifact:store.get,...command});
+      if(projected.alreadyScheduled)return projected;
+      const before=clone(state),reportRef=await store.put(projected.recovery);
+      const retired=state.work.find(w=>w.id===projected.retiredRepairId);
+      retired.status='superseded';retired.supersededByWorkId=projected.replacementWorkId;
+      retired.nativeTemporalRecoveryRef=reportRef;
+      const job={...projected.job,status:'waiting_dependency',resultRef:null,failure:null};
+      validateBindings(job.bindings,state.scope);state.work.push(job);refresh();
+      event('completed_temporal_invariant_recovery_queued',{...projected.recovery,reportRef,replacementWorkId:job.id,providerCalled:false,toolExecuted:false});
+      try{await checkpoint();}catch(error){state=before;writes=Promise.resolve();observations.clear();throw error;}
+      return {replacementWorkId:job.id,reportRef,alreadyScheduled:false};
+    }
+    if(command.type==='return_interrupted_read_to_method'){
+      const work=state.work.find(w=>w.id===command.workId),op=work?.operationState;
+      const invalid=()=>fail('ROSTER_WORKFLOW_INTERRUPTED_READ_RETURN_INVALID',command.workId);
+      if(command.ownership?.kind!=='product_single_writer_lease'||command.ownership.held!==true
+        ||work?.role!=='roster_workflow_tool'||!fresh(work)||!command.reason?.trim()
+        ||!['bounded_unit_temporal','bounded_joint_temporal'].includes(work.inputs.request?.value?.operation))invalid();
+      if(work.interruptedReadReturn){
+        if(work.interruptedReadReturn.originalPending.requestRef!==command.requestRef)invalid();
+        return {resultRef:work.interruptedReadReturn.resultRef,alreadyReturned:true,queryReplayed:false};
+      }
+      const pending=op?.pending;
+      if(work.status!=='needs_repair'||work.failure?.code!=='DISPATCH_OUTCOME_UNKNOWN'
+        ||!pending||command.requestRef!==pending.requestRef||op.completedRef||op.retryInterruptedQuery)invalid();
+      const [request,input]=await Promise.all([store.get(pending.requestRef),store.get(work.inputRef)]);
+      const dispatch=state.events.findLast(e=>e.type==='dispatch'&&e.workId===work.id);
+      if(request.operation!==work.inputs.request.value.operation||input.workId!==work.id
+        ||input.role!==work.role||!isDeepStrictEqual(input.bindings,work.bindings)
+        ||dispatch?.dispatchKey!==work.dispatchKey||dispatch.inputRef!==work.inputRef)invalid();
+      const value={operation:request.operation,status:'returned_to_model',
+        code:'ROSTER_READ_QUERY_RETURNED_UNFINISHED',executionStatus:'interrupted_without_final_receipt',
+        nativeSuccess:false,originalResultUnknown:true,request:clone(work.inputs.request.value.args),
+        originalRequestRef:pending.requestRef,sourceStateHash:pending.sourceStateHash,reason:command.reason,
+        queryRepair:{correctable:false,controlReturn:true,resolutionRequired:'method_or_scope_decision',
+          sourceContract:'roster_interrupted_read_method_v1',failureClass:'administrative_pause',
+          originalQueryNotAnswered:true,factAnswered:false,nativeRetryAuthorized:false,resumeSavedFrontierSupported:false,
+          instruction:'The prior read was explicitly ended without a final Native receipt. This is an administrative return, not an invalid parameter, failed Rules action, search exhaustion, negative reachability or zero benefit. Preserve the original question, selected army, unit/target scope and existing evidence. Read the current source-owned tool contract and original method intent before choosing a meaningful revised method or returning the unresolved obligation to its author. Do not increase bounds merely because the read was stopped, repeat old coordinates by default, invent a partial result or claim internal frontier recovery. Only your explicit next work order may dispatch another query; no factual answer or Plan approval has been granted.'}};
+      const result={kind:'interpretation',continuation:true,value,conditions:[
+        'Administrative interruption of an isolated read-only search; no final Native result was obtained.',
+        'Original pending request, dispatch, failures and counts retained; no arrival, control or negative reachability fact.']};
+      const resultRef=await store.put(result),before=clone(state);
+      work.failureHistory=[...(work.failureHistory??[]),{failure:clone(work.failure),originalOperationState:clone(op),
+        originalInputRef:work.inputRef,reason:command.reason,controlResultRef:resultRef}];
+      work.interruptedReadReturn={version:1,resultRef,originalPending:clone(pending),originalDispatchKey:work.dispatchKey,
+        originalInputRef:work.inputRef,reason:command.reason};
+      op.pending=null;work.resultRef=resultRef;work.status='needs_model_choice';work.failure=null;
+      event('interrupted_read_returned_to_method',{workId:work.id,resultRef,requestRef:pending.requestRef,
+        originalDispatchKey:work.dispatchKey,queryReplayed:false,nativeResultFabricated:false,historyReset:false,planApproved:false});
+      try{refresh();await checkpoint();}catch(error){state=before;writes=Promise.resolve();observations.clear();throw error;}
+      return {resultRef,alreadyReturned:false,queryReplayed:false};
+    }
+    if(command.type==='recover_read_only_query'){
+      const work=state.work.find(w=>w.id===command.workId),op=work?.operationState,pending=op?.pending;
+      const invalid=()=>fail('ROSTER_WORKFLOW_READ_ONLY_QUERY_RECOVERY_INVALID',command.workId);
+      if(command.ownership?.kind!=='product_single_writer_lease'||command.ownership.held!==true
+        ||work?.role!=='roster_workflow_tool'||work.status!=='needs_repair'||!fresh(work)
+        ||work.failure?.code!=='DISPATCH_OUTCOME_UNKNOWN'||!pending||!command.reason
+        ||command.requestRef!==pending.requestRef||op.retryInterruptedQuery||op.completedRef
+        ||op.interruptedQueryAttempts?.some(row=>row.originalPending.requestRef===pending.requestRef)
+        ||!isRosterReadOnlyObservationV1(work.inputs.request?.value?.operation))invalid();
+      const [request,input]=await Promise.all([store.get(pending.requestRef),store.get(work.inputRef)]);
+      const dispatch=state.events.findLast(e=>e.type==='dispatch'&&e.workId===work.id);
+      if(request.operation!==work.inputs.request.value.operation||input.workId!==work.id
+        ||input.role!==work.role||!isDeepStrictEqual(input.bindings,work.bindings)
+        ||dispatch?.dispatchKey!==work.dispatchKey||dispatch.inputRef!==work.inputRef)invalid();
+      work.failureHistory=[...(work.failureHistory??[]),{failure:clone(work.failure),
+        originalPending:clone(pending),reason:command.reason}];
+      op.retryInterruptedQuery={version:1,requestRef:pending.requestRef,sourceStateHash:pending.sourceStateHash,
+        reason:command.reason};
+      // Keep pending until the actual executor compares its fully bound args
+      // and selected Native source. No query/Provider call occurs here.
+      work.status='ready';work.failure=null;
+      event('interrupted_read_only_query_queued',{workId:work.id,requestRef:pending.requestRef,
+        originalDispatchKey:work.dispatchKey,completedResultRef:op.completedRef??null,
+        providerReplayed:false,countersReset:false,historyReset:false});
+      await checkpoint();return {id:work.id,status:work.status};
+    }
+    if(command.type==='reprepare_incomplete_output'){
+      const work=state.work.find(w=>w.id===command.workId),op=work?.operationState;
+      if(!work||!fresh(work)||!op?.pending||!command.reason)fail('ROSTER_INCOMPLETE_OUTPUT_RECOVERY_INVALID');
+      const request=await store.get(op.pending.requestRef),recovery=projectRosterIncompleteOutputRecoveryV1({work,request,
+        event:command.event,engineeringChangeId:command.engineeringChangeId,targetContract:command.targetContract});
+      if(!recovery)fail('ROSTER_INCOMPLETE_OUTPUT_RECOVERY_INVALID');
+      const incompleteEventRef=await store.put(command.event);
+      work.failureHistory=[...(work.failureHistory??[]),{failure:clone(work.failure),originalPending:clone(op.pending),
+        incompleteEventRef,recovery:clone(recovery),reason:command.reason}];
+      op.incompleteOutputRecoveries=[...(op.incompleteOutputRecoveries??[]),{...recovery,incompleteEventRef}];
+      // Count the received request, preserve its separate usage record, and
+      // require the changed contract before another dispatch. Never parse it.
+      op.turn=request.roundIndex;op.pending=null;op.requiredOutputContract=clone(command.targetContract);
+      work.failure=null;work.status='ready';
+      event('incomplete_output_reprepared',{workId:work.id,incompleteEventRef,...recovery});
+      await checkpoint();return {id:work.id,status:work.status,incompleteEventRef,paidResponseAccepted:false};
+    }
     if(command.type==='reflow_provider_context'){
+
       const work=state.work.find(w=>w.id===command.workId),dispatch=command.dispatch;
       const op=work?.operationState,pending=op?.pending;
       if(work?.status!=='needs_repair'||!fresh(work)||!pending||op.retryProviderDispatch
@@ -1268,38 +1992,167 @@ export async function createRosterDecisionWorkflowV1({store,execute,
         originalCostStatus:dispatch.costStatus,semanticCountersReset:false});
       await checkpoint();return {id:work.id,status:work.status};
     }
+    if(command.type==='reconcile_observed_unissued_request'){
+      const work=state.work.find(w=>w.id===command.workId),pending=work?.operationState?.pending;
+      const retired=work?.status==='superseded';
+      if(!work||(!retired&&!fresh(work))||!pending||!command.reason
+        ||pending.requestRef!==command.expectedRequestRef||pending.contextHash!==command.expectedContextHash)
+        fail('ROSTER_WORKFLOW_UNISSUED_OBSERVATION_INVALID');
+      const request=await store.get(pending.requestRef);
+      const recovery=projectRosterObservedUnissuedRequestV1({work,request,observation:command.observation});
+      if(!recovery)fail('ROSTER_WORKFLOW_UNISSUED_OBSERVATION_INVALID');
+      const observationRef=await store.put(command.observation);
+      work.failureHistory=[...(work.failureHistory??[]),{failure:clone(work.failure),originalPending:clone(pending),
+        recovery:clone(recovery),observationRef,reason:command.reason}];
+      work.interruptionRecoveries=[...(work.interruptionRecoveries??[]),{...recovery,observationRef}];
+      work.operationState.pending=null;
+      if(!retired){work.status='ready';work.failure=null;}
+      event('observed_unissued_request_reconciled',{...recovery,observationRef});
+      await checkpoint();return {id:work.id,status:work.status,observationRef};
+    }
+    if(command.type==='retry_unrecorded_rejected_request'){
+      const work=state.work.find(w=>w.id===command.workId),op=work?.operationState,pending=op?.pending;
+      if(work?.status!=='needs_repair'||!fresh(work)||!pending
+        ||work.failure?.code!=='ROSTER_WORKSPACE_PROVIDER_RESPONSE_REJECTED'
+        ||work.failure.providerDispatch||work.failure.providerRejection
+        ||op.retryProviderDispatch||op.unrecordedRejectionRecoveries?.length
+        ||command.allowUnknownCharge!==true||!command.authorizationId||!command.reason
+        ||command.expectedRequestRef!==pending.requestRef||command.expectedContextHash!==pending.contextHash)
+        fail('ROSTER_WORKFLOW_UNRECORDED_REJECTION_RECOVERY_INVALID');
+      const request=await store.get(pending.requestRef);
+      if(request.contextHash!==pending.contextHash||request.roundKind!==work.role||request.roundIndex!==op.turn+1)
+        fail('ROSTER_WORKFLOW_UNRECORDED_REJECTION_RECOVERY_INVALID');
+      const recovery={kind:'legacy_unrecorded_rejection_v1',sourceRequestRef:pending.requestRef,
+        contextHash:request.contextHash,sessionId:request.sessionId,roundKind:request.roundKind,roundIndex:request.roundIndex,
+        authorizationId:command.authorizationId,allowUnknownCharge:true,originalCostStatus:'unknown',originalWireIdentityKnown:false,
+        semanticCountersReset:false,nativeActionsReplayed:false};
+      work.failureHistory=[...(work.failureHistory??[]),{failure:clone(work.failure),originalPending:clone(pending),
+        recovery:clone(recovery),reason:command.reason}];
+      op.unrecordedRejectionRecoveries=[clone(recovery)];op.retryProviderDispatch=clone(recovery);
+      work.status='ready';work.failure=null;
+      event('unrecorded_provider_rejection_reissue_authorized',{workId:work.id,...recovery});
+      await checkpoint();return {id:work.id,status:work.status};
+    }
     if(command.type==='retry_provider_dispatch'){
       const work=state.work.find(w=>w.id===command.workId),dispatch=command.dispatch;
       const op=work?.operationState,pending=op?.pending;
-      const failedTransport=['ROSTER_WORKSPACE_PROVIDER_SEND_FAILED','ROSTER_WORKSPACE_AMBIGUOUS_DISPATCH_STOP'].includes(work?.failure?.code);
+      const providerHandoff=command.providerHandoff;
+      if(providerHandoff!==undefined&&(!providerHandoff||Array.isArray(providerHandoff)
+        ||Object.keys(providerHandoff).some(k=>!['providerKind','modelVersion'].includes(k))
+        ||!['providerKind','modelVersion'].every(k=>typeof providerHandoff[k]==='string'
+          &&/^[A-Za-z0-9_.:/-]{1,120}$/u.test(providerHandoff[k]))))
+        fail('ROSTER_WORKFLOW_PROVIDER_HANDOFF_INVALID');
+      const failedTransport=isExplicitlyRecoverableProviderFailureV1(work?.failure);
+      const additionalLeaf=isExplicitLatestProviderRetryV1({dispatch,currentDispatch:work?.failure?.providerDispatch,
+        retainedRetry:op?.retryProviderDispatch,authorizationId:command.authorizationId,
+        expectedRequestId:command.expectedRequestId,
+        authorizeOneAdditionalDispatchRetry:command.authorizeOneAdditionalDispatchRetry,history:work?.failureHistory??[]});
       const preEgressRetryResumed=work?.failure?.code==='ROSTER_WORKSPACE_RETRY_REQUEST_CHANGED'
         &&op?.retryProviderDispatch?.requestId===dispatch?.requestId
         &&op.retryProviderDispatch.retryAuthorizationId===command.authorizationId
         &&dispatch?.status==='definitely_not_sent'&&dispatch.transportFailure?.requestDefinitelyNotSent===true;
       if(work?.status!=='needs_repair'||!fresh(work)||(!failedTransport&&!preEgressRetryResumed)||!pending
-        ||op.retryProviderDispatch&&!preEgressRetryResumed
+        ||op.retryProviderDispatch&&!preEgressRetryResumed&&!additionalLeaf
         ||!command.reason||!command.authorizationId||!dispatch?.requestId
         ||dispatch.contextHash!==pending.contextHash||dispatch.roundKind!==work.role
-        ||dispatch.roundIndex!==op.turn+1||dispatch.retryOfRequestId||dispatch.retryOfNotSentRequestId
-        ||!['definitely_not_sent','ambiguous'].includes(dispatch.status)
-        ||dispatch.status==='ambiguous'&&command.allowUnknownCharge!==true)
+        ||dispatch.roundIndex!==op.turn+1||(dispatch.retryOfRequestId||dispatch.retryOfNotSentRequestId)&&!additionalLeaf
+        ||!isExplicitlyRecoverableProviderDispatchV1(dispatch)
+        ||work.failure?.code==='ROSTER_WORKSPACE_PROVIDER_RESPONSE_REJECTED'
+          &&!isDeepStrictEqual(work.failure.providerDispatch,dispatch)
+        ||dispatch.status!=='definitely_not_sent'&&command.allowUnknownCharge!==true)
         fail('ROSTER_WORKFLOW_TRANSPORT_RESUME_INVALID',command.workId);
       const request=await store.get(pending.requestRef);
       if(request.contextHash!==dispatch.contextHash||request.sessionId!==dispatch.sessionId
         ||!dispatch.requestBodyHash)fail('ROSTER_WORKFLOW_TRANSPORT_REQUEST_MISMATCH');
       work.failureHistory=[...(work.failureHistory||[]),{failure:clone(work.failure),
         originalPending:clone(pending),dispatch:clone(dispatch),reason:command.reason,
-        authorizationId:command.authorizationId,preEgressRetryResumed}];
+        authorizationId:command.authorizationId,preEgressRetryResumed,additionalLeaf,
+        ...(providerHandoff?{providerHandoff:clone(providerHandoff)}:{})}];
       op.retryProviderDispatch={...clone(dispatch),explicitSingleRetry:true,
-        retryAuthorizationId:command.authorizationId};
+        retryAuthorizationId:command.authorizationId,
+        ...(providerHandoff?{providerHandoff:clone(providerHandoff)}:{})};
       work.status='ready';work.failure=null;
       event('provider_transport_retry_authorized',{workId:work.id,requestId:dispatch.requestId,
+        ...(providerHandoff?{providerHandoff:clone(providerHandoff)}:{}),
         originalContextHash:dispatch.contextHash,originalCostStatus:dispatch.costStatus,
         semanticCountersReset:false});
       await checkpoint();return {id:work.id,status:work.status};
     }
+    if(['reattach_returned_provider_reply','reattach_offline_role_reply'].includes(command.type)){
+      const offline=command.type==='reattach_offline_role_reply';
+      const work=state.work.find(w=>w.id===command.workId),op=work?.operationState;
+      const {dispatchRecord}=command,pending=op?.pending;
+      const reject=()=>fail('ROSTER_WORKFLOW_RETURNED_REPLY_RECONCILIATION_INVALID');
+      if(!work||work.role==='roster_workflow_tool'||!fresh(work)||work.status!=='needs_repair'
+        ||!pending||op.noProgressStop||op.revalidateReplyRef||!command.reason
+        ||pending.requestRef!==command.expectedRequestRef
+        ||(!offline&&pending.contextHash!==dispatchRecord?.contextHash)
+        ||!Number.isSafeInteger(op.turn)||!Array.isArray(op.calls)||op.calls.length!==op.turn
+        ||op.calls.some(call=>call.requestRef===pending.requestRef))reject();
+      const request=await store.get(pending.requestRef);
+      const sent=request.promptNodes?.find(node=>node.kind==='workflow_role_assignment');
+      if(sent?.workId!==work.id||sent.role!==work.role||!isDeepStrictEqual(sent.scope,state.scope)
+        ||request.roundIndex!==op.turn+1||request.contextHash!==pending.contextHash)reject();
+      let reply=command.reply,offlineSourceRef;
+      if(offline){
+        if(typeof loadRetainedOfflineReply!=='function'||command.ownership?.kind!=='product_single_writer_lease'
+          ||command.ownership.held!==true||pending.phase!=='provider_entered'
+          ||work.failure?.code!=='DISPATCH_OUTCOME_UNKNOWN'||op.retryProviderDispatch||dispatchRecord||reply
+          ||work.failure.providerDispatch||work.failure.providerRejection)reject();
+        const source=await loadRetainedOfflineReply({workId:work.id,requestRef:pending.requestRef,contextHash:pending.contextHash,
+          dispatchKey:work.dispatchKey,request:clone(request)});
+        if(source?.kind!=='prepared_offline_role_reply_v1'||source.workId!==work.id
+          ||source.requestRef!==pending.requestRef||source.contextHash!==pending.contextHash
+          ||source.externalDispatch!==false||source.productConsumed!==false||!source.output)reject();
+        reply={output:clone(source.output),receipt:{contextHash:request.contextHash,roundKind:request.roundKind,
+          sessionId:request.sessionId,roundIndex:request.roundIndex,outputHash:hash(source.output),paidProviderCall:false}};
+        offlineSourceRef=await store.put(source);
+      }else if(!matchesReturnedRosterProviderReplyV1({request,reply,dispatch:dispatchRecord}))reject();
+      if(rosterRoleReplyCommunicationErrorsV1(request,reply).length)reject();
+      const replyRef=await store.put(reply),operation=clone(op);
+      await recordRosterWorkflowReadDeliveryV1({request,operation,store});
+      operation.calls.push({turn:++operation.turn,requestRef:pending.requestRef,replyRef,
+        receipt:reply.receipt,reconciled:true,...(offline?{offlineSourceRef}:{dispatchRequestId:dispatchRecord.requestId})});
+      operation.revalidateReplyRef=replyRef;
+      operation.savedRevalidationRequestRef=pending.requestRef;
+      operation.pending=null;
+      delete operation.retryProviderDispatch;
+      delete operation.requiredOutputContract;
+      work.failureHistory=[...(work.failureHistory??[]),{failure:clone(work.failure),reason:command.reason,
+        originalPending:clone(pending),...(offline?{offlineSourceRef}:{providerDispatch:clone(dispatchRecord)})}];
+      work.operationState=operation;work.status='ready';work.failure=null;
+      event(offline?'offline_role_reply_reattached':'returned_provider_reply_reattached',
+        {workId:work.id,requestRef:pending.requestRef,replyRef,
+          ...(offline?{offlineSourceRef}:{dispatchRequestId:dispatchRecord.requestId,traceId:command.traceId}),
+          paidCallReplayed:false,historyReset:false});
+      await checkpoint();
+      return {id:work.id,status:work.status,requestRef:pending.requestRef,replyRef,providerReplay:false};
+    }
     if(command.type==='reconcile_provider_reply'){
       const work=state.work.find(w=>w.id===command.workId),reply=command.reply;
+      const savedCall=work?.operationState?.calls?.at(-1);
+      // Earlier reconciliations saved correction/cost but omitted the normal
+      // continuation result, so graph.canContinue could never resume them.
+      // Resume the exact installed reply idempotently; do not clear counters,
+      // manufacture a valid model result, or weaken the scheduler predicate.
+      const alreadyReconciled=['needs_model_choice','ready'].includes(work?.status)
+        &&!work.operationState?.pending&&savedCall?.reconciled===true
+        &&work.operationState.correction?.originalReplyRef===savedCall.replyRef
+        &&reply?.dispatchOutcome==='completed_invalid'
+        &&isDeepStrictEqual(reply,await store.get(savedCall.replyRef));
+      const continuationResult=()=>({kind:'interpretation',continuation:true,
+        value:{status:'needs_local_correction',errors:clone(work.operationState.correction.errors)},
+        conditions:['Completed Provider response is invalid; no role decision, fact or strategy approved']});
+      if(alreadyReconciled){
+        if(!fresh(work)||!command.reason)fail('ROSTER_WORKFLOW_PROVIDER_RECONCILIATION_INVALID');
+        if(!work.resultRef){
+          work.resultRef=await store.put(continuationResult());
+          event('provider_correction_continuation_restored',{workId:work.id,replyRef:savedCall.replyRef,
+            resultRef:work.resultRef,paidCallReplayed:false,countersReset:false});
+          await checkpoint();
+        }
+        return {id:work.id,status:work.status,alreadyReconciled:true};
+      }
       if(work?.status!=='needs_repair'||!fresh(work)||!command.reason
         ||!work.operationState?.pending||reply?.dispatchOutcome!=='completed_invalid'
         ||reply.receipt?.contextHash!==work.operationState.pending.contextHash
@@ -1307,14 +2160,48 @@ export async function createRosterDecisionWorkflowV1({store,execute,
       const op=work.operationState,request=await store.get(op.pending.requestRef);
       if(rosterRoleReplyCommunicationErrorsV1(request,reply).length)fail('ROSTER_WORKFLOW_PROVIDER_RECONCILIATION_IDENTITY_INVALID');
       const replyRef=await store.put(reply);
-      work.failureHistory=[...(work.failureHistory||[]),{failure:clone(work.failure),reason:command.reason,originalPending:clone(op.pending)}];
+      work.failureHistory=[...(work.failureHistory||[]),{failure:clone(work.failure),reason:command.reason,originalPending:clone(op.pending),
+        ...(work.resultRef?{originalResultRef:work.resultRef}:{})}];
       op.calls.push({turn:++op.turn,requestRef:op.pending.requestRef,replyRef,receipt:reply.receipt,reconciled:true});
       op.pending=null;op.consecutiveCorrections=(op.consecutiveCorrections||0)+1;
       op.correction={errors:[{code:'provider_output_invalid',providerCode:reply.failureCode}],originalReplyRef:replyRef,
         instruction:'The completed malformed output and cost are now known; correct only this role reply.'};
+      work.resultRef=await store.put(continuationResult());
       work.status='needs_model_choice';work.failure=null;
-      event('provider_reply_reconciled',{workId:work.id,replyRef,paidCallReplayed:false});
+      event('provider_reply_reconciled',{workId:work.id,replyRef,resultRef:work.resultRef,paidCallReplayed:false});
       await checkpoint();return {id:work.id,status:work.status};
+    }
+    if(command.type==='correct_decision_assignment'){
+      const work=state.work.find(w=>w.id===command.workId),op=work?.operationState;
+      const last=op?.calls?.at(-1),oldQuestion=work?.inputs?.question;
+      if(work?.role!=='roster_workflow_strategy_decision'||work.status!=='needs_model_choice'
+        ||!fresh(work)||op?.pending||op?.noProgressStop||!op?.correction?.errors?.length
+        ||oldQuestion?.source!=='literal'||typeof oldQuestion.value!=='string'
+        ||last?.requestRef!==command.expectedRequestRef||last?.replyRef!==command.expectedReplyRef
+        ||!last?.requestRef||!last?.replyRef||work.resultRef!==command.expectedResultRef
+        ||op.correction.originalReplyRef!==last.replyRef
+        ||oldQuestion.value!==command.expectedQuestion
+        ||typeof command.question!=='string'||!command.question.trim()||command.question===oldQuestion.value
+        ||typeof command.reason!=='string'||!command.reason.trim()
+        ||work.assignmentCorrectionHistory?.some(h=>h.sourceReplyRef===last.replyRef))
+        fail('ROSTER_WORKFLOW_ASSIGNMENT_CORRECTION_INVALID');
+      // Repair a dispatcher-authored instruction at its source, not the paid
+      // answer. Calls, counters, reads, unresolved questions and feedback stay.
+      const record={version:1,sourceRequestRef:last.requestRef,sourceReplyRef:last.replyRef,
+        sourceResultRef:work.resultRef,previousQuestion:clone(oldQuestion),
+        previousCorrection:clone(op.correction),previousStatus:work.status,
+        correctedQuestion:command.question,reason:command.reason,
+        historyReset:false,factApprovalGranted:false,planApprovalGranted:false,
+        nativeExecutionAuthorized:false,additionalInvalidResultsGranted:0};
+      work.assignmentCorrectionHistory=[...(work.assignmentCorrectionHistory??[]),record];
+      work.inputs.question={source:'literal',value:command.question};
+      work.inputs.assignmentCorrection={source:'literal',value:{...clone(record),
+        instruction:'The dispatcher corrected the task description. Use correctedQuestion as the current assignment; previousQuestion and paid replies remain historical provenance. Existing semantic errors, required questions, tool limits, source checks and correction counts still apply. Select the next permitted operation yourself. This record supplies no factual answer, tactical preference, query authorization or release approval.'}};
+      work.status='ready';
+      event('decision_assignment_corrected',{workId:work.id,sourceRequestRef:last.requestRef,
+        sourceReplyRef:last.replyRef,reason:command.reason,historyReset:false,
+        nativeExecutionAuthorized:false,additionalInvalidResultsGranted:0});
+      await checkpoint();return {id:work.id,status:work.status,historyReset:false,providerReplay:false};
     }
     if(command.type==='handoff_strategy_author'){
       const work=state.work.find(w=>w.id===command.workId);
@@ -1332,6 +2219,82 @@ export async function createRosterDecisionWorkflowV1({store,execute,
     }
     if(['resume_role_correction','revalidate_role_reply'].includes(command.type)){
       const work=state.work.find(w=>w.id===command.workId);
+      if(command.type==='revalidate_role_reply'&&work&&command.reason?.trim()&&fresh(work)){
+        const recovery=await projectRosterCommandEnvelopeRecoveryV1({state,work,readArtifact:store.get})
+          ??await projectRosterInventoryClaimRecoveryV1({state,work,readArtifact:store.get});
+        if(recovery){
+          const recoveryHistory=recovery.kind?.startsWith('inventory_')?'inventoryClaimRecoveryHistory':'decisionEnvelopeRecoveryHistory';
+          work[recoveryHistory]=[...(work[recoveryHistory]??[]),
+            {...clone(recovery),failure:clone(work.failure),correction:clone(work.operationState.correction),reason:command.reason}];
+          work.operationState.revalidateReplyRef=recovery.replyRef;
+          work.operationState.savedRevalidationRequestRef=recovery.requestRef;
+          work.status='ready';work.failure=null;
+          event(recovery.kind?.startsWith('inventory_')?'inventory_original_extraction_revalidation':'decision_envelope_revalidation',{...recovery,historyReset:false,additionalInvalidResultsGranted:0});
+          await checkpoint();return {id:work.id,status:work.status,providerReplay:false};
+        }
+      }
+      if(command.type==='revalidate_role_reply'&&work?.status==='evidence_ready'){
+        if(!fresh(work)||!command.reason?.trim())fail('ROSTER_COMPARISON_PROGRESS_RECHECK_INVALID');
+        const recovery=await projectRosterCitationOnlyComparisonRecoveryV1({state,work,readArtifact:store.get})
+          ??await projectRosterDecisionUseRecoveryV1({state,work,readArtifact:store.get});
+        if(!recovery)fail('ROSTER_COMPARISON_PROGRESS_RECHECK_INVALID');
+        for(const id of recovery.unissuedConsumerIds??[]){
+          const consumer=state.work.find(w=>w.id===id);consumer.status='superseded';
+          consumer.supersededReason={kind:recovery.kind,authorWorkId:work.id,originalAuthorResultRef:recovery.resultRef};
+          event('comparison_unissued_review_retired',{workId:id,...consumer.supersededReason});
+        }
+        work.comparisonProgressHistory=[{...clone(recovery),reason:command.reason}];
+        work.draftOutcomeHistory=[...(work.draftOutcomeHistory??[]),{receiptRef:work.draftOutcomeRef,reason:command.reason}];
+        work.operationState.revalidateReplyRef=recovery.replyRef;
+        work.operationState.savedRevalidationRequestRef=recovery.requestRef;
+        work.resultRef=null;work.draftOutcomeRef=null;work.failure=null;work.status='ready';
+        event('comparison_progress_recheck',{workId:work.id,...recovery,reason:command.reason});
+        refresh();await checkpoint();return {id:work.id,status:work.status,providerReplay:false};
+      }
+      if(command.type==='revalidate_role_reply'&&work?.status==='needs_model_choice'&&fresh(work)&&command.reason?.trim()){
+        const recovery=await projectRosterDeliveredCitationRecoveryV1({state,work,readArtifact:store.get});
+        if(recovery){
+          work.citationDeliveryRecoveryHistory=[...(work.citationDeliveryRecoveryHistory??[]),{...clone(recovery),reason:command.reason}];
+          work.operationState.revalidateReplyRef=recovery.replyRef;
+          work.operationState.savedRevalidationRequestRef=recovery.requestRef;
+          work.status='ready';work.failure=null;
+          event('source_projection_citation_revalidation',{workId:work.id,replyRef:recovery.replyRef,requestRef:recovery.requestRef,
+            originalResultRef:recovery.originalResultRef,deliveredFieldCount:recovery.deliveredFields.length,providerReplay:false,historyReset:false});
+          await checkpoint();return {id:work.id,status:work.status,providerReplay:false};
+        }
+      }
+      // A paid local reply can be revalidated after an engineering fix before
+      // exhausting its normal correction cycle. This is NOT a retry grant:
+      // reuse the exact last reply through the normal role, retain all counts,
+      // and never release an unknown dispatch or a persisted no-progress stop.
+      if(command.type==='revalidate_role_reply'&&work?.status==='needs_repair'&&fresh(work)&&command.reason?.trim()){
+        const recovery=await projectRosterSavedProposalRecoveryV1({state,work,readArtifact:store.get})
+          ??await projectRosterHostStepKindRecoveryV1({state,work,readArtifact:store.get})
+          ??await projectRosterEmptyCandidateRecoveryV1({state,work,readArtifact:store.get});
+        if(recovery){
+          const recoveryHistory=recovery.kind==='host_saved_proposal_v1'?'hostProposalRecoveryHistory':recovery.kind==='host_step_kind_v1'?'hostStepKindRecoveryHistory':recovery.kind==='candidate_host_empty_fields_v1'?'candidateEmptyFieldRecoveryHistory':'inventoryAccountingRecoveryHistory';
+          work[recoveryHistory]=[...(work[recoveryHistory]??[]),
+            {...clone(recovery),failure:clone(work.failure),correction:clone(work.operationState.correction),reason:command.reason}];
+          work.operationState.revalidateReplyRef=recovery.replyRef;
+          work.operationState.savedRevalidationRequestRef=recovery.requestRef;
+          work.status='ready';work.failure=null;
+          event(recovery.kind==='host_saved_proposal_v1'?'host_saved_proposal_revalidation':recovery.kind==='host_step_kind_v1'?'host_step_kind_revalidation':recovery.kind==='candidate_host_empty_fields_v1'?'candidate_empty_field_revalidation':'inventory_original_extraction_revalidation',{...recovery,historyReset:false,providerReplay:false});
+          await checkpoint();return {id:work.id,status:work.status,providerReplay:false};
+        }
+      }
+      const waiting=work?.operationState;
+      if(command.type==='revalidate_role_reply'&&work?.status==='needs_model_choice'
+        &&fresh(work)&&command.reason&&!waiting?.pending&&!waiting?.noProgressStop
+        &&waiting?.correction?.originalReplyRef
+        &&waiting.calls?.at(-1)?.replyRef===waiting.correction.originalReplyRef){
+        work.failureHistory=[...(work.failureHistory??[]),{failure:clone(work.failure),
+          operationState:clone(waiting),reason:command.reason}];
+        waiting.revalidateReplyRef=waiting.correction.originalReplyRef;
+        work.status='ready';work.failure=null;
+        event(command.type,{workId:work.id,reason:command.reason,retainedReads:waiting.reads.length,
+          historyReset:false,additionalInvalidResultsGranted:0,providerReplay:false});
+        await checkpoint();return {id:work.id,status:work.status};
+      }
       const completedLocalFailure=work?.failure?.dispatchOutcome==='completed_invalid'
         ||work?.failure?.dispatchOutcome==='completed_no_progress'
           &&['ROSTER_WORKFLOW_ROLE_READS_NOT_CONVERGED','ROSTER_WORKFLOW_ROLE_CATALOGUE_NOT_CONVERGED',
@@ -1430,6 +2393,7 @@ export async function createRosterDecisionWorkflowV1({store,execute,
       refresh();await checkpoint();return {id:prior.id,status:prior.status,resolvedByWorkId:replacement.id};
     }
     if(command.type==='run_ready'){
+      await dispatch({type:'reconcile_comparison_authorizations'});
       const limit=command.concurrency??1;
       if(!Number.isSafeInteger(limit)||limit<1)fail('ROSTER_WORKFLOW_CONCURRENCY_INVALID');
       if(command.workIds!==undefined&&(!Array.isArray(command.workIds)||!command.workIds.length
@@ -1448,10 +2412,23 @@ export async function createRosterDecisionWorkflowV1({store,execute,
       });
       let cursor=0,stopUnissued=false;
       await Promise.all(Array.from({length:Math.min(limit,ready.length)},async()=>{
-        while(cursor<ready.length&&!stopUnissued){const work=ready[cursor++];
+        while(cursor<ready.length&&!stopUnissued&&shouldStop?.()!==true){const work=ready[cursor++];
           try{await run(work);}catch(error){
+            if(error instanceof RosterWorkflowDispatchPause){
+              // The role has not issued its external call. Retain prepared
+              // input/operation and attempt history; resume the SAME work later.
+              // Do not fabricate a result, count a model error or reset a retry.
+              work.status='ready';stopUnissued=true;
+              event('work_paused_before_external_dispatch',{workId:work.id,detail:clone(error.detail),
+                providerDispatched:false,historyReset:false});
+              await checkpoint();continue;
+            }
             const dispatched=work.status==='running';
             work.status='needs_repair';work.failure={code:error.code||error.message,detail:clone(error.detail??null),
+              ...(error.code==='ROSTER_WORKSPACE_PROVIDER_RESPONSE_REJECTED'&&error.providerRejection
+                ?{providerRejection:clone(error.providerRejection)}:{}),
+              ...(error.providerDispatch&&error.providerDispatch.contextHash===work.operationState?.pending?.contextHash
+                ?{providerDispatch:clone(error.providerDispatch)}:{}),
               dispatchOutcome:error.dispatchOutcome||(dispatched?'unknown':'not_dispatched')};
             // Drain already-dispatched operations, but do not issue any next
             // job after an evidenced loop. The same marker blocks cold runs.
@@ -1467,16 +2444,31 @@ export async function createRosterDecisionWorkflowV1({store,execute,
   function observation(consumer){
     if(!state)return null;
     return {schema,scope:clone(state.scope),draftRef:state.draftRef??null,draftRevision:state.draftRevision??null,work:clone(state.work),evidence:directory(consumer),
-      events:clone(state.events),acceptanceGranted:false};
+      events:clone(state.events),acceptanceGranted:false,...(pendingDraftCommit?{draftCommitRecovery:{status:'outcome_unknown',
+        visibleState:'last_known_before_commit',attemptedRevision:pendingDraftCommit.intended.draftRevision,
+        requiredAction:'retry_same_commit_or_reload_durable_workspace'}}:{})};
   }
   return {
     dispatch(command){
-      const next=commands.then(()=>dispatch(command));
+      const next=commands.then(async()=>{
+        if(pendingDraftCommit){
+          // Do not run another tool/model against a possibly obsolete draft.
+          // Only the exact command may reconcile this uncertain local commit.
+          if(!persistedEqual(command,pendingDraftCommit.command))
+            fail('ROSTER_WORKFLOW_DRAFT_COMMIT_OUTCOME_UNKNOWN',{reason:'same_commit_required',retrySameCommit:true});
+          await reconcileDraftCommit();
+        }
+        return dispatch(command);
+      });
       // A rejected command must not leave a cached view of any partial local
       // mutation. Successful mutations already invalidate at their checkpoint.
       commands=next.catch(()=>{observations.clear();});return next;
     },
     async inspect(consumer='observer'){await commands;return observation(consumer);},
+    // Host dependency consumers need the named work's actual reads, not the
+    // observer's catalogue access or a full-history copy added to every prompt.
+    async readDependencies(workId){await commands;
+      return clone((state?.reads??[]).filter(row=>row.consumer===workId));},
     async inspectReadOnly(consumer='observer'){
       await commands;
       if(!observations.has(consumer))observations.set(consumer,freezeObservation(observation(consumer)));

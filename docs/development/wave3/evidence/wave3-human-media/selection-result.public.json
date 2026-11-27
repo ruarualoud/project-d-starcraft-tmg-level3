@@ -1,0 +1,36 @@
+{
+  "style": {
+    "color": "#55ed63",
+    "effect": "non-scaling-stroke",
+    "width": "1.75",
+    "fill": "none"
+  },
+  "music": [
+    [
+      "/assets/soundtrack/terran-one.mp3",
+      533.067256
+    ],
+    [
+      "/assets/soundtrack/protoss-one.mp3",
+      532.514376
+    ],
+    [
+      "/assets/soundtrack/zerg-one.mp3",
+      517.675374
+    ]
+  ],
+  "voiceDecode": [
+    [
+      "ZergDefilerWhat00SC1.ogg",
+      1.1783541666666666
+    ],
+    [
+      "Marauder_Yes00.ogg",
+      1.408875
+    ],
+    [
+      "Adept_Death00.ogg",
+      1.8207291666666667
+    ]
+  ]
+}

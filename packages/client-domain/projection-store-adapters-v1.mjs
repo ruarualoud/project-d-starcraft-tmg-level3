@@ -69,3 +69,35 @@ export function createAsyncStorageStarcraftTmgProjectionStoreAdapter(options = {
   }
   return Object.freeze({ load, save, remove });
 }
+
+// Full Standard-room projections exceed localStorage's small synchronous quota.
+// Keep the same sanitized projection contract in browser-native async storage.
+export function createIndexedDbStarcraftTmgProjectionStoreAdapter(options = {}) {
+  const indexedDB = options.indexedDB;
+  if (!indexedDB?.open) throw new TypeError('indexedDB.open is required');
+  let opening;
+  const database = () => opening ||= new Promise((resolve, reject) => {
+    const request = indexedDB.open(options.namespace || 'project-d-starcraft-projections-v1', 1);
+    request.onupgradeneeded = () => request.result.createObjectStore('projections');
+    request.onerror = () => { opening = null; reject(request.error); };
+    request.onsuccess = () => {
+      const db = request.result;
+      db.onversionchange = () => { db.close(); opening = null; };
+      resolve(db);
+    };
+  });
+  async function operation(key, mode, invoke) {
+    const db = await database();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction('projections', mode);
+      const request = invoke(transaction.objectStore('projections'), safeKey(key));
+      transaction.oncomplete = () => resolve(request.result ?? null);
+      transaction.onabort = transaction.onerror = () => reject(transaction.error || request.error);
+    });
+  }
+  return Object.freeze({
+    load: key => operation(key, 'readonly', (store, id) => store.get(id)),
+    save: (key, record) => operation(key, 'readwrite', (store, id) => store.put(record, id)),
+    remove: key => operation(key, 'readwrite', (store, id) => store.delete(id)),
+  });
+}

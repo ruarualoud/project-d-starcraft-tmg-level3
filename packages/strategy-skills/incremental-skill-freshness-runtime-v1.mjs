@@ -1,4 +1,5 @@
 import { clone, fail, freeze, hash, seal } from "../skill-production/common.mjs";
+import { assertStarcraftTmgStrategyReleaseStoreV1 } from "./strategy-release-store-contract-v1.mjs";
 
 export const STARCRAFT_TMG_INCREMENTAL_SKILL_FRESHNESS_VERSION =
   "starcraft_tmg_incremental_skill_freshness_v1";
@@ -17,10 +18,23 @@ function key(artifactId, version) {
 }
 
 function dependency(value) {
-  return freeze({
+  const ref = {
     artifactId: required(value?.artifactId, "dependency.artifactId"),
     version: required(value?.version, "dependency.version"),
-  });
+  };
+  if (value.factKeys !== undefined) {
+    if (!Array.isArray(value.factKeys) || !value.factKeys.length) fail("SKILL_FRESHNESS_FACT_KEYS_INVALID");
+    ref.factKeys = [...new Set(value.factKeys.map(name => required(name, "dependency.factKey")))].sort();
+  }
+  return freeze(ref);
+}
+
+// Without both recorded values the consumer always goes to review.
+function sameDependencyFacts(ref, original, candidate) {
+  if (!ref.factKeys || original?.kind !== "source" || candidate?.kind !== "source") return false;
+  const before = original.contentRef?.facts, after = candidate.contentRef?.facts;
+  return before && after && ref.factKeys.every(name =>
+    Object.hasOwn(before, name) && Object.hasOwn(after, name) && hash(before[name]) === hash(after[name]));
 }
 
 function normalizeArtifact(input) {
@@ -41,13 +55,29 @@ function normalizeArtifact(input) {
   return freeze({ ...artifact, versionIdentity: hash(artifact) });
 }
 
+const checkpointKind = "skill_freshness_checkpoint_v1";
+
+export async function restoreStarcraftTmgSkillFreshnessCheckpointV1({ store, checkpointHash, releaseManifestHash }) {
+  if (!/^[a-f0-9]{64}$/.test(checkpointHash)) fail("SKILL_FRESHNESS_CHECKPOINT_HASH_INVALID");
+  const row = await assertStarcraftTmgStrategyReleaseStoreV1(store).getArtifact("skill-freshness:" + checkpointHash);
+  if (row?.record.kind !== checkpointKind || row.artifact.hash !== checkpointHash
+      || row.artifact.schema !== checkpointKind) fail("SKILL_FRESHNESS_CHECKPOINT_MISSING_OR_INVALID");
+  if (row.artifact.releaseManifestHash !== releaseManifestHash) fail("SKILL_FRESHNESS_CHECKPOINT_RELEASE_MISMATCH");
+  return createRuntime({}, row.artifact);
+}
+
 export function createStarcraftTmgIncrementalSkillFreshnessRuntimeV1(input = {}) {
+  return createRuntime(input);
+}
+
+function createRuntime(input, checkpoint) {
   const versions = new Map();
   const active = new Map();
   const plans = new Map();
   const regressions = new Map();
   const registryHistory = new Map([[0, new Map()]]);
   let registryRevision = 0;
+  const releaseManifestHash = checkpoint?.releaseManifestHash ?? input.releaseManifestHash;
 
   function register(inputArtifact = {}) {
     const artifact = normalizeArtifact(inputArtifact);
@@ -75,10 +105,9 @@ export function createStarcraftTmgIncrementalSkillFreshnessRuntimeV1(input = {})
     const reverse = new Map();
     for (const artifact of currentArtifacts()) {
       for (const ref of artifact.dependencies) {
-        const dependencyKey = key(ref.artifactId, ref.version);
-        const rows = reverse.get(dependencyKey) || [];
-        rows.push(artifact);
-        reverse.set(dependencyKey, rows);
+        const rows = reverse.get(ref.artifactId) || [];
+        rows.push({artifact, ref});
+        reverse.set(ref.artifactId, rows);
       }
     }
     return reverse;
@@ -104,16 +133,23 @@ export function createStarcraftTmgIncrementalSkillFreshnessRuntimeV1(input = {})
     }
     const reverse = reverseDependents();
     const affectedKeys = new Set(changedKeys);
-    const queue = [...changedKeys];
-    while (queue.length) {
-      const dependencyKey = queue.shift();
-      for (const dependent of reverse.get(dependencyKey) || []) {
-        const dependentKey = key(dependent.artifactId, dependent.version);
-        if (!affectedKeys.has(dependentKey)) {
-          affectedKeys.add(dependentKey);
-          queue.push(dependentKey);
-        }
+    const queue = [];
+    const propagate = new Set();
+    function affect(artifact) {
+      affectedKeys.add(key(artifact.artifactId, artifact.version));
+      if (propagate.has(artifact.artifactId)) return;
+      propagate.add(artifact.artifactId);
+      queue.push(artifact.artifactId);
+    }
+    for (const change of changes) {
+      const next = versions.get(key(change.artifactId, change.toVersion));
+      for (const {artifact, ref} of reverse.get(change.artifactId) || []) {
+        const original = versions.get(key(ref.artifactId, ref.version));
+        if (!sameDependencyFacts(ref, original, next)) affect(artifact);
       }
+    }
+    for (let i = 0; i < queue.length; i++) {
+      for (const {artifact} of reverse.get(queue[i]) || []) affect(artifact);
     }
     const affected = currentArtifacts().filter((artifact) =>
       affectedKeys.has(key(artifact.artifactId, artifact.version)));
@@ -146,8 +182,10 @@ export function createStarcraftTmgIncrementalSkillFreshnessRuntimeV1(input = {})
       automaticPublication: false,
       trainingTruth: false,
     });
-    if (plans.has(planId) && plans.get(planId).hash !== plan.hash) {
-      fail("SKILL_FRESHNESS_PLAN_ID_DRIFT", { planId });
+    const existing = plans.get(planId);
+    if (existing) {
+      if (existing.hash !== plan.hash) fail("SKILL_FRESHNESS_PLAN_ID_DRIFT", { planId });
+      return existing;
     }
     plans.set(planId, plan);
     regressions.set(planId, new Map());
@@ -277,10 +315,35 @@ export function createStarcraftTmgIncrementalSkillFreshnessRuntimeV1(input = {})
     });
   }
 
-  if (Array.isArray(input.artifacts)) {
+  async function saveCheckpoint({ store, createdAt }) {
+    if (!/^[a-f0-9]{64}$/.test(releaseManifestHash)) {
+      fail("SKILL_FRESHNESS_CHECKPOINT_RELEASE_MISMATCH");
+    }
+    const artifact = seal({
+      schema: checkpointKind, releaseManifestHash, createdAt,
+      registryRevision, versions: [...versions], active: [...active], plans: [...plans],
+      regressions: [...regressions].map(([id, receipts]) => [id, [...receipts]]),
+      registryHistory: [...registryHistory].map(([revision, pointers]) => [revision, [...pointers]]),
+    });
+    return assertStarcraftTmgStrategyReleaseStoreV1(store).putArtifact({
+      artifactId: "skill-freshness:" + artifact.hash, kind: checkpointKind,
+      artifact, expectedHash: artifact.hash, createdAt,
+    });
+  }
+
+  if (checkpoint) {
+    for (const [id, version] of checkpoint.versions) versions.set(id, freeze(version));
+    for (const [id, version] of checkpoint.active) active.set(id, version);
+    for (const [id, plan] of checkpoint.plans) plans.set(id, freeze(plan));
+    for (const [id, receipts] of checkpoint.regressions) {
+      regressions.set(id, new Map(receipts.map(([key, receipt]) => [key, freeze(receipt)])));
+    }
+    for (const [revision, pointers] of checkpoint.registryHistory) registryHistory.set(revision, new Map(pointers));
+    registryRevision = checkpoint.registryRevision;
+  } else if (Array.isArray(input.artifacts)) {
     for (const artifact of input.artifacts) register(artifact);
     registryHistory.set(0, new Map(active));
   }
   return freeze({ register, planRefresh, recordRegression, publishSelective,
-    rollback, readVersion, read });
+    rollback, readVersion, read, saveCheckpoint });
 }

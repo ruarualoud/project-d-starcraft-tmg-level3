@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { useI18n } from "@/lib/i18n";
+import { useLevel3ClientDomain } from '@/lib/level3/client-domain-provider';
 
 const API_PREFIX = "/starcraft-tmg-level3/bot/api/v1";
 
@@ -33,6 +34,7 @@ export function HostedOpponentOperationsPanel({ roomId }: {
   roomId: string | null;
 }) {
   const { lang } = useI18n();
+  const { hostedPhysical } = useLevel3ClientDomain();
   const zh = lang === "zh";
   const [projection, setProjection] = useState<Record<string, any> | null>(null);
   const [busy, setBusy] = useState(false);
@@ -65,7 +67,8 @@ export function HostedOpponentOperationsPanel({ roomId }: {
         if (!response.ok || body?.result?.ok !== true || !body.result.projection) {
           throw new Error(body?.result?.reason || "HOSTED_OPPONENT_READ_FAILED");
         }
-        setProjection(body.result.projection);
+        setProjection({ ...body.result.projection,
+          notifications: body.notifications || body.result.projection.notifications || [] });
         setError(null);
       } catch (caught) {
         if (readRequestRef.current === pending) {
@@ -96,21 +99,9 @@ export function HostedOpponentOperationsPanel({ roomId }: {
     setBusy(true);
     setError(null);
     try {
-      const response = await fetch(
-        `${baseUrl}${API_PREFIX}/rooms/${encodeURIComponent(roomId)}/physical-tasks/${encodeURIComponent(taskId)}/${operation}`,
-        {
-          method: "POST",
-          headers: { "content-type": "application/json", accept: "application/json" },
-          body: JSON.stringify(operation === "complete"
-            ? { completedBy: "human", evidenceRefs: [] }
-            : operation === "dispute"
-              ? { reason: "Web user requested rules review" }
-              : {}),
-        },
-      );
-      const body = await response.json();
-      if (!response.ok || body?.result?.ok !== true) {
-        throw new Error(body?.result?.reason || "PHYSICAL_TASK_OPERATION_FAILED");
+      const result = await hostedPhysical.operate(taskId, operation, 'Web user requested rules review');
+      if (result?.ok !== true) {
+        throw new Error(result?.reason || "PHYSICAL_TASK_OPERATION_FAILED");
       }
       await read();
     } catch (caught) {

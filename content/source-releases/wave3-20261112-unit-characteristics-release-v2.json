@@ -1,0 +1,86 @@
+{
+  "schema": "starcraft_tmg_release_manifest_v2",
+  "releaseId": "wave3-u83-c84-r50-unit-characteristics-v1",
+  "status": "candidate",
+  "source": {
+    "snapshotRef": "build/ticket-28-wave3-source-candidate-20261112-v1/compiled/snapshot.json",
+    "datasetRef": "build/ticket-28-wave3-source-candidate-20261112-v1/compiled/dataset.json",
+    "sourceRevisionRef": "build/ticket-28-wave3-source-candidate-20261112-v1/compiled/candidate-revision.json",
+    "sourceRevisionHash": "e001b54ee2789bb184b6770c2004153213ae92e378bbb758ff69174b3cb13573",
+    "references": {
+      "faq": {
+        "version": "1.3",
+        "ref": "build/ticket-28-wave3-assessment-20261112/faq-v1.3.pdf",
+        "byteHash": "65cb2399c44e29b45d65faddbade7c72a46726e7b9c812e2c4af57c1704cc213",
+        "role": "reference"
+      },
+      "core": {
+        "version": "frozen-byte-version",
+        "ref": "build/ticket-28-wave3-source-candidate-20261112-v1/raw/StarCraft-TMG_EN.pdf",
+        "byteHash": "27639c562e6db9777dd9ba984d0c9f9b581841ec30166848e021f893cd00ea54",
+        "role": "reference"
+      },
+      "costs": {
+        "version": "10.2026",
+        "ref": "build/ticket-28-wave3-source-candidate-20261112-v1/raw/StarCraft-TMG-Cost-Table-10.2026_EN.pdf",
+        "byteHash": "5b1e3adf0c12128d5184b1926b25889a46833cbe1f7b2886d9857e1f15f7b350",
+        "role": "reference"
+      }
+    },
+    "snapshotHash": "4412c17faaebaff04b117d1ddc666d1cdd939eca420a22f861c7c944f1179c8c",
+    "datasetHash": "718057e86ac4f93a72c06b8e4d8f4d851ba33ee04c9dddea33e966eda9fe6685",
+    "versions": {
+      "cardsVersion": "84",
+      "rulesVersion": "50",
+      "unitsVersion": "83"
+    },
+    "policy": {
+      "source": "official_command_center_army_builder_firestore",
+      "collections": [
+        "army_units",
+        "tactical_cards",
+        "faction_cards",
+        "system_metadata_versions"
+      ],
+      "pdfUse": "supplementary_reference_and_conflict_log",
+      "conflictAction": "preserve_builder_values_and_record_reference_discrepancy",
+      "explicitUserInstruction": "2026-11-12 官方写表器抓数据为主，PDF参考",
+      "freezePolicy": "reuse_existing_observed_payloads_no_background_refresh"
+    }
+  },
+  "components": {
+    "abilityIdentities": {
+      "ref": "build/ticket-28-wave3-release-context-20261112-v1/ability-identities-v2.json",
+      "version": "2",
+      "integrity": {
+        "field": "identityCatalogueHash",
+        "value": "5d97626c9596a71768a41c3a707f1a2900b8be9f7acbd52536767397e0c21004"
+      }
+    },
+    "armyBuilder": {
+      "ref": "content/source-releases/wave3-20261112-army-builder-v2.json",
+      "version": "2.0.0",
+      "integrity": {
+        "field": "bundleHash",
+        "value": "277bcfcdb28920ea3b4ea0dc500df9b49ce5e77b08a1959c753ac0a9b339392b"
+      }
+    },
+    "geometry": {
+      "ref": "content/source-releases/wave3-20261112-geometry-v2.json",
+      "version": "2.0.0",
+      "integrity": {
+        "field": "bundleHash",
+        "value": "0d8d362ba668624c83af65df1929aa279952fc08f4d9bc9bea382c7e3bdfb80e"
+      }
+    },
+    "unitCharacteristics": {
+      "ref": "content/source-releases/wave3-20261112-unit-characteristics-v2.json",
+      "version": "2.0.0",
+      "integrity": {
+        "field": "bundleHash",
+        "value": "60365a02d0a97172392b509ec342aa8511d7aaea7def354351a64e5ba1dbc32d"
+      }
+    }
+  },
+  "manifestHash": "becc3812607c68ee00048c70de248fe75f05de6e022971bda66f2f10757ee099"
+}

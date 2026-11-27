@@ -1,0 +1,30 @@
+{
+  "revision": "community-20261122-v1",
+  "raven": {
+    "widthMm": 100,
+    "depthMm": 100,
+    "horizontalArmDepthMm": null,
+    "verticalArmWidthMm": null,
+    "sourceUrls": [
+      "https://firestore.googleapis.com/v1/projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/system_changelogs/uCBa37ipCfRcBLkdfyId",
+      "https://www.reddit.com/r/StarCraftTMG/comments/1x2btav/the_raven_stand_looks_unsafe/"
+    ]
+  },
+  "stormMarker": {
+    "diameterMm": null,
+    "sourceUrls": [
+      "https://archon-studio.com/shop/products/starcraft-tabletop-miniatures-game/starcraft-high-templar"
+    ]
+  },
+  "stormBlast": {
+    "selected": "community_5inch",
+    "diametersMm": {
+      "community_5inch": 127,
+      "community_120mm": 120
+    },
+    "sourceUrls": [
+      "https://www.reddit.com/r/StarCraftTMG/comments/1y26o4g/psionic_storm_template_size/",
+      "https://www.reddit.com/r/StarCraftTMG/comments/1xzvcl1/template_sizes/"
+    ]
+  }
+}

@@ -1,5 +1,31 @@
+import { officialSpatialRuleErrorV1 } from '../rule-atoms/official-spatial-proposal-error-v1.mjs';
+import { OFFICIAL_BURROWED_ENGAGEMENT_RANGE_MILLI_INCHES_V1 } from "../source-data/official-hidden-burrowed-data-bundle-v1.mjs";
+import { normalizeOfficialElevationV1 } from "../rule-atoms/official-elevation-contract-v1.mjs";
+import {unitEntryPerimeters,unitEntryReceipt,assertUnitEntryElevation} from "./official-unit-entry-perimeters-v1.mjs";
+import { isOfficialFlyingUnitV1 } from "../rule-atoms/official-flying-rules-kernel-v1.mjs";
+import { OFFICIAL_RAVEN_CONTOUR_GEOMETRY_BUNDLE_VERSION } from "../source-data/official-model-base-geometry-data-bundle-v1.mjs";
+import { consumeOfficialForceWallCrossingsV1, readOfficialActiveForceWallFootprintsV1 } from './official-force-wall-v1.mjs';
+import {projectOfficialDeploymentSupplyV1 as supplyAvailable} from '../rule-atoms/official-deployment-supply-projection-v1.mjs';
 import { isDeepStrictEqual } from "node:util";
-import {remainingOfficialSelectedRosterSpatialModelIdsV1} from './official-selected-roster-spatial-parameter-contract-v1.mjs';
+import { OFFICIAL_OMEGA_WORM_NETWORK_DEFINITION_ID,
+  OFFICIAL_PYLON_WARP_IN_DEFINITION_ID } from './official-unit-lifecycle-family-adapter-v1.mjs';
+import { refreshOfficialRoundSupplyOccupancyV1 } from '../rule-atoms/official-round-supply-state-v1.mjs';
+import { hasOfficialTunnelingClawsMovementV1 } from "./official-relocation-family-adapter-v1.mjs";
+import { projectOfficialCharacteristicStatusFamilyModifiersV1, hasOfficialCharacteristicConsumerPolicyV1,
+  projectOfficialHorizontalCoherencyV1, resolveOfficialMovementSpeedV1,
+  resolveOfficialRavenReserveEntryRouteV1, consumeOfficialCharacteristicActivationStartV1,
+  consumeOfficialCharacteristicBurrowedMovementV1, isOfficialBurrowedCoreActorV1,
+  applyOfficialAfterActionCharacteristicPassivesV1 } from './official-characteristic-status-family-adapter-v1.mjs';
+import { consumeOfficialActionPerformedStatusesV1 } from '../rule-atoms/official-action-status-lifecycle-policy-v1.mjs';
+import { canonicalOfficialGapInputsV1, officialGapInputContractV1, remainingOfficialSelectedRosterSpatialModelIdsV1 }
+  from './official-selected-roster-spatial-parameter-contract-v1.mjs';
+import { OFFICIAL_HYDRALISK_LUNGE_DEFINITION_ID } from './official-reaction-family-adapter-v1.mjs';
+import { measureOfficialSingleRoundBlockerPathsV1 } from '../rule-atoms/official-charge-round-path-infeasibility-proof-v1.mjs';
+import { measureOfficialRoundObstacleForwardPathBoundV1, measureOfficialRoundObstacleUnionPathBoundV1,
+  measureOfficialRoundObstacleUnionForwardPathBoundV1, realizeOfficialRoundObstacleGeodesicsV1 }
+  from '../rule-atoms/official-round-obstacle-path-bound-v1.mjs';
+import { convexHullOfficialPathPointsV1, createOfficialConvexObstaclePathSearchV1 }
+  from '../rule-atoms/official-convex-obstacle-path-candidates-v1.mjs';
 
 import { hashStarcraftTmgContract } from
   "../authoritative-engine/referee-crypto-v1.mjs";
@@ -7,19 +33,37 @@ import { OFFICIAL_ASSAULT_RUN_ACTION_ATOM_IDS } from
   "../rule-atoms/official-assault-run-executor-v1.mjs";
 import { OFFICIAL_DISENGAGE_CASUALTY_ACTION_ATOM_IDS } from
   "../rule-atoms/official-disengage-casualty-executor-v1.mjs";
-import { deriveOfficialEngagementGraphV2 } from
+import { deriveOfficialEngagementGraphV2, OFFICIAL_ENGAGEMENT_RANGE_V2_MILLI_INCHES } from
   "../rule-atoms/official-engagement-graph-v2.mjs";
 import {
   createOfficialModelBaseFootprintV1,
   createOfficialPhysicalFootprintV1,
+  readOfficialCrossArmDimensionsV1,
+  readOfficialModelBaseOutlineV1,
+  isOfficialProfileBoundOutlineV1,
   evaluateOfficialCoherencyPlacementV1,
   evaluateOfficialPhysicalFootprintRelationV1,
+  isOfficialPhysicalFootprintWhollyWithinRangeV1,
+  OFFICIAL_PHYSICAL_GEOMETRY_TOLERANCE_MILLI_INCHES_V1,
   evaluateOfficialSweptPhysicalFootprintCollisionV1,
 } from "../rule-atoms/official-model-base-geometry-rules-kernel-v1.mjs";
-import { deriveOfficialSemanticSurfaceSupportV1 } from
+import { deriveOfficialSemanticSurfaceSupportV1, deriveOfficialFinalPlacementSurfaceSupportV13 } from
   "../rule-atoms/official-semantic-surface-support-v1.mjs";
+import { hasOfficialHighGroundFinalPlacementPolicyV13 } from
+  "../rule-atoms/official-high-ground-final-placement-policy-v13.mjs";
+import { deriveOfficialRoundModelGapMouthsV1 } from
+  "../rule-atoms/official-gap-place-geometry-kernel-v1.mjs";
+import { hasOfficialModelGapTransitPolicyV13, allowsOfficialModelGapSweepV13,
+  usesOfficialGroundSizeClearanceV13, createOfficialGroundSizeClearanceFootprintV13,
+  getOfficialGroundSizeClearanceDiameterV13, OFFICIAL_PHYSICAL_GAP_TRANSIT_POLICY_V13 } from
+  "../rule-atoms/official-model-gap-transit-policy-v13.mjs";
 import { projectOfficialContextualSupplyValueV1 } from
   "../rule-atoms/official-contextual-supply-projection-v1.mjs";
+import { isOfficialGroundTerrainTraversalBlockedV13, projectOfficialRaptorStrainTerrainPermissionV13, hasOfficialLargeTerrainRemovalPolicyV1,
+  inspectOfficialLargeMovementSourceV1 } from
+  "../rule-atoms/official-movement-clearance-contract-v13.mjs";
+import { assertOfficialSiegeModeActionAllowedV1 } from
+  "../rule-atoms/official-status-stay-in-play-rules-kernel-v1.mjs";
 import { OFFICIAL_RESERVE_DEPLOY_V5_ACTION_ATOM_IDS } from
   "../rule-atoms/official-reserve-deploy-executor-v5.mjs";
 import { OFFICIAL_STANDARD_MOVE_V5_ACTION_ATOM_IDS } from
@@ -36,12 +80,13 @@ import { verifyOfficialStandardActionRouteCatalogueV1 } from
   "./official-standard-action-route-catalogue-v1.mjs";
 import {
   assertOfficialSelectedRosterCoreActionWindowV1,
+  finishOfficialSelectedRosterActivationV1,
   openOfficialSelectedRosterAfterActionWindowV1,
   resolveOfficialSelectedRosterAbilityModifiersV1,
 } from "./official-selected-roster-ability-runtime-v1.mjs";
-import { projectOfficialBattlefieldAssetFamilyModifiersV1 } from
+import { OFFICIAL_PYLON_WARP_CONDUIT_DEFINITION_ID, projectOfficialBattlefieldAssetFamilyModifiersV1 } from
   "./official-battlefield-asset-family-adapter-v1.mjs";
-import { resolveOfficialLogicalGrassRemovalV1 } from
+import { resolveOfficialLogicalGrassRemovalV1, resolveOfficialLogicalLargeTerrainRemovalV1 } from
   "./official-logical-terrain-groups-v1.mjs";
 import { resolveOfficialLogicalTerrainSurfaceCoverageV1 } from
   "./official-logical-terrain-surface-geometry-v1.mjs";
@@ -62,6 +107,9 @@ const MOVEMENT_ACTION_TYPES = new Set([
 ]);
 const SIDE_KEYS = new Set(["player1", "player2"]);
 const TOLERANCE = 1;
+const MAX_LUNGE_UNION_BLOCKERS = 8;
+const MAX_LUNGE_SEARCH_OBSTACLES = 16;
+const LUNGE_RAY_SAMPLES_MILLI_INCHES = [125, 250, 500, 1000];
 const MAX_RAW_PATH_POINTS = 64;
 const MAX_CANONICAL_PATH_POINTS = 32;
 
@@ -115,7 +163,7 @@ const ATOMS_BY_ACTION = Object.freeze({
 });
 
 function fail(code, detail = "") {
-  throw new Error(detail ? `${code}:${detail}` : code);
+  throw officialSpatialRuleErrorV1(code, detail);
 }
 function object(value) {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
@@ -147,8 +195,7 @@ function point(value, code = "SELECTED_SPATIAL_POINT_INVALID", detail = "") {
   return { xMilliInches, yMilliInches };
 }
 function elevation(value) {
-  const normalized = String(value || "ground").toLowerCase();
-  if (normalized === "ground_level") return "ground";
+  const normalized = normalizeOfficialElevationV1(value || "ground");
   if (!new Set(["ground", "mid", "high"]).has(normalized)) {
     fail("SELECTED_SPATIAL_ELEVATION_INVALID", normalized);
   }
@@ -180,6 +227,12 @@ function activeModels(piece) {
     model?.isOnField !== false && model?.isDestroyed !== true
   ));
 }
+function contourRelease(state) {
+  return state.officialModelBaseGeometryDataBundle?.version === OFFICIAL_RAVEN_CONTOUR_GEOMETRY_BUNDLE_VERSION;
+}
+function usesFlyingMovement(state, piece) {
+  return contourRelease(state) && isOfficialFlyingUnitV1(piece);
+}
 function modelPoint(model) {
   return { xMilliInches: milli(model?.xInches,
     "SELECTED_SPATIAL_MODEL_POSITION_INVALID", String(model?.id || "")),
@@ -192,6 +245,14 @@ function modelRadius(model) {
   const depth = milli(model?.baseDepthInches,
     "SELECTED_SPATIAL_BASE_INVALID", String(model?.id || ""));
   const shape = String(model?.baseShape || "").toLowerCase();
+  if (shape === "measured_contour") {
+    return Math.ceil(Math.max(...model.baseLocalVerticesMilliInches.map(vertex =>
+      Math.hypot(vertex.xMilliInches, vertex.yMilliInches))));
+  }
+  if (shape === "orthogonal_cross") {
+    const { horizontalArmDepthMilliInches: horizontal, verticalArmWidthMilliInches: vertical } = readOfficialCrossArmDimensionsV1(model);
+    return Math.ceil(Math.max(Math.hypot(width, horizontal), Math.hypot(vertical, depth)) / 2);
+  }
   if (width <= 0 || depth <= 0
     || !new Set(["round", "rectangle"]).has(shape)
     || (shape === "round" && Math.abs(width - depth) > TOLERANCE)) {
@@ -215,12 +276,23 @@ function modelHalfExtents(model, rotationDegrees = 0) {
     const radius = modelRadius(model);
     return { x: radius, y: radius };
   }
-  if (shape !== "rectangle" || width <= 0 || depth <= 0) {
+  if (shape === "measured_contour") {
+    const bounds = contourLocalBounds(width, depth, model.baseLocalVerticesMilliInches, rotationDegrees);
+    return { x: Math.max(-bounds.minX, bounds.maxX), y: Math.max(-bounds.minY, bounds.maxY) };
+  }
+  if (!["rectangle", "orthogonal_cross"].includes(shape) || width <= 0 || depth <= 0) {
     fail("SELECTED_SPATIAL_BASE_SCOPE_UNSUPPORTED", String(model?.id || ""));
   }
   const angle = (canonicalRotation(rotationDegrees) * Math.PI) / 180;
   const cosine = Math.abs(Math.cos(angle));
   const sine = Math.abs(Math.sin(angle));
+  if (shape === "orthogonal_cross") {
+    const { horizontalArmDepthMilliInches: horizontal, verticalArmWidthMilliInches: vertical } = readOfficialCrossArmDimensionsV1(model);
+    return {
+      x: Math.max(width * cosine + horizontal * sine, vertical * cosine + depth * sine) / 2,
+      y: Math.max(width * sine + horizontal * cosine, vertical * sine + depth * cosine) / 2,
+    };
+  }
   return {
     x: ((width / 2) * cosine) + ((depth / 2) * sine),
     y: ((width / 2) * sine) + ((depth / 2) * cosine),
@@ -303,7 +375,9 @@ function physicalBounds(footprint) {
     const { xMilliInches: x, yMilliInches: y } = footprint.center;
     const r = footprint.radiusMilliInches;
     bounds = { minX: x - r, maxX: x + r, minY: y - r, maxY: y + r };
-  } else if (footprint.shape === "rectangle" && footprint.vertices?.length === 4) {
+  } else if (footprint.shape === "rectangle" && footprint.vertices?.length === 4
+    || footprint.shape === "orthogonal_cross" && footprint.vertices?.length === 12
+    || footprint.shape === "measured_contour" && footprint.vertices?.length >= 3) {
     const xs = footprint.vertices.map(p => p.xMilliInches);
     const ys = footprint.vertices.map(p => p.yMilliInches);
     bounds = { minX: Math.min(...xs), maxX: Math.max(...xs),
@@ -514,20 +588,26 @@ function exactSpeed(state, piece, profile, modelCount) {
       state.officialBattlefieldAssetFamilySourceBundle, state,
       { pieceId: piece.id, context: { actionType: "movement" } },
     ) : {};
-  return printed + Math.max(Number(modifiers.speedModifier || 0),
-    Number(battlefield.speedModifier || 0));
+  // The saved policy selects current consumers while preserving older Room bindings.
+  const characteristic = state.officialCharacteristicStatusFamilySourceBundle
+    && hasOfficialCharacteristicConsumerPolicyV1(state)
+    ? projectOfficialCharacteristicStatusFamilyModifiersV1(state.officialCharacteristicStatusFamilySourceBundle, state,
+      { pieceId: piece.id, context: { actionType: 'movement' } }) : {};
+  return resolveOfficialMovementSpeedV1(printed, [modifiers, characteristic, battlefield]);
 }
 function modelProfiles(piece) {
   return activePiece(piece) ? activeModels(piece).map((model) => ({
     modelId: model.id, baseShape: model.baseShape,
     baseWidthMilliInches: milli(model.baseWidthInches),
     baseDepthMilliInches: milli(model.baseDepthInches),
+    ...readOfficialModelBaseOutlineV1(model),
     startPoint: modelPoint(model), startElevation: elevation(model.elevation),
     supportTerrainIds: [...new Set(model.supportTerrainIds || [])].sort(),
   })) : piece.models.filter((model) => model.isDestroyed !== true).map((model) => ({
     modelId: model.id, baseShape: model.baseShape,
     baseWidthMilliInches: milli(model.baseWidthInches),
     baseDepthMilliInches: milli(model.baseDepthInches),
+    ...readOfficialModelBaseOutlineV1(model),
     startPoint: null, startElevation: "ground", supportTerrainIds: [],
   }));
 }
@@ -553,7 +633,10 @@ function verifyRuntimeState(state) {
       fail("SELECTED_SPATIAL_MODEL_DENOMINATOR_INVALID", piece.id);
     }
     for (const model of piece.models.filter((entry) => entry.isDestroyed !== true)) {
-      verifyDeclaredBase(model);
+      if (isOfficialProfileBoundOutlineV1(model.baseShape)) {
+        createOfficialModelBaseFootprintV1({ piece, model, dataBundle: state.officialModelBaseGeometryDataBundle,
+          position: { xMilliInches: 0, yMilliInches: 0 } });
+      } else verifyDeclaredBase(model);
     }
   }
   const expectedBattlefield = state.engagementScale === "Standard"
@@ -581,19 +664,6 @@ function effectiveDisengageSupply(state, piece) {
   return projectOfficialContextualSupplyValueV1({ state, pieceId: piece.id,
     context: "disengage_check" }).effectiveSupply;
 }
-function supplyAvailable(state, sideKey) {
-  const capacity = Number(
-    state.officialRoundSupplyState?.supplyPoolBySide?.[sideKey]
-      ?? state.players?.[sideKey]?.supply
-      ?? 0,
-  );
-  const committed = state.pieces.filter((piece) => (
-    piece.sideKey === sideKey && activePiece(piece)
-  )).reduce((sum, piece) => sum + projectOfficialContextualSupplyValueV1({
-    state, pieceId: piece.id, context: "supply_pool_calculation",
-  }).effectiveSupply, 0);
-  return { capacity, committed, available: Math.max(0, capacity - committed) };
-}
 // Read ports use the EXACT deployment validator calculation, even when the
 // selected seat currently has no enabled deploy domain. No second calculator.
 export {supplyAvailable as projectOfficialSelectedRosterDeploymentSupplyV1};
@@ -602,8 +672,13 @@ function actionContext(state, sideKey, piece, actionType) {
   if (!piece || piece.sideKey !== sideKey || !livePiece(piece)) {
     fail("SELECTED_SPATIAL_UNIT_UNAVAILABLE", String(piece?.id || ""));
   }
+  assertOfficialSiegeModeActionAllowedV1(state, piece, actionType);
   if (piece.isStructure === true) {
     fail("SELECTED_SPATIAL_STRUCTURE_CANNOT_PERFORM_ACTIONS", piece.id);
+  }
+  const profile = routeProfile(state, piece);
+  if (profile.coreMovementProhibitedByNullSpeed === true) {
+    fail('SELECTED_SPATIAL_NULL_SPEED_ACTION_PROHIBITED', piece.id);
   }
   if (piece.activatedPhases?.[actionType === "run" ? "assault" : "movement"] === true) {
     fail("SELECTED_SPATIAL_UNIT_ALREADY_ACTIVATED", piece.id);
@@ -615,10 +690,8 @@ function actionContext(state, sideKey, piece, actionType) {
     if (piece.isOnField === true || piece.isInReserves !== true) {
       fail("SELECTED_SPATIAL_DEPLOY_REQUIRES_RESERVE", piece.id);
     }
-    const supply = supplyAvailable(state, sideKey);
-    const requestedSupply = projectOfficialContextualSupplyValueV1({ state,
-      pieceId: piece.id, context: "supply_pool_calculation" }).effectiveSupply;
-    if (requestedSupply > supply.available) {
+    const supply = supplyAvailable(state, sideKey, piece.id);
+    if (!supply.poolRequirementSatisfied) {
       fail("SELECTED_SPATIAL_DEPLOY_SUPPLY_UNAVAILABLE", piece.id);
     }
   } else {
@@ -633,15 +706,40 @@ function actionContext(state, sideKey, piece, actionType) {
       fail("SELECTED_SPATIAL_RUN_REQUIRES_MOVEMENT_ACTIVATION", piece.id);
     }
   }
-  return { profile: routeProfile(state, piece), engagement };
+  return { profile, engagement };
 }
-function entrySegments(state, sideKey) {
+export function projectOfficialRavenReserveEntrySegmentsV1(state, piece) {
+  const route = resolveOfficialRavenReserveEntryRouteV1(state, piece);
+  if (!route) return [];
+  const binding = state.officialDeploymentGeometryBinding;
+  const assigned = ['player1', 'player2'].map(side => binding?.entryEdgesByPlayer?.[side]?.segments);
+  const directions = ['top', 'bottom', 'left', 'right'];
+  const { widthInches, heightInches } = binding?.battlefield || {};
+  if (assigned.some(segments => !Array.isArray(segments) || !segments.length
+    || segments.some(segment => !directions.includes(segment.side)))
+    || !Number.isFinite(widthInches) || widthInches <= 0
+    || !Number.isFinite(heightInches) || heightInches <= 0
+    || widthInches !== state.board.widthInches || heightInches !== state.board.heightInches) {
+    fail('RAVEN_RESERVE_ENTRY_BATTLEFIELD_BINDING_REQUIRED', piece.id);
+  }
+  const assignedSides = new Set(assigned.flat().map(segment => segment.side));
+  return directions.filter(side => !assignedSides.has(side)).map(side => ({
+    kind: 'raven_neutral_table_edge', segmentId: 'raven-neutral-entry:' + side,
+    side, startInches: 0, endInches: side === 'top' || side === 'bottom' ? widthInches : heightInches,
+    fullTableEdge: true, generatesZoneOfInfluence: false,
+    sourcePieceId: piece.id, definitionId: route.definitionId, sourceRouteHash: route.routeHash,
+    enemyExclusionRangeMilliInches: route.enemyExclusionRangeMilliInches,
+  }));
+}
+
+function entrySegments(state, sideKey, piece, supply) {
   const segments = state.officialDeploymentGeometryBinding
     ?.entryEdgesByPlayer?.[sideKey]?.segments;
   if (!Array.isArray(segments) || segments.length < 1) {
     fail("SELECTED_SPATIAL_ENTRY_EDGE_UNAVAILABLE", sideKey);
   }
-  return clone(segments);
+  const alternate = unitEntryPerimeters(state,sideKey,piece,supply);
+  return [...clone(segments), ...alternate, ...projectOfficialRavenReserveEntrySegmentsV1(state, piece)];
 }
 function postDisengageRestriction(state, piece, engagement) {
   const enemySupplyByUnit = Object.fromEntries(engagement.enemyUnitIds.map((unitId) => {
@@ -655,7 +753,11 @@ function postDisengageRestriction(state, piece, engagement) {
   const modifiers = resolveOfficialSelectedRosterAbilityModifiersV1(state, piece, {
     actionType: "disengage",
   });
-  const ignoresPenalty = modifiers.ignoreDisengagePenalty;
+  const assets = state.officialBattlefieldAssetFamilySourceBundle;
+  const ignoresPenalty = modifiers.ignoreDisengagePenalty
+    || (state.officialRosterDisclosureDataBundle?.sourceBinding && assets?.routes.some(row => row.effectKind === 'orders')
+      && projectOfficialBattlefieldAssetFamilyModifiersV1(assets, state, { pieceId: piece.id }).ignoreDisengagePenalty)
+    || false;
   return seal({
     schema: "starcraft_tmg_official_post_disengage_assault_restriction_v2",
     semanticVersion: "2.0.0", declaredRound: Number(state.round),
@@ -673,7 +775,16 @@ function postDisengageRestriction(state, piece, engagement) {
 function domainFor(state, sideKey, piece, actionType, context) {
   const profiles = modelProfiles(piece);
   const speed = exactSpeed(state, piece, context.profile, Number(piece.currentModels));
-  const supply = supplyAvailable(state, sideKey);
+  const supply = actionType === "deploy"
+    ? supplyAvailable(state, sideKey, piece.id) : null;
+  const raptorStrain = projectOfficialRaptorStrainTerrainPermissionV13(state, piece);
+  const rosterReleased = state.officialRosterDisclosureDataBundle?.sourceBinding;
+  const characteristic = state.officialCharacteristicStatusFamilySourceBundle;
+  const coherencyRange = rosterReleased && characteristic
+    ? projectOfficialHorizontalCoherencyV1(characteristic, state, {
+      pieceId: piece.id, assumeDeployed: actionType === 'deploy',
+    }).horizontalCoherencyMilliInches
+    : milli(context.profile.movementProfile.horizontalCoherencyInches);
   const core = {
     schemaVersion: "starcraft_tmg_official_parameter_domain_v1",
     semanticVersion: "1.0.0",
@@ -691,7 +802,9 @@ function domainFor(state, sideKey, piece, actionType, context) {
       coordinateUnit: "milli-inch", maxRawPathPoints: MAX_RAW_PATH_POINTS,
       maxCanonicalPathPoints: MAX_CANONICAL_PATH_POINTS,
       exactRemainingPlacementCount: profiles.length - 1,
-      optional: ["elevationTransitions", "gapMouths", "coherencyGapMouths"],
+      ...officialGapInputContractV1(state),
+      optional: state.officialModelGapTransitPolicy?.version === "2.0.0"
+        ? ["elevationTransitions"] : ["elevationTransitions", "gapMouths", "coherencyGapMouths"],
     },
     unitRepositionProcedure: {
       leadingModelPhysicalPathOnly: true,
@@ -710,28 +823,32 @@ function domainFor(state, sideKey, piece, actionType, context) {
     },
     constraints: {
       modelProfiles: profiles,
+      ...(usesFlyingMovement(state, piece) ? { flyingPointToPoint: true } : {}),
       battlefieldWidthMilliInches: milli(state.board.widthInches),
       battlefieldHeightMilliInches: milli(state.board.heightInches),
       maxDistanceMilliInches: milli(speed), speedAllowanceInches: speed,
-      coherencyRangeMilliInches:
-        milli(context.profile.movementProfile.horizontalCoherencyInches),
+      coherencyRangeMilliInches: coherencyRange,
       coherencyConstraintMode:
         "each_remaining_model_base_wholly_within_leading_model_range",
       coherencyCasualtyRequiresNoLegalPositionCertificate: true,
       engagedEnemyUnitIds: context.engagement.enemyUnitIds,
       engagementHash: context.engagement.engagementHash || null,
-      entrySegments: actionType === "deploy" ? entrySegments(state, sideKey) : [],
+      entrySegments: actionType === "deploy" ? entrySegments(state, sideKey, piece, supply) : [],
       supply: actionType === "deploy" ? supply : null,
       modelBaseGeometryDataBundleHash:
         state.officialModelBaseGeometryDataBundle.bundleHash,
       terrainLosDataBundleHash: state.officialTerrainLosDataBundle.bundleHash,
       specialTerrainAgreementHash: state.board.specialTerrainAgreement.agreementHash,
       actionRouteCatalogueHash: state.officialActionRouteCatalogue.catalogueHash,
-      raptorStrainRouteObserved: piece.officialUnitRecordKey
-        === "army_units:kerrigan_swarm_raptor__zergling_",
-      raptorStrainAvailableInDomain: piece.officialUnitRecordKey
-        === "army_units:kerrigan_swarm_raptor__zergling_",
+      raptorStrainRouteObserved: Boolean(raptorStrain),
+      raptorStrainAvailableInDomain: Boolean(raptorStrain),
+      ...(raptorStrain?.sourceDefinitionId ? { raptorStrainSourceDefinitionId: raptorStrain.sourceDefinitionId } : {}),
       successfulPlacementPathExact: true,
+      ...(state.officialModelGapTransitPolicy?.version === "2.0.0" ? {
+        groundMovementClearance: { diameterMilliInches: getOfficialGroundSizeClearanceDiameterV13(piece),
+          sourceSection: "core:4.6", scope: "ground_level_path_only", finalPositionUsesActualBase: true,
+          suppliedByRules: true },
+      } : {}),
       disengageNoLegalPlacementRequiresRulesOwnedCertificate:
         actionType === "disengage",
     },
@@ -803,26 +920,34 @@ export function enumerateOfficialSelectedRosterSpatialActionsV1(state, options =
   return result;
 }
 
-function canonicalPath(start, raw, domain, actionType) {
+function canonicalPath(start, raw, domain, actionType, preserveWaypoints = false) {
   if (!Array.isArray(raw) || raw.length < 1 || raw.length > MAX_RAW_PATH_POINTS) {
     fail("SELECTED_SPATIAL_PATH_DENOMINATOR_INVALID");
   }
-  const normalized = [{ ...start, elevation: elevation(start.elevation),
-    supportTerrainIds: [...new Set(start.supportTerrainIds || [])].sort(),
+  const flying = domain.constraints.flyingPointToPoint === true;
+  const normalized = [{ ...start, elevation: flying ? "ground" : elevation(start.elevation),
+    supportTerrainIds: flying ? [] : [...new Set(start.supportTerrainIds || [])].sort(),
     rotationDegrees: canonicalRotation(start.rotationDegrees) }];
   for (const [index, entry] of raw.entries()) {
     const next = { ...point(entry, "SELECTED_SPATIAL_PATH_POINT_INVALID", String(index)),
-      elevation: elevation(entry.elevation),
-      supportTerrainIds: [...new Set((entry.supportTerrainIds || []).map(String))].sort(),
+      elevation: flying ? "ground" : elevation(entry.elevation),
+      supportTerrainIds: flying ? [] : [...new Set((entry.supportTerrainIds || []).map(String))].sort(),
       rotationDegrees: canonicalRotation(entry.rotationDegrees) };
     const previous = normalized.at(-1);
     if (distance(previous, next) > TOLERANCE
       || previous.elevation !== next.elevation) normalized.push(next);
   }
+  if (flying && normalized.length > 2) normalized.splice(1, normalized.length - 2);
   if (normalized.length < 2) fail("SELECTED_SPATIAL_PATH_MUST_CHANGE_POSITION");
+  if (flying && distance(normalized[0], normalized[1]) <= TOLERANCE) {
+    fail("SELECTED_SPATIAL_PATH_MUST_CHANGE_POSITION");
+  }
   const points = [];
   for (const entry of normalized) {
-    while (points.length >= 2
+    // A reversal is collinear too, but consumes movement and can cross terrain.
+    while (!preserveWaypoints && points.length >= 2
+      && (points.at(-1).xMilliInches - points.at(-2).xMilliInches) * (entry.xMilliInches - points.at(-1).xMilliInches)
+        + (points.at(-1).yMilliInches - points.at(-2).yMilliInches) * (entry.yMilliInches - points.at(-1).yMilliInches) >= 0
       && points.at(-2).elevation === points.at(-1).elevation
       && points.at(-1).elevation === entry.elevation
       && Math.abs(((points.at(-1).xMilliInches - points.at(-2).xMilliInches)
@@ -845,7 +970,20 @@ function canonicalPath(start, raw, domain, actionType) {
   return freezeDeep({ schemaVersion: "starcraft_tmg_selected_spatial_path_v1",
     unit: "milli-inch", points, distanceMilliInches });
 }
+function contourLocalBounds(widthMilliInches, depthMilliInches, localVerticesMilliInches, rotationDegrees) {
+  return physicalBounds(createOfficialPhysicalFootprintV1({ objectId: "boundary-contour", kind: "model_base",
+    shape: "measured_contour", center: { xMilliInches: 0, yMilliInches: 0 },
+    widthMilliInches, depthMilliInches, localVerticesMilliInches, rotationDegrees }));
+}
 function fullBaseInsideBoard(value, model, domain) {
+  if (model.baseShape === "measured_contour") {
+    const bounds = contourLocalBounds(milli(model.baseWidthInches), milli(model.baseDepthInches),
+      model.baseLocalVerticesMilliInches, value.rotationDegrees);
+    return value.xMilliInches + bounds.minX >= -TOLERANCE
+      && value.xMilliInches + bounds.maxX <= domain.constraints.battlefieldWidthMilliInches + TOLERANCE
+      && value.yMilliInches + bounds.minY >= -TOLERANCE
+      && value.yMilliInches + bounds.maxY <= domain.constraints.battlefieldHeightMilliInches + TOLERANCE;
+  }
   const half = modelHalfExtents(model, value.rotationDegrees);
   return value.xMilliInches >= half.x - TOLERANCE
     && value.xMilliInches <= domain.constraints.battlefieldWidthMilliInches
@@ -858,33 +996,68 @@ function segmentById(domain, segmentId) {
   const segment = domain.constraints.entrySegments.find((entry) => (
     entry.segmentId === segmentId
   ));
-  if (!segment || !new Set(["top", "bottom", "left", "right"]).has(segment.side)) {
+  if (!segment || segment.kind !== 'unit_base_perimeter'
+    && !new Set(["top", "bottom", "left", "right"]).has(segment.side)) {
     fail("SELECTED_SPATIAL_ENTRY_SEGMENT_INVALID", segmentId);
   }
   return segment;
 }
-function deployStart(domain, segment, along, modelProfile) {
+export function resolveOfficialSelectedRosterDeployStartV1(domain, segment, along, modelProfile) {
   const halfWidth = Math.round(modelProfile.baseWidthMilliInches / 2);
   const halfDepth = Math.round(modelProfile.baseDepthMilliInches / 2);
+  if (segment.kind === 'unit_base_perimeter') {
+    if (!Number.isSafeInteger(along) || along < 0 || along > segment.maximumAlongEdgeMilliInches) {
+      fail("SELECTED_SPATIAL_ENTRY_POINT_INVALID", segment.segmentId);
+    }
+    const angle = along / segment.radiusMilliInches;
+    const x = Math.cos(angle);
+    const y = Math.sin(angle);
+    if (modelProfile.baseShape === "measured_contour") {
+      const inwardVertex = modelProfile.localVerticesMilliInches.reduce((best, vertex) =>
+        x * vertex.xMilliInches + y * vertex.yMilliInches < x * best.xMilliInches + y * best.yMilliInches
+          ? vertex : best);
+      return {
+        xMilliInches: Math.round(segment.center.xMilliInches + x * segment.radiusMilliInches - inwardVertex.xMilliInches),
+        yMilliInches: Math.round(segment.center.yMilliInches + y * segment.radiusMilliInches - inwardVertex.yMilliInches),
+        elevation: segment.sourceElevation, supportTerrainIds: segment.supportTerrainIds,
+      };
+    }
+    // Offset the entering model's support point onto the source circumference.
+    const supportX = modelProfile.baseShape === 'round' ? x * halfWidth
+      : Math.abs(x) < 1e-12 ? 0 : Math.sign(x) * halfWidth;
+    const supportY = modelProfile.baseShape === 'round' ? y * halfDepth
+      : Math.abs(y) < 1e-12 ? 0 : Math.sign(y) * halfDepth;
+    return {
+      xMilliInches: Math.round(segment.center.xMilliInches + x * segment.radiusMilliInches + supportX),
+      yMilliInches: Math.round(segment.center.yMilliInches + y * segment.radiusMilliInches + supportY),
+      elevation: segment.sourceElevation, supportTerrainIds: segment.supportTerrainIds,
+    };
+  }
   const minimum = milli(segment.startInches);
   const maximum = milli(segment.endInches);
-  const edgeHalf = new Set(["top", "bottom"]).has(segment.side)
-    ? halfWidth : halfDepth;
-  if (!Number.isSafeInteger(along) || along < minimum + edgeHalf
-    || along > maximum - edgeHalf) {
+  const horizontalEdge = segment.side === "top" || segment.side === "bottom";
+  const bounds = modelProfile.baseShape === "measured_contour"
+    ? contourLocalBounds(modelProfile.baseWidthMilliInches, modelProfile.baseDepthMilliInches,
+      modelProfile.localVerticesMilliInches, 0)
+    : { minX: -halfWidth, maxX: halfWidth, minY: -halfDepth, maxY: halfDepth };
+  const edgeMin = horizontalEdge ? bounds.minX : bounds.minY;
+  const edgeMax = horizontalEdge ? bounds.maxX : bounds.maxY;
+  if (!Number.isSafeInteger(along) || along < minimum - edgeMin
+    || along > maximum - edgeMax) {
     fail("SELECTED_SPATIAL_ENTRY_POINT_INVALID", segment.segmentId);
   }
   if (segment.side === "top") return { xMilliInches: along,
-    yMilliInches: domain.constraints.battlefieldHeightMilliInches + halfDepth,
+    yMilliInches: domain.constraints.battlefieldHeightMilliInches - bounds.minY,
     elevation: "ground" };
   if (segment.side === "bottom") return { xMilliInches: along,
-    yMilliInches: -halfDepth, elevation: "ground" };
-  if (segment.side === "left") return { xMilliInches: -halfWidth,
+    yMilliInches: -bounds.maxY, elevation: "ground" };
+  if (segment.side === "left") return { xMilliInches: -bounds.maxX,
     yMilliInches: along, elevation: "ground" };
-  return { xMilliInches: domain.constraints.battlefieldWidthMilliInches + halfWidth,
+  return { xMilliInches: domain.constraints.battlefieldWidthMilliInches - bounds.minX,
     yMilliInches: along, elevation: "ground" };
 }
 function verifyDeployInward(segment, path) {
+  if (segment.kind === 'unit_base_perimeter') return;
   const start = path.points[0];
   const first = path.points[1];
   const inward = segment.side === "top" ? first.yMilliInches < start.yMilliInches
@@ -914,8 +1087,19 @@ function canonicalPlacements(domain, leadingModelId, raw, endpoint) {
   if (remaining.size > 0) fail("SELECTED_SPATIAL_PLACEMENT_DENOMINATOR_INVALID");
   return rows.sort((left, right) => left.modelId.localeCompare(right.modelId));
 }
-function assertPathBoardAndModels(state, piece, leadingModel, path, domain, actionType) {
-  const pointsToCheck = actionType === "deploy" ? path.points.slice(1) : path.points;
+function burrowedTransitTargets(state, actor, actionType) {
+  if (!ACTION_TYPES.includes(actionType) || state.officialCharacteristicConsumerPolicy?.burrowedBaseTransit !== true) return [];
+  return state.pieces.filter(piece => piece.id !== actor.id && activePiece(piece)
+    && isOfficialBurrowedCoreActorV1(state, piece));
+}
+
+function assertPathBoardAndModels(state, piece, leadingModel, path, domain, actionType, segment) {
+  const gapPolicy = hasOfficialModelGapTransitPolicyV13(state);
+  const newRelease = contourRelease(state);
+  const flying = newRelease && isOfficialFlyingUnitV1(piece);
+  const sizeClearance = !flying && usesOfficialGroundSizeClearanceV13(state, path);
+  const localEntry = segment?.kind === 'unit_base_perimeter';
+  const pointsToCheck = actionType === "deploy" && !localEntry ? path.points.slice(1) : path.points;
   if (pointsToCheck.some((entry) => !fullBaseInsideBoard(entry, leadingModel, domain))) {
     fail("SELECTED_SPATIAL_FULL_BASE_OUTSIDE_BATTLEFIELD", leadingModel.id);
   }
@@ -937,9 +1121,17 @@ function assertPathBoardAndModels(state, piece, leadingModel, path, domain, acti
       fail("SELECTED_SPATIAL_ROTATING_BASE_OUTSIDE_BATTLEFIELD", leadingModel.id);
     }
   }
+  // Tunneling changes transit only. Final geometry still checks every base.
+  if (isOfficialBurrowedCoreActorV1(state, piece)
+    && hasOfficialTunnelingClawsMovementV1(state, piece, actionType)) return [];
+  if (flying && !localEntry) return [];
+  const transit = new Set(burrowedTransitTargets(state, piece, actionType).map(target => target.id));
   const blockers = state.pieces.filter((entry) => (
     entry.id !== piece.id && activePiece(entry)
-  )).flatMap((entry) => activeModels(entry).map((model) => ({
+  )).flatMap(entry => activeModels(entry).filter(model => (
+    localEntry && model.id === segment.sourceModelId
+      || !flying && (!newRelease || !isOfficialFlyingUnitV1(entry)) && !transit.has(entry.id)
+  )).map(model => ({
     pieceId: entry.id,
     modelId: model.id,
     footprint: createOfficialModelBaseFootprintV1({
@@ -948,22 +1140,58 @@ function assertPathBoardAndModels(state, piece, leadingModel, path, domain, acti
       dataBundle: state.officialModelBaseGeometryDataBundle,
     }),
   })));
+  const collisions = [];
+  const actualPathFootprints = sizeClearance
+    ? path.points.map(point => modelFootprintAt(state, piece, leadingModel, point)) : null;
+  const clearanceFootprints = actualPathFootprints?.map(footprint => (
+    createOfficialGroundSizeClearanceFootprintV13(piece, footprint)));
   for (let index = 1; index < path.points.length; index += 1) {
     for (const blocker of blockers) {
       const collision = sweptFootprintsCollide({
-        movingStart: modelFootprintAt(
+        movingStart: actualPathFootprints?.[index - 1] || modelFootprintAt(
           state, piece, leadingModel, path.points[index - 1],
         ),
-        movingEnd: modelFootprintAt(
+        movingEnd: actualPathFootprints?.[index] || modelFootprintAt(
           state, piece, leadingModel, path.points[index],
         ),
         blocker: blocker.footprint,
       });
+      const isEntrySource = localEntry && blocker.modelId === segment.sourceModelId;
+      if (isEntrySource && index === 1 && !physicalSeparationWithinTolerance(
+        modelFootprintAt(state, piece, leadingModel, path.points[0]), blocker.footprint)) {
+        fail("SELECTED_SPATIAL_ENTRY_POINT_NOT_IN_BASE_CONTACT", segment.segmentId);
+      }
+      if (sizeClearance && !isEntrySource && sweptFootprintsCollide({ movingStart: clearanceFootprints[index - 1],
+        movingEnd: clearanceFootprints[index], blocker: blocker.footprint })) {
+        fail("SELECTED_SPATIAL_PATH_MODEL_CLEARANCE_INSUFFICIENT", blocker.modelId);
+      }
       if (collision) {
-        fail("SELECTED_SPATIAL_PATH_MODEL_COLLISION", blocker.modelId);
+        if (!gapPolicy || isEntrySource) fail("SELECTED_SPATIAL_PATH_MODEL_COLLISION", blocker.modelId);
+        collisions.push({ index, blocker });
       }
     }
   }
+  if (!collisions.length) return [];
+  if (sizeClearance) {
+    const body = { schema: "starcraft_tmg_host_ground_clearance_model_sweep_v1",
+      actorUnitId: piece.id, actorSizeCharacteristic: Number(piece.sizeCharacteristic),
+      clearanceDiameterMilliInches: getOfficialGroundSizeClearanceDiameterV13(piece),
+      scope: "ground_level_transit", finalPositionUsesActualBase: true,
+      pathHash: hashStarcraftTmgContract(path),
+      boundaryFootprintHashes: [...new Set(collisions.map(row => row.blocker.footprint.footprintHash))].sort() };
+    return [{ ...body, certificateHash: hashStarcraftTmgContract(body) }];
+  }
+  const gaps = deriveOfficialRoundModelGapMouthsV1({ state, actor: piece, path: path.points,
+    boundaryModelIds: [...new Set(collisions.filter(row => row.blocker.footprint.shape === "round")
+      .map(row => row.blocker.modelId))] });
+  for (const { index, blocker } of collisions) {
+    if (!allowsOfficialModelGapSweepV13({
+      movingStart: modelFootprintAt(state, piece, leadingModel, path.points[index - 1]),
+      movingEnd: modelFootprintAt(state, piece, leadingModel, path.points[index]),
+      blocker: blocker.footprint, gaps,
+    })) fail("SELECTED_SPATIAL_PATH_MODEL_COLLISION", blocker.modelId);
+  }
+  return gaps;
 }
 function crossedForceFieldTokenIds(state, piece, leadingModel, path) {
   const bindings = new Map((state.officialBattlefieldAssetBindings || []).map((entry) => (
@@ -996,11 +1224,115 @@ function crossedForceFieldTokenIds(state, piece, leadingModel, path) {
   }
   return crossed;
 }
-function deployTerrainResult(state, piece, path) {
+
+function assertForceWallTraversal(state, piece, leadingModel, path, placements) {
+  const walls = readOfficialActiveForceWallFootprintsV1(state);
+  if (!walls.length) return [];
+  const crossed = walls.filter(wall => pathSweepsFootprint(
+    state, piece, leadingModel, path.points, wall.footprint,
+  ));
+  const size = piece.sizeCharacteristic;
+  const minimumSize = state.officialForceWallTraversalPolicy.minimumCrossingSize;
+  if (crossed.length && (!Number.isSafeInteger(size) || size < minimumSize)) {
+    fail("SELECTED_SPATIAL_FORCE_WALL_BLOCKS_SIZE_TWO_OR_LOWER", crossed[0].token.tokenId);
+  }
+  const remaining = walls.filter(wall => !crossed.includes(wall));
+  if (remaining.length) {
+    for (const position of placements) {
+      const model = piece.models.find(entry => entry.id === position.modelId);
+      const base = modelFootprintAt(state, piece, model, position);
+      const occupied = remaining.find(wall => physicalInteriorsOverlap(base, wall.footprint));
+      if (occupied) fail("SELECTED_SPATIAL_FORCE_WALL_ENDPOINT_OCCUPIED", occupied.token.tokenId);
+    }
+  }
+  return crossed.map(wall => wall.token.tokenId).sort();
+}
+function prepareLargeTerrainRemoval(state, piece, leadingModel, path, placements) {
+  if (!hasOfficialLargeTerrainRemovalPolicyV1(state) || !piece.officialLargeMovementTrait) {
+    return { state, removal: null };
+  }
+  inspectOfficialLargeMovementSourceV1(state, piece);
+  const pathBases = path.points.map(value => modelFootprintAt(state, piece, leadingModel, value));
+  const finalBases = placements.map(value => modelFootprintAt(state, piece,
+    piece.models.find(model => model.id === value.modelId), value));
+  const tokenIds = new Set((state.board.tokens || []).map(token => token.tokenId || token.id));
+  const contacts = (state.board.terrain || []).filter(terrain => terrain.isRemoved !== true
+    && terrain.isDestroyed !== true && terrain.terrainKind === 'impassable'
+    && [0, 1].includes(terrain.size) && !tokenIds.has(terrain.id)).filter(terrain => {
+      const blockers = terrainPhysicalFootprints(terrain);
+      return blockers.some(blocker => pathBases.slice(1).some((end, index) =>
+        sweptFootprintsCollide({ movingStart: pathBases[index], movingEnd: end, blocker }))
+        || finalBases.some(base => physicalInteriorsOverlap(base, blocker)));
+    }).map(terrain => terrain.id);
+  if (!contacts.length) return { state, removal: null };
+  const expanded = resolveOfficialLogicalLargeTerrainRemovalV1(state, contacts);
+  const removed = new Set(expanded.largeRemovedTerrainIds);
+  const removal = { ...expanded, actorUnitId: piece.id,
+    sourceFeatureHash: piece.officialLargeMovementTrait.sourceFeatureHash,
+    tokenRemovalAllowed: false, leadingPathAndAllFinalBasesChecked: true };
+  return { state: { ...state, board: { ...state.board,
+    terrain: state.board.terrain.map(terrain => removed.has(terrain.id) ? { ...terrain, isRemoved: true } : terrain),
+    accessPoints: (state.board.accessPoints || []).map(access => removed.has(access.terrainId)
+      ? { ...access, isRemoved: true } : access) } }, removal };
+}
+
+export function assertOfficialRavenReserveEntryClearanceV1(state, piece, placements, segment) {
+  if (segment?.kind !== 'raven_neutral_table_edge') return;
+  const enemies = state.pieces.filter(enemy => enemy.sideKey !== piece.sideKey && activePiece(enemy))
+    .flatMap(enemy => activeModels(enemy).map(model =>
+      modelFootprintAt(state, enemy, model, modelPoint(model))));
+  for (const position of placements) {
+    const model = piece.models.find(entry => entry.id === position.modelId);
+    const footprint = modelFootprintAt(state, piece, model, position);
+    const limit = segment.enemyExclusionRangeMilliInches + TOLERANCE;
+    if (enemies.some(enemy => evaluateOfficialPhysicalFootprintRelationV1({ left: footprint, right: enemy })
+      .minimumSeparationMilliInches <= limit)) {
+      fail('RAVEN_RESERVE_ENTRY_WITHIN_EIGHT_OF_ENEMY_MODEL', model.id);
+    }
+  }
+}
+
+function assertOutsideEnemyDeploymentZone(state, piece, placements) {
+  const enemySide = piece.sideKey === 'player1' ? 'player2' : 'player1';
+  const zones = state.officialDeploymentGeometryBinding.entryEdgesByPlayer[enemySide].segments.map(edge => {
+    const { xMin, xMax, yMin, yMax } = edge.zoneRectangle;
+    return createOfficialPhysicalFootprintV1({ objectId: edge.segmentId, kind: 'terrain', shape: 'rectangle',
+      center: { xMilliInches: milli((xMin + xMax) / 2), yMilliInches: milli((yMin + yMax) / 2) },
+      widthMilliInches: milli(xMax - xMin), depthMilliInches: milli(yMax - yMin), rotationDegrees: 0 });
+  });
+  for (const position of placements) {
+    const model = piece.models.find(entry => entry.id === position.modelId);
+    const footprint = modelFootprintAt(state, piece, model, position);
+    if (zones.some(zone => physicalInteriorsOverlap(footprint, zone))) {
+      fail('SELECTED_SPATIAL_DEPLOY_ENEMY_ZONE_OF_INFLUENCE', model.id);
+    }
+  }
+}
+
+export function applyOfficialLargeTerrainRemovalV1(state, piece, removal) {
+  if (!removal) return;
+  if (!hasOfficialLargeTerrainRemovalPolicyV1(state) || removal.actorUnitId !== piece.id
+    || removal.sourceFeatureHash !== piece.officialLargeMovementTrait?.sourceFeatureHash) {
+    fail('SELECTED_SPATIAL_LARGE_TERRAIN_REMOVAL_INVALID');
+  }
+  const removed = new Set(removal.largeRemovedTerrainIds);
+  for (const terrain of state.board.terrain) if (removed.has(terrain.id)) {
+    terrain.isRemoved = true;
+    terrain.removedBy = { rule: 'official_large_movement', actorUnitId: piece.id,
+      sourceFeatureHash: removal.sourceFeatureHash, round: Number(state.round), phase: state.phase };
+  }
+  for (const access of state.board.accessPoints || []) {
+    if (removed.has(access.terrainId)) access.isRemoved = true;
+  }
+}
+
+function deployTerrainResult(state, piece, path, placements) {
   const leadingModel = piece.models.find((entry) => (
     entry.id === path.leadingModelId
   ));
   const points = path.canonicalPath.points;
+  const flying = usesFlyingMovement(state, piece);
+  const sizeClearance = !flying && usesOfficialGroundSizeClearanceV13(state, path.canonicalPath);
   // Reuse only within this evaluation. Prepare lazily to retain the original
   // terrain/segment failure order and avoid constructing unvisited segments.
   const pathFootprints = [];
@@ -1009,6 +1341,10 @@ function deployTerrainResult(state, piece, path) {
       state, piece, leadingModel, points[index],
     )
   );
+  const clearanceFootprints = [];
+  const ruleFootprintAt = index => sizeClearance
+    ? (clearanceFootprints[index] ??= createOfficialGroundSizeClearanceFootprintV13(piece, pathFootprintAt(index)))
+    : pathFootprintAt(index);
   const interactions = [];
   const grassRemovedTerrainIds = [];
   for (const terrain of (state.board?.terrain || []).filter((entry) => (
@@ -1023,13 +1359,23 @@ function deployTerrainResult(state, piece, path) {
       })
     )));
     const kind = String(terrain.terrainKind || "ordinary").toLowerCase();
-    if (pathIntersects && kind === "grass") grassRemovedTerrainIds.push(terrain.id);
-    if (pathIntersects && (kind === "impassable"
+    const rulePathIntersects = sizeClearance ? blockers.some(blocker => points.slice(1).some((point, index) => (
+      sweptFootprintsCollide({ movingStart: ruleFootprintAt(index), movingEnd: ruleFootprintAt(index + 1), blocker })
+    ))) : pathIntersects;
+    const endpointOverlap = flying && placements.some(position => {
+      const model = piece.models.find(entry => entry.id === position.modelId);
+      const footprint = modelFootprintAt(state, piece, model, position);
+      return blockers.some(blocker => physicalInteriorsOverlap(footprint, blocker));
+    });
+    if ((flying ? endpointOverlap : pathIntersects) && kind === "grass") grassRemovedTerrainIds.push(terrain.id);
+    if (flying && endpointOverlap && kind !== "grass") fail("SELECTED_SPATIAL_TERRAIN_ENDPOINT_UNSUPPORTED", terrain.id);
+    if (!flying && rulePathIntersects && (kind === "impassable"
       || (kind === "ordinary" && Number(terrain.size) >= 2))) {
       fail("SELECTED_SPATIAL_DEPLOY_TERRAIN_BLOCKED", terrain.id);
     }
     interactions.push({ terrainId: terrain.id, terrainKind: kind,
       size: Number(terrain.size), pathIntersects,
+      ...(sizeClearance ? { rulePathIntersects, sizeClearanceDiameterMilliInches: getOfficialGroundSizeClearanceDiameterV13(piece) } : {}),
       grassRemoved: grassRemovedTerrainIds.includes(terrain.id) });
   }
   const removal = resolveOfficialLogicalGrassRemovalV1(state, grassRemovedTerrainIds);
@@ -1079,8 +1425,29 @@ function geometryProjection(state, piece, placements) {
   ));
   return { state: projected, actor };
 }
+function assertBurrowedEndpointClearance(state, piece, placements, actionType) {
+  const targets = burrowedTransitTargets(state, piece, actionType);
+  if (!targets.length) return;
+  const footprints = targets.flatMap(target => activeModels(target).map(model => ({
+    modelId: model.id, footprint: createOfficialModelBaseFootprintV1({
+      piece: target, model, dataBundle: state.officialModelBaseGeometryDataBundle,
+    }),
+  })));
+  for (const placement of placements) {
+    const model = piece.models.find(entry => entry.id === placement.modelId);
+    const landed = modelFootprintAt(state, piece, model, placement);
+    for (const { modelId, footprint } of footprints) {
+      const { minimumSeparationMilliInches } = evaluateOfficialPhysicalFootprintRelationV1({ left: landed, right: footprint });
+      if (minimumSeparationMilliInches <= OFFICIAL_BURROWED_ENGAGEMENT_RANGE_MILLI_INCHES_V1) {
+        fail("SELECTED_SPATIAL_ENDPOINT_WITHIN_BURROWED_ENGAGEMENT_RANGE", `${placement.modelId}:${modelId}`);
+      }
+    }
+  }
+}
+
 function validateFinalGeometry(state, piece, domain, placements, leadingModelId,
   engagedEnemyUnitIds, options = {}) {
+  assertBurrowedEndpointClearance(state, piece, placements, domain.actionType);
   const projected = geometryProjection(state, piece, placements);
   const geometryState = options.allowEnemyEngagement === true
     ? {
@@ -1105,14 +1472,16 @@ function validateFinalGeometry(state, piece, domain, placements, leadingModelId,
   });
 }
 function specialTerrainResult(state, piece, actionType, domain, leadingModelId,
-  path, placements, parameters) {
+  path, placements, parameters, modelGaps = []) {
   if (!MOVEMENT_ACTION_TYPES.has(actionType)) return null;
+  const finalPlacementPolicy = hasOfficialHighGroundFinalPlacementPolicyV13(state);
+  const flying = usesFlyingMovement(state, piece);
+  const sizeClearance = !flying && usesOfficialGroundSizeClearanceV13(state, path);
   if ((parameters.gapMouths || []).length > 0
     || (parameters.coherencyGapMouths || []).length > 0) {
     fail("SELECTED_SPATIAL_DECLARED_GAP_NOT_PRESENT_ON_CERTIFIED_BOARD");
   }
-  const raptorStrain = piece.officialUnitRecordKey
-    === "army_units:kerrigan_swarm_raptor__zergling_";
+  const raptorStrain = projectOfficialRaptorStrainTerrainPermissionV13(state, piece);
   const transitionBySegment = new Map();
   for (const transition of parameters.elevationTransitions || []) {
     const segmentIndex = Number(transition?.segmentIndex);
@@ -1133,7 +1502,7 @@ function specialTerrainResult(state, piece, actionType, domain, leadingModelId,
       if (declared) fail("SELECTED_SPATIAL_REDUNDANT_ELEVATION_TRANSITION", String(index));
       continue;
     }
-    if (raptorStrain && !declared) {
+    if (raptorStrain?.mayChangeElevationWithoutAccessPoints && !declared) {
       accessPointUses.push({ segmentIndex: index, accessPointId: null,
         terrainId: null, sourceFeature: "Raptor Strain" });
       continue;
@@ -1209,6 +1578,11 @@ function specialTerrainResult(state, piece, actionType, domain, leadingModelId,
     }
     nativeTopTraversals.set(use.segmentIndex, connected);
   }
+  const finalSurfaceByModel = new Map(finalPlacementPolicy ? endpointFootprints.map(({ placement, footprint }) => (
+    [placement.modelId, deriveOfficialFinalPlacementSurfaceSupportV13(state, footprint)]
+  )) : []);
+  const clearanceFootprints = sizeClearance ? pathFootprints.map(footprint => (
+    createOfficialGroundSizeClearanceFootprintV13(piece, footprint))) : null;
   for (const terrain of activeTerrain) {
     const rectangle = terrainRectangle(terrain);
     const terrainFootprints = terrainPhysicalFootprints(terrain);
@@ -1219,11 +1593,16 @@ function specialTerrainResult(state, piece, actionType, domain, leadingModelId,
         blocker,
       })
     )));
+    const rulePathIntersects = sizeClearance ? terrainFootprints.some(blocker => clearanceFootprints.slice(1).some((footprint, index) => (
+      sweptFootprintsCollide({ movingStart: clearanceFootprints[index], movingEnd: footprint, blocker })
+    ))) : pathIntersects;
     const endpointModelIds = endpointFootprints.filter(({ footprint }) => (
       terrainFootprints.some(right => physicalInteriorsOverlap(footprint, right))
     )).map(({ placement }) => placement.modelId).sort();
     const supportedEndpointModelIds = endpointFootprints.filter(
       ({ placement, footprint }) => {
+        if (finalPlacementPolicy) return finalSurfaceByModel.get(placement.modelId)
+          .supportTerrainIds.includes(terrain.id);
         const logicalSurface = logicalEndpoints.get(placement.modelId)?.groups.find(group => (
           group.covered && group.terrainGroupId === terrain.terrainGroupId
         ));
@@ -1235,13 +1614,19 @@ function specialTerrainResult(state, piece, actionType, domain, leadingModelId,
         && placement.supportTerrainIds.includes(terrain.id);
       },
     ).map(({ placement }) => placement.modelId).sort();
-    if (kind === "grass" && (pathIntersects || endpointModelIds.length > 0)) {
+    if (kind === "grass" && ((!flying && pathIntersects) || endpointModelIds.length > 0)) {
       grassRemoved.add(terrain.id);
     }
     const accessUsed = accessPointUses.some((entry) => entry.terrainId === terrain.id);
     const sameLogicalSurfaceSweep = logicalSweep?.groups.some(group => group.covered
       && group.terrainGroupId === terrain.terrainGroupId
       && path.points.every(value => value.elevation === group.elevation)) === true;
+    // Convex/union containment proves this is movement on the existing top,
+    // without admitting an ascent or applying the final-position exception to transit.
+    const sameHighGroundSweep = finalPlacementPolicy && kind === "ordinary"
+      && Number(terrain.size) >= 3 && terrain.standableHorizontalSurface === true
+      && path.points.every(point => point.elevation === "high")
+      && officialRectangleUnionCoversBasesV1(terrain.footprintCells || [terrain.footprint], pathFootprints);
     const raptorElevationOverrideUsed = accessPointUses.some((entry) => (
       entry.sourceFeature === "Raptor Strain"
         && terrainFootprints.some(blocker => sweptFootprintsCollide({
@@ -1261,10 +1646,12 @@ function specialTerrainResult(state, piece, actionType, domain, leadingModelId,
           [pathFootprints[index], pathFootprints[index + 1]])?.groups
           .some(group => group.covered && group.elevation === from.elevation && group.terrainGroupId === terrain.terrainGroupId);
       });
-    const pathBlocked = (kind === "impassable" && pathIntersects
-      && !(raptorStrain && Number(terrain.size) <= 4))
-      || (kind === "ordinary" && Number(terrain.size) >= 2 && pathIntersects
-        && !accessUsed && !raptorElevationOverrideUsed && !sameLogicalSurfaceSweep && !nativeTopSurfaceSweep);
+    const ordinaryTraversalAllowed = kind === "ordinary" && (accessUsed
+      || raptorElevationOverrideUsed || sameLogicalSurfaceSweep
+      || nativeTopSurfaceSweep || sameHighGroundSweep);
+    const pathBlocked = !flying && rulePathIntersects
+      && isOfficialGroundTerrainTraversalBlockedV13(piece, terrain, raptorStrain)
+      && !ordinaryTraversalAllowed;
     if (pathBlocked) fail("SELECTED_SPATIAL_TERRAIN_PATH_BLOCKED", terrain.id);
     if (endpointModelIds.some((modelId) => !supportedEndpointModelIds.includes(modelId))
       && kind !== "grass") {
@@ -1272,9 +1659,10 @@ function specialTerrainResult(state, piece, actionType, domain, leadingModelId,
     }
     interactions.push({ terrainId: terrain.id, terrainKind: kind,
       size: Number(terrain.size), pathIntersects, pathBlocked,
+      ...(sizeClearance ? { rulePathIntersects, sizeClearanceDiameterMilliInches: getOfficialGroundSizeClearanceDiameterV13(piece) } : {}),
       endpointModelIds, supportedEndpointModelIds, accessUsed,
       ...(logicalSweep ? { sameLogicalSurfaceSweep, nativeTopSurfaceSweep } : {}),
-      raptorStrainUsed: raptorStrain
+      raptorStrainUsed: Boolean(raptorStrain)
         && ((kind === "impassable" && pathIntersects)
           || raptorElevationOverrideUsed),
       grassRemoved: grassRemoved.has(terrain.id) });
@@ -1290,8 +1678,8 @@ function specialTerrainResult(state, piece, actionType, domain, leadingModelId,
       fail("SELECTED_SPATIAL_TERRAIN_SUPPORT_DECLARATION_MISMATCH", placement.modelId);
     }
     const model = piece.models.find((entry) => entry.id === placement.modelId);
-    const semanticSurface = deriveOfficialSemanticSurfaceSupportV1(state,
-      modelFootprintAt(state, piece, model, placement));
+    const semanticSurface = finalPlacementPolicy ? finalSurfaceByModel.get(placement.modelId)
+      : deriveOfficialSemanticSurfaceSupportV1(state, modelFootprintAt(state, piece, model, placement));
     if (semanticSurface && !isDeepStrictEqual(
       semanticSurface.supportTerrainIds, actualSupportByModel.get(placement.modelId))) {
       fail("SELECTED_SPATIAL_SEMANTIC_BOARD_SUPPORT_DRIFT", placement.modelId);
@@ -1321,9 +1709,12 @@ function specialTerrainResult(state, piece, actionType, domain, leadingModelId,
       logicalSurfaceEndpoints: Object.fromEntries(logicalEndpoints) } : {}),
     coherencyRangeMilliInches: domain.constraints.coherencyRangeMilliInches,
     fullLeadingBaseSwept: true, allEndpointBasesChecked: true,
-    raptorStrainObserved: raptorStrain,
+    raptorStrainObserved: Boolean(raptorStrain),
     raptorStrainApplied: interactions.some((entry) => entry.raptorStrainUsed),
+    ...(hasOfficialModelGapTransitPolicyV13(state) ? { hostDerivedModelGapCertificates: modelGaps } : {}),
     sourceRefreshPerformed: false,
+    ...(finalPlacementPolicy ? { finalPlacementPolicyVersion: state.officialHighGroundFinalPlacementPolicy.version,
+      finalSurfaceSupportByModel: Object.fromEntries(finalSurfaceByModel) } : {}),
     rulesTruth: "official_selected_roster_terrain_elevation_access_adapter",
     trainingTruth: false,
   };
@@ -1358,6 +1749,8 @@ export function validateOfficialSelectedRosterRelocationGeometryV1(input = {}) {
     || !parametersAllowed(actionType, parameters)) {
     fail("SELECTED_SPATIAL_RELOCATION_INPUT_INVALID", String(input.pieceId || ""));
   }
+  if (state.officialHostDerivedGapInputs) canonicalOfficialGapInputsV1(state, parameters);
+  assertOfficialSiegeModeActionAllowedV1(state, piece, actionType);
   const profiles = modelProfiles(piece);
   const leadingModelId = String(parameters.leadingModelId || "");
   const leadingModel = activeModels(piece).find((entry) => entry.id === leadingModelId);
@@ -1381,15 +1774,17 @@ export function validateOfficialSelectedRosterRelocationGeometryV1(input = {}) {
     rotationDegrees: leadingModel.baseRotationDegrees || 0,
   };
   const path = canonicalPath(start, parameters.path, domain, actionType);
-  assertPathBoardAndModels(state, piece, leadingModel, path, domain, actionType);
+  const modelGaps = assertPathBoardAndModels(state, piece, leadingModel, path, domain, actionType);
   const placements = canonicalPlacements(
     domain,
     leadingModelId,
     parameters.placements,
     path.points.at(-1),
   );
+  const crossedForceWallTokenIds = assertForceWallTraversal(state, piece, leadingModel, path, placements);
+  const large = prepareLargeTerrainRemoval(state, piece, leadingModel, path, placements);
   const geometryResult = validateFinalGeometry(
-    state,
+    large.state,
     piece,
     domain,
     placements,
@@ -1398,7 +1793,7 @@ export function validateOfficialSelectedRosterRelocationGeometryV1(input = {}) {
     { allowEnemyEngagement: true },
   );
   const terrainPlan = specialTerrainResult(
-    state,
+    large.state,
     piece,
     actionType,
     domain,
@@ -1406,6 +1801,7 @@ export function validateOfficialSelectedRosterRelocationGeometryV1(input = {}) {
     path,
     placements,
     parameters,
+    modelGaps,
   );
   const body = {
     schemaVersion: "starcraft_tmg_selected_roster_relocation_geometry_v1",
@@ -1422,6 +1818,8 @@ export function validateOfficialSelectedRosterRelocationGeometryV1(input = {}) {
     specialTerrainPlanHash: terrainPlan.planHash,
     terrainResultHash: terrainPlan.result.resultHash,
     grassRemovedTerrainIds: terrainPlan.result.grassRemovedTerrainIds,
+    ...(state.officialForceWallTraversalPolicy ? { crossedForceWallTokenIds } : {}),
+    ...(large.removal ? { largeTerrainRemoval: large.removal } : {}),
     ...(terrainPlan.result.logicalGrassRemoval
       ? { logicalGrassRemoval: terrainPlan.result.logicalGrassRemoval } : {}),
     fullBaseBoundaryAndSweptPathChecked: true,
@@ -1451,9 +1849,14 @@ export function instantiateOfficialSelectedRosterSpatialActionV1(
   if (!current || !isDeepStrictEqual(current, domain)) {
     fail("SELECTED_SPATIAL_PARAMETER_DOMAIN_STALE");
   }
+  return instantiateSpatialGeometry(state, domain, parameters);
+}
+
+function instantiateSpatialGeometry(state, domain, parameters, preserveWaypoints = false) {
   if (!parametersAllowed(domain.actionType, parameters)) {
     fail("SELECTED_SPATIAL_PARAMETERS_INVALID");
   }
+  const gapInputs = canonicalOfficialGapInputsV1(state, parameters);
   const piece = state.pieces.find((entry) => entry.id === domain.pieceId);
   const leadingModelId = String(parameters.leadingModelId || "");
   const leadingModel = piece.models.find((entry) => (
@@ -1469,27 +1872,37 @@ export function instantiateOfficialSelectedRosterSpatialActionV1(
   let start;
   if (domain.actionType === "deploy") {
     segment = segmentById(domain, String(parameters.entrySegmentId || ""));
-    start = deployStart(domain, segment,
+    start = resolveOfficialSelectedRosterDeployStartV1(domain, segment,
       Number(parameters.entryAlongEdgeMilliInches), leadingProfile);
   } else {
     start = { ...leadingProfile.startPoint, elevation: leadingProfile.startElevation,
       supportTerrainIds: leadingProfile.supportTerrainIds,
       rotationDegrees: leadingModel.baseRotationDegrees || 0 };
   }
-  const path = canonicalPath(start, parameters.path, domain, domain.actionType);
+  const path = canonicalPath(start, parameters.path, domain, domain.actionType, preserveWaypoints);
   if (segment) verifyDeployInward(segment, path);
-  assertPathBoardAndModels(state, piece, leadingModel, path, domain, domain.actionType);
+  const localEntry = segment?.kind === 'unit_base_perimeter';
+  const modelGaps = assertPathBoardAndModels(state, piece, leadingModel, path, domain, domain.actionType, segment);
   const crossedForceFieldTokenIdsValue = crossedForceFieldTokenIds(
     state, piece, leadingModel, path);
   const endpoint = path.points.at(-1);
   const placements = canonicalPlacements(domain, leadingModelId,
     parameters.placements, endpoint);
-  const geometryResult = validateFinalGeometry(state, piece, domain,
+  const crossedForceWallTokenIds = assertForceWallTraversal(state, piece, leadingModel, path, placements);
+  if (localEntry) {
+    assertUnitEntryElevation(state,segment,placements);
+    assertOutsideEnemyDeploymentZone(state, piece, placements);
+  }
+  assertOfficialRavenReserveEntryClearanceV1(state, piece, placements, segment);
+  const large = prepareLargeTerrainRemoval(state, piece, leadingModel, path, placements);
+  const geometryResult = validateFinalGeometry(large.state, piece, domain,
     placements, leadingModelId, domain.constraints.engagedEnemyUnitIds);
-  const terrainResult = domain.actionType === "deploy"
-    ? deployTerrainResult(state, piece, { leadingModelId, canonicalPath: path })
-    : specialTerrainResult(state, piece, domain.actionType, domain, leadingModelId,
-      path, placements, parameters);
+  const tableEntry = domain.actionType === "deploy" && !localEntry;
+  const terrainResult = tableEntry
+    ? deployTerrainResult(large.state, piece, { leadingModelId, canonicalPath: path }, placements)
+    : specialTerrainResult(large.state, piece, localEntry ? 'move' : domain.actionType, domain, leadingModelId,
+      path, placements, parameters, modelGaps);
+  const terrainFacts = tableEntry ? terrainResult : terrainResult.result;
   const restriction = domain.actionType === "disengage"
     ? postDisengageRestriction(state, piece,
       actionContext(state, domain.sideKey, piece, domain.actionType).engagement)
@@ -1504,35 +1917,36 @@ export function instantiateOfficialSelectedRosterSpatialActionV1(
     placements: placements.filter((entry) => entry.modelId !== leadingModelId)
       .map((entry) => clone(entry)),
     elevationTransitions: clone(parameters.elevationTransitions || []),
-    gapMouths: clone(parameters.gapMouths || []),
-    coherencyGapMouths: clone(parameters.coherencyGapMouths || []),
+    ...gapInputs,
   };
   const planBody = {
     schemaVersion: OFFICIAL_SELECTED_ROSTER_SPATIAL_PLAN_SCHEMA,
     semanticVersion: "1.0.0", actionType: domain.actionType,
     sideKey: domain.sideKey, pieceId: piece.id, leadingModelId,
+    ...(hasOfficialModelGapTransitPolicyV13(state) ? { hostDerivedModelGapCertificates: modelGaps } : {}),
     domainId: domain.domainId, canonicalParameters,
     canonicalPath: path, finalModelPositions: placements,
     distanceTravelledInches: path.distanceMilliInches / 1000,
     speedAllowanceInches: domain.constraints.speedAllowanceInches,
     coherencyRangeMilliInches: domain.constraints.coherencyRangeMilliInches,
     coherencyPlacementResultHash: geometryResult.resultHash,
-    specialTerrainPlanHash: domain.actionType === "deploy"
-      ? null : terrainResult.planHash,
-    terrainResultHash: domain.actionType === "deploy"
-      ? terrainResult.resultHash : terrainResult.result.resultHash,
-    grassRemovedTerrainIds: domain.actionType === "deploy"
-      ? terrainResult.grassRemovedTerrainIds
-      : terrainResult.result.grassRemovedTerrainIds,
-    ...((domain.actionType === "deploy" ? terrainResult : terrainResult.result).logicalGrassRemoval
-      ? { logicalGrassRemoval: (domain.actionType === "deploy"
-        ? terrainResult : terrainResult.result).logicalGrassRemoval } : {}),
+    specialTerrainPlanHash: tableEntry ? null : terrainResult.planHash,
+    terrainResultHash: terrainFacts.resultHash,
+    grassRemovedTerrainIds: terrainFacts.grassRemovedTerrainIds,
+    ...(terrainFacts.logicalGrassRemoval ? { logicalGrassRemoval: terrainFacts.logicalGrassRemoval } : {}),
+    ...(large.removal ? { largeTerrainRemoval: large.removal } : {}),
     crossedForceFieldTokenIds: crossedForceFieldTokenIdsValue,
+    ...(state.officialForceWallTraversalPolicy ? { crossedForceWallTokenIds } : {}),
     forceFieldsRemovedBySizeThreeOrHigher:
       crossedForceFieldTokenIdsValue.length > 0,
     entrySegmentId: segment?.segmentId || null,
     entryAlongEdgeMilliInches: segment
       ? Number(parameters.entryAlongEdgeMilliInches) : null,
+    ...(segment?.kind === 'raven_neutral_table_edge' ? { entrySource: {
+      definitionId: segment.definitionId, sourcePieceId: segment.sourcePieceId, sourceRouteHash: segment.sourceRouteHash,
+      entrySegmentId: segment.segmentId, enemyExclusionRangeMilliInches: segment.enemyExclusionRangeMilliInches,
+    } } : {}),
+    ...(localEntry ? {entrySource:unitEntryReceipt(segment,domain.constraints.supply.requestedSupply)} : {}),
     engagementHashBefore: domain.constraints.engagementHash,
     postDisengageAssaultRestriction: restriction,
     fullBaseBoundaryAndSweptPathChecked: true,
@@ -1565,6 +1979,858 @@ export function instantiateOfficialSelectedRosterSpatialActionV1(
   });
 }
 
+function lungeMovementContext(state, triggerHash) {
+  verifyRuntimeState(state);
+  const route = state.officialReactionFamilySourceBundle?.routes.find(row =>
+    row.definitionId === OFFICIAL_HYDRALISK_LUNGE_DEFINITION_ID && row.requiresRangedTargetSnapshot);
+  const resolution = state.officialReactionResolutionHistory?.at(-1);
+  const effect = resolution?.effects?.find(row => row.definitionId === route?.definitionId);
+  if (!route || !effect || resolution.triggerHash !== triggerHash
+    || resolution.consumedByHost !== true || resolution.round !== Number(state.round)
+    || resolution.phase !== route.phase || state.phase !== route.phase
+    || resolution.triggerKind !== route.triggerKind || state.pendingOfficialReactionWindow
+    || resolution.resolutionHash !== hashStarcraftTmgContract(without(resolution, ['resolutionHash']))
+    || effect.effectHash !== hashStarcraftTmgContract(without(effect, ['effectHash']))
+    || effect.sourceFeatureHash !== route.sourceFeatureHash) fail('LUNGE_MOVE_RESOLUTION_REQUIRED');
+
+  const followup = effect.followup;
+  const actor = state.pieces.find(row => row.id === followup?.actorPieceId);
+  const target = state.pieces.find(row => row.id === followup?.targetPieceId);
+  if (followup?.actionType !== 'move' || followup.destinationConstraint !== route.destinationConstraint
+    || followup.movementDistanceSource !== route.movementDistanceSource || actor?.id !== effect.sourcePieceId
+    || target?.id !== effect.attackerPieceId || actor?.sideKey !== effect.sideKey
+    || target?.sideKey !== resolution.activeSideKey || actor?.sideKey === target?.sideKey
+    || !actor || !target || !activePiece(actor) || !activePiece(target) || actor.isStructure === true) {
+    fail('LUNGE_MOVE_ACTOR_OR_TARGET_INVALID');
+  }
+  assertOfficialSiegeModeActionAllowedV1(state, actor, 'move');
+  const profile = routeProfile(state, actor);
+  if (profile.coreMovementProhibitedByNullSpeed === true) fail('SELECTED_SPATIAL_NULL_SPEED_ACTION_PROHIBITED', actor.id);
+  const engagement = engagementSnapshot(state, actor);
+  if (engagement.enemyUnitIds.length) fail('SELECTED_SPATIAL_ENGAGED_ACTION_PROHIBITED', actor.id);
+  return { actor, target, resolution, effect,
+    domain: domainFor(state, actor.sideKey, actor, 'move', { profile, engagement }) };
+}
+
+function lungeRouteBound(state, actor, model, endpoint, speedMilliInches) {
+  const moving = createOfficialModelBaseFootprintV1({ piece: actor, model,
+    dataBundle: state.officialModelBaseGeometryDataBundle });
+  const start = moving.center;
+  const chord = distance(start, endpoint);
+  const witnesses = [];
+  const blockers = [];
+  const usesTunneling = isOfficialBurrowedCoreActorV1(state, actor)
+    && hasOfficialTunnelingClawsMovementV1(state, actor, 'move');
+  if (!usesTunneling && ['rectangle', 'round'].includes(moving.shape)) {
+    const transit = new Set(burrowedTransitTargets(state, actor, 'move').map(row => row.id));
+    const radius = Math.min(moving.widthMilliInches, moving.depthMilliInches) / 2;
+    const guaranteedRadius = hasOfficialModelGapTransitPolicyV13(state)
+      ? Math.min(radius, OFFICIAL_PHYSICAL_GAP_TRANSIT_POLICY_V13.smallClearanceDiameterMilliInches / 2)
+      : radius;
+    for (const piece of state.pieces.filter(row => row.id !== actor.id && activePiece(row) && !transit.has(row.id))) {
+      for (const blockerModel of activeModels(piece).filter(row => row.baseShape === 'round')) {
+        const footprint = createOfficialModelBaseFootprintV1({ piece, model: blockerModel,
+          dataBundle: state.officialModelBaseGeometryDataBundle });
+        if (footprint.shape !== 'round') continue;
+        // An inscribed disc survives any rotation of the translating base.
+        // Leave room for swept-boundary tolerance and quantized gap interpolation.
+        const forbiddenRadiusMilliInches = guaranteedRadius + footprint.radiusMilliInches - 4 * TOLERANCE;
+        if (forbiddenRadiusMilliInches <= 0) continue;
+        const blocker = { id: blockerModel.id, center: footprint.center, forbiddenRadiusMilliInches };
+        blockers.push(blocker);
+        const routes = measureOfficialSingleRoundBlockerPathsV1(start, endpoint,
+          blocker);
+        if (!routes || routes.minimumLength <= chord) continue;
+        witnesses.push({ blockerModelId: blockerModel.id, blockerFootprintHash: footprint.footprintHash,
+          forbiddenRadiusMilliInches, minimumLengthMilliInches: routes.minimumLength,
+          clockwiseLowerBoundMilliInches: routes.clockwise,
+          counterclockwiseLowerBoundMilliInches: routes.counterclockwise });
+      }
+    }
+  }
+  const alone = Math.max(chord, ...witnesses.map(row => row.minimumLengthMilliInches));
+  const clearance = blocker => pointSegmentDistance(blocker.center, start, endpoint) - blocker.forbiddenRadiusMilliInches;
+  const nearby = blockers.sort((left, right) => clearance(left) - clearance(right)
+    || left.id.localeCompare(right.id)).slice(0, MAX_LUNGE_UNION_BLOCKERS);
+  const union = nearby.length > 1 && witnesses.length
+    ? measureOfficialRoundObstacleUnionPathBoundV1(start, endpoint, nearby) : null;
+  const optimisticLength = Math.max(alone, union?.minimumLengthMilliInches ?? 0);
+  const minimumRoundedLength = Math.max(0, Math.round(optimisticLength - 0.01));
+  return { start: clone(start), end: clone(endpoint), movingFootprintHash: moving.footprintHash,
+    speedMilliInches, directDistanceMilliInches: Math.round(chord),
+    routeLengthLowerBoundMilliInches: minimumRoundedLength,
+    exceedsMoveBudget: minimumRoundedLength > speedMilliInches + TOLERANCE,
+    obstacleWitnesses: witnesses.sort((left, right) => left.blockerModelId.localeCompare(right.blockerModelId)),
+    ...(union ? { unionWitness: { ...union, blockerIds: nearby.map(blocker => blocker.id).sort(),
+      singleBlockerLowerBoundMilliInches: Math.round(alone - 0.01) } } : {}),
+    proofScope: 'fixed_endpoint_planar_relaxation', trainingTruth: false };
+}
+
+export function projectOfficialLungeMovePathLowerBoundV1(state, triggerHash, { leadingModelId, endpoint } = {}) {
+  const { actor, domain, resolution } = lungeMovementContext(state, triggerHash);
+  const model = activeModels(actor).find(row => row.id === leadingModelId);
+  if (!model) fail('SELECTED_SPATIAL_LEADING_MODEL_INVALID', leadingModelId);
+  return seal({ triggerHash, resolutionHash: resolution.resolutionHash, leadingModelId,
+    ...lungeRouteBound(state, actor, model, point(endpoint), domain.constraints.maxDistanceMilliInches) }, 'boundHash');
+}
+
+function lungeTargetBases(state, target) {
+  return activeModels(target).map(model => ({ modelId: model.id,
+    footprint: createOfficialModelBaseFootprintV1({ piece: target, model,
+      dataBundle: state.officialModelBaseGeometryDataBundle }) }));
+}
+
+function lungeDistancesToTarget(footprint, targetBases) {
+  const rows = targetBases.map(reference => ({ ...reference,
+    distance: evaluateOfficialPhysicalFootprintRelationV1({ left: footprint,
+      right: reference.footprint }).minimumSeparationMilliInches }));
+  const distanceToUnit = Math.min(...rows.map(reference => reference.distance));
+  return { distanceToUnit, nearest: rows.filter(reference => reference.distance === distanceToUnit) };
+}
+
+function lungeSearchEnvelope(footprint, halfX, halfY, clearanceRadius) {
+  const padding = 2 * TOLERANCE;
+  const corners = (left, bottom, right, top) => [
+    { xMilliInches: left, yMilliInches: bottom }, { xMilliInches: right, yMilliInches: bottom },
+    { xMilliInches: right, yMilliInches: top }, { xMilliInches: left, yMilliInches: top },
+  ];
+  if (footprint.shape !== 'round') {
+    const bounds = physicalBounds(footprint);
+    return bounds ? corners(Math.floor(bounds.minX - halfX - padding), Math.floor(bounds.minY - halfY - padding),
+      Math.ceil(bounds.maxX + halfX + padding), Math.ceil(bounds.maxY + halfY + padding)) : null;
+  }
+  const [x, y] = [footprint.center.xMilliInches, footprint.center.yMilliInches];
+  // Minkowski sum of the moving base's fixed-heading rectangular envelope
+  // and a circumscribed round blocker polygon. Snap the hull vertices outward.
+  const count = 16;
+  const radius = (footprint.radiusMilliInches + (clearanceRadius ?? 0) + padding) / Math.cos(Math.PI / count);
+  return convexHullOfficialPathPointsV1(Array.from({ length: count }, (_, index) => {
+    const theta = (index + 0.5) * 2 * Math.PI / count;
+    const offsetX = radius * Math.cos(theta), offsetY = radius * Math.sin(theta);
+    const vertexX = x + Math.sign(offsetX) * Math.ceil(Math.abs(offsetX));
+    const vertexY = y + Math.sign(offsetY) * Math.ceil(Math.abs(offsetY));
+    if (clearanceRadius !== undefined) return [{ xMilliInches: vertexX, yMilliInches: vertexY }];
+    return corners(Math.floor(vertexX - halfX), Math.floor(vertexY - halfY),
+      Math.ceil(vertexX + halfX), Math.ceil(vertexY + halfY));
+  }).flat());
+}
+
+function lungeGroundSearchObstacles(state, actor, start, halfX, halfY, speed) {
+  const relevant = { minX: start.xMilliInches - speed - halfX, maxX: start.xMilliInches + speed + halfX,
+    minY: start.yMilliInches - speed - halfY, maxY: start.yMilliInches + speed + halfY };
+  const transit = new Set(burrowedTransitTargets(state, actor, 'move').map(row => row.id));
+  const movingThroughModels = isOfficialBurrowedCoreActorV1(state, actor)
+    && hasOfficialTunnelingClawsMovementV1(state, actor, 'move');
+  const models = movingThroughModels ? [] : state.pieces
+    .filter(piece => activePiece(piece) && piece.id !== actor.id && !transit.has(piece.id))
+    .flatMap(piece => activeModels(piece).map(model => createOfficialModelBaseFootprintV1({ piece, model,
+      dataBundle: state.officialModelBaseGeometryDataBundle })));
+  const raptorStrain = projectOfficialRaptorStrainTerrainPermissionV13(state, actor);
+  const terrain = state.board.terrain.filter(entry => entry.isRemoved !== true && entry.isDestroyed !== true
+    && isOfficialGroundTerrainTraversalBlockedV13(actor, entry, raptorStrain)
+    && boundsMayTouch(relevant, terrainRectangle(entry))).flatMap(terrainPhysicalFootprints);
+  return [...models, ...terrain].filter(footprint => boundsMayTouch(relevant, physicalBounds(footprint)));
+}
+
+function groundLungeRoundBlockers(state, actor, start, end, speed, clearance) {
+  return lungeGroundSearchObstacles(state, actor, start, clearance, clearance, speed)
+    .filter(footprint => footprint.kind === 'model_base' && footprint.shape === 'round')
+    .map(footprint => ({ id: footprint.objectId, center: footprint.center,
+      forbiddenRadiusMilliInches: clearance + footprint.radiusMilliInches - OFFICIAL_PHYSICAL_GEOMETRY_TOLERANCE_MILLI_INCHES_V1 }))
+    .filter(blocker => blocker.forbiddenRadiusMilliInches > 0)
+    .sort((left, right) =>
+      pointSegmentDistance(left.center, start, end) - left.forbiddenRadiusMilliInches
+      - pointSegmentDistance(right.center, start, end) + right.forbiddenRadiusMilliInches
+      || left.id.localeCompare(right.id)).slice(0, MAX_LUNGE_UNION_BLOCKERS);
+}
+
+function groundLungeRoundClearance(state, actor, path, speed) {
+  if (!usesOfficialGroundSizeClearanceV13(state, path)
+    || projectOfficialRaptorStrainTerrainPermissionV13(state, actor)?.mayChangeElevationWithoutAccessPoints) return null;
+  const start = path.points[0], end = path.points.at(-1);
+  const reachableElevationPort = (state.board.specialTerrainAgreement.terrainEntries || []).some(entry =>
+    (entry.accessPoints || []).some(port => (port.connects || []).includes('ground')
+      && pointRectangleDistance(start, terrainRectangle({ id: port.accessPointId, footprint: port.footprint }))
+        <= speed + TOLERANCE + 0.5));
+  // An alternative that could reach a port may use a different sweep rule.
+  if (reachableElevationPort) return null;
+  const clearance = getOfficialGroundSizeClearanceDiameterV13(actor) / 2;
+  const blockers = groundLungeRoundBlockers(state, actor, start, end, speed, clearance);
+  return { groundClearanceRadiusMilliInches: clearance, blockers };
+}
+
+function groundLungeRoundLowerBound(state, actor, path, speed) {
+  const clearance = groundLungeRoundClearance(state, actor, path, speed);
+  if (!clearance) return null;
+  const start = path.points[0], end = path.points.at(-1);
+  const { blockers } = clearance;
+  const relaxation = measureOfficialRoundObstacleUnionPathBoundV1(start, end, blockers);
+  if (!relaxation || !relaxation.shortestPathGraph?.length) return null;
+  return { ...clearance,
+    routeLengthLowerBoundMilliInches: Math.round(relaxation.minimumLengthMilliInches - 0.0001),
+    selectedDiscPathGraph: relaxation.shortestPathGraph };
+}
+
+function lungeGridAnchor(origin, direction, tangent) {
+  const tangentLength = Math.hypot(tangent.x, tangent.y);
+  if (tangentLength <= TOLERANCE) return null;
+  let best = null;
+  for (let x = -3; x <= 3; x += 1) {
+    for (let y = -3; y <= 3; y += 1) {
+      const length = Math.hypot(x, y);
+      if (length <= TOLERANCE || x * direction.x + y * direction.y <= 0
+        || Math.abs(x * direction.y - y * direction.x) > TOLERANCE) continue;
+      const excess = length - (x * tangent.x + y * tangent.y) / tangentLength;
+      if (!best || excess < best.excess) {
+        best = { excess, anchor: { xMilliInches: origin.xMilliInches + x, yMilliInches: origin.yMilliInches + y } };
+      }
+    }
+  }
+  return best?.anchor ?? null;
+}
+
+function lungeRoundedDetourCandidates(start, end, direction, lower) {
+  const { selectedDiscPathGraph, blockers } = lower;
+  const departures = selectedDiscPathGraph.filter(edge => edge.fromIndex === 0).slice(0, 2);
+  const arrivals = selectedDiscPathGraph.filter(edge => edge.toIndex === 1).slice(0, 2);
+  const paths = [];
+  for (const first of departures) {
+    const departure = lungeGridAnchor(start, direction, {
+      x: first.end.xMilliInches - first.start.xMilliInches, y: first.end.yMilliInches - first.start.yMilliInches,
+    });
+    if (!departure) continue;
+    for (const last of arrivals) {
+      const arrival = lungeGridAnchor(end, { x: -direction.x, y: -direction.y }, {
+        x: last.start.xMilliInches - last.end.xMilliInches, y: last.start.yMilliInches - last.end.yMilliInches,
+      });
+      if (!arrival) continue;
+      const geodesic = measureOfficialRoundObstacleUnionPathBoundV1(departure, arrival, blockers);
+      if (!geodesic) continue;
+      // Leave room for the original start and the forced departure/return segments.
+      const minimum = distance(start, departure) + geodesic.minimumLengthMilliInches + distance(arrival, end);
+      if (Math.round(minimum - 0.0001) > lower.routeLengthLowerBoundMilliInches) continue;
+      const rounded = realizeOfficialRoundObstacleGeodesicsV1(geodesic, blockers, {
+        maxPaths: 2, maxBendRadians: 0.043, radialPadding: 0.5, refineOnGrid: true,
+        maxWaypoints: MAX_CANONICAL_PATH_POINTS - 3,
+      });
+      for (const trail of rounded) paths.push([departure, ...trail, end]);
+    }
+  }
+  return paths;
+}
+
+export function searchOfficialLungeMoveGeometryV1(state, triggerHash, request) {
+  const { actor, target, domain } = lungeMovementContext(state, triggerHash);
+  const model = activeModels(actor).find(row => row.id === request.leadingModelId);
+  if (!model) fail('SELECTED_SPATIAL_LEADING_MODEL_INVALID', request.leadingModelId);
+  const moving = createOfficialModelBaseFootprintV1({ piece: actor, model,
+    dataBundle: state.officialModelBaseGeometryDataBundle });
+  const start = moving.center, end = point(request.endpoint);
+  const speed = domain.constraints.maxDistanceMilliInches;
+  const bounds = lungeRouteBound(state, actor, model, end, speed);
+  const candidates = [];
+  const rejected = new Set();
+  const tried = new Set();
+  const reply = status => ({ status, bounds, candidates: candidates.sort((left, right) =>
+    left.spatialPlan.canonicalPath.distanceMilliInches - right.spatialPlan.canonicalPath.distanceMilliInches
+      || left.geometryHash.localeCompare(right.geometryHash)), rejected: [...rejected].sort(),
+  triedPaths: tried.size, completeSearch: false, trainingTruth: false });
+  if (bounds.exceedsMoveBudget) return reply('fixed_endpoint_exceeds_speed');
+  if (elevation(model.elevation) !== 'ground' || elevation(request.endpoint.elevation) !== 'ground') {
+    return reply('ground_route_search_unavailable');
+  }
+  const rotationDegrees = model.baseRotationDegrees ?? 0;
+  const waypoint = value => ({ ...value, elevation: 'ground', rotationDegrees });
+  function check(path, reference) {
+    const key = hashStarcraftTmgContract(path);
+    if (tried.has(key)) return;
+    tried.add(key);
+    let geometry;
+    try {
+      geometry = inspectOfficialLungeMoveGeometryV1(state, triggerHash, { leadingModelId: model.id,
+        path: path.map(waypoint), placements: request.placements });
+    } catch (error) {
+      if (typeof error?.message !== 'string'
+        || !/^(SELECTED_SPATIAL_|MODEL_BASE_GEOMETRY_|SPECIAL_TERRAIN_|FORCE_WALL_|LUNGE_MOVE_)/u.test(error.message)) throw error;
+      rejected.add(error.message.split(':')[0]);
+      return;
+    }
+    if (reference ? geometry.bypassReferenceModelIds.includes(reference.modelId) : geometry.referencesOnRay.length) {
+      candidates.push(geometry);
+    }
+  }
+  check([end], null);
+  if (candidates.length) return reply('candidate_geometry_found');
+
+  const clearanceRadius = usesOfficialGroundSizeClearanceV13(state, { points: [waypoint(start), waypoint(end)] })
+    ? getOfficialGroundSizeClearanceDiameterV13(actor) / 2 : undefined;
+  const half = clearanceRadius === undefined ? modelHalfExtents(model, rotationDegrees) : { x: clearanceRadius, y: clearanceRadius };
+  const roundBlockers = clearanceRadius === undefined ? []
+    : groundLungeRoundBlockers(state, actor, start, end, speed, clearanceRadius);
+  const roundLower = roundBlockers.length
+    ? groundLungeRoundLowerBound(state, actor, { points: [waypoint(start), waypoint(end)] }, speed) : null;
+  const footprints = lungeGroundSearchObstacles(state, actor, start, half.x, half.y, speed)
+    .sort((left, right) => pointSegmentDistance(left.center, start, end) - pointSegmentDistance(right.center, start, end)
+      || left.objectId.localeCompare(right.objectId)).slice(0, MAX_LUNGE_SEARCH_OBSTACLES);
+  const pathSearch = createOfficialConvexObstaclePathSearchV1(footprints.map(footprint =>
+    lungeSearchEnvelope(footprint, half.x, half.y, clearanceRadius)).filter(Boolean));
+  const { nearest } = lungeDistancesToTarget(moving, lungeTargetBases(state, target));
+  for (const reference of nearest) {
+    const center = reference.footprint.center;
+    const length = distance(start, center);
+    if (length <= TOLERANCE) continue;
+    const dx = (center.xMilliInches - start.xMilliInches) / length;
+    const dy = (center.yMilliInches - start.yMilliInches) / length;
+    if (roundLower && pointSegmentDistance(end, start, center) <= TOLERANCE) {
+      for (const path of lungeRoundedDetourCandidates(start, end, { x: dx, y: dy }, roundLower)) check(path, reference);
+    }
+    const offset = (origin, travel) => ({ xMilliInches: Math.round(origin.xMilliInches + dx * travel),
+      yMilliInches: Math.round(origin.yMilliInches + dy * travel) });
+    if (roundBlockers.length) {
+      for (const travel of [2, 8]) {
+        const departure = offset(start, travel), arrival = offset(end, -travel);
+        const relaxed = measureOfficialRoundObstacleUnionPathBoundV1(departure, arrival, roundBlockers);
+        for (const radialPadding of [0, 0.35, 0.75]) {
+          for (const vertices of realizeOfficialRoundObstacleGeodesicsV1(relaxed, roundBlockers, { radialPadding })) {
+            check([departure, ...vertices, end], reference);
+          }
+        }
+      }
+    }
+    for (const departure of LUNGE_RAY_SAMPLES_MILLI_INCHES.map(value => offset(start, value))) {
+      if (!pathSearch.edgeClear(start, departure)) continue;
+      for (const arrival of LUNGE_RAY_SAMPLES_MILLI_INCHES.map(value => offset(end, -value))) {
+        if (!pathSearch.edgeClear(arrival, end)) continue;
+        const around = pathSearch.shortestPath(departure, arrival);
+        if (!around) continue;
+        check([...around, end], reference);
+      }
+    }
+  }
+  return reply(candidates.length ? 'candidate_geometry_found' : 'no_candidate_in_search');
+}
+
+// The reaction owner still requires direction, leader, and formation proof
+// before it may commit. This sub-step compares lower bounds to a Native path.
+export function inspectOfficialLungeMoveGeometryV1(state, triggerHash, parameters) {
+  return inspectLungeMoveGeometry(state, triggerHash, parameters, lungeMovementContext(state, triggerHash));
+}
+
+function inspectLungeMoveGeometry(state, triggerHash, parameters, { actor, target, domain, resolution, effect }) {
+  const { canonicalParameters, action: { spatialPlan } } = instantiateSpatialGeometry(state, domain, parameters, true);
+  const targetBases = lungeTargetBases(state, target);
+  const modelDistances = activeModels(actor).map(model => {
+    const start = createOfficialModelBaseFootprintV1({ piece: actor, model,
+      dataBundle: state.officialModelBaseGeometryDataBundle });
+    const end = modelFootprintAt(state, actor, model, spatialPlan.finalModelPositions.find(row => row.modelId === model.id));
+    const { nearest, distanceToUnit: from } = lungeDistancesToTarget(start, targetBases);
+    return { modelId: model.id, from, to: lungeDistancesToTarget(end, targetBases).distanceToUnit,
+      closestReferenceModels: nearest.map(reference => ({
+        modelId: reference.modelId, center: reference.footprint.center,
+        straightLineLowerBoundMilliInches: distance(start.center, reference.footprint.center),
+      })) };
+  });
+  const leader = modelDistances.find(row => row.modelId === spatialPlan.leadingModelId);
+  if (leader.to > leader.from) fail('LUNGE_MOVE_ENDS_FURTHER_FROM_ATTACKER', leader.modelId);
+
+  const [start, ...steps] = spatialPlan.canonicalPath.points;
+  function movesInOriginalDirection(center, from, to) {
+    const dx = center.xMilliInches - start.xMilliInches;
+    const dy = center.yMilliInches - start.yMilliInches;
+    const sx = to.xMilliInches - from.xMilliInches;
+    const sy = to.yMilliInches - from.yMilliInches;
+    return dx * sx + dy * sy > 0 && Math.abs(dx * sy - dy * sx) <= Math.hypot(dx, dy) * TOLERANCE;
+  }
+  function followsRay(center, path) {
+    const dx = center.xMilliInches - start.xMilliInches;
+    const dy = center.yMilliInches - start.yMilliInches;
+    const length = Math.hypot(dx, dy);
+    let previousProjection = 0;
+    for (const step of path) {
+      const ex = step.xMilliInches - start.xMilliInches;
+      const ey = step.yMilliInches - start.yMilliInches;
+      const dot = dx * ex + dy * ey;
+      if (dot <= previousProjection || dot > length * (length + TOLERANCE)
+        || Math.abs(dx * ey - dy * ex) > length * TOLERANCE) return false;
+      previousProjection = dot;
+    }
+    return true;
+  }
+  const referencesOnRay = leader.closestReferenceModels.filter(reference =>
+    followsRay(reference.center, steps)).map(reference => reference.modelId);
+  const endpoint = steps.at(-1);
+  const bypassReferenceModelIds = steps.length >= 3 ? leader.closestReferenceModels.filter(({ modelId, center }) =>
+    !referencesOnRay.includes(modelId) && movesInOriginalDirection(center, start, steps[0])
+      && movesInOriginalDirection(center, steps.at(-2), endpoint)).map(reference => reference.modelId) : [];
+  const directDistance = Math.round(distance(start, endpoint));
+  const leadingModel = activeModels(actor).find(model => model.id === spatialPlan.leadingModelId);
+  const pathBounds = lungeRouteBound(state, actor, leadingModel, point(endpoint), domain.constraints.maxDistanceMilliInches);
+  if (steps.length > 1 && spatialPlan.canonicalPath.distanceMilliInches > directDistance + TOLERANCE
+    && !canonicalParameters.elevationTransitions.length
+    && leader.closestReferenceModels.some(reference => followsRay(reference.center, [endpoint]))) {
+    let direct;
+    try {
+      direct = instantiateSpatialGeometry(state, domain, { ...canonicalParameters, path: [endpoint] }, true);
+    } catch (error) {
+      if (typeof error?.message !== 'string'
+        || !/^(SELECTED_SPATIAL_|MODEL_BASE_GEOMETRY_|SPECIAL_TERRAIN_|FORCE_WALL_)/u.test(error.message)) throw error;
+    }
+    if (direct) fail('LUNGE_MOVE_ROUTE_LONGER_THAN_LEGAL_DIRECT_PATH', leader.modelId);
+  }
+  return seal({ schemaVersion: 'starcraft_tmg_official_lunge_move_geometry_v1', triggerHash,
+    resolutionHash: resolution.resolutionHash, effectHash: effect.effectHash, phase: state.phase,
+    actorPieceId: actor.id, targetPieceId: target.id, canonicalParameters, spatialPlan,
+    modelDistances, referencesOnRay, bypassReferenceModelIds, directDistanceLowerBoundMilliInches: directDistance,
+    pathBounds: { ...pathBounds, acceptedLengthMilliInches: spatialPlan.canonicalPath.distanceMilliInches,
+      shortestForFixedEndpointsProven: pathBounds.routeLengthLowerBoundMilliInches === spatialPlan.canonicalPath.distanceMilliInches },
+    trainingTruth: false }, 'geometryHash');
+}
+
+export function projectOfficialLungeGroundDetourProofV1(state, triggerHash, parameters) {
+  const geometry = inspectOfficialLungeMoveGeometryV1(state, triggerHash, parameters);
+  const actor = state.pieces.find(piece => piece.id === geometry.actorPieceId);
+  const { canonicalPath } = geometry.spatialPlan;
+  const lower = groundLungeRoundLowerBound(state, actor, canonicalPath, geometry.pathBounds.speedMilliInches);
+  const leader = geometry.modelDistances.find(model => model.modelId === geometry.spatialPlan.leadingModelId);
+  const start = canonicalPath.points[0], end = canonicalPath.points.at(-1);
+  const returnsToRay = leader.closestReferenceModels.some(reference =>
+    geometry.bypassReferenceModelIds.includes(reference.modelId)
+    && pointSegmentDistance(end, start, reference.center) <= TOLERANCE);
+  const certifiedShortest = Boolean(lower && returnsToRay
+    && lower.routeLengthLowerBoundMilliInches === canonicalPath.distanceMilliInches);
+  return seal({ schemaVersion: 'starcraft_tmg_official_lunge_ground_detour_proof_v1',
+    triggerHash, geometryHash: geometry.geometryHash,
+    parameters: geometry.canonicalParameters, acceptedLengthMilliInches: canonicalPath.distanceMilliInches,
+    originalRayRejoined: returnsToRay, lower, certifiedShortest, trainingTruth: false }, 'proofHash');
+}
+
+function lungeReferenceDirection(start, referenceCenter) {
+  const length = distance(start, referenceCenter);
+  if (length <= TOLERANCE) return null;
+  return { x: (referenceCenter.xMilliInches - start.xMilliInches) / length,
+    y: (referenceCenter.yMilliInches - start.yMilliInches) / length };
+}
+
+function strongestLungeForwardBound(start, direction, progress, blockers, certifiedJointObstacles = false) {
+  const bounds = blockers.map(blocker => measureOfficialRoundObstacleForwardPathBoundV1(start, direction, progress, blocker))
+    .filter(Boolean);
+  // Ignoring the other obstacles in each calculation only relaxes the route.
+  const single = bounds.sort((left, right) => right.minimumLengthMilliInches - left.minimumLengthMilliInches
+    || left.blockerId.localeCompare(right.blockerId))[0] ?? null;
+  if (!certifiedJointObstacles) return single;
+  const joint = measureOfficialRoundObstacleUnionForwardPathBoundV1(start, direction, progress, blockers);
+  return joint && (!single || joint.minimumLengthMilliInches > single.minimumLengthMilliInches + 0.0001)
+    ? joint : single;
+}
+
+function lungeGroundForwardProof(state, geometry, certifiedJointObstacles = false) {
+  const { canonicalPath, leadingModelId } = geometry.spatialPlan;
+  const start = canonicalPath.points[0], end = canonicalPath.points.at(-1);
+  const leader = geometry.modelDistances.find(model => model.modelId === leadingModelId);
+  const actor = state.pieces.find(piece => piece.id === geometry.actorPieceId);
+  const clearance = groundLungeRoundClearance(state, actor, canonicalPath, geometry.pathBounds.speedMilliInches);
+  const references = [];
+  if (clearance) {
+    for (const reference of leader.closestReferenceModels) {
+      if (!geometry.bypassReferenceModelIds.includes(reference.modelId)) continue;
+      const direction = lungeReferenceDirection(start, reference.center);
+      if (!direction) continue;
+      const progress = (end.xMilliInches - start.xMilliInches) * direction.x
+        + (end.yMilliInches - start.yMilliInches) * direction.y;
+      const lower = strongestLungeForwardBound(start, direction, progress, clearance.blockers, certifiedJointObstacles);
+      if (!lower) continue;
+      const bound = Math.round(lower.minimumLengthMilliInches - 0.0001);
+      references.push({ modelId: reference.modelId, lowerBoundMilliInches: bound, continuousBound: lower,
+        certifiedShortest: bound === canonicalPath.distanceMilliInches });
+    }
+  }
+  return seal({ schemaVersion: 'starcraft_tmg_official_lunge_ground_forward_proof_v1',
+    geometryHash: geometry.geometryHash, acceptedLengthMilliInches: canonicalPath.distanceMilliInches,
+    references, certifiedShortest: references.some(row => row.certifiedShortest), trainingTruth: false }, 'proofHash');
+}
+
+export function projectOfficialLungeGroundForwardProofV1(state, triggerHash, parameters, { certifiedJointObstacles = false } = {}) {
+  return lungeGroundForwardProof(state, inspectOfficialLungeMoveGeometryV1(state, triggerHash, parameters), certifiedJointObstacles);
+}
+
+export function searchOfficialLungeGroundForwardPathsV1(state, triggerHash, request, { certifiedJointObstacles = false } = {}) {
+  const { actor, target, domain } = lungeMovementContext(state, triggerHash);
+  const model = activeModels(actor).find(row => row.id === request.leadingModelId);
+  if (!model) fail('SELECTED_SPATIAL_LEADING_MODEL_INVALID', request.leadingModelId);
+  const progress = request.forwardProgressMilliInches;
+  if (!Number.isSafeInteger(progress) || progress <= 0 || progress > domain.constraints.maxDistanceMilliInches + TOLERANCE) {
+    fail('LUNGE_MOVE_FORWARD_PROGRESS_INVALID');
+  }
+  const choices = [];
+  const rejected = new Set();
+  const reply = () => ({ status: choices.length ? 'candidate_geometry_found' : 'no_candidate_in_search',
+    completeSearch: false, choices, rejected: [...rejected].sort(), trainingTruth: false });
+  if (elevation(model.elevation) !== 'ground') return reply();
+  const moving = createOfficialModelBaseFootprintV1({ piece: actor, model,
+    dataBundle: state.officialModelBaseGeometryDataBundle });
+  const start = moving.center;
+  const waypoint = value => ({ ...value, elevation: 'ground', rotationDegrees: model.baseRotationDegrees ?? 0 });
+  const tested = new Set();
+  for (const reference of lungeDistancesToTarget(moving, lungeTargetBases(state, target)).nearest) {
+    const direction = lungeReferenceDirection(start, reference.footprint.center);
+    if (!direction) continue;
+    const offset = (origin, amount) => ({ xMilliInches: Math.round(origin.xMilliInches + direction.x * amount),
+      yMilliInches: Math.round(origin.yMilliInches + direction.y * amount) });
+    const clearance = groundLungeRoundClearance(state, actor,
+      { points: [waypoint(start), waypoint(offset(start, progress))] }, domain.constraints.maxDistanceMilliInches);
+    if (!clearance) continue;
+    const lower = strongestLungeForwardBound(start, direction, progress, clearance.blockers, certifiedJointObstacles);
+    if (!lower) continue;
+    for (const branch of lower.branches) {
+      const departure = lungeGridAnchor(start, direction, { x: branch.initialTangent.xMilliInches - start.xMilliInches,
+        y: branch.initialTangent.yMilliInches - start.yMilliInches });
+      const end = offset(branch.endpoint, 0);
+      const arrival = offset(end, -2);
+      if (!departure || distance(end, arrival) <= TOLERANCE) continue;
+      const graph = measureOfficialRoundObstacleUnionPathBoundV1(departure, arrival, clearance.blockers);
+      for (const trail of realizeOfficialRoundObstacleGeodesicsV1(graph, clearance.blockers, {
+        maxPaths: 2, maxBendRadians: 0.043, radialPadding: 0.5, refineOnGrid: true,
+        maxWaypoints: MAX_CANONICAL_PATH_POINTS - 3,
+      })) {
+        const path = [departure, ...trail, end].map(waypoint);
+        const key = hashStarcraftTmgContract(path);
+        if (tested.has(key)) continue;
+        tested.add(key);
+        try {
+          const geometry = inspectOfficialLungeMoveGeometryV1(state, triggerHash,
+            { leadingModelId: model.id, path, placements: request.placements });
+          if (!geometry.bypassReferenceModelIds.includes(reference.modelId)) continue;
+          choices.push({ geometry, proof: lungeGroundForwardProof(state, geometry, certifiedJointObstacles) });
+        } catch (error) {
+          if (typeof error?.message !== 'string'
+            || !/^(SELECTED_SPATIAL_|MODEL_BASE_GEOMETRY_|SPECIAL_TERRAIN_|FORCE_WALL_|LUNGE_MOVE_)/u.test(error.message)) throw error;
+          rejected.add(error.message.split(':')[0]);
+        }
+      }
+    }
+  }
+  choices.sort((left, right) => left.proof.acceptedLengthMilliInches - right.proof.acceptedLengthMilliInches
+    || left.proof.proofHash.localeCompare(right.proof.proofHash));
+  return reply();
+}
+
+// The full Move accepts the placements first. For round and rectangular models
+// the lead footprint expanded by the coherency radius is convex, so the whole
+// follower footprint is inside it. This gives a lower bound without sampling
+// placements or excluding rotations the actual Rules allow.
+export function projectOfficialLungeClosestFormationProofV1(state, triggerHash, parameters) {
+  return lungeClosestFormationProof(state, inspectOfficialLungeMoveGeometryV1(state, triggerHash, parameters));
+}
+
+function lungeFollowerTargetSeparation(models, leadingDistance, coherencyRange) {
+  const separation = OFFICIAL_ENGAGEMENT_RANGE_V2_MILLI_INCHES + 1;
+  const addsCoherencyBound = models.every(model => ['round', 'rectangle'].includes(model.baseShape));
+  const coherencyBound = addsCoherencyBound
+    ? leadingDistance - coherencyRange - OFFICIAL_PHYSICAL_GEOMETRY_TOLERANCE_MILLI_INCHES_V1 : 0;
+  return { separation, coherencyBound, lowerBound: Math.max(separation, coherencyBound) };
+}
+
+function lungeClosestFormationProof(state, geometry) {
+  const { spatialPlan, modelDistances, triggerHash } = geometry;
+  const actor = state.pieces.find(piece => piece.id === geometry.actorPieceId);
+  const target = state.pieces.find(piece => piece.id === geometry.targetPieceId);
+  const ground = piece => (piece.combatTags || []).some(tag => String(tag).toLowerCase() === 'ground');
+  if (!ground(actor) || !ground(target)) fail('LUNGE_FORMATION_GROUND_SCOPE_REQUIRED');
+  const leader = modelDistances.find(model => model.modelId === spatialPlan.leadingModelId);
+  // Standard Move stops outside the inclusive engagement range. Use the same
+  // rounded edge-distance boundary as the engagement graph, before certifying
+  // a formation that the older placement tolerance alone would accept.
+  const separation = OFFICIAL_ENGAGEMENT_RANGE_V2_MILLI_INCHES + 1;
+  const enemies = state.pieces.filter(piece => piece.sideKey !== actor.sideKey && ground(piece) && activePiece(piece));
+  const enemyBases = enemies.flatMap(enemy => lungeTargetBases(state, enemy));
+  const finalPositions = new Map(spatialPlan.finalModelPositions.map(position => [position.modelId, position]));
+  const models = activeModels(actor);
+  for (const model of models) {
+    const footprint = modelFootprintAt(state, actor, model, finalPositions.get(model.id));
+    if (lungeDistancesToTarget(footprint, enemyBases).distanceToUnit < separation) {
+      fail('LUNGE_FORMATION_ENDS_WITHIN_ENGAGEMENT_RANGE', model.id);
+    }
+  }
+  const range = spatialPlan.coherencyRangeMilliInches;
+  // For these shapes, Native's wholly-within predicate proves containment.
+  // With any other shape only the independent non-engagement floor is used.
+  const { coherencyBound, lowerBound } = lungeFollowerTargetSeparation(models, leader.to, range);
+  const followers = modelDistances.filter(model => model.modelId !== leader.modelId)
+    .map(model => ({ modelId: model.modelId, distanceToTargetMilliInches: model.to,
+      optimalityGapMilliInches: model.to - lowerBound }));
+  const allReachBound = followers.every(model => model.optimalityGapMilliInches === 0);
+  return seal({ schemaVersion: 'starcraft_tmg_official_lunge_closest_formation_proof_v1',
+    triggerHash, geometryHash: geometry.geometryHash, leadingModelId: leader.modelId,
+    leadingDistanceToTargetMilliInches: leader.to, targetPieceId: geometry.targetPieceId,
+    coherencyRangeMilliInches: range, nonEngagedLowerBoundMilliInches: separation,
+    coherencyLowerBoundMilliInches: Math.max(coherencyBound, 0),
+    followerDistanceLowerBoundMilliInches: lowerBound, followers,
+    closestFormationProvenForThisLeaderEndpoint: allReachBound, trainingTruth: false }, 'proofHash');
+}
+
+// Even after rotating, the rectangle stays inside its circumcircle. To reach
+// any round target, both integer center coordinates must enter its expanded
+// bounding box. This also bounds paths with detours or multiple waypoints.
+function lungeAxisTravelBound(footprint, outerRadius, targetBases, separation) {
+  if (footprint.shape !== 'rectangle' || !targetBases?.length) return 0;
+  let shortest = Infinity;
+  for (const { footprint: target } of targetBases) {
+    if (target.shape !== 'round') return 0;
+    // The kernel rounds edge separation to an integer and rotated vertices
+    // to six decimal places. Enlarge the box before rounding to the grid.
+    const extent = Math.floor(outerRadius + target.radiusMilliInches + separation + 0.5 + 0.000002);
+    const dx = Math.abs(footprint.center.xMilliInches - target.center.xMilliInches);
+    const dy = Math.abs(footprint.center.yMilliInches - target.center.yMilliInches);
+    shortest = Math.min(shortest, Math.max(0, dx - extent, dy - extent));
+  }
+  return shortest;
+}
+
+function lungeAlternativeLeaderBounds(state, geometry, targetSeparation, certifiedAxisLeaderBound) {
+  const { spatialPlan, modelDistances } = geometry;
+  const { leadingModelId } = spatialPlan;
+  const actor = state.pieces.find(piece => piece.id === geometry.actorPieceId);
+  const models = new Map(activeModels(actor).map(model => [model.id, model]));
+  const targetBases = certifiedAxisLeaderBound
+    ? lungeTargetBases(state, state.pieces.find(piece => piece.id === geometry.targetPieceId)) : null;
+  return modelDistances.filter(model => model.modelId !== leadingModelId).map(row => {
+    const footprint = createOfficialModelBaseFootprintV1({ piece: actor, model: models.get(row.modelId),
+      dataBundle: state.officialModelBaseGeometryDataBundle });
+    const { shape, radiusMilliInches: radius, widthMilliInches: width, depthMilliInches: depth } = footprint;
+    if (shape !== 'round' && shape !== 'rectangle') {
+      return { modelId: row.modelId, optimisticDistanceMilliInches: 0 };
+    }
+    const inner = shape === 'round' ? radius : Math.min(width, depth) / 2;
+    const outer = shape === 'round' ? radius : Math.hypot(width, depth) / 2;
+    // Two edge measurements can each round by half a milli-inch. Round the
+    // lower bound down and leave one full unit for that combined tolerance.
+    const optimisticDistanceMilliInches = Math.max(
+      Math.floor(row.from - (outer - inner) - targetSeparation - 1),
+      lungeAxisTravelBound(footprint, outer, targetBases, targetSeparation),
+    );
+    return { modelId: row.modelId, optimisticDistanceMilliInches };
+  });
+}
+
+// Reaching the nearest legal separation gives a route witness. Compare it
+// with a lower bound for every other possible leader, allowing even the most
+// favorable rotation and ignoring route obstacles in the alternatives' favor.
+function proveLungeLeaderAndFormation(state, geometry, detourProof, leaderWitness, certifiedAxisLeaderBound) {
+  const formation = lungeClosestFormationProof(state, geometry);
+  const { spatialPlan } = geometry;
+  const targetSeparation = formation.nonEngagedLowerBoundMilliInches;
+  const alternatives = lungeAlternativeLeaderBounds(state, geometry, targetSeparation, certifiedAxisLeaderBound);
+  const routeLength = spatialPlan.canonicalPath.distanceMilliInches;
+  const reachedTargetBoundary = formation.leadingDistanceToTargetMilliInches === targetSeparation;
+  const exactDirectRoute = geometry.referencesOnRay.length > 0 && geometry.pathBounds.shortestForFixedEndpointsProven;
+  const exactDetour = detourProof?.certifiedShortest === true;
+  const comparisonLength = leaderWitness?.lengthMilliInches ?? routeLength;
+  const shortestLeaderProven = ((reachedTargetBoundary && (exactDirectRoute || exactDetour)) || Boolean(leaderWitness))
+    && alternatives.every(row => row.optimisticDistanceMilliInches >= comparisonLength);
+  return seal({ schemaVersion: 'starcraft_tmg_official_lunge_leader_and_formation_proof_v1',
+    geometryHash: geometry.geometryHash, formation, alternatives, routeLengthMilliInches: routeLength,
+    ...(exactDetour ? { groundForwardProofHash: detourProof.proofHash } : {}),
+    ...(leaderWitness ? { leaderWitness } : {}),
+    reachedTargetBoundary, exactDirectRoute, shortestLeaderProven, trainingTruth: false }, 'proofHash');
+}
+
+function certifyLungeLeaderWitness(state, triggerHash, geometry, parameters, certifiedJointObstacles, certifiedAxisLeaderBound) {
+  const leaderId = geometry.spatialPlan.leadingModelId;
+  const leader = geometry.modelDistances.find(model => model.modelId === leaderId);
+  const targetSeparation = OFFICIAL_ENGAGEMENT_RANGE_V2_MILLI_INCHES + 1;
+  if (!object(parameters) || parameters.leadingModelId !== leaderId || leader.to <= targetSeparation) {
+    fail('LUNGE_MOVE_LEADER_WITNESS_INVALID');
+  }
+  const context = lungeMovementContext(state, triggerHash);
+  const comparisonLimit = Math.min(...lungeAlternativeLeaderBounds(state, geometry, targetSeparation, certifiedAxisLeaderBound)
+    .map(row => row.optimisticDistanceMilliInches));
+  if (!Number.isSafeInteger(comparisonLimit) || comparisonLimit <= 0) fail('LUNGE_MOVE_LEADER_WITNESS_UNPROVEN');
+  // This geometry is only a comparison against other leaders. The committed
+  // plan has already been checked against the actor's real Move allowance.
+  const witnessDomain = { ...context.domain, constraints: { ...context.domain.constraints,
+    maxDistanceMilliInches: comparisonLimit, speedAllowanceInches: inches(comparisonLimit) } };
+  const witness = inspectLungeMoveGeometry(state, triggerHash, parameters, { ...context, domain: witnessDomain });
+  const detour = witness.bypassReferenceModelIds.length ? lungeGroundForwardProof(state, witness, certifiedJointObstacles) : undefined;
+  const ranking = proveLungeLeaderAndFormation(state, witness, detour, undefined, certifiedAxisLeaderBound);
+  if (!ranking.reachedTargetBoundary || !ranking.shortestLeaderProven) fail('LUNGE_MOVE_LEADER_WITNESS_UNPROVEN');
+  return { canonicalParameters: witness.canonicalParameters, summary: seal({
+    geometryHash: witness.geometryHash, rankingProofHash: ranking.proofHash,
+    lengthMilliInches: ranking.routeLengthMilliInches, comparisonLimitMilliInches: comparisonLimit,
+    actualMoveLimitMilliInches: context.domain.constraints.maxDistanceMilliInches,
+  }, 'witnessHash') };
+}
+
+// Extend only the final forward segment of an already validated proposal.
+// The comparison route is private to the proof and never applied as movement.
+export function searchOfficialLungeLeaderWitnessV1(state, triggerHash, parameters, { certifiedJointObstacles = false, certifiedAxisLeaderBound = false } = {}) {
+  const context = lungeMovementContext(state, triggerHash);
+  const geometry = inspectLungeMoveGeometry(state, triggerHash, parameters, context);
+  const { actor, target } = context;
+  const { canonicalPath, leadingModelId } = geometry.spatialPlan;
+  const path = canonicalPath.points;
+  const end = path.at(-1);
+  const previous = path.at(-2);
+  if (geometry.modelDistances.length < 2 || !previous
+    || path.some(step => step.elevation !== 'ground')
+    || geometry.canonicalParameters.elevationTransitions.length) return null;
+
+  const separation = OFFICIAL_ENGAGEMENT_RANGE_V2_MILLI_INCHES + 1;
+  const alternatives = lungeAlternativeLeaderBounds(state, geometry, separation, certifiedAxisLeaderBound);
+  const remaining = Math.min(...alternatives.map(row => row.optimisticDistanceMilliInches))
+    - canonicalPath.distanceMilliInches;
+  if (remaining <= 0) return null;
+  const moving = activeModels(actor).find(model => model.id === leadingModelId);
+  const direction = lungeReferenceDirection(previous, end);
+  if (!direction) return null;
+
+  const references = lungeTargetBases(state, target);
+  const pointAt = offset => ({ ...end,
+    xMilliInches: Math.round(end.xMilliInches + direction.x * offset),
+    yMilliInches: Math.round(end.yMilliInches + direction.y * offset) });
+  for (const reference of references) {
+    const center = reference.footprint.center;
+    const forwardLimit = (center.xMilliInches - end.xMilliInches) * direction.x
+      + (center.yMilliInches - end.yMilliInches) * direction.y;
+    const limit = Math.min(remaining, Math.floor(forwardLimit));
+    const measured = offset => lungeDistancesToTarget(
+      modelFootprintAt(state, actor, moving, pointAt(offset)), [reference]).distanceToUnit;
+    if (limit < 1 || measured(0) <= separation || measured(limit) > separation) continue;
+
+    let low = 1;
+    let high = limit;
+    while (low < high) {
+      const middle = Math.floor((low + high) / 2);
+      if (measured(middle) <= separation) high = middle;
+      else low = middle + 1;
+    }
+    for (let offset = Math.max(1, low - 2); offset <= Math.min(limit, low + 2); offset++) {
+      if (measured(offset) !== separation) continue;
+      const witness = { ...geometry.canonicalParameters, path: [...path.slice(0, -1), pointAt(offset)] };
+      try {
+        return certifyLungeLeaderWitness(state, triggerHash, geometry, witness, certifiedJointObstacles, certifiedAxisLeaderBound).canonicalParameters;
+      } catch (error) {
+        if (!/^(?:SELECTED_SPATIAL_|MODEL_BASE_GEOMETRY_|SPECIAL_TERRAIN_|FORCE_WALL_|LUNGE_MOVE_)/u
+          .test(error?.message || '')) throw error;
+      }
+    }
+  }
+  return null;
+}
+
+const LUNGE_FORMATION_RAY_COUNT = 24;
+const LUNGE_FORMATION_MAX_POINTS_PER_FOLLOWER = 24;
+const LUNGE_FORMATION_MAX_PACKING_STEPS = 1024;
+const LUNGE_FORMATION_MAX_COMPLETE_PLANS = 24;
+
+function lungeFollowerShellPoint(state, actor, model, rotationDegrees, target, direction, separation) {
+  const { center } = target;
+  const location = radius => ({
+    xMilliInches: Math.round(center.xMilliInches + direction.x * radius),
+    yMilliInches: Math.round(center.yMilliInches + direction.y * radius),
+    rotationDegrees, elevation: 'ground', supportTerrainIds: [],
+  });
+  const footprintAt = radius => modelFootprintAt(state, actor, model, location(radius));
+  // For these convex bases, the Minkowski sum contains the ray origin.
+  // Along a ray, distance from that sum never decreases before rounding.
+  const gap = radius => evaluateOfficialPhysicalFootprintRelationV1({
+    left: footprintAt(radius), right: target,
+  }).minimumSeparationMilliInches;
+  let low = 1;
+  let high = Math.ceil(Math.hypot(model.baseWidthInches, model.baseDepthInches) * 500
+    + Math.hypot(target.widthMilliInches, target.depthMilliInches) / 2 + separation + 3);
+  if (!Number.isSafeInteger(high) || gap(high) < separation) return null;
+  while (low < high) {
+    const middle = Math.floor((low + high) / 2);
+    if (gap(middle) < separation) low = middle + 1;
+    else high = middle;
+  }
+  return gap(low) === separation ? location(low) : null;
+}
+
+// Advisor only. Native certifies the full path, every placement and the
+// complete leader/formation proof before exposing a proposed action.
+export function* searchOfficialLungeFormationCandidatesV1(state, triggerHash, move) {
+  const { actor, target, domain } = lungeMovementContext(state, triggerHash);
+  const models = activeModels(actor);
+  const leader = models.find(model => model.id === move.leadingModelId);
+  if (!leader) fail('SELECTED_SPATIAL_LEADING_MODEL_INVALID', move.leadingModelId);
+  const path = canonicalPath(modelPoint(leader), move.path, domain, 'move');
+  const end = path.points.at(-1);
+  if (move.elevationTransitions?.length || path.points.some(step => step.elevation !== 'ground')
+    || models.some(model => !['round', 'rectangle'].includes(model.baseShape)
+      || elevation(model.elevation) !== 'ground')) return;
+  const followers = models.filter(model => model.id !== leader.id);
+  if (!followers.length) { yield []; return; }
+
+  const leaderBase = modelFootprintAt(state, actor, leader, end);
+  const targets = lungeTargetBases(state, target);
+  if (targets.some(row => !['round', 'rectangle'].includes(row.footprint.shape))) return;
+  const nearest = lungeDistancesToTarget(leaderBase, targets);
+  const range = domain.constraints.coherencyRangeMilliInches;
+  const { separation, lowerBound } = lungeFollowerTargetSeparation(models, nearest.distanceToUnit, range);
+  const field = state.pieces.filter(piece => activePiece(piece) && piece.id !== actor.id);
+  const modelBases = piece => activeModels(piece).filter(model => elevation(model.elevation) === 'ground')
+    .map(model => createOfficialModelBaseFootprintV1({ piece, model,
+      dataBundle: state.officialModelBaseGeometryDataBundle }));
+  const blockers = field.flatMap(modelBases);
+  const enemies = field.filter(piece => piece.sideKey !== actor.sideKey
+    && piece.combatTags?.some(tag => String(tag).toLowerCase() === 'ground'))
+    .flatMap(piece => lungeTargetBases(state, piece));
+  const sortedTargets = [...targets].sort((a, b) => distance(a.footprint.center, end) - distance(b.footprint.center, end));
+
+  const options = followers.map(model => {
+    const rotations = model.baseShape === 'round' ? [model.baseRotationDegrees ?? 0]
+      : [...new Set([model.baseRotationDegrees ?? 0, 0, 45, 90, 135])];
+    const rows = new Map();
+    for (const { footprint: targetBase } of sortedTargets) {
+      const facing = Math.atan2(end.yMilliInches - targetBase.center.yMilliInches,
+        end.xMilliInches - targetBase.center.xMilliInches);
+      for (let index = 0; index < LUNGE_FORMATION_RAY_COUNT; index++) {
+        const angle = facing + (index % 2 ? 1 : -1) * Math.ceil(index / 2) * 2 * Math.PI / LUNGE_FORMATION_RAY_COUNT;
+        const direction = { x: Math.cos(angle), y: Math.sin(angle) };
+        for (const rotation of rotations) {
+          const candidate = lungeFollowerShellPoint(state, actor, model, rotation, targetBase, direction, lowerBound);
+          if (!candidate) continue;
+          const footprint = modelFootprintAt(state, actor, model, candidate);
+          if (!isOfficialPhysicalFootprintWhollyWithinRangeV1({ source: leaderBase, target: footprint, rangeMilliInches: range })
+            || physicalInteriorsOverlap(leaderBase, footprint)
+            || blockers.some(base => physicalInteriorsOverlap(base, footprint))
+            || lungeDistancesToTarget(footprint, targets).distanceToUnit !== lowerBound
+            || lungeDistancesToTarget(footprint, enemies).distanceToUnit < separation) continue;
+          const key = [candidate.xMilliInches, candidate.yMilliInches, rotation].join(',');
+          rows.set(key, { placement: { modelId: model.id, ...candidate }, footprint });
+          if (rows.size >= LUNGE_FORMATION_MAX_POINTS_PER_FOLLOWER) return [...rows.values()];
+        }
+      }
+    }
+    return [...rows.values()];
+  }).sort((left, right) => left.length - right.length);
+
+  let packingSteps = 0;
+  let completePlans = 0;
+  function* pack(index, selected) {
+    if (index === options.length) {
+      completePlans++;
+      yield selected.map(row => row.placement);
+      return;
+    }
+    for (const row of options[index]) {
+      if (packingSteps++ >= LUNGE_FORMATION_MAX_PACKING_STEPS || completePlans >= LUNGE_FORMATION_MAX_COMPLETE_PLANS) return;
+      if (!selected.some(other => physicalInteriorsOverlap(other.footprint, row.footprint))) {
+        yield* pack(index + 1, [...selected, row]);
+      }
+    }
+  }
+  yield* pack(0, []);
+}
+
+export function projectOfficialLungeLeaderAndFormationProofV1(state, triggerHash, parameters, { certifiedMultiModelDetour = false, certifiedJointObstacles = false, certifiedAxisLeaderBound = false } = {}) {
+  const geometry = inspectOfficialLungeMoveGeometryV1(state, triggerHash, parameters);
+  const detour = certifiedMultiModelDetour && geometry.bypassReferenceModelIds.length
+    ? lungeGroundForwardProof(state, geometry, certifiedJointObstacles) : undefined;
+  return proveLungeLeaderAndFormation(state, geometry, detour, undefined, certifiedAxisLeaderBound);
+}
+
 export function previewOfficialSelectedRosterSpatialActionV1(
   state, domain, parameters, options = {},
 ) {
@@ -1592,6 +2858,66 @@ export function previewOfficialSelectedRosterSpatialActionV1(
     trainingTruth: false }, "previewHash");
 }
 
+export function instantiateOfficialLungeMoveActionV1(state, triggerHash, moveParameters, {
+  certifiedMultiModel = false, certifiedForwardDetour = false, certifiedMultiModelDetour = false,
+  certifiedLeaderWitness = false, certifiedJointObstacles = false, certifiedAxisLeaderBound = false,
+} = {}) {
+  const hasWitness = object(moveParameters) && Object.hasOwn(moveParameters, 'leaderRouteWitness');
+  if (hasWitness && !certifiedLeaderWitness) fail('SELECTED_SPATIAL_PARAMETERS_INVALID');
+  const { leaderRouteWitness, ...actualParameters } = hasWitness ? moveParameters : {};
+  const geometry = inspectOfficialLungeMoveGeometryV1(state, triggerHash, hasWitness ? actualParameters : moveParameters);
+  const actor = state.pieces.find(piece => piece.id === geometry.actorPieceId);
+  const multiModel = geometry.modelDistances.length > 1;
+  if (hasWitness && !multiModel) fail('LUNGE_MOVE_LEADER_WITNESS_INVALID');
+  let detourProof;
+  if (!geometry.referencesOnRay.length || !geometry.pathBounds.shortestForFixedEndpointsProven) {
+    if (!certifiedForwardDetour || multiModel && !certifiedMultiModelDetour) fail('LUNGE_MOVE_GLOBAL_PROOF_REQUIRED');
+    detourProof = lungeGroundForwardProof(state, geometry, certifiedJointObstacles);
+    if (!detourProof.certifiedShortest) fail('LUNGE_MOVE_GLOBAL_PROOF_REQUIRED');
+    if (!multiModel) lungeClosestFormationProof(state, geometry);
+  }
+  let formationProof;
+  let routeWitness;
+  if (multiModel) {
+    if (!certifiedMultiModel) fail('LUNGE_MOVE_GLOBAL_PROOF_REQUIRED');
+    if (hasWitness) routeWitness = certifyLungeLeaderWitness(state, triggerHash, geometry, leaderRouteWitness, certifiedJointObstacles, certifiedAxisLeaderBound);
+    formationProof = proveLungeLeaderAndFormation(state, geometry, detourProof, routeWitness?.summary, certifiedAxisLeaderBound);
+    if (!formationProof.shortestLeaderProven || !formationProof.formation.closestFormationProvenForThisLeaderEndpoint) {
+      fail('LUNGE_MOVE_LEADER_OR_FORMATION_PROOF_REQUIRED');
+    }
+  }
+  if (!state.log?.at(-1)?.events.some(event => event.type === 'reaction_window_closed'
+    && event.triggerHash === triggerHash)) fail('LUNGE_MOVE_CONTINUATION_STALE');
+  return freezeDeep({ actionType: 'move', sideKey: actor.sideKey, phase: state.phase, pieceId: actor.id,
+    spatialPlan: geometry.spatialPlan, ruleAtomIds: [...ATOMS_BY_ACTION.move],
+    ...(routeWitness ? { leaderRouteWitness: routeWitness.canonicalParameters } : {}),
+    executorId: OFFICIAL_SELECTED_ROSTER_SPATIAL_ACTION_RUNTIME_ID,
+    executorVersion: OFFICIAL_SELECTED_ROSTER_SPATIAL_ACTION_RUNTIME_VERSION,
+    lungeAuthorization: { triggerHash, effectHash: geometry.effectHash, resolutionHash: geometry.resolutionHash,
+      geometryHash: geometry.geometryHash, targetPieceId: geometry.targetPieceId,
+      ...(detourProof ? { groundForwardProofHash: detourProof.proofHash } : {}),
+      ...(routeWitness ? { leaderRouteWitnessHash: routeWitness.summary.witnessHash } : {}),
+      ...(formationProof ? { leaderAndFormationProofHash: formationProof.proofHash } : {}) } });
+}
+
+export function officialLungeMoveCanonicalParametersV1(action) {
+  return action.leaderRouteWitness
+    ? { ...action.spatialPlan.canonicalParameters, leaderRouteWitness: action.leaderRouteWitness }
+    : action.spatialPlan.canonicalParameters;
+}
+
+export function applyOfficialLungeMoveActionV1(state, action, options = {}, proofOptions = {}) {
+  if (action?.actionType !== 'move' || !action.lungeAuthorization || !action.spatialPlan?.canonicalParameters) {
+    fail('LUNGE_MOVE_ACTION_INVALID');
+  }
+  if (state.spatialActionHistory?.some(row => row.event?.lungeAuthorization?.triggerHash
+    === action.lungeAuthorization.triggerHash)) fail('LUNGE_MOVE_ALREADY_RESOLVED');
+  const current = instantiateOfficialLungeMoveActionV1(state, action.lungeAuthorization.triggerHash,
+    officialLungeMoveCanonicalParametersV1(action), proofOptions);
+  if (!isDeepStrictEqual(current, action)) fail('LUNGE_MOVE_ACTION_STALE');
+  return commitSpatialMovement(state, current, options, current.lungeAuthorization);
+}
+
 export function applyOfficialSelectedRosterSpatialActionV1(
   stateInput, actionInput, options = {},
 ) {
@@ -1613,8 +2939,14 @@ export function applyOfficialSelectedRosterSpatialActionV1(
   if (!isDeepStrictEqual(current.action, actionInput)) {
     fail("SELECTED_SPATIAL_ACTION_STALE");
   }
+  return commitSpatialMovement(stateInput, actionInput, options);
+}
+
+function commitSpatialMovement(stateInput, actionInput, options, lungeAuthorization = null) {
   const state = clone(stateInput);
   const piece = state.pieces.find((entry) => entry.id === actionInput.pieceId);
+  const events = [];
+  if (!lungeAuthorization) consumeOfficialCharacteristicActivationStartV1(state, piece, events);
   const positions = new Map(actionInput.spatialPlan.finalModelPositions.map((entry) => (
     [entry.modelId, entry]
   )));
@@ -1637,8 +2969,10 @@ export function applyOfficialSelectedRosterSpatialActionV1(
   if (actionInput.actionType === "deploy") piece.deploymentStatus = "deployed";
   piece.statuses = (piece.statuses || []).filter((status) => status !== "stationary");
   const activationPhase = actionInput.actionType === "run" ? "assault" : "movement";
-  piece.activatedPhases = { movement: false, assault: false, combat: false,
-    ...(piece.activatedPhases || {}), [activationPhase]: true };
+  if (!lungeAuthorization) {
+    piece.activatedPhases = { movement: false, assault: false, combat: false,
+      ...(piece.activatedPhases || {}), [activationPhase]: true };
+  }
   piece.inCoherency = true;
   piece.coherencyStatus = { schemaVersion: "starcraft_tmg_unit_coherency_status_v1",
     status: "in_coherency", isOutOfCoherency: false,
@@ -1649,6 +2983,7 @@ export function applyOfficialSelectedRosterSpatialActionV1(
     piece.disengageAssaultRestriction = clone(
       actionInput.spatialPlan.postDisengageAssaultRestriction);
   }
+  applyOfficialLargeTerrainRemovalV1(state, piece, actionInput.spatialPlan.largeTerrainRemoval);
   for (const terrainId of actionInput.spatialPlan.grassRemovedTerrainIds) {
     const terrain = state.board.terrain.find((entry) => entry.id === terrainId);
     if (terrain) {
@@ -1662,6 +2997,8 @@ export function applyOfficialSelectedRosterSpatialActionV1(
     }
   }
   const removedForceFieldTokenIds = actionInput.spatialPlan.crossedForceFieldTokenIds || [];
+  const removedForceWallTokenIds = actionInput.spatialPlan.crossedForceWallTokenIds || [];
+  consumeOfficialForceWallCrossingsV1(state, removedForceWallTokenIds);
   if (removedForceFieldTokenIds.length > 0) {
     const removed = new Set(removedForceFieldTokenIds);
     state.board.tokens = (state.board.tokens || []).filter((token) => (
@@ -1677,11 +3014,19 @@ export function applyOfficialSelectedRosterSpatialActionV1(
     ));
     if (row && actionInput.actionType === "deploy") row.deploymentStatus = "deployed";
   }
+  const entryDefinitionId = actionInput.spatialPlan.entrySource?.definitionId;
+  const pylonDeploy = entryDefinitionId === OFFICIAL_PYLON_WARP_CONDUIT_DEFINITION_ID;
+  const refreshBoundDeploymentSupply = contourRelease(state) && actionInput.actionType === "deploy";
+  if (state.officialRoundSupplyState && (refreshBoundDeploymentSupply || pylonDeploy
+    || entryDefinitionId === OFFICIAL_OMEGA_WORM_NETWORK_DEFINITION_ID)) {
+    state.officialRoundSupplyState = refreshOfficialRoundSupplyOccupancyV1({ state });
+  }
   const event = {
     type: `unit_${actionInput.actionType}_resolved`,
     sideKey: piece.sideKey, pieceId: piece.id,
     leadingModelId: actionInput.spatialPlan.leadingModelId,
     spatialPlanHash: actionInput.spatialPlan.spatialPlanHash,
+    ...(actionInput.spatialPlan.entrySource ? { entrySource: clone(actionInput.spatialPlan.entrySource) } : {}),
     distanceTravelledInches: actionInput.spatialPlan.distanceTravelledInches,
     speedAllowanceInches: actionInput.spatialPlan.speedAllowanceInches,
     modelPositionCount: positions.size,
@@ -1689,8 +3034,11 @@ export function applyOfficialSelectedRosterSpatialActionV1(
     ...(actionInput.spatialPlan.logicalGrassRemoval
       ? { logicalGrassRemoval: clone(actionInput.spatialPlan.logicalGrassRemoval) } : {}),
     removedForceFieldTokenIds: clone(removedForceFieldTokenIds),
+    ...(state.officialForceWallTraversalPolicy ? { removedForceWallTokenIds } : {}),
+    ...(actionInput.spatialPlan.largeTerrainRemoval ? { largeTerrainRemoval: clone(actionInput.spatialPlan.largeTerrainRemoval) } : {}),
     movementActivated: piece.activatedPhases.movement === true,
     assaultActivated: piece.activatedPhases.assault === true,
+    ...(lungeAuthorization ? { lungeAuthorization } : {}),
     rulesTruth: "official_selected_roster_spatial_transition",
     trainingTruth: false,
   };
@@ -1700,17 +3048,31 @@ export function applyOfficialSelectedRosterSpatialActionV1(
     actionType: actionInput.actionType, pieceId: piece.id,
     spatialPlanHash: actionInput.spatialPlan.spatialPlanHash,
     event: clone(event), trainingTruth: false });
+  events.push(event);
+  if (!hasOfficialTunnelingClawsMovementV1(state, piece, actionInput.actionType)) {
+    consumeOfficialCharacteristicBurrowedMovementV1(state, piece, events);
+  }
   state.log = Array.isArray(state.log) ? state.log : [];
   state.log.push({ id: `log-${state.log.length + 1}`, round: Number(state.round),
-    phase: state.phase, action: clone(actionInput), events: [clone(event)] });
-  openOfficialSelectedRosterAfterActionWindowV1(
-    state, piece.sideKey, piece.id, activationPhase);
+    phase: state.phase, action: clone(actionInput), events: clone(events) });
+  if (lungeAuthorization) {
+    consumeOfficialActionPerformedStatusesV1(state, piece.id, 'lunge_move_completed');
+    applyOfficialAfterActionCharacteristicPassivesV1(state, piece.id);
+  } else if (pylonDeploy) {
+    if (state.officialUnitLifecycleFamilySourceBundle?.definitionIds.includes(OFFICIAL_PYLON_WARP_IN_DEFINITION_ID)) {
+      openOfficialSelectedRosterAfterActionWindowV1(state, piece.sideKey, piece.id, activationPhase);
+    }
+    const ended = { ...finishOfficialSelectedRosterActivationV1(state, piece, activationPhase),
+      reason: 'pylon_warp_conduit', entrySourcePieceId: actionInput.spatialPlan.entrySource.sourcePieceId };
+    events.push(ended);
+    state.log.at(-1).events.push(clone(ended));
+  } else openOfficialSelectedRosterAfterActionWindowV1(state, piece.sideKey, piece.id, activationPhase);
   return freezeDeep({ ok: true,
     schemaVersion: "starcraft_tmg_selected_roster_spatial_transition_v1",
     runtimeId: OFFICIAL_SELECTED_ROSTER_SPATIAL_ACTION_RUNTIME_ID,
     runtimeVersion: OFFICIAL_SELECTED_ROSTER_SPATIAL_ACTION_RUNTIME_VERSION,
     postRevision: Number(options.postRevision || 0), state,
-    action: clone(actionInput), events: [event],
+    action: clone(actionInput), events,
     rulesTruth: "official_selected_roster_spatial_transition",
     trainingTruth: false });
 }
@@ -1803,6 +3165,38 @@ export function verifyOfficialSelectedRosterSpatialRuntimeDescriptorV1(descripto
     || descriptor.sourceRefreshPerformed !== false
     || descriptor.trainingTruth !== false) {
     fail("SELECTED_SPATIAL_RUNTIME_DESCRIPTOR_INVALID");
+  }
+  return true;
+}
+
+// Query precheck: the same leading-model entry/path predicates as instantiation.
+// Passing is not a complete formation certificate; final Native checks still run.
+export function checkOfficialSelectedRosterDeployLeaderPathV1(state, domain, parameters) {
+  if (domain?.actionType !== "deploy"
+    || domain.executorId !== OFFICIAL_SELECTED_ROSTER_SPATIAL_ACTION_RUNTIME_ID) {
+    fail("SELECTED_SPATIAL_DEPLOY_PRECHECK_DOMAIN_INVALID");
+  }
+  const piece = state.pieces.find(entry => entry.id === domain.pieceId);
+  const leadingModel = piece?.models.find(entry => entry.id === parameters.leadingModelId
+    && entry.isDestroyed !== true);
+  const profile = domain.constraints.modelProfiles.find(entry => entry.modelId === parameters.leadingModelId);
+  if (!leadingModel || !profile) fail("SELECTED_SPATIAL_LEADING_MODEL_INVALID");
+  const segment = segmentById(domain, String(parameters.entrySegmentId || ""));
+  const start = resolveOfficialSelectedRosterDeployStartV1(domain, segment, Number(parameters.entryAlongEdgeMilliInches), profile);
+  const path = canonicalPath(start, parameters.path, domain, "deploy");
+  verifyDeployInward(segment, path);
+  const modelGaps = assertPathBoardAndModels(state, piece, leadingModel, path, domain, "deploy", segment);
+  crossedForceFieldTokenIds(state, piece, leadingModel, path);
+  const placements = [{ modelId: leadingModel.id, ...path.points.at(-1) }];
+  assertForceWallTraversal(state, piece, leadingModel, path, placements);
+  const large = prepareLargeTerrainRemoval(state, piece, leadingModel, path, placements);
+  assertOfficialRavenReserveEntryClearanceV1(state, piece, placements, segment);
+  if (segment.kind === 'unit_base_perimeter') {
+    assertUnitEntryElevation(state, segment, placements);
+    assertOutsideEnemyDeploymentZone(state, piece, placements);
+    specialTerrainResult(large.state, piece, 'move', domain, leadingModel.id, path, placements, parameters, modelGaps);
+  } else {
+    deployTerrainResult(large.state, piece, { leadingModelId: leadingModel.id, canonicalPath: path }, placements);
   }
   return true;
 }

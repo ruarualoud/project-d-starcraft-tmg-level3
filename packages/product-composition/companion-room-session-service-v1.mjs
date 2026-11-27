@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { projectCompanionRoomContextV1 } from './companion-room-context-v1.mjs';
 
 import { hashStarcraftTmgContract } from "../authoritative-engine/transition-v1.mjs";
 import { createWorldbookEntry, importCompanionBackendContract } from
@@ -890,25 +891,25 @@ export function createStarcraftTmgCompanionRoomSessionServiceV1(options = {}) {
     });
   }
 
-  async function drainCompanionReplies(loaded, scanText) {
-    const [roomResult, workbenchResult] = await Promise.all([
-      roomRuntime.readRoom({ roomId: loaded.binding.roomId, seatToken: loaded.seatToken }),
-      roomRuntime.readBattleWorkbench({ roomId: loaded.binding.roomId, seatToken: loaded.seatToken }),
-    ]);
-    if (!roomResult?.ok || !workbenchResult?.ok) {
-      return rejection("COMPANION_ROOM_CONTEXT_UNAVAILABLE", {
-        conversationId: loaded.conversationId,
-        acceptedHistoryPreserved: true,
-      });
+  async function readCompanionRoomContext(loaded) {
+    const input = {roomId: loaded.binding.roomId, seatToken: loaded.seatToken};
+    const details = {conversationId: loaded.conversationId, acceptedHistoryPreserved: true};
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const [room, workbench] = await Promise.all([roomRuntime.readRoom(input), roomRuntime.readBattleWorkbench(input)]);
+      if (!room?.ok || !workbench?.ok) return {failure: rejection("COMPANION_ROOM_CONTEXT_UNAVAILABLE", details)};
+      try {
+        return {roomContext: projectCompanionRoomContextV1(room.projection, workbench.snapshot)};
+      } catch (error) {
+        if (error.code === 'COMPANION_ROOM_CONTEXT_STALE' && attempt === 0) continue;
+        if (!['COMPANION_ROOM_CONTEXT_STALE','OFFICIAL_RELEASE_QUERY_BINDING_MISMATCH'].includes(error.code)) throw error;
+        return {failure: rejection(error.code, details)};
+      }
     }
-    const roomContext = {
-      room: roomResult.projection.room,
-      viewer: roomResult.projection.viewer,
-      matchBinding: roomResult.projection.matchBinding,
-      state: roomResult.projection.state,
-      workbench: workbenchResult.snapshot,
-      visibility: "player_visible",
-    };
+  }
+
+  async function drainCompanionReplies(loaded, scanText) {
+    const {roomContext, failure} = await readCompanionRoomContext(loaded);
+    if (failure) return failure;
     const replies = [];
     while (true) {
       loaded.state = await backend.sessionRuntime.getSessionState(loaded.conversationId);
@@ -928,7 +929,7 @@ export function createStarcraftTmgCompanionRoomSessionServiceV1(options = {}) {
         pending,
         {
           items: [{
-            itemId: `room-context-${roomResult.projection.room.stateRevision}`,
+            itemId: `room-context-${roomContext.room.stateRevision}`,
             visibility: "player_visible",
             payload: roomContext,
           }],
@@ -1639,30 +1640,15 @@ export function createStarcraftTmgCompanionRoomSessionServiceV1(options = {}) {
         if (!participant || participant.kind !== "companion") {
           return rejection("COMPANION_TURN_OWNER_INVALID", { participantId: branch.ownerParticipantId });
         }
-        const [roomResult, workbenchResult] = await Promise.all([
-          roomRuntime.readRoom({ roomId: loaded.binding.roomId, seatToken: loaded.seatToken }),
-          roomRuntime.readBattleWorkbench({ roomId: loaded.binding.roomId, seatToken: loaded.seatToken }),
-        ]);
-        if (!roomResult?.ok || !workbenchResult?.ok) {
-          return rejection("COMPANION_ROOM_CONTEXT_UNAVAILABLE", {
-            conversationId: loaded.conversationId,
-            acceptedHistoryPreserved: true,
-          });
-        }
+        const {roomContext, failure} = await readCompanionRoomContext(loaded);
+        if (failure) return failure;
         const lastUserTurn = [...loaded.state.acceptedTurns].reverse()
           .find((turn) => turn.ownerParticipantId === loaded.binding.userParticipantId);
         const completed = await providerReply(
           loaded,
           participant,
           lastUserTurn?.content || "",
-          {
-            room: roomResult.projection.room,
-            viewer: roomResult.projection.viewer,
-            matchBinding: roomResult.projection.matchBinding,
-            state: roomResult.projection.state,
-            workbench: workbenchResult.snapshot,
-            visibility: "player_visible",
-          },
+          roomContext,
         );
         if (!completed.ok) {
           return rejection(completed.reason || "COMPANION_PROVIDER_REJECTED", {

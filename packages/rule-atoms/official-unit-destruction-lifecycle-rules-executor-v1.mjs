@@ -276,19 +276,20 @@ function applyPiecePatch(state, patch) {
   Object.assign(piece, clone(patch.set || {}));
   for (const field of patch.deleteFields || []) delete piece[field];
 }
-function removeExact(entries, ids, code) {
+function removeExact(entries, ids, code, identityField = 'id') {
   const remove = new Set(ids || []);
   if (remove.size !== (ids || []).length
-    || [...remove].some((id) => !entries.some((entry) => entry?.id === id))) {
+    || [...remove].some((id) => !entries.some((entry) => entry?.[identityField] === id))) {
     fail(code);
   }
-  return entries.filter((entry) => !remove.has(entry.id));
+  return entries.filter((entry) => !remove.has(entry[identityField]));
 }
-function applyMutation(state, mutation) {
+export function applyOfficialUnitDestructionMutationV1(state, mutation, { tokenIdentityField = 'id' } = {}) {
+  if (!['id', 'tokenId'].includes(tokenIdentityField)) fail('UNIT_DESTRUCTION_TOKEN_IDENTITY_FIELD_INVALID');
   for (const patch of mutation.piecePatches || []) applyPiecePatch(state, patch);
   for (const patch of mutation.outwardPiecePatches || []) applyPiecePatch(state, patch);
   state.board.tokens = removeExact(state.board.tokens,
-    mutation.removeBoardTokenIds || [], "UNIT_DESTRUCTION_TOKEN_PATCH_STALE");
+    mutation.removeBoardTokenIds || [], "UNIT_DESTRUCTION_TOKEN_PATCH_STALE", tokenIdentityField);
   state.board.effectMarkers = removeExact(state.board.effectMarkers,
     mutation.removeEffectMarkerIds || [], "UNIT_DESTRUCTION_MARKER_PATCH_STALE");
 }
@@ -317,7 +318,7 @@ export function applyOfficialUnitDestructionLifecycleRulesV1(stateInput,
   const choice = pending.choices[0];
   const state = clone(stateInput);
   state.pendingAction = null;
-  applyMutation(state, choice.result.mutation);
+  applyOfficialUnitDestructionMutationV1(state, choice.result.mutation);
   const resolution = {
     schema: "starcraft_tmg_official_unit_destruction_lifecycle_resolution_v1",
     sideKey: pending.sideKey, pieceId: choice.result.pieceId,

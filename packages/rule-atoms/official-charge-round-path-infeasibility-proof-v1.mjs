@@ -53,13 +53,14 @@ function positiveAngle(value) {
 
 // Shortest path in the plane outside one open circular blocker. Every Rules
 // polyline that avoids this blocker is at least this long. Tangency is allowed.
-function shortestPathAroundRoundBlocker(start, end, blocker) {
+function shortestPathAroundRoundBlocker(start, end, blocker, includeBranches = false) {
   const radius = blocker.forbiddenRadius;
   const startRadius = distance(start, blocker.center);
   const endRadius = distance(end, blocker.center);
   if (startRadius < radius || endRadius < radius) return null;
   if (pointSegmentDistance(blocker.center, start, end) >= radius) {
-    return distance(start, end);
+    const direct = distance(start, end);
+    return includeBranches ? { minimumLength: direct, clockwise: null, counterclockwise: null } : direct;
   }
   const startAngle = Math.atan2(start.y - blocker.center.y,
     start.x - blocker.center.x);
@@ -75,7 +76,20 @@ function shortestPathAroundRoundBlocker(start, end, blocker) {
     (endAngle - endTangentAngle) - (startAngle + startTangentAngle));
   const clockwiseArc = positiveAngle(
     (startAngle - startTangentAngle) - (endAngle + endTangentAngle));
-  return tangentLength + radius * Math.min(counterclockwiseArc, clockwiseArc);
+  const minimumLength = tangentLength + radius * Math.min(counterclockwiseArc, clockwiseArc);
+  return includeBranches ? { minimumLength, clockwise: tangentLength + radius * clockwiseArc,
+    counterclockwise: tangentLength + radius * counterclockwiseArc } : minimumLength;
+}
+
+// Continuous planar relaxation for a certified forbidden disc. The routes are
+// bounds, not movement commands. Omitted blockers can only shorten the result.
+export function measureOfficialSingleRoundBlockerPathsV1(start, end, blocker) {
+  return shortestPathAroundRoundBlocker(
+    { x: start.xMilliInches, y: start.yMilliInches },
+    { x: end.xMilliInches, y: end.yMilliInches },
+    { center: { x: blocker.center.xMilliInches, y: blocker.center.yMilliInches },
+      forbiddenRadius: blocker.forbiddenRadiusMilliInches }, true,
+  );
 }
 
 function inconclusive(reason) {

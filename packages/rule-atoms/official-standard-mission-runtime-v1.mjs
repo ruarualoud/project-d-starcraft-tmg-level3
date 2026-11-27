@@ -6,7 +6,9 @@ import {
   getOfficialMissionEffectIrV1,
   verifyOfficialMissionEffectCatalogueV1,
 } from "../source-data/official-mission-effect-ir-v1.mjs";
+import { createOfficialArtefactHuntKernelV1 } from "./official-artefact-hunt-kernel-v1.mjs";
 import { deriveOfficialEngagementGraphV2 } from "./official-engagement-graph-v2.mjs";
+import { isOfficialMorphActivationLockedV1 } from "./official-phase-activation-availability-v1.mjs";
 import {
   createOfficialPhysicalFootprintV1,
   evaluateOfficialPhysicalFootprintRelationV1,
@@ -44,6 +46,8 @@ export const OFFICIAL_MISSION_ACTION_TYPES = Object.freeze({
   SCORE: "score_mission",
   END_GAME: "check_mission_end_game",
 });
+
+export const OFFICIAL_MISSION_SABOTAGE_ACTION_V1 = "perform_mission_sabotage_action";
 
 const SIDE_KEYS = Object.freeze(["player1", "player2"]);
 const MARKER_RADIUS_INCHES = 16 / 25.4;
@@ -394,17 +398,16 @@ function relativeAffinity(runtimeState, markerNumber, sideKey) {
   return owner === null ? "neutral" : owner === sideKey ? "own" : "opponent";
 }
 
-function gatherCandidates(state, context, sideKey) {
-  if (context.mission.missionRef.family !== "gather_the_resources"
-    || state.phase !== "assault" || String(state.activeSideKey || "") !== sideKey
+function assaultObjectiveCandidates(state, context, sideKey, rule) {
+  if (state.phase !== "assault" || String(state.activeSideKey || "") !== sideKey
     || state.gameOver === true || state.terminal === true) return [];
   const graph = deriveOfficialEngagementGraphV2(state);
   const engaged = new Set(graph.engagedUnitIds || []);
   const markers = markerRows(state).filter((marker) => (
     marker.isActivated === true && marker.isRemoved !== true
       && marker.controlSideKey === sideKey
-      && ["neutral", "opponent"].includes(relativeAffinity(
-        context.runtimeState, Number(marker.number), sideKey))
+      && (!rule.permittedAffinities || rule.permittedAffinities.includes(relativeAffinity(
+        context.runtimeState, Number(marker.number), sideKey)))
   ));
   const candidates = [];
   for (const piece of state.pieces) {
@@ -419,7 +422,7 @@ function gatherCandidates(state, context, sideKey) {
       const minimumDistance = Math.min(...models.map((model) => (
         edgeDistance(model, marker, context)
       )));
-      if (minimumDistance > 3 + DISTANCE_TOLERANCE_INCHES) continue;
+      if (minimumDistance > rule.rangeMilliInches / 1000 + DISTANCE_TOLERANCE_INCHES) continue;
       candidates.push({ pieceId: piece.id, markerId: marker.id,
         markerNumber: Number(marker.number), minimumEdgeDistanceInches: minimumDistance,
         engagementGraphHash: graph.graphHash });
@@ -429,7 +432,53 @@ function gatherCandidates(state, context, sideKey) {
     || left.markerNumber - right.markerNumber);
 }
 
-function controlEvent(state, round) {
+function gatherCandidates(state, context, sideKey) {
+  return context.mission.missionRef.family === "gather_the_resources"
+    ? assaultObjectiveCandidates(state, context, sideKey, {
+      rangeMilliInches: 3000, permittedAffinities: ["neutral", "opponent"],
+    }) : [];
+}
+
+function sabotageRule(mission) {
+  return mission.actionDefinitions.find(rule => rule.kind === "sabotage_standard_action_replacement");
+}
+
+function markerSabotageLevel(marker, rule) {
+  const level = marker.sabotageLevel;
+  if (!Number.isSafeInteger(level) || level < rule.minimumLevel || level > rule.maximumLevel) {
+    fail("WAVE3_FIRE_MARKER_SABOTAGE_LEVEL_INVALID", marker.id);
+  }
+  return level;
+}
+
+function artefactPlacementsAfterControl(state, round, control) {
+  const placements = new Map();
+  let afterControl = false;
+  for (const entry of state.log || []) {
+    for (const event of entry?.events || []) {
+      if (event === control) afterControl = true;
+      if (afterControl && Number(entry.round) === round
+        && event?.type === "mission_artefact_marker_dropped") {
+        placements.set(event.markerId, event);
+      }
+    }
+  }
+  return placements;
+}
+
+function hasArtefactPlacementProof(state, marker, round, control, placement) {
+  const coordinate = placement?.coordinate;
+  return placement?.invalidatedControlResolutionHash === control.controlResolutionHash
+    && HASH_PATTERN.test(String(placement.placementProofHash || ""))
+    && state.officialArtefactHuntCustody?.byMarkerId?.[marker.id] === null
+    && marker.isRemoved === false && marker.artefactDropRound === round
+    && marker.controlDeterminedAt === undefined
+    && Number.isSafeInteger(coordinate?.xMilliInches) && Number.isSafeInteger(coordinate?.yMilliInches)
+    && marker.xInches === coordinate.xMilliInches / 1000
+    && marker.yInches === coordinate.yMilliInches / 1000;
+}
+
+function controlEvent(state, round, acceptArtefactPlacementProof = false) {
   const markers = markerRows(state);
   const events = (state.log || []).flatMap((entry) => entry?.events || [])
     .filter((event) => event?.type === "mission_marker_control_determined"
@@ -440,11 +489,15 @@ function controlEvent(state, round) {
     fail("STANDARD_MISSION_CONTROL_RECEIPT_INVALID");
   }
   const event = events[0];
+  const placements = acceptArtefactPlacementProof ? artefactPlacementsAfterControl(state, round, event) : null;
   for (const marker of markers) {
     const result = event.markerResults.find((entry) => entry.markerId === marker.id);
-    if (!result || result.nextControlSideKey !== (marker.controlSideKey ?? null)
-      || marker.controlDeterminedAt?.round !== round
-      || marker.controlDeterminedAt?.controlResolutionHash !== event.controlResolutionHash) {
+    const current = marker.controlDeterminedAt?.round === round
+      && marker.controlDeterminedAt?.controlResolutionHash === event.controlResolutionHash;
+    // Artefact points depend on custody and affinity. A resolved placement can
+    // invalidate its own marker's position receipt after the claim window.
+    const placed = placements && hasArtefactPlacementProof(state, marker, round, event, placements.get(marker.id));
+    if (!result || result.nextControlSideKey !== (marker.controlSideKey ?? null) || (!current && !placed)) {
       fail("STANDARD_MISSION_CONTROL_RECEIPT_INVALID", marker.id);
     }
   }
@@ -536,7 +589,7 @@ function scoringBreakdown(state, context) {
     fail("STANDARD_MISSION_SCORING_UNAVAILABLE");
   }
   verifyOfficialSupplyLossLedgerV1(state.supplyLossLedger, { round });
-  const control = controlEvent(state, round);
+  const control = controlEvent(state, round, context.acceptArtefactPlacementProof);
   const activeMarkers = markerRows(state).filter((marker) => (
     marker.isActivated === true && marker.isRemoved !== true
   ));
@@ -579,6 +632,34 @@ function scoringBreakdown(state, context) {
           kind: "marker_control_transfer_bonus_vp",
           markerNumber: Number(marker.number), previousControlSideKey: otherSide(sideKey), vp: 2 });
       }
+    }
+  } else if (family === "artefact_hunt") {
+    if (state.officialArtefactHuntClaimWindow) fail("ARTEFACT_HUNT_CLAIMS_PENDING");
+    const kernel = context.artefactHunt;
+    if (!kernel) fail("ARTEFACT_HUNT_RUNTIME_REQUIRED");
+    const custody = state.officialArtefactHuntCustody;
+    if (kernel.pendingOpponentDrops(state, custody).length) fail("ARTEFACT_HUNT_DROP_PLACEMENT_REQUIRED");
+    const rule = context.mission.scoring.objectiveRules.find(row => row.kind === "artefact_final_marker_vp");
+    if (round === rule.round) {
+      const awards = kernel.prepareFinalMarkerPoints(state, custody);
+      for (const sideKey of SIDE_KEYS) {
+        breakdowns[sideKey].objectiveVp += awards[sideKey];
+        breakdowns[sideKey].objectiveRows.push({ kind: rule.kind, vp: awards[sideKey], custodyHash: custody.custodyHash });
+      }
+    }
+  } else if (family === "fire_in_the_sky") {
+    const rule = context.mission.scoring.objectiveRules.find(row => row.kind === "sabotage_level_marker_control_vp");
+    if (round >= rule.startsRound) for (const marker of activeMarkers) {
+      if (!marker.controlSideKey) continue;
+      const sideKey = marker.controlSideKey;
+      const affinity = relativeAffinity(context.runtimeState, Number(marker.number), sideKey);
+      if (!rule.permittedAffinities.includes(affinity)) continue;
+      const sabotageLevel = markerSabotageLevel(marker, sabotageRule(context.mission));
+      const vp = sabotageLevel * rule.vpPerSabotageLevel;
+      breakdowns[sideKey].objectiveVp += vp;
+      breakdowns[sideKey].objectiveRows.push({
+        kind: rule.kind, markerNumber: Number(marker.number), affinity, sabotageLevel, vp,
+      });
     }
   } else if (family === "gather_the_resources" && round >= 2) {
     for (const marker of activeMarkers) {
@@ -644,7 +725,7 @@ function endGameResolution(state, context) {
   const leader = scores.player1 === scores.player2 ? null
     : scores.player1 > scores.player2 ? "player1" : "player2";
   const lead = Math.abs(scores.player1 - scores.player2);
-  const immediate = leader !== null
+  const immediate = leader !== null && context.mission.terminal.immediateLeadThresholdVp !== null
     && lead >= context.mission.terminal.immediateLeadThresholdVp;
   const roundLimit = round >= context.mission.terminal.scheduledRoundLimit;
   const terminal = immediate || roundLimit;
@@ -698,12 +779,23 @@ function transition(state, action, events, contract, extra = {}) {
 }
 
 function createMissionRuntime(input, contract) {
+  const acceptArtefactPlacementProof = input.acceptArtefactPlacementProof === true;
   const catalogue = input.missionEffectCatalogue;
   verifyOfficialMissionEffectCatalogueV1(catalogue);
   const supported = catalogue.missions.filter((entry) => (
     contract.supportedScales.includes(entry.missionRef.engagementScale)
   ));
-  if (supported.length !== contract.supportedMissionCount) {
+  const hasWave3Pair = Boolean(catalogue.wave3FireInSky || catalogue.wave3ArtefactHunt);
+  if (hasWave3Pair && contract.runtimeSchema !== OFFICIAL_MISSION_RUNTIME_SCHEMA) {
+    fail("WAVE3_MISSION_PAIR_REQUIRES_RUNTIME_V2");
+  }
+  const artefactHunt = catalogue.wave3ArtefactHunt ? createOfficialArtefactHuntKernelV1({
+    context: input.wave3MissionSourceContext, missionRecordKey: input.artefactHuntMissionRecordKey,
+  }) : null;
+  if (artefactHunt && (catalogue.wave3ArtefactHunt.bundleHash !== artefactHunt.binding.sourceBundleHash
+    || catalogue.wave3ArtefactHunt.profilesByRecordKey[artefactHunt.binding.missionRecordKey]?.profileHash
+      !== artefactHunt.binding.sourceProfileHash)) fail("ARTEFACT_HUNT_RUNTIME_SOURCE_MISMATCH");
+  if (supported.length !== contract.supportedMissionCount + (hasWave3Pair ? contract.supportedScales.length : 0)) {
     fail("STANDARD_MISSION_RUNTIME_DENOMINATOR_INVALID");
   }
   const descriptorBody = {
@@ -713,7 +805,7 @@ function createMissionRuntime(input, contract) {
     supportedMissionRecordKeys: supported.map((entry) => entry.missionRef.recordKey).sort(),
     supportedMissionFamilies: [...new Set(supported.map((entry) => (
       entry.missionRef.family)))].sort(),
-    supportedMissionCount: contract.supportedMissionCount,
+    supportedMissionCount: supported.length,
     ...(contract.supportedScales.length === 1
       ? { supportedEngagementScale: contract.supportedScales[0] }
       : {
@@ -725,7 +817,9 @@ function createMissionRuntime(input, contract) {
           lifecycleAdapterContract:
             "mission_runtime_initialize_enumerate_prepare_apply_v2",
         }),
-    exactCapabilities: ["setup", "round_start", "gather_action", "scoring", "end_game"],
+    exactCapabilities: ["setup", "round_start", "gather_action", "scoring", "end_game",
+      ...(catalogue.wave3FireInSky ? ["sabotage_action"] : []),
+      ...(artefactHunt ? ["artefact_custody", "artefact_final_scoring"] : [])],
     chanceAuthority: "injected_rules_chance_reveal",
     contentHashIsLineageNotCompatibilityGate: true,
     trainingTruth: false,
@@ -750,6 +844,7 @@ function createMissionRuntime(input, contract) {
       marker.activationRound = activated ? 0 : null;
       marker.controlSideKey = null;
       marker.factionIndicatorSideKey = null;
+      if (mission.setup.initialSabotageLevel !== undefined) marker.sabotageLevel = mission.setup.initialSabotageLevel;
       delete marker.controlDeterminedAt;
     }
     validateScores(state);
@@ -773,6 +868,10 @@ function createMissionRuntime(input, contract) {
       trainingTruth: false,
     };
     state.officialMissionRuntimeState = sealRuntimeState(runtimeBody);
+    if (artefactHunt) {
+      if (mission.missionRef.recordKey !== artefactHunt.binding.missionRecordKey) fail("ARTEFACT_HUNT_RUNTIME_SOURCE_MISMATCH");
+      state.officialArtefactHuntCustody = artefactHunt.initialize(state);
+    }
     const events = [{ type: `${contract.eventPrefix}_initialized`,
       missionRecordKey: mission.missionRef.recordKey,
       missionEffectIrHash: mission.missionEffectIrHash,
@@ -801,10 +900,31 @@ function createMissionRuntime(input, contract) {
     ));
   }
 
+  function sabotageActions(state, context, sideKey) {
+    const rule = sabotageRule(context.mission);
+    const window = state.selectedRosterActivationWindow;
+    if (!rule || state.players?.[sideKey]?.passedPhases?.assault === true
+      || (window && (window.stage !== "before_action" || window.sideKey !== sideKey
+        || window.phase !== "assault"))) return [];
+    const markerById = new Map(markerRows(state).map(marker => [marker.id, marker]));
+    const piecesById = new Map(state.pieces.map(piece => [piece.id, piece]));
+    return assaultObjectiveCandidates(state, context, sideKey, rule).flatMap(candidate => {
+      if ((window && window.pieceId !== candidate.pieceId)
+        || isOfficialMorphActivationLockedV1(state, piecesById.get(candidate.pieceId))) return [];
+      const priorLevel = markerSabotageLevel(markerById.get(candidate.markerId), rule);
+      return rule.permittedLevelDeltas.map(delta => priorLevel + delta)
+        .filter(nextLevel => nextLevel >= rule.minimumLevel && nextLevel <= rule.maximumLevel)
+        .map(nextLevel => baseAction(state, context.runtimeState, context.mission, contract,
+          OFFICIAL_MISSION_SABOTAGE_ACTION_V1, sideKey, { ...candidate, priorLevel, nextLevel }));
+    });
+  }
+
   function prepareScore(input = {}) {
     const state = input.state;
     const context = verifyRuntimeState(state, catalogue, contract);
-    const resolution = scoringBreakdown(state, context);
+    const resolution = scoringBreakdown(state, artefactHunt ? {
+      ...context, artefactHunt, acceptArtefactPlacementProof,
+    } : context);
     return baseAction(state, context.runtimeState, context.mission, contract,
       contract.actionTypes.SCORE,
       firstPlayer(state), { resolution });
@@ -868,6 +988,7 @@ function createMissionRuntime(input, contract) {
       }
       if (state.phase === "assault" && String(state.activeSideKey || "") === requestedSideKey) {
         candidates.push(...enumerateGather({ state, sideKey: requestedSideKey }));
+        candidates.push(...sabotageActions(state, context, requestedSideKey));
       }
       if (state.phase === "cleanup" && firstPlayer(state) === requestedSideKey) {
         if (progress?.startRoundApplied === true && progress.scoringApplied !== true) {
@@ -967,6 +1088,24 @@ function createMissionRuntime(input, contract) {
     return transition(state, action, events, contract);
   }
 
+  function applySabotage(stateInput, action) {
+    const context = verifyRuntimeState(stateInput, catalogue, contract);
+    const expected = sabotageActions(stateInput, context, side(action.sideKey))
+      .find(candidate => candidate.actionHash === action.actionHash);
+    if (!expected) fail("WAVE3_FIRE_SABOTAGE_ACTION_UNAVAILABLE");
+    verifyAction(action, expected, contract);
+    const state = clone(stateInput);
+    const { pieceId, markerId, priorLevel, nextLevel } = action.payload;
+    const marker = markerRows(state).find(row => row.id === markerId);
+    marker.sabotageLevel = nextLevel;
+    const piece = state.pieces.find(row => row.id === pieceId);
+    piece.activatedPhases = { ...piece.activatedPhases, assault: true };
+    const events = [{ type: "mission_sabotage_performed", round: Number(state.round),
+      sideKey: action.sideKey, pieceId, markerId, priorLevel, nextLevel, trainingTruth: false }];
+    appendLog(state, action, events);
+    return transition(state, action, events, contract);
+  }
+
   function applyScore(stateInput, action) {
     const expected = prepareScore({ state: stateInput });
     verifyAction(action, expected, contract);
@@ -1039,6 +1178,8 @@ function createMissionRuntime(input, contract) {
         return applyStart(state, action);
       case contract.actionTypes.GATHER:
         return applyGather(state, action);
+      case OFFICIAL_MISSION_SABOTAGE_ACTION_V1:
+        return applySabotage(state, action);
       case contract.actionTypes.SCORE:
         return applyScore(state, action);
       case contract.actionTypes.END_GAME:

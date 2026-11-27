@@ -1,0 +1,19 @@
+{
+  "source": "isolated Git tree export",
+  "runtimeInputs": 14,
+  "rooms": [
+    {
+      "setup": "wave3-skirmish-v1",
+      "version": "2.99.12",
+      "httpStatus": 201,
+      "roomIdReturned": true
+    },
+    {
+      "setup": "wave3-standard-v1",
+      "version": "2.99.12",
+      "httpStatus": 201,
+      "roomIdReturned": true
+    }
+  ],
+  "providerCalls": 0
+}

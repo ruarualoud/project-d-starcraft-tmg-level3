@@ -41,7 +41,7 @@ export function describeOfficialSelectedRosterFightParameterFieldsV1(domain) {
 }
 
 export function createOfficialSelectedRosterFightParameterSchemaV1({
-  targetUnitIds, leadingModelIds, surgeRequired, criticalRequired,
+  targetUnitIds, leadingModelIds, surgeRequired, criticalRequired, conditionalCriticalTargetUnitIds = [], hostDerivedFields,
 }) {
   const target = required => required
     ? { type: 'string', enum: [...targetUnitIds], allocatedTargetRequired: true }
@@ -50,7 +50,7 @@ export function createOfficialSelectedRosterFightParameterSchemaV1({
   const point = { type: 'object', required: ['xMilliInches', 'yMilliInches'],
     properties: { xMilliInches: coordinate, yMilliInches: coordinate } };
   return {
-    type: 'object', additionalProperties: false,
+    type: 'object', additionalProperties: false, ...(hostDerivedFields ? {hostDerivedFields} : {}),
     required: ['closeRanksMode', 'allocations',
       ...(surgeRequired ? ['surgeTargetUnitId'] : []),
       ...(criticalRequired ? ['criticalTargetUnitId'] : [])],
@@ -67,15 +67,17 @@ export function createOfficialSelectedRosterFightParameterSchemaV1({
           closeRanksMode: ['decline', 'move'], targetUnitIds },
       }),
       surgeTargetUnitId: target(surgeRequired),
-      criticalTargetUnitId: target(criticalRequired),
+      criticalTargetUnitId: !criticalRequired && conditionalCriticalTargetUnitIds.length
+        ? { type: ['string', 'null'], enum: ['', null, ...conditionalCriticalTargetUnitIds], allocatedTargetRequired: true }
+        : target(criticalRequired),
       leadingModelId: { type: 'string', enum: [...leadingModelIds] },
       path: { type: 'array', minItems: 1, items: point },
       placements: { type: 'array', items: { ...point,
         required: ['modelId', 'xMilliInches', 'yMilliInches'], properties: {
           ...point.properties, modelId: { type: 'string', enum: [...leadingModelIds] },
         } } },
-      elevationTransitions: { type: 'array' }, gapMouths: { type: 'array' },
-      coherencyGapMouths: { type: 'array' },
+      elevationTransitions: { type: 'array' },
+      ...(hostDerivedFields ? {} : {gapMouths:{type:'array'}, coherencyGapMouths:{type:'array'}}),
     },
     submissionContractVersion: 'official_selected_roster_fight_submission_v2',
   };

@@ -1,0 +1,2036 @@
+{
+  "schema": "starcraft_tmg_wave3_faq_implementation_worklist_v1",
+  "fromLedgerRef": "content/source-releases/wave3-20261112-faq-delta-v1.json",
+  "fromLedgerHash": "edcc68d9854d4fbf663b259085c92156a4255581353a718b922196c06f839cf2",
+  "scope": "04交给05及能力包的实施计划，所有产品验证尚待执行",
+  "owners": [
+    {
+      "itemId": "T28-W3-05",
+      "currentEntryIds": [
+        "faq-v1.3:15",
+        "faq-v1.3:16",
+        "faq-v1.3:22",
+        "faq-v1.3:23",
+        "faq-v1.3:25",
+        "faq-v1.3:39",
+        "faq-v1.3:55",
+        "faq-v1.3:56",
+        "faq-v1.3:58",
+        "faq-v1.3:59",
+        "faq-v1.3:60",
+        "faq-v1.3:61",
+        "faq-v1.3:62",
+        "faq-v1.3:63",
+        "faq-v1.3:64",
+        "faq-v1.3:65",
+        "faq-v1.3:66",
+        "faq-v1.3:67",
+        "faq-v1.3:68",
+        "faq-v1.3:69",
+        "faq-v1.3:70",
+        "faq-v1.3:71",
+        "faq-v1.3:72",
+        "faq-v1.3:73",
+        "faq-v1.3:74",
+        "faq-v1.3:75",
+        "faq-v1.3:76",
+        "faq-v1.3:77",
+        "faq-v1.3:78",
+        "faq-v1.3:79",
+        "faq-v1.3:92",
+        "faq-v1.3:93",
+        "faq-v1.3:98"
+      ]
+    },
+    {
+      "itemId": "T28-W3-06",
+      "currentEntryIds": [
+        "faq-v1.3:15",
+        "faq-v1.3:16",
+        "faq-v1.3:23",
+        "faq-v1.3:25",
+        "faq-v1.3:59",
+        "faq-v1.3:62",
+        "faq-v1.3:64",
+        "faq-v1.3:70",
+        "faq-v1.3:71",
+        "faq-v1.3:79",
+        "faq-v1.3:92"
+      ]
+    },
+    {
+      "itemId": "T28-W3-07",
+      "currentEntryIds": [
+        "faq-v1.3:25",
+        "faq-v1.3:59",
+        "faq-v1.3:60",
+        "faq-v1.3:64",
+        "faq-v1.3:75",
+        "faq-v1.3:93"
+      ]
+    },
+    {
+      "itemId": "T28-W3-08",
+      "currentEntryIds": [
+        "faq-v1.3:39",
+        "faq-v1.3:56",
+        "faq-v1.3:60",
+        "faq-v1.3:62",
+        "faq-v1.3:63",
+        "faq-v1.3:66",
+        "faq-v1.3:67",
+        "faq-v1.3:70",
+        "faq-v1.3:71",
+        "faq-v1.3:72",
+        "faq-v1.3:73",
+        "faq-v1.3:74",
+        "faq-v1.3:75",
+        "faq-v1.3:76",
+        "faq-v1.3:78",
+        "faq-v1.3:79",
+        "faq-v1.3:93",
+        "faq-v1.3:98"
+      ]
+    },
+    {
+      "itemId": "T28-W3-09",
+      "currentEntryIds": [
+        "faq-v1.3:25",
+        "faq-v1.3:56",
+        "faq-v1.3:59",
+        "faq-v1.3:62",
+        "faq-v1.3:64",
+        "faq-v1.3:66",
+        "faq-v1.3:67",
+        "faq-v1.3:70",
+        "faq-v1.3:71",
+        "faq-v1.3:72",
+        "faq-v1.3:78",
+        "faq-v1.3:79"
+      ]
+    },
+    {
+      "itemId": "T28-W3-10",
+      "currentEntryIds": [
+        "faq-v1.3:39",
+        "faq-v1.3:55",
+        "faq-v1.3:56",
+        "faq-v1.3:61",
+        "faq-v1.3:63",
+        "faq-v1.3:65",
+        "faq-v1.3:66",
+        "faq-v1.3:67",
+        "faq-v1.3:68",
+        "faq-v1.3:69",
+        "faq-v1.3:72",
+        "faq-v1.3:73",
+        "faq-v1.3:74",
+        "faq-v1.3:76",
+        "faq-v1.3:77",
+        "faq-v1.3:78",
+        "faq-v1.3:98"
+      ]
+    },
+    {
+      "itemId": "T28-W3-11",
+      "currentEntryIds": [
+        "faq-v1.3:22",
+        "faq-v1.3:58"
+      ]
+    }
+  ],
+  "revisions": [
+    {
+      "current": 55,
+      "existingAtomId": "rule-atom:faq-v1-49-one-reaction-per-trigger",
+      "candidateAtomId": "rule-atom:faq-v1.3-outside-activation-per-phase",
+      "change": "把通用激活外次数键从trigger改为player/round/phase，保留命名技能每回合限制。"
+    },
+    {
+      "current": 56,
+      "existingAtomId": "rule-atom:faq-v1-50-structure-area-unit-target",
+      "candidateAtomId": "rule-atom:faq-v1.3-structure-area-target",
+      "change": "普通能力不能凭unit范围选择Structure；area范围及明确的非targeting例外分别处理。"
+    },
+    {
+      "current": 58,
+      "existingAtomId": "rule-atom:faq-v1-52-artefact-blocks-psionic-transfer",
+      "candidateAtomId": "rule-atom:faq-v1.3-drop-artefact-before-teleport",
+      "change": "由禁止Adept携带传送改为所有相关传送先丢标记，旧发布保留原限制。"
+    }
+  ],
+  "proposedAtoms": [
+    {
+      "id": "rule-atom:faq-v1.3-supply-drop-before-priority",
+      "primitive": "order_marker_activation_before_priority_roll",
+      "kind": "timing",
+      "entries": [
+        22
+      ],
+      "owner": "T28-W3-05",
+      "status": "proposed_not_registered_or_executed"
+    },
+    {
+      "id": "rule-atom:faq-v1.3-asset-deploy-source-elevation",
+      "primitive": "require_same_elevation_as_deployment_asset",
+      "kind": "constraint",
+      "entries": [
+        25
+      ],
+      "owner": "T28-W3-06",
+      "status": "proposed_not_registered_or_executed"
+    },
+    {
+      "id": "rule-atom:faq-v1.3-rapid-reinforcement-source-exclusion",
+      "primitive": "exclude_structure_as_rapid_reinforcement_origin",
+      "kind": "constraint",
+      "entries": [
+        59
+      ],
+      "owner": "T28-W3-07",
+      "status": "proposed_not_registered_or_executed"
+    },
+    {
+      "id": "rule-atom:faq-v1.3-location-damage-no-los",
+      "primitive": "resolve_location_effect_casualties_without_model_los",
+      "kind": "permission",
+      "entries": [
+        62
+      ],
+      "owner": "T28-W3-09",
+      "status": "proposed_not_registered_or_executed"
+    },
+    {
+      "id": "rule-atom:faq-v1.3-deployment-ability-attribution",
+      "primitive": "attribute_burrow_deployment_to_source_entry_ability",
+      "kind": "state_transition",
+      "entries": [
+        64
+      ],
+      "owner": "T28-W3-09",
+      "status": "proposed_not_registered_or_executed"
+    },
+    {
+      "id": "rule-atom:faq-v1.3-tactical-los-default",
+      "primitive": "require_tactical_los_only_when_explicit",
+      "kind": "constraint",
+      "entries": [
+        66
+      ],
+      "owner": "T28-W3-05",
+      "status": "proposed_not_registered_or_executed"
+    },
+    {
+      "id": "rule-atom:faq-v1.3-range-reference-not-target",
+      "primitive": "distinguish_measurement_reference_from_selected_target",
+      "kind": "definition",
+      "entries": [
+        67,
+        72
+      ],
+      "owner": "T28-W3-05",
+      "status": "proposed_not_registered_or_executed"
+    },
+    {
+      "id": "rule-atom:faq-v1.3-token-area-elevation",
+      "primitive": "apply_token_area_across_elevations_unless_excepted",
+      "kind": "derived_value",
+      "entries": [
+        70
+      ],
+      "owner": "T28-W3-06",
+      "status": "proposed_not_registered_or_executed"
+    },
+    {
+      "id": "rule-atom:faq-v1.3-token-placement-elevation",
+      "primitive": "allow_token_placement_across_elevation",
+      "kind": "permission",
+      "entries": [
+        71
+      ],
+      "owner": "T28-W3-06",
+      "status": "proposed_not_registered_or_executed"
+    },
+    {
+      "id": "rule-atom:faq-v1.3-untargeted-impact-structure",
+      "primitive": "allow_untargeted_impact_hits_on_structure",
+      "kind": "permission",
+      "entries": [
+        73
+      ],
+      "owner": "T28-W3-05",
+      "status": "proposed_not_registered_or_executed"
+    },
+    {
+      "id": "rule-atom:faq-v1.3-bound-weapon-modifier-reuse",
+      "primitive": "reuse_profile_bound_modifier_for_additional_attacks",
+      "kind": "state_transition",
+      "entries": [
+        74
+      ],
+      "owner": "T28-W3-10",
+      "status": "proposed_not_registered_or_executed"
+    },
+    {
+      "id": "rule-atom:faq-v1.3-coordinated-strike-latest-owner",
+      "primitive": "replace_same_target_coordinated_strike_owner",
+      "kind": "state_transition",
+      "entries": [
+        76
+      ],
+      "owner": "T28-W3-07",
+      "status": "native_component_verified_consumers_pending",
+      "evidenceRefs": [
+        "build/ticket-28-wave2-capabilities-20261113-v1/tank-coordinated-strike/REPORT.zh-CN.md",
+        "build/ticket-28-wave2-capabilities-20261113-v1/tank-coordinated-strike/mode-dependency/boundary.json"
+      ]
+    },
+    {
+      "id": "rule-atom:faq-v1.3-detached-delayed-source-lifetime",
+      "primitive": "retain_authorized_delayed_effect_after_source_destroyed",
+      "kind": "state_transition",
+      "entries": [
+        79
+      ],
+      "owner": "T28-W3-08",
+      "status": "proposed_not_registered_or_executed"
+    }
+  ],
+  "cases": [
+    {
+      "entryId": "faq-v1.3:15",
+      "title": "高地最终摆放可悬边",
+      "action": "reuse_binding",
+      "existingAtomIds": [
+        "rule-atom:faq-v1-12-wobbly-minimum-overhang",
+        "rule-atom:faq-v1-12-wobbly-supported-center",
+        "rule-atom:singleton:core-2-3-wobbly-model-position:d968118c812d"
+      ],
+      "featureRefs": [],
+      "proposedAtomIds": [],
+      "revision": null,
+      "reads": [
+        "movement.stage",
+        "model.baseCenter",
+        "terrain.highGroundFootprint"
+      ],
+      "writes": [],
+      "expected": "动作结束的最终摆放允许Wobbly悬边，中心须留在高地，不能据此宣称整个移动路径合法。",
+      "witness": "同底盘最终悬边中心在高地允许；中心越过高地边缘拒绝。",
+      "consumers": {
+        "owners": [
+          "T28-W3-05",
+          "T28-W3-06"
+        ],
+        "rules": [
+          {
+            "path": "packages/rule-atoms/official-elevation-effective-size-rules-kernel-v1.mjs",
+            "export": "evaluateOfficialElevatedLineOfSightV1"
+          },
+          {
+            "path": "packages/rule-atoms/official-gap-place-geometry-kernel-v1.mjs",
+            "export": "certifyOfficialGapPlaceGeometryPlanV1"
+          }
+        ],
+        "queryKinds": [
+          "legal_full_path_movement",
+          "legal_asset_placement_options",
+          "action_specific_threat",
+          "attack_probability"
+        ],
+        "lifecycle": "准备合法候选→同位置preview/apply→摆放/高地效果→存储恢复"
+      },
+      "validationStatus": "not_run"
+    },
+    {
+      "entryId": "faq-v1.3:16",
+      "title": "跨高度禁止俯视底盘重叠",
+      "action": "reuse_binding",
+      "existingAtomIds": [
+        "rule-atom:singleton:core-2-3-no-base-overlap:dd57d4bf866c"
+      ],
+      "featureRefs": [],
+      "proposedAtomIds": [],
+      "revision": null,
+      "reads": [
+        "model.footprints",
+        "model.elevation"
+      ],
+      "writes": [],
+      "expected": "悬边下方也不能摆另一个模型，重叠判定使用俯视投影。",
+      "witness": "同XY不同高度仍拒绝重叠，分离底盘允许。",
+      "consumers": {
+        "owners": [
+          "T28-W3-05",
+          "T28-W3-06"
+        ],
+        "rules": [
+          {
+            "path": "packages/rule-atoms/official-elevation-effective-size-rules-kernel-v1.mjs",
+            "export": "evaluateOfficialElevatedLineOfSightV1"
+          },
+          {
+            "path": "packages/rule-atoms/official-gap-place-geometry-kernel-v1.mjs",
+            "export": "certifyOfficialGapPlaceGeometryPlanV1"
+          }
+        ],
+        "queryKinds": [
+          "legal_full_path_movement",
+          "legal_asset_placement_options",
+          "action_specific_threat",
+          "attack_probability"
+        ],
+        "lifecycle": "准备合法候选→同位置preview/apply→摆放/高地效果→存储恢复"
+      },
+      "validationStatus": "not_run"
+    },
+    {
+      "entryId": "faq-v1.3:22",
+      "title": "Supply Drop先激活标记再掷先手",
+      "action": "new_binding",
+      "existingAtomIds": [],
+      "featureRefs": [],
+      "proposedAtomIds": [
+        "rule-atom:faq-v1.3-supply-drop-before-priority"
+      ],
+      "revision": null,
+      "reads": [
+        "mission.family",
+        "round.startStep",
+        "random.cursor"
+      ],
+      "writes": [
+        "mission.markerActivation",
+        "round.priority"
+      ],
+      "expected": "回合开始先完成任务标记随机激活，再进行Priority Roll。",
+      "witness": "读取同轮journal，marker activation事件严格在priority之前，恢复不重掷。",
+      "consumers": {
+        "owners": [
+          "T28-W3-05",
+          "T28-W3-11"
+        ],
+        "rules": [
+          {
+            "path": "packages/rule-atoms/official-standard-mission-runtime-v1.mjs",
+            "export": "createOfficialMissionRuntimeV2"
+          }
+        ],
+        "queryKinds": [
+          "mission_marker_control"
+        ],
+        "lifecycle": "回合开始/标记状态→任务行动→控制和真实计分→保存恢复；新增Artefact任务由11接完整生命周期"
+      },
+      "validationStatus": "not_run"
+    },
+    {
+      "entryId": "faq-v1.3:23",
+      "title": "高地闪避资格看全队每个底盘",
+      "action": "reuse_binding",
+      "existingAtomIds": [
+        "rule-atom:singleton:core-7-1-3-high-ground-evade:0711eafb82c1"
+      ],
+      "featureRefs": [],
+      "proposedAtomIds": [],
+      "revision": null,
+      "reads": [
+        "attacker.elevation",
+        "defender.modelFootprints",
+        "terrain.highGround"
+      ],
+      "writes": [
+        "attack.evadeEligibility"
+      ],
+      "expected": "防守队所有模型均有至少一部分底盘在高地，且射击来自更低高度，才有该闪避资格。",
+      "witness": "全队部分悬边但均接高地允许；一模型全在平地或攻击同高度不给高地资格。",
+      "consumers": {
+        "owners": [
+          "T28-W3-05",
+          "T28-W3-06"
+        ],
+        "rules": [
+          {
+            "path": "packages/rule-atoms/official-elevation-effective-size-rules-kernel-v1.mjs",
+            "export": "evaluateOfficialElevatedLineOfSightV1"
+          },
+          {
+            "path": "packages/rule-atoms/official-gap-place-geometry-kernel-v1.mjs",
+            "export": "certifyOfficialGapPlaceGeometryPlanV1"
+          }
+        ],
+        "queryKinds": [
+          "legal_full_path_movement",
+          "legal_asset_placement_options",
+          "action_specific_threat",
+          "attack_probability"
+        ],
+        "lifecycle": "准备合法候选→同位置preview/apply→摆放/高地效果→存储恢复"
+      },
+      "validationStatus": "not_run"
+    },
+    {
+      "entryId": "faq-v1.3:25",
+      "title": "Worm/Pylon进场与源同高度",
+      "action": "new_binding",
+      "existingAtomIds": [
+        "rule-atom:faq-v1-20-edge-touch-high-ground-entry",
+        "rule-atom:faq-v1-20-high-ground-deploy-legality",
+        "rule-atom:singleton:core-11-access-point-elevation-change:a5c3fcad63e9",
+        "rule-atom:singleton:core-11-entry-edge-reserve-deployment:4fcc890f1383"
+      ],
+      "featureRefs": [],
+      "proposedAtomIds": [
+        "rule-atom:faq-v1.3-asset-deploy-source-elevation"
+      ],
+      "revision": null,
+      "reads": [
+        "deployment.sourceAsset",
+        "sourceAsset.elevation",
+        "candidate.elevation"
+      ],
+      "writes": [],
+      "expected": "源底盘接触高地不等于可进到高地，区别主棋盘边缘与单位Entry Edge。",
+      "witness": "源在平地而目标在高地拒绝，同高度且满足其余部署条件允许。",
+      "consumers": {
+        "owners": [
+          "T28-W3-05",
+          "T28-W3-06",
+          "T28-W3-07",
+          "T28-W3-09"
+        ],
+        "rules": [
+          {
+            "path": "packages/product-composition/official-battlefield-asset-family-adapter-v1.mjs",
+            "export": "createOfficialBattlefieldAssetFamilyAdapterV1"
+          },
+          {
+            "path": "packages/product-composition/official-unit-lifecycle-family-adapter-v1.mjs",
+            "export": "createOfficialUnitLifecycleFamilyAdapterV1"
+          }
+        ],
+        "queryKinds": [
+          "legal_asset_placement_options",
+          "legal_full_path_movement"
+        ],
+        "lifecycle": "入口/源能力资格→同高度与全底盘合法摆放→源使用归因→激活结束→恢复"
+      },
+      "validationStatus": "not_run"
+    },
+    {
+      "entryId": "faq-v1.3:39",
+      "title": "Blast批次顺序可选",
+      "action": "reuse_binding",
+      "existingAtomIds": [
+        "rule-atom:faq-v1-67-guardian-shield-per-attack-batch",
+        "rule-atom:faq-v1-68-critical-main-target-only",
+        "rule-atom:faq-v1-68-precision-main-target-only",
+        "rule-atom:singleton:core-11-critical-hit-resolution:7501d86a7392",
+        "rule-atom:singleton:core-11-precision-failed-dice-conversion:b540b4f0a7c2",
+        "rule-atom:singleton:core-8-7-6-template-surge-application:bec5add22266"
+      ],
+      "featureRefs": [],
+      "proposedAtomIds": [],
+      "revision": null,
+      "reads": [
+        "attack.templateBatches",
+        "attack.batchOrder",
+        "attack.spilloverModifiers"
+      ],
+      "writes": [
+        "attack.batchCursor"
+      ],
+      "expected": "模板攻击顺序由控制方选择，Spillover仍按自身无武器修正的合同结算。",
+      "witness": "两种合法批次顺序均可声明；不能借顺序把主目标武器修正复制给Spillover。",
+      "consumers": {
+        "owners": [
+          "T28-W3-05",
+          "T28-W3-08",
+          "T28-W3-10"
+        ],
+        "rules": [
+          {
+            "path": "packages/rule-atoms/official-template-weapon-executor-v1.mjs",
+            "export": "applyOfficialTemplateWeaponV1"
+          },
+          {
+            "path": "packages/rule-atoms/official-dodge-resolution-kernel-v1.mjs",
+            "export": "createOfficialDodgeResolutionKernelV1"
+          },
+          {
+            "path": "packages/rule-atoms/official-impact-executor-v1.mjs",
+            "export": "applyOfficialImpactV1"
+          }
+        ],
+        "queryKinds": [
+          "attack_probability",
+          "ranged_activation_probability",
+          "fire_zone_exchange"
+        ],
+        "lifecycle": "选批次/参数→同核心概率→掷骰与损伤→伤亡/状态→下一批次→恢复"
+      },
+      "validationStatus": "partial_adaptive_order_component_passed",
+      "runtimeEvidence": {
+        "componentVersion": "3.15.0",
+        "templateRuntimeVersion": "1.5.0",
+        "policyModule": "packages/rule-atoms/official-template-batch-order-policy-v13.mjs",
+        "semanticField": "batchOrderUnitIds initial preference; next finite candidate target selection",
+        "compiledField": "pendingOfficialBlastTemplateAttack.batches with completed prefix",
+        "sourceBinding": "frozen_FAQ_v1.3_entry39",
+        "nativeReceipts": 11,
+        "legacyReceipts": 15,
+        "reportRef": "build/ticket-28-wave2-capabilities-20261113-v1/template-adaptive-order/REPORT.zh-CN.md",
+        "boundaryRef": "build/ticket-28-wave2-capabilities-20261113-v1/template-adaptive-order/verification/boundary.json",
+        "queryKindsVerified": [
+          "blast_template_attack_preview",
+          "blast_template_next_batch_preview"
+        ],
+        "remaining": [
+          "formal Weapon IR order combination Native case",
+          "worker / roster Plan / UI order consumers",
+          "complete 2000-point Match"
+        ],
+        "entryId": "faq-v1.3:39",
+        "status": "controller_initial_and_adaptive_order_component_passed",
+        "policyVersion": "1.1.0",
+        "currentBatchArmourReactionEvidenceRef": "build/ticket-28-wave2-capabilities-20261113-v1/template-armour-reaction/REPORT.zh-CN.md",
+        "templatePrimaryTargetEvidenceRef": "build/ticket-28-wave2-capabilities-20261113-v1/template-target-reaction/REPORT.zh-CN.md"
+      }
+    },
+    {
+      "entryId": "faq-v1.3:55",
+      "title": "激活外反应每阶段一次",
+      "action": "revise",
+      "existingAtomIds": [
+        "rule-atom:faq-v1-49-one-reaction-per-trigger",
+        "rule-atom:faq-v1-49-outside-activation-reaction",
+        "rule-atom:faq-v1-49-outside-reaction-first-player-priority",
+        "rule-atom:faq-v1-59-repeatable-reaction-activation-cap",
+        "rule-atom:faq-v1-59-repeatable-reaction-trigger-cap",
+        "rule-atom:per-activation-reaction-limit",
+        "rule-atom:reaction-exact-trigger-declaration-window",
+        "rule-atom:simultaneous-reaction-active-player-priority",
+        "rule-atom:singleton:core-11-repeatable-use-permission:202261e65742"
+      ],
+      "featureRefs": [],
+      "proposedAtomIds": [],
+      "revision": {
+        "current": 55,
+        "existingAtomId": "rule-atom:faq-v1-49-one-reaction-per-trigger",
+        "candidateAtomId": "rule-atom:faq-v1.3-outside-activation-per-phase",
+        "change": "把通用激活外次数键从trigger改为player/round/phase，保留命名技能每回合限制。"
+      },
+      "reads": [
+        "reaction.trigger",
+        "reaction.repeatable",
+        "round.phase",
+        "player.reactionsOutsidePhase",
+        "unit.namedReactionUses"
+      ],
+      "writes": [
+        "player.reactionsOutsidePhase",
+        "unit.namedReactionUses"
+      ],
+      "expected": "通用每阶段上限与FAQ86的每trigger上限共同检查。REPEATABLE只明确豁免命名技能每回合限制，不假定豁免每阶段上限。",
+      "witness": "同玩家同阶段第二个不同trigger拒绝；下阶段且命名次数允许时可用。重复投递不多扣资源。",
+      "consumers": {
+        "owners": [
+          "T28-W3-05",
+          "T28-W3-10"
+        ],
+        "rules": [
+          {
+            "path": "packages/rule-atoms/official-faq-f4-ability-tactical-keyword-kernel-v1.mjs",
+            "export": "evaluateOfficialFaqF4RuleV1"
+          },
+          {
+            "path": "packages/product-composition/official-reaction-family-adapter-v1.mjs",
+            "export": "openOfficialReactionFamilyWindowV1"
+          }
+        ],
+        "queryKinds": [
+          "action_specific_threat",
+          "attack_probability"
+        ],
+        "lifecycle": "原始事件→窗口与每阶段/每激活/每trigger次数→支付→回到父动作→恢复无重复"
+      },
+      "validationStatus": "not_run"
+    },
+    {
+      "entryId": "faq-v1.3:56",
+      "title": "Structure普通能力须area范围",
+      "action": "revise",
+      "existingAtomIds": [
+        "rule-atom:faq-v1-50-structure-area-unit-target",
+        "rule-atom:faq-v1-50-structure-explicit-exclusion",
+        "rule-atom:singleton:core-10-1-special-ability-universal-structure:5a816d600530"
+      ],
+      "featureRefs": [],
+      "proposedAtomIds": [],
+      "revision": {
+        "current": 56,
+        "existingAtomId": "rule-atom:faq-v1-50-structure-area-unit-target",
+        "candidateAtomId": "rule-atom:faq-v1.3-structure-area-target",
+        "change": "普通能力不能凭unit范围选择Structure；area范围及明确的非targeting例外分别处理。"
+      },
+      "reads": [
+        "target.structure",
+        "effect.targetScope",
+        "effect.explicitExceptions"
+      ],
+      "writes": [],
+      "expected": "移除旧版普通unit范围自动允许Structure的解释，73的非targeting IMPACT和明确例外单独处理。",
+      "witness": "普通unit-target拒绝，area-effect允许；IMPACT不得被误当普通unit-target。",
+      "consumers": {
+        "owners": [
+          "T28-W3-05",
+          "T28-W3-08",
+          "T28-W3-09",
+          "T28-W3-10"
+        ],
+        "rules": [
+          {
+            "path": "packages/product-composition/official-ability-effect-runtime-v1.mjs",
+            "export": "createOfficialAbilityEffectRuntimeV1"
+          },
+          {
+            "path": "packages/product-composition/official-selected-roster-ability-runtime-v1.mjs",
+            "export": "queryOfficialSelectedRosterAbilityV1"
+          }
+        ],
+        "queryKinds": [
+          "action_specific_threat",
+          "legal_asset_placement_options",
+          "attack_probability"
+        ],
+        "lifecycle": "区分目标、区域与测距参照→资格/显式LOS→Host绑定→preview/apply"
+      },
+      "validationStatus": "not_run"
+    },
+    {
+      "entryId": "faq-v1.3:58",
+      "title": "携带遗物传送先丢标记",
+      "action": "revise",
+      "existingAtomIds": [
+        "rule-atom:faq-v1-52-artefact-blocks-psionic-transfer"
+      ],
+      "featureRefs": [],
+      "proposedAtomIds": [],
+      "revision": {
+        "current": 58,
+        "existingAtomId": "rule-atom:faq-v1-52-artefact-blocks-psionic-transfer",
+        "candidateAtomId": "rule-atom:faq-v1.3-drop-artefact-before-teleport",
+        "change": "由禁止Adept携带传送改为所有相关传送先丢标记，旧发布保留原限制。"
+      },
+      "reads": [
+        "mission.family",
+        "unit.claimedMarkerId",
+        "ability.placementKind",
+        "unit.position"
+      ],
+      "writes": [
+        "marker.claimedBy",
+        "marker.position",
+        "unit.position"
+      ],
+      "expected": "先在原处丢下标记，再执行传送。任务与位置状态一次提交，不能连标记一起搬走。",
+      "witness": "原携带者合法传送后标记留在原位置，冷恢复不重复丢落；明确拒绝把带删除线的No.作为有效答案。",
+      "consumers": {
+        "owners": [
+          "T28-W3-05",
+          "T28-W3-11"
+        ],
+        "rules": [
+          {
+            "path": "packages/rule-atoms/official-standard-mission-runtime-v1.mjs",
+            "export": "createOfficialMissionRuntimeV2"
+          }
+        ],
+        "queryKinds": [
+          "mission_marker_control"
+        ],
+        "lifecycle": "回合开始/标记状态→任务行动→控制和真实计分→保存恢复；新增Artefact任务由11接完整生命周期"
+      },
+      "validationStatus": "not_run"
+    },
+    {
+      "entryId": "faq-v1.3:59",
+      "title": "Raider增援不能从Structure来源PLACE",
+      "action": "new_binding",
+      "existingAtomIds": [],
+      "featureRefs": [
+        {
+          "semanticId": "unit:raynor_s_raider__marine_/rapid-reinforcements-movement-phase",
+          "semanticVersion": 1,
+          "recordKey": "army_units:raynor_s_raider__marine_",
+          "name": "Rapid Reinforcements",
+          "phase": "Movement Phase"
+        }
+      ],
+      "proposedAtomIds": [
+        "rule-atom:faq-v1.3-rapid-reinforcement-source-exclusion"
+      ],
+      "revision": null,
+      "reads": [
+        "ability.sourceUnit",
+        "deployment.originUnit",
+        "originUnit.structure"
+      ],
+      "writes": [],
+      "expected": "此能力来源单位不能是Structure，不能扩大成所有部署方式都禁用Structure。",
+      "witness": "同能力从Structure拒绝，从符合原卡条件的非Structure来源允许。",
+      "consumers": {
+        "owners": [
+          "T28-W3-05",
+          "T28-W3-06",
+          "T28-W3-07",
+          "T28-W3-09"
+        ],
+        "rules": [
+          {
+            "path": "packages/product-composition/official-battlefield-asset-family-adapter-v1.mjs",
+            "export": "createOfficialBattlefieldAssetFamilyAdapterV1"
+          },
+          {
+            "path": "packages/product-composition/official-unit-lifecycle-family-adapter-v1.mjs",
+            "export": "createOfficialUnitLifecycleFamilyAdapterV1"
+          }
+        ],
+        "queryKinds": [
+          "legal_asset_placement_options",
+          "legal_full_path_movement"
+        ],
+        "lifecycle": "入口/源能力资格→同高度与全底盘合法摆放→源使用归因→激活结束→恢复"
+      },
+      "validationStatus": "not_run"
+    },
+    {
+      "entryId": "faq-v1.3:60",
+      "title": "Combat Shield对具名伤害可闪避",
+      "action": "reuse_binding",
+      "existingAtomIds": [],
+      "featureRefs": [
+        {
+          "semanticId": "unit:marine/combat-shield-movement-phase",
+          "semanticVersion": 1,
+          "recordKey": "army_units:marine",
+          "name": "Combat Shield",
+          "phase": "Movement Phase"
+        }
+      ],
+      "proposedAtomIds": [],
+      "revision": null,
+      "reads": [
+        "effect.combatShield",
+        "damage.type",
+        "damage.sourceSide",
+        "damage.fromSpecialAbility"
+      ],
+      "writes": [
+        "damage.evadeEligibility"
+      ],
+      "expected": "Non-Lethal、Psionic Storm、Plague的受支持伤害路径都需尊重Combat Shield，来源条件与原卡同时记录。",
+      "witness": "敌方技能的三类伤害分别可给闪避；自伤Stimpack需独立核源条件，不能由此FAQ推定可闪避。",
+      "consumers": {
+        "owners": [
+          "T28-W3-05",
+          "T28-W3-07",
+          "T28-W3-08"
+        ],
+        "rules": [
+          {
+            "path": "packages/rule-atoms/official-attack-pool-edge-executor-v1.mjs",
+            "export": "applyOfficialAttackPoolEdgeV1"
+          },
+          {
+            "path": "packages/product-composition/official-selected-roster-ability-runtime-v1.mjs",
+            "export": "resolveOfficialSelectedRosterAbilityModifiersV1"
+          }
+        ],
+        "queryKinds": [
+          "attack_probability",
+          "ranged_activation_probability",
+          "fire_zone_exchange"
+        ],
+        "lifecycle": "实际伤害来源/防御资格→旧伤加新伤→伤亡上限→余伤/人口/分数→恢复"
+      },
+      "validationStatus": "not_run"
+    },
+    {
+      "entryId": "faq-v1.3:61",
+      "title": "Nerazim失去HIDDEN立即反应",
+      "action": "reuse_binding",
+      "existingAtomIds": [
+        "rule-atom:faq-v1-37-different-name-active-unbounded",
+        "rule-atom:faq-v1-37-named-active-once-round",
+        "rule-atom:faq-v1-37-reaction-once-per-activation",
+        "rule-atom:faq-v1-37-tactical-card-active-unbounded",
+        "rule-atom:named-active-ability-per-unit-round-limit",
+        "rule-atom:per-activation-reaction-limit"
+      ],
+      "featureRefs": [
+        {
+          "semanticId": "card:nerazim/might-of-the-nerazim-any",
+          "semanticVersion": 1,
+          "recordKey": "tactical_cards:nerazim",
+          "name": "Might Of The Nerazim",
+          "phase": ""
+        }
+      ],
+      "proposedAtomIds": [],
+      "revision": null,
+      "reads": [
+        "status.hidden",
+        "attack.stage",
+        "reaction.trigger"
+      ],
+      "writes": [
+        "reaction.window",
+        "unit.modifiers"
+      ],
+      "expected": "失去HIDDEN后、攻击掷骰前开启窗口，Buff影响本次攻击。",
+      "witness": "同次攻击先失去HIDDEN并反应，再形成攻击参数。",
+      "consumers": {
+        "owners": [
+          "T28-W3-05",
+          "T28-W3-10"
+        ],
+        "rules": [
+          {
+            "path": "packages/rule-atoms/official-faq-f4-ability-tactical-keyword-kernel-v1.mjs",
+            "export": "evaluateOfficialFaqF4RuleV1"
+          },
+          {
+            "path": "packages/product-composition/official-reaction-family-adapter-v1.mjs",
+            "export": "openOfficialReactionFamilyWindowV1"
+          }
+        ],
+        "queryKinds": [
+          "action_specific_threat",
+          "attack_probability"
+        ],
+        "lifecycle": "原始事件→窗口与每阶段/每激活/每trigger次数→支付→回到父动作→恢复无重复"
+      },
+      "validationStatus": "not_run"
+    },
+    {
+      "entryId": "faq-v1.3:62",
+      "title": "Corrosive Bile位置伤害不查LOS",
+      "action": "new_binding",
+      "existingAtomIds": [],
+      "featureRefs": [
+        {
+          "semanticId": "unit:ravager/corrosive-bile-movement-phase",
+          "semanticVersion": 1,
+          "recordKey": "army_units:ravager",
+          "name": "Corrosive Bile",
+          "phase": "Movement Phase"
+        }
+      ],
+      "proposedAtomIds": [
+        "rule-atom:faq-v1.3-location-damage-no-los"
+      ],
+      "revision": null,
+      "reads": [
+        "token.position",
+        "damage.eligibleModels",
+        "effect.targetScope"
+      ],
+      "writes": [
+        "unit.damage",
+        "unit.currentModels"
+      ],
+      "expected": "伤害结算按位置范围选对象，移除伤亡不要求看见Ravager或被伤模型。",
+      "witness": "遮挡目标和来源仍结算，范围外模型排除。",
+      "consumers": {
+        "owners": [
+          "T28-W3-05",
+          "T28-W3-06",
+          "T28-W3-08",
+          "T28-W3-09"
+        ],
+        "rules": [
+          {
+            "path": "packages/product-composition/official-battlefield-asset-family-adapter-v1.mjs",
+            "export": "createOfficialBattlefieldAssetFamilyAdapterV1"
+          },
+          {
+            "path": "packages/product-composition/official-match-lifecycle-family-adapter-v1.mjs",
+            "export": "createOfficialMatchLifecycleFamilyAdapterV1"
+          }
+        ],
+        "queryKinds": [
+          "legal_asset_placement_options",
+          "action_specific_threat",
+          "attack_probability"
+        ],
+        "lifecycle": "token来源/高度/适用域→保存→具名触发→来源死亡策略→结算与到期清理"
+      },
+      "validationStatus": "not_run"
+    },
+    {
+      "entryId": "faq-v1.3:63",
+      "title": "Dodge在有效池封顶之后减转移",
+      "action": "reuse_binding",
+      "existingAtomIds": [
+        "attack-effect:dodge-v1",
+        "rule-atom:singleton:core-11-dodge-surge-reduction:4e101fc93566"
+      ],
+      "featureRefs": [],
+      "proposedAtomIds": [],
+      "revision": null,
+      "reads": [
+        "attack.armourPoolDice",
+        "attack.requestedTransferDice",
+        "defender.dodge"
+      ],
+      "writes": [
+        "attack.damagePoolDice"
+      ],
+      "expected": "先min(装甲池,请求转移数)，再减Dodge，最低0。已有Dodge内核采用此公式，复用并验证新版本来源绑定。",
+      "witness": "装甲池1、请求转移3、Dodge1，实际转移0，不能先3减1再封顶得1。",
+      "consumers": {
+        "owners": [
+          "T28-W3-05",
+          "T28-W3-08",
+          "T28-W3-10"
+        ],
+        "rules": [
+          {
+            "path": "packages/rule-atoms/official-template-weapon-executor-v1.mjs",
+            "export": "applyOfficialTemplateWeaponV1"
+          },
+          {
+            "path": "packages/rule-atoms/official-dodge-resolution-kernel-v1.mjs",
+            "export": "createOfficialDodgeResolutionKernelV1"
+          },
+          {
+            "path": "packages/rule-atoms/official-impact-executor-v1.mjs",
+            "export": "applyOfficialImpactV1"
+          }
+        ],
+        "queryKinds": [
+          "attack_probability",
+          "ranged_activation_probability",
+          "fire_zone_exchange"
+        ],
+        "lifecycle": "选批次/参数→同核心概率→掷骰与损伤→伤亡/状态→下一批次→恢复"
+      },
+      "validationStatus": "not_run"
+    },
+    {
+      "entryId": "faq-v1.3:64",
+      "title": "Burrow部署计入源Entry能力使用",
+      "action": "new_binding",
+      "existingAtomIds": [],
+      "featureRefs": [],
+      "proposedAtomIds": [
+        "rule-atom:faq-v1.3-deployment-ability-attribution"
+      ],
+      "revision": null,
+      "reads": [
+        "deployment.route",
+        "deployment.sourceAbilityId",
+        "unit.upgrades"
+      ],
+      "writes": [
+        "ability.usageLedger"
+      ],
+      "expected": "Worm或Zagara边缘结合Burrow Ambush仍算源能力部署，Host保留归因而非只保存最终坐标。",
+      "witness": "记录两类入口的sourceAbility归因，不能借Burrow绕过原入口次数或本轮限制。",
+      "consumers": {
+        "owners": [
+          "T28-W3-05",
+          "T28-W3-06",
+          "T28-W3-07",
+          "T28-W3-09"
+        ],
+        "rules": [
+          {
+            "path": "packages/product-composition/official-battlefield-asset-family-adapter-v1.mjs",
+            "export": "createOfficialBattlefieldAssetFamilyAdapterV1"
+          },
+          {
+            "path": "packages/product-composition/official-unit-lifecycle-family-adapter-v1.mjs",
+            "export": "createOfficialUnitLifecycleFamilyAdapterV1"
+          }
+        ],
+        "queryKinds": [
+          "legal_asset_placement_options",
+          "legal_full_path_movement"
+        ],
+        "lifecycle": "入口/源能力资格→同高度与全底盘合法摆放→源使用归因→激活结束→恢复"
+      },
+      "validationStatus": "not_run"
+    },
+    {
+      "entryId": "faq-v1.3:65",
+      "title": "借行动不等于目标单位激活",
+      "action": "reuse_binding",
+      "existingAtomIds": [
+        "rule-atom:faq-v1-36-active-battlefield-unit",
+        "rule-atom:faq-v1-36-card-effect-independence",
+        "rule-atom:faq-v1-37-different-name-active-unbounded",
+        "rule-atom:faq-v1-37-named-active-once-round",
+        "rule-atom:faq-v1-37-reaction-once-per-activation",
+        "rule-atom:faq-v1-37-tactical-card-active-unbounded",
+        "rule-atom:named-active-ability-per-unit-round-limit",
+        "rule-atom:per-activation-reaction-limit",
+        "rule-atom:singleton:core-10-2-active-requires-activation:dbe149746c16"
+      ],
+      "featureRefs": [
+        {
+          "semanticId": "card:templar_caste/khassar-de-templari-any",
+          "semanticVersion": 1,
+          "recordKey": "tactical_cards:templar_caste",
+          "name": "Khassar de Templari",
+          "phase": ""
+        }
+      ],
+      "proposedAtomIds": [],
+      "revision": null,
+      "reads": [
+        "activation.activeUnitId",
+        "action.executingUnitId"
+      ],
+      "writes": [],
+      "expected": "被选单位只执行action，不能用只对active unit开放的主动能力。",
+      "witness": "只借行动的目标主动菜单不可用，当前激活者身份保留。",
+      "consumers": {
+        "owners": [
+          "T28-W3-05",
+          "T28-W3-10"
+        ],
+        "rules": [
+          {
+            "path": "packages/rule-atoms/official-round-phase-activation-rules-executor-v1.mjs",
+            "export": "applyOfficialRoundPhaseActivationRulesV1"
+          },
+          {
+            "path": "packages/product-composition/official-selected-roster-ability-runtime-v1.mjs",
+            "export": "openOfficialSelectedRosterAfterActionWindowV1"
+          }
+        ],
+        "queryKinds": [
+          "action_specific_threat"
+        ],
+        "lifecycle": "当前激活者身份→合法子行动→保留父激活者→action后状态→后继；Pass补标记与action回调分开"
+      },
+      "validationStatus": "not_run"
+    },
+    {
+      "entryId": "faq-v1.3:66",
+      "title": "战术卡不默认要求LOS",
+      "action": "new_binding",
+      "existingAtomIds": [
+        "rule-atom:faq-v1-38-concussive-friendly-los",
+        "rule-atom:faq-v1-38-concussive-friendly-subject"
+      ],
+      "featureRefs": [],
+      "proposedAtomIds": [
+        "rule-atom:faq-v1.3-tactical-los-default"
+      ],
+      "revision": null,
+      "reads": [
+        "card.abilityText",
+        "ability.requiresLineOfSight"
+      ],
+      "writes": [],
+      "expected": "按具体卡和规则的明确条件检查LOS，不能把普通攻击LOS要求默认加到战术卡。",
+      "witness": "无LOS条款的卡可处理遮挡场景，明确LOS条款仍拒绝不可见目标。",
+      "consumers": {
+        "owners": [
+          "T28-W3-05",
+          "T28-W3-08",
+          "T28-W3-09",
+          "T28-W3-10"
+        ],
+        "rules": [
+          {
+            "path": "packages/product-composition/official-ability-effect-runtime-v1.mjs",
+            "export": "createOfficialAbilityEffectRuntimeV1"
+          },
+          {
+            "path": "packages/product-composition/official-selected-roster-ability-runtime-v1.mjs",
+            "export": "queryOfficialSelectedRosterAbilityV1"
+          }
+        ],
+        "queryKinds": [
+          "action_specific_threat",
+          "legal_asset_placement_options",
+          "attack_probability"
+        ],
+        "lifecycle": "区分目标、区域与测距参照→资格/显式LOS→Host绑定→preview/apply"
+      },
+      "validationStatus": "not_run"
+    },
+    {
+      "entryId": "faq-v1.3:67",
+      "title": "距离资格检查不等于选择目标",
+      "action": "new_binding",
+      "existingAtomIds": [],
+      "featureRefs": [],
+      "proposedAtomIds": [
+        "rule-atom:faq-v1.3-range-reference-not-target"
+      ],
+      "revision": null,
+      "reads": [
+        "ability.measurementRole",
+        "ability.proximitySubjects",
+        "ability.explicitLos"
+      ],
+      "writes": [],
+      "expected": "Burrow等距离限制只检查资格，默认不产生target/LOS条件。",
+      "witness": "可见性不改变相同距离资格，实际target条款仍按其原规则检查。",
+      "consumers": {
+        "owners": [
+          "T28-W3-05",
+          "T28-W3-08",
+          "T28-W3-09",
+          "T28-W3-10"
+        ],
+        "rules": [
+          {
+            "path": "packages/product-composition/official-ability-effect-runtime-v1.mjs",
+            "export": "createOfficialAbilityEffectRuntimeV1"
+          },
+          {
+            "path": "packages/product-composition/official-selected-roster-ability-runtime-v1.mjs",
+            "export": "queryOfficialSelectedRosterAbilityV1"
+          }
+        ],
+        "queryKinds": [
+          "action_specific_threat",
+          "legal_asset_placement_options",
+          "attack_probability"
+        ],
+        "lifecycle": "区分目标、区域与测距参照→资格/显式LOS→Host绑定→preview/apply"
+      },
+      "validationStatus": "not_run"
+    },
+    {
+      "entryId": "faq-v1.3:68",
+      "title": "Hold会触发action结束效果",
+      "action": "reuse_binding",
+      "existingAtomIds": [
+        "rule-atom:movement-phase-hold-action"
+      ],
+      "featureRefs": [
+        {
+          "semanticId": "unit:stalker/path-of-shadows-any-phase",
+          "semanticVersion": 1,
+          "recordKey": "army_units:stalker",
+          "name": "Path of Shadows",
+          "phase": "Any Phase"
+        }
+      ],
+      "proposedAtomIds": [],
+      "revision": null,
+      "reads": [
+        "action.type",
+        "unit.statuses"
+      ],
+      "writes": [
+        "unit.statuses"
+      ],
+      "expected": "Hold算已结算action，Path of Shadows等action后处理须被调用。不能从旧no-action标签推导跳过生命周期。",
+      "witness": "HIDDEN Stalker Hold后按能力移除HIDDEN，位置不变。",
+      "consumers": {
+        "owners": [
+          "T28-W3-05",
+          "T28-W3-10"
+        ],
+        "rules": [
+          {
+            "path": "packages/rule-atoms/official-round-phase-activation-rules-executor-v1.mjs",
+            "export": "applyOfficialRoundPhaseActivationRulesV1"
+          },
+          {
+            "path": "packages/product-composition/official-selected-roster-ability-runtime-v1.mjs",
+            "export": "openOfficialSelectedRosterAfterActionWindowV1"
+          }
+        ],
+        "queryKinds": [
+          "action_specific_threat"
+        ],
+        "lifecycle": "当前激活者身份→合法子行动→保留父激活者→action后状态→后继；Pass补标记与action回调分开"
+      },
+      "validationStatus": "not_run"
+    },
+    {
+      "entryId": "faq-v1.3:69",
+      "title": "Pass补标记不产生action或activation",
+      "action": "reuse_binding",
+      "existingAtomIds": [
+        "rule-atom:singleton:core-8-4-2-unactivated-unit-markers:d4d57b8ee9fb"
+      ],
+      "featureRefs": [],
+      "proposedAtomIds": [],
+      "revision": null,
+      "reads": [
+        "player.passed",
+        "unit.activationMarkers"
+      ],
+      "writes": [
+        "unit.activationMarkers"
+      ],
+      "expected": "补Activation Marker只关闭可用性，不给被补标记单位派发action/activation回调。",
+      "witness": "Pass保留相关单位HIDDEN等以action结束为条件的状态。",
+      "consumers": {
+        "owners": [
+          "T28-W3-05",
+          "T28-W3-10"
+        ],
+        "rules": [
+          {
+            "path": "packages/rule-atoms/official-round-phase-activation-rules-executor-v1.mjs",
+            "export": "applyOfficialRoundPhaseActivationRulesV1"
+          },
+          {
+            "path": "packages/product-composition/official-selected-roster-ability-runtime-v1.mjs",
+            "export": "openOfficialSelectedRosterAfterActionWindowV1"
+          }
+        ],
+        "queryKinds": [
+          "action_specific_threat"
+        ],
+        "lifecycle": "当前激活者身份→合法子行动→保留父激活者→action后状态→后继；Pass补标记与action回调分开"
+      },
+      "validationStatus": "not_run"
+    },
+    {
+      "entryId": "faq-v1.3:70",
+      "title": "Token范围跨高度默认生效",
+      "action": "new_binding",
+      "existingAtomIds": [
+        "rule-atom:faq-v1-65-model-less-blast-attacker",
+        "rule-atom:faq-v1-65-model-less-blast-flying-base",
+        "rule-atom:faq-v1-65-model-less-blast-ground-target",
+        "rule-atom:faq-v1-65-model-less-blast-no-tags",
+        "rule-atom:faq-v1-65-model-less-blast-same-elevation",
+        "rule-atom:singleton:core-8-7-6-blast-template-alignment:480abe551c04",
+        "rule-atom:singleton:core-8-7-6-template-target-elevation:e7dcf6bf993d",
+        "rule-atom:singleton:core-8-7-6-template-target-type:ff5eb006ea8a"
+      ],
+      "featureRefs": [],
+      "proposedAtomIds": [
+        "rule-atom:faq-v1.3-token-area-elevation"
+      ],
+      "revision": null,
+      "reads": [
+        "token.position",
+        "model.position",
+        "model.elevation",
+        "effect.elevationPolicy"
+      ],
+      "writes": [
+        "effect.affectedModels"
+      ],
+      "expected": "默认token范围跨所有高度，明确指定同高度的模板等规则覆盖该默认。",
+      "witness": "Creep/Bile覆盖不同高度；Psionic Storm模板仍按94同高度限制。",
+      "consumers": {
+        "owners": [
+          "T28-W3-05",
+          "T28-W3-06",
+          "T28-W3-08",
+          "T28-W3-09"
+        ],
+        "rules": [
+          {
+            "path": "packages/product-composition/official-battlefield-asset-family-adapter-v1.mjs",
+            "export": "createOfficialBattlefieldAssetFamilyAdapterV1"
+          },
+          {
+            "path": "packages/product-composition/official-match-lifecycle-family-adapter-v1.mjs",
+            "export": "createOfficialMatchLifecycleFamilyAdapterV1"
+          }
+        ],
+        "queryKinds": [
+          "legal_asset_placement_options",
+          "action_specific_threat",
+          "attack_probability"
+        ],
+        "lifecycle": "token来源/高度/适用域→保存→具名触发→来源死亡策略→结算与到期清理"
+      },
+      "validationStatus": "not_run"
+    },
+    {
+      "entryId": "faq-v1.3:71",
+      "title": "Creep token可跨高度设置",
+      "action": "new_binding",
+      "existingAtomIds": [],
+      "featureRefs": [],
+      "proposedAtomIds": [
+        "rule-atom:faq-v1.3-token-placement-elevation"
+      ],
+      "revision": null,
+      "reads": [
+        "token.source",
+        "candidate.position",
+        "candidate.elevation",
+        "token.allowedRange"
+      ],
+      "writes": [
+        "token.position"
+      ],
+      "expected": "合法距离内可在另一高度设置Creep，使用统一距离定义，不增加必须同高度条件。",
+      "witness": "另一高度6英寸内允许，超过合法距离拒绝。",
+      "consumers": {
+        "owners": [
+          "T28-W3-05",
+          "T28-W3-06",
+          "T28-W3-08",
+          "T28-W3-09"
+        ],
+        "rules": [
+          {
+            "path": "packages/product-composition/official-battlefield-asset-family-adapter-v1.mjs",
+            "export": "createOfficialBattlefieldAssetFamilyAdapterV1"
+          },
+          {
+            "path": "packages/product-composition/official-match-lifecycle-family-adapter-v1.mjs",
+            "export": "createOfficialMatchLifecycleFamilyAdapterV1"
+          }
+        ],
+        "queryKinds": [
+          "legal_asset_placement_options",
+          "action_specific_threat",
+          "attack_probability"
+        ],
+        "lifecycle": "token来源/高度/适用域→保存→具名触发→来源死亡策略→结算与到期清理"
+      },
+      "validationStatus": "not_run"
+    },
+    {
+      "entryId": "faq-v1.3:72",
+      "title": "Griffin距离来源可为Holo Decoy",
+      "action": "new_binding",
+      "existingAtomIds": [],
+      "featureRefs": [
+        {
+          "semanticId": "card:nova_covert_ops/griffin-support-any",
+          "semanticVersion": 1,
+          "recordKey": "tactical_cards:nova_covert_ops",
+          "name": "Griffin Support",
+          "phase": ""
+        }
+      ],
+      "proposedAtomIds": [
+        "rule-atom:faq-v1.3-range-reference-not-target"
+      ],
+      "revision": null,
+      "reads": [
+        "ability.measurementRole",
+        "friendly.presence",
+        "candidate.position"
+      ],
+      "writes": [
+        "token.sabotageDrone"
+      ],
+      "expected": "量12英寸的友方参照物不是被target的单位，Holo Decoy可以作参照。",
+      "witness": "合法Holo Decoy附近允许设置；不能将其当被选目标触发Targeting禁制。",
+      "consumers": {
+        "owners": [
+          "T28-W3-05",
+          "T28-W3-08",
+          "T28-W3-09",
+          "T28-W3-10"
+        ],
+        "rules": [
+          {
+            "path": "packages/product-composition/official-ability-effect-runtime-v1.mjs",
+            "export": "createOfficialAbilityEffectRuntimeV1"
+          },
+          {
+            "path": "packages/product-composition/official-selected-roster-ability-runtime-v1.mjs",
+            "export": "queryOfficialSelectedRosterAbilityV1"
+          }
+        ],
+        "queryKinds": [
+          "action_specific_threat",
+          "legal_asset_placement_options",
+          "attack_probability"
+        ],
+        "lifecycle": "区分目标、区域与测距参照→资格/显式LOS→Host绑定→preview/apply"
+      },
+      "validationStatus": "not_run"
+    },
+    {
+      "entryId": "faq-v1.3:73",
+      "title": "IMPACT不target所以可伤Structure",
+      "action": "new_binding",
+      "existingAtomIds": [
+        "rule-atom:singleton:core-11-impact-single-enemy-allocation:fc5a76f34fee"
+      ],
+      "featureRefs": [],
+      "proposedAtomIds": [
+        "rule-atom:faq-v1.3-untargeted-impact-structure"
+      ],
+      "revision": null,
+      "reads": [
+        "effect.kind",
+        "effect.targeting",
+        "defender.structure"
+      ],
+      "writes": [
+        "attack.impactHits"
+      ],
+      "expected": "IMPACT分配Hits并未target敌Unit，可对Structure结算，作为56普通target规则的明确例外。",
+      "witness": "合法IMPACT对Structure形成Hits；普通unit-target能力仍受56约束。",
+      "consumers": {
+        "owners": [
+          "T28-W3-05",
+          "T28-W3-08",
+          "T28-W3-10"
+        ],
+        "rules": [
+          {
+            "path": "packages/rule-atoms/official-template-weapon-executor-v1.mjs",
+            "export": "applyOfficialTemplateWeaponV1"
+          },
+          {
+            "path": "packages/rule-atoms/official-dodge-resolution-kernel-v1.mjs",
+            "export": "createOfficialDodgeResolutionKernelV1"
+          },
+          {
+            "path": "packages/rule-atoms/official-impact-executor-v1.mjs",
+            "export": "applyOfficialImpactV1"
+          }
+        ],
+        "queryKinds": [
+          "attack_probability",
+          "ranged_activation_probability",
+          "fire_zone_exchange"
+        ],
+        "lifecycle": "选批次/参数→同核心概率→掷骰与损伤→伤亡/状态→下一批次→恢复"
+      },
+      "validationStatus": "not_run"
+    },
+    {
+      "entryId": "faq-v1.3:74",
+      "title": "相同武器再攻击继续享受武器Buff",
+      "action": "new_binding",
+      "existingAtomIds": [],
+      "featureRefs": [
+        {
+          "semanticId": "card:templar_caste/khassar-de-templari-any",
+          "semanticVersion": 1,
+          "recordKey": "tactical_cards:templar_caste",
+          "name": "Khassar de Templari",
+          "phase": ""
+        }
+      ],
+      "proposedAtomIds": [
+        "rule-atom:faq-v1.3-bound-weapon-modifier-reuse"
+      ],
+      "revision": null,
+      "reads": [
+        "effect.boundWeaponProfile",
+        "effect.expiresAt",
+        "attack.weaponProfileId"
+      ],
+      "writes": [
+        "attack.modifiers"
+      ],
+      "expected": "已授予某武器的效果在有效期内再次使用该武器时仍应用，不能在首次攻击后无条件消费掉。",
+      "witness": "同武器第二次攻击保留Precision；其他武器或已到期效果不给该修正。",
+      "consumers": {
+        "owners": [
+          "T28-W3-05",
+          "T28-W3-08",
+          "T28-W3-10"
+        ],
+        "rules": [
+          {
+            "path": "packages/product-composition/official-selected-roster-ability-runtime-v1.mjs",
+            "export": "consumeOfficialSelectedRosterFirstWeaponModifierV1"
+          },
+          {
+            "path": "packages/product-composition/official-battlefield-asset-family-adapter-v1.mjs",
+            "export": "consumeOfficialBattlefieldAssetFirstWeaponEffectsV1"
+          }
+        ],
+        "queryKinds": [
+          "attack_probability",
+          "ranged_activation_probability",
+          "fire_zone_exchange"
+        ],
+        "lifecycle": "效果来源、受益者、武器绑定和有效期→覆盖/再次攻击→到期→保存恢复"
+      },
+      "validationStatus": "not_run"
+    },
+    {
+      "entryId": "faq-v1.3:75",
+      "title": "Bile Launcher不受Drone额外HITS",
+      "action": "reuse_binding",
+      "existingAtomIds": [
+        "rule-atom:hits-x-no-surge"
+      ],
+      "featureRefs": [
+        {
+          "semanticId": "unit:sabotage_drone/have-a-nice-day-assault-phase",
+          "semanticVersion": 1,
+          "recordKey": "army_units:sabotage_drone",
+          "name": "Have a Nice Day",
+          "phase": "Assault Phase"
+        }
+      ],
+      "proposedAtomIds": [],
+      "revision": null,
+      "reads": [
+        "target.actualAbilities",
+        "effect.damageProfile"
+      ],
+      "writes": [
+        "attack.hits"
+      ],
+      "expected": "对Bile Launcher使用标准HITS 5(1)，不能凭模型外观、Unique或unitType把它当额外伤害对象。",
+      "witness": "按冻结资料分类后的Bile Launcher恰为标准Hits；正向加伤对象单独按原卡判定。",
+      "consumers": {
+        "owners": [
+          "T28-W3-05",
+          "T28-W3-07",
+          "T28-W3-08"
+        ],
+        "rules": [
+          {
+            "path": "packages/rule-atoms/official-attack-pool-edge-executor-v1.mjs",
+            "export": "applyOfficialAttackPoolEdgeV1"
+          },
+          {
+            "path": "packages/product-composition/official-selected-roster-ability-runtime-v1.mjs",
+            "export": "resolveOfficialSelectedRosterAbilityModifiersV1"
+          }
+        ],
+        "queryKinds": [
+          "attack_probability",
+          "ranged_activation_probability",
+          "fire_zone_exchange"
+        ],
+        "lifecycle": "实际伤害来源/防御资格→旧伤加新伤→伤亡上限→余伤/人口/分数→恢复"
+      },
+      "validationStatus": "not_run"
+    },
+    {
+      "entryId": "faq-v1.3:76",
+      "title": "Coordinated Strike同目标归属覆盖",
+      "action": "new_binding",
+      "existingAtomIds": [],
+      "featureRefs": [
+        {
+          "semanticId": "unit:siege_tank/coordinated-strike-movement-phase",
+          "semanticVersion": 1,
+          "recordKey": "army_units:siege_tank",
+          "name": "Coordinated Strike",
+          "phase": "Movement Phase"
+        }
+      ],
+      "proposedAtomIds": [
+        "rule-atom:faq-v1.3-coordinated-strike-latest-owner"
+      ],
+      "revision": null,
+      "reads": [
+        "effect.name",
+        "effect.targetId",
+        "effect.sourceId"
+      ],
+      "writes": [
+        "effect.owner",
+        "effect.beneficiary"
+      ],
+      "expected": "第二台Tank使用同目标时取代第一台，第一台不再获益。仅做数值不叠加不能表达来源改变。",
+      "witness": "TankA绑定后TankB覆盖，后续受益者只有B，冷恢复仍保持B。",
+      "consumers": {
+        "owners": [
+          "T28-W3-07",
+          "T28-W3-05",
+          "T28-W3-08",
+          "T28-W3-10"
+        ],
+        "rules": [
+          {
+            "path": "packages/product-composition/official-selected-roster-ability-runtime-v1.mjs",
+            "export": "consumeOfficialSelectedRosterFirstWeaponModifierV1"
+          },
+          {
+            "path": "packages/product-composition/official-battlefield-asset-family-adapter-v1.mjs",
+            "export": "consumeOfficialBattlefieldAssetFirstWeaponEffectsV1"
+          }
+        ],
+        "queryKinds": [
+          "attack_probability",
+          "ranged_activation_probability",
+          "fire_zone_exchange"
+        ],
+        "lifecycle": "效果来源、受益者、武器绑定和有效期→覆盖/再次攻击→到期→保存恢复"
+      },
+      "validationStatus": "native_component_verified_consumers_pending",
+      "atomBinding": {
+        "ownerItemId": "T28-W3-07",
+        "module": "packages/rule-atoms/official-coordinated-strike-policy-v1.mjs",
+        "export": "replaceOfficialCoordinatedStrikeEffectV1",
+        "componentVersion": "3.54.0",
+        "evidenceRefs": [
+          "build/ticket-28-wave2-capabilities-20261113-v1/tank-coordinated-strike/REPORT.zh-CN.md",
+          "build/ticket-28-wave2-capabilities-20261113-v1/tank-coordinated-strike/mode-dependency/boundary.json"
+        ],
+        "remainingConsumers": [
+          "attack_probability",
+          "ranged_activation_probability",
+          "fire_zone_exchange",
+          "all unified agent and UI entry points"
+        ]
+      }
+    },
+    {
+      "entryId": "faq-v1.3:77",
+      "title": "借行动前后保留激活者主动能力",
+      "action": "reuse_binding",
+      "existingAtomIds": [
+        "rule-atom:faq-v1-36-active-battlefield-unit",
+        "rule-atom:faq-v1-36-card-effect-independence",
+        "rule-atom:faq-v1-37-different-name-active-unbounded",
+        "rule-atom:faq-v1-37-named-active-once-round",
+        "rule-atom:faq-v1-37-reaction-once-per-activation",
+        "rule-atom:faq-v1-37-tactical-card-active-unbounded",
+        "rule-atom:named-active-ability-per-unit-round-limit",
+        "rule-atom:per-activation-reaction-limit",
+        "rule-atom:singleton:core-10-2-active-requires-activation:dbe149746c16"
+      ],
+      "featureRefs": [
+        {
+          "semanticId": "card:templar_caste/khassar-de-templari-any",
+          "semanticVersion": 1,
+          "recordKey": "tactical_cards:templar_caste",
+          "name": "Khassar de Templari",
+          "phase": ""
+        }
+      ],
+      "proposedAtomIds": [],
+      "revision": null,
+      "reads": [
+        "activation.activeUnitId",
+        "activation.actionSpent"
+      ],
+      "writes": [
+        "activation.childAction",
+        "activation.resume"
+      ],
+      "expected": "原激活者不能再做action，但仍可在借出行动前后使用合法主动能力，子动作不能错误换掉激活者身份。",
+      "witness": "父激活→子行动→父激活后继，65与77两方资格同时正确。",
+      "consumers": {
+        "owners": [
+          "T28-W3-05",
+          "T28-W3-10"
+        ],
+        "rules": [
+          {
+            "path": "packages/rule-atoms/official-round-phase-activation-rules-executor-v1.mjs",
+            "export": "applyOfficialRoundPhaseActivationRulesV1"
+          },
+          {
+            "path": "packages/product-composition/official-selected-roster-ability-runtime-v1.mjs",
+            "export": "openOfficialSelectedRosterAfterActionWindowV1"
+          }
+        ],
+        "queryKinds": [
+          "action_specific_threat"
+        ],
+        "lifecycle": "当前激活者身份→合法子行动→保留父激活者→action后状态→后继；Pass补标记与action回调分开"
+      },
+      "validationStatus": "not_run"
+    },
+    {
+      "entryId": "faq-v1.3:78",
+      "title": "Indomitable不连接不同交战",
+      "action": "reuse_binding",
+      "existingAtomIds": [],
+      "featureRefs": [
+        {
+          "semanticId": "unit:bile_launcher/indomitable-assault-phase",
+          "semanticVersion": 1,
+          "recordKey": "army_units:bile_launcher",
+          "name": "Indomitable",
+          "phase": "Assault Phase"
+        },
+        {
+          "semanticId": "unit:goliath/indomitable-assault-phase",
+          "semanticVersion": 1,
+          "recordKey": "army_units:goliath",
+          "name": "Indomitable",
+          "phase": "Assault Phase"
+        }
+      ],
+      "proposedAtomIds": [],
+      "revision": null,
+      "reads": [
+        "attacker.engagementComponent",
+        "target.engagementComponent",
+        "effect.indomitable"
+      ],
+      "writes": [],
+      "expected": "两方各在不同交战不能互为目标；与本方当前交战或卡文明确的Unengaged条件分别判断。",
+      "witness": "不同交战组件拒绝，不得因双方都有Indomitable互相放行。",
+      "consumers": {
+        "owners": [
+          "T28-W3-05",
+          "T28-W3-08",
+          "T28-W3-09",
+          "T28-W3-10"
+        ],
+        "rules": [
+          {
+            "path": "packages/product-composition/official-ability-effect-runtime-v1.mjs",
+            "export": "createOfficialAbilityEffectRuntimeV1"
+          },
+          {
+            "path": "packages/product-composition/official-selected-roster-ability-runtime-v1.mjs",
+            "export": "queryOfficialSelectedRosterAbilityV1"
+          }
+        ],
+        "queryKinds": [
+          "action_specific_threat",
+          "legal_asset_placement_options",
+          "attack_probability"
+        ],
+        "lifecycle": "区分目标、区域与测距参照→资格/显式LOS→Host绑定→preview/apply"
+      },
+      "validationStatus": "not_run"
+    },
+    {
+      "entryId": "faq-v1.3:79",
+      "title": "Raven死亡后具名延迟效果继续",
+      "action": "new_binding",
+      "existingAtomIds": [],
+      "featureRefs": [
+        {
+          "semanticId": "unit:raven/explosive-shrapnel-shells-assault-phase",
+          "semanticVersion": 1,
+          "recordKey": "army_units:raven",
+          "name": "Explosive Shrapnel Shells",
+          "phase": "Assault Phase"
+        },
+        {
+          "semanticId": "unit:raven/seeker-missile-movement-phase",
+          "semanticVersion": 1,
+          "recordKey": "army_units:raven",
+          "name": "Seeker Missile",
+          "phase": "Movement Phase"
+        }
+      ],
+      "proposedAtomIds": [
+        "rule-atom:faq-v1.3-detached-delayed-source-lifetime"
+      ],
+      "revision": null,
+      "reads": [
+        "effect.sourceId",
+        "effect.trigger",
+        "effect.expiresAt"
+      ],
+      "writes": [
+        "effect.resolution",
+        "unit.damage"
+      ],
+      "expected": "两种已建立效果在Raven死亡后仍按触发继续，保留来源审计信息但不要求来源存活。",
+      "witness": "建立效果→来源死亡→保存恢复→到时结算一次；不能扩展到全部需要来源存活的光环。",
+      "consumers": {
+        "owners": [
+          "T28-W3-05",
+          "T28-W3-06",
+          "T28-W3-08",
+          "T28-W3-09"
+        ],
+        "rules": [
+          {
+            "path": "packages/product-composition/official-battlefield-asset-family-adapter-v1.mjs",
+            "export": "createOfficialBattlefieldAssetFamilyAdapterV1"
+          },
+          {
+            "path": "packages/product-composition/official-match-lifecycle-family-adapter-v1.mjs",
+            "export": "createOfficialMatchLifecycleFamilyAdapterV1"
+          }
+        ],
+        "queryKinds": [
+          "legal_asset_placement_options",
+          "action_specific_threat",
+          "attack_probability"
+        ],
+        "lifecycle": "token来源/高度/适用域→保存→具名触发→来源死亡策略→结算与到期清理"
+      },
+      "validationStatus": "not_run"
+    },
+    {
+      "entryId": "faq-v1.3:92",
+      "title": "Psionic Transfer允许SET接战",
+      "action": "reuse_binding",
+      "existingAtomIds": [],
+      "featureRefs": [
+        {
+          "semanticId": "unit:adept/psionic-transfer-movement-phase",
+          "semanticVersion": 1,
+          "recordKey": "army_units:adept",
+          "name": "Psionic Transfer",
+          "phase": "Movement Phase"
+        }
+      ],
+      "proposedAtomIds": [],
+      "revision": null,
+      "reads": [
+        "ability.identity",
+        "candidate.enemyEngagement",
+        "candidate.coherency"
+      ],
+      "writes": [
+        "unit.modelPositions"
+      ],
+      "expected": "该具名SET允许接战范围，仍检查全部其他摆放条件；不泛化到普通部署。",
+      "witness": "Adept合法SET接战允许，范围/底盘/连续性违规仍拒绝。",
+      "consumers": {
+        "owners": [
+          "T28-W3-05",
+          "T28-W3-06"
+        ],
+        "rules": [
+          {
+            "path": "packages/rule-atoms/official-elevation-effective-size-rules-kernel-v1.mjs",
+            "export": "evaluateOfficialElevatedLineOfSightV1"
+          },
+          {
+            "path": "packages/rule-atoms/official-gap-place-geometry-kernel-v1.mjs",
+            "export": "certifyOfficialGapPlaceGeometryPlanV1"
+          }
+        ],
+        "queryKinds": [
+          "legal_full_path_movement",
+          "legal_asset_placement_options",
+          "action_specific_threat",
+          "attack_probability"
+        ],
+        "lifecycle": "准备合法候选→同位置preview/apply→摆放/高地效果→存储恢复"
+      },
+      "validationStatus": "not_run"
+    },
+    {
+      "entryId": "faq-v1.3:93",
+      "title": "Concentrated Fire达到上限清空全部旧伤",
+      "action": "reuse_binding",
+      "existingAtomIds": [
+        "rule-atom:singleton:core-11-concentrated-fire-casualty-cap:3753f38b416e"
+      ],
+      "featureRefs": [],
+      "proposedAtomIds": [],
+      "revision": null,
+      "reads": [
+        "unit.existingDamage",
+        "attack.assignedDamage",
+        "attack.casualtyCap"
+      ],
+      "writes": [
+        "unit.totalDamage"
+      ],
+      "expected": "达到伤亡上限后所有剩余Total Damage清空，包括旧伤与Non-Lethal。",
+      "witness": "旧伤加新伤移除X模型后余伤为0；未达到X的路径保留合法余伤。",
+      "consumers": {
+        "owners": [
+          "T28-W3-05",
+          "T28-W3-07",
+          "T28-W3-08"
+        ],
+        "rules": [
+          {
+            "path": "packages/rule-atoms/official-attack-pool-edge-executor-v1.mjs",
+            "export": "applyOfficialAttackPoolEdgeV1"
+          },
+          {
+            "path": "packages/product-composition/official-selected-roster-ability-runtime-v1.mjs",
+            "export": "resolveOfficialSelectedRosterAbilityModifiersV1"
+          }
+        ],
+        "queryKinds": [
+          "attack_probability",
+          "ranged_activation_probability",
+          "fire_zone_exchange"
+        ],
+        "lifecycle": "实际伤害来源/防御资格→旧伤加新伤→伤亡上限→余伤/人口/分数→恢复"
+      },
+      "validationStatus": "not_run"
+    },
+    {
+      "entryId": "faq-v1.3:98",
+      "title": "Storm模板与Token中心对齐",
+      "action": "reuse_binding",
+      "existingAtomIds": [
+        "rule-atom:singleton:core-8-7-6-blast-template-alignment:480abe551c04"
+      ],
+      "featureRefs": [],
+      "proposedAtomIds": [],
+      "revision": null,
+      "reads": [
+        "token.psionicStorm.position",
+        "template.center"
+      ],
+      "writes": [
+        "template.center"
+      ],
+      "expected": "模板中心由token中心确定，模型不另选落点。",
+      "witness": "查询与Apply均使用token中心；偏移模板拒绝。",
+      "consumers": {
+        "owners": [
+          "T28-W3-05",
+          "T28-W3-08",
+          "T28-W3-10"
+        ],
+        "rules": [
+          {
+            "path": "packages/rule-atoms/official-template-weapon-executor-v1.mjs",
+            "export": "applyOfficialTemplateWeaponV1"
+          },
+          {
+            "path": "packages/rule-atoms/official-dodge-resolution-kernel-v1.mjs",
+            "export": "createOfficialDodgeResolutionKernelV1"
+          },
+          {
+            "path": "packages/rule-atoms/official-impact-executor-v1.mjs",
+            "export": "applyOfficialImpactV1"
+          }
+        ],
+        "queryKinds": [
+          "attack_probability",
+          "ranged_activation_probability",
+          "fire_zone_exchange"
+        ],
+        "lifecycle": "选批次/参数→同核心概率→掷骰与损伤→伤亡/状态→下一批次→恢复"
+      },
+      "validationStatus": "not_run"
+    }
+  ],
+  "sourceScopeQuestions": [
+    {
+      "currentEntryId": "faq-v1.3:60",
+      "note": "FAQ没有明确区分自伤与敌方Non-Lethal，本项将自伤作为待澄清分支，不阻塞已明确的敌方伤害分支。",
+      "disposition": "explicit_self_damage_subcase_needs_source_clarification",
+      "owner": "T28-W3-05"
+    }
+  ],
+  "retainedDependencyCases": [
+    {
+      "currentEntryId": "faq-v1.3:86",
+      "dependency": "faq-v1.3:55",
+      "reason": "每trigger与每phase限制同时满足，Repeatable不自动取消通用phase上限。"
+    },
+    {
+      "currentEntryId": "faq-v1.3:94",
+      "dependency": "faq-v1.3:70",
+      "reason": "模板的同高度明文条件覆盖Token跨高度默认。"
+    }
+  ],
+  "requiredOrder": [
+    "05冻结三项改写的新版本合同",
+    "05通用判定与源条件",
+    "06几何及token高度",
+    "07～10能力声明/执行/恢复",
+    "11任务与开始阶段",
+    "12统一Query/Plan/Teach/在线/复盘消费者"
+  ],
+  "sourceRoles": "模型选择语义和策略；Host绑定身份/位置/次数；Rules返回事实；本表的字段是语义要求，实施时对齐实际Native字段",
+  "trainingTruth": false
+}

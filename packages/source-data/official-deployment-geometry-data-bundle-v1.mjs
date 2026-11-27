@@ -1,3 +1,4 @@
+import { readOfficialReviewedDeploymentGeometryV1 } from './official-reviewed-deployment-geometry-v1.mjs';
 import { hashStarcraftTmgContract } from
   "../authoritative-engine/referee-crypto-v1.mjs";
 import { OFFICIAL_FAQ_SUPPLEMENTAL_CLAUSE_BINDING_V3 } from
@@ -11,6 +12,8 @@ import {
   createOfficialMissionDeploymentDraftDataBundleV1,
   verifyOfficialMissionDeploymentDraftDataBundleV1,
 } from "./official-mission-deployment-draft-data-bundle-v1.mjs";
+
+import { assertOfficialReleaseSourceV2 } from "./official-release-context-v2.mjs";
 
 export const OFFICIAL_DEPLOYMENT_GEOMETRY_DATA_BUNDLE_SCHEMA =
   "starcraft_tmg_official_deployment_geometry_data_bundle_v1";
@@ -158,8 +161,13 @@ function compileEntry(colour, rows, width, height) {
       left.x - right.x || left.y - right.y)),
     zoneDepthInches: 6 };
 }
-function compileGeometry(profile) {
-  const raw = RAW_GEOMETRY[profile.name];
+function compileGeometry(profile, reviewedByKey) {
+  const reviewed = reviewedByKey.get(profile.recordKey);
+  if (profile.reviewedGeometry?.entryHash !== reviewed?.entryHash
+    || profile.reviewedGeometry?.bundleHash !== reviewed?.bundleHash) {
+    fail("DEPLOYMENT_GEOMETRY_REVIEWED_PROFILE_MISMATCH", profile.recordKey);
+  }
+  const raw = reviewed?.geometry ?? RAW_GEOMETRY[profile.name];
   if (!raw) fail("DEPLOYMENT_GEOMETRY_PROFILE_MISSING", profile.name);
   const [widthInches, heightInches] = raw.dimensions;
   if (profile.battlefieldDimensionClass?.widthInches !== widthInches
@@ -198,10 +206,12 @@ function compileGeometry(profile) {
     terrainHeightTierRequiredForEveryPiece: true,
     allowedMissionMarkerElevations: ["ground_level", "mid_ground", "high_ground"],
     missionMarkerImpassableOverlapAllowed: false,
-    p2pEvidence: structuredClone(profile.p2pEvidence),
-    transcriptionEvidence: { method: "labelled_dimension_transcription",
-      sourcePages: [13, 14], sourceHash: TERRAN_P2P_HASH,
-      reviewedOrientation: "card_title_upright", inferredPixelsUsed: false },
+    ...(reviewed ? { reviewedGeometry: profile.reviewedGeometry,
+      transcriptionEvidence: { ...structuredClone(reviewed.evidence), inferredPixelsUsed: false } }
+      : { p2pEvidence: structuredClone(profile.p2pEvidence),
+        transcriptionEvidence: { method: "labelled_dimension_transcription",
+          sourcePages: [13, 14], sourceHash: TERRAN_P2P_HASH,
+          reviewedOrientation: "card_title_upright", inferredPixelsUsed: false } }),
     rulesTruth: "official_selected_deployment_geometry", trainingTruth: false };
   return { ...body, geometryHash: hashStarcraftTmgContract(body) };
 }
@@ -227,30 +237,48 @@ function verifyFaqBinding() {
 }
 
 export function createOfficialDeploymentGeometryDataBundleV1(input = {}) {
-  const dataset = input.dataset;
-  if (!object(dataset) || dataset.datasetHash !== OFFICIAL_DEVELOPMENT_TRANCHE_DATASET_HASH
-    || dataset.sourceSnapshotHash !== OFFICIAL_DEVELOPMENT_TRANCHE_SNAPSHOT_HASH
-    || dataset.repositoryFallbackAllowed !== false) {
+  const { dataset, snapshot, releaseContext } = input;
+  if (!object(dataset) || dataset.repositoryFallbackAllowed !== false) {
     fail("DEPLOYMENT_GEOMETRY_DATASET_INVALID");
   }
   const draftBundle = input.missionDeploymentDraftDataBundle
-    || createOfficialMissionDeploymentDraftDataBundleV1({ dataset });
+    || createOfficialMissionDeploymentDraftDataBundleV1({ dataset, snapshot, releaseContext });
   verifyOfficialMissionDeploymentDraftDataBundleV1(draftBundle);
-  const geometryProfiles = draftBundle.deploymentProfiles.map(compileGeometry)
+  const binding = draftBundle.releaseBinding;
+  if (binding) {
+    const manifest = assertOfficialReleaseSourceV2(releaseContext, { dataset, snapshot });
+    if (binding.manifestHash !== manifest.manifestHash || binding.releaseId !== manifest.releaseId
+      || binding.normalizedDatasetHash !== dataset.datasetHash
+      || binding.sourceSnapshotHash !== dataset.sourceSnapshotHash
+      || binding.sourceRevisionHash !== manifest.source.sourceRevisionHash) {
+      fail("DEPLOYMENT_GEOMETRY_RELEASE_DRAFT_MISMATCH");
+    }
+  } else if (dataset.datasetHash !== OFFICIAL_DEVELOPMENT_TRANCHE_DATASET_HASH
+    || dataset.sourceSnapshotHash !== OFFICIAL_DEVELOPMENT_TRANCHE_SNAPSHOT_HASH) {
+    fail("DEPLOYMENT_GEOMETRY_DATASET_INVALID");
+  }
+  const reviewedByKey = readOfficialReviewedDeploymentGeometryV1({
+    dataset, releaseContext: binding ? releaseContext : null,
+  });
+  const geometryProfiles = draftBundle.deploymentProfiles.map(profile => compileGeometry(profile, reviewedByKey))
     .sort((left, right) => left.recordKey.localeCompare(right.recordKey));
   const faqBinding = verifyFaqBinding();
   const body = { schema: OFFICIAL_DEPLOYMENT_GEOMETRY_DATA_BUNDLE_SCHEMA,
-    sourceLockHash: OFFICIAL_DEVELOPMENT_TRANCHE_SOURCE_LOCK_HASH,
-    sourceSnapshotHash: OFFICIAL_DEVELOPMENT_TRANCHE_SNAPSHOT_HASH,
-    normalizedDatasetHash: OFFICIAL_DEVELOPMENT_TRANCHE_DATASET_HASH,
+    sourceLockHash: draftBundle.sourceLockHash,
+    sourceSnapshotHash: draftBundle.sourceSnapshotHash,
+    normalizedDatasetHash: draftBundle.normalizedDatasetHash,
+    ...(binding ? { releaseBinding: binding } : {}),
     coreRulesHash: CORE_RULES_HASH, p2pDeploymentSourceHash: TERRAN_P2P_HASH,
     missionDeploymentDraftDataBundleHash: draftBundle.bundleHash,
     ruleClauses: structuredClone(RULE_CLAUSES), faqBinding,
     geometryProfiles, geometryProfileIndexHash: hashStarcraftTmgContract(geometryProfiles),
-    counts: { geometryProfiles: 10, standardProfiles: 5, skirmishProfiles: 5,
+    counts: { geometryProfiles: geometryProfiles.length,
+      standardProfiles: geometryProfiles.filter(profile => profile.engagementScale === "Standard").length,
+      skirmishProfiles: geometryProfiles.filter(profile => profile.engagementScale === "Skirmish").length,
       standardMissionMarkersPerProfile: 5, skirmishMissionMarkersPerProfile: 3,
       promotedAtoms: 12 },
     sourcePrecedence: { geometry: "terran_p2p_labelled_dimensions",
+      ...(reviewedByKey.size ? { supplementalGeometry: "reviewed_deployment_card_labelled_dimensions" } : {}),
       setupOrder: "core_pdf_page_78_primary",
       faq: "official_mutable_supplement_exact_semantic_binding",
       commandCenterRuleProseMayOverrideCorePdf: false,
@@ -277,14 +305,29 @@ export function createOfficialDeploymentGeometryDataBundleV1(input = {}) {
 }
 
 export function verifyOfficialDeploymentGeometryDataBundleV1(bundle) {
+  const binding = bundle?.releaseBinding;
+  const reviewedProfiles = bundle?.geometryProfiles?.filter(profile => profile.reviewedGeometry) ?? [];
+  const sourceInvalid = binding
+    ? !binding.releaseId || !HASH_PATTERN.test(binding.manifestHash)
+      || !HASH_PATTERN.test(binding.sourceRevisionHash)
+      || !HASH_PATTERN.test(binding.sourceSnapshotHash)
+      || !HASH_PATTERN.test(binding.normalizedDatasetHash)
+      || binding.sourceRevisionHash !== bundle.sourceLockHash
+      || binding.sourceSnapshotHash !== bundle.sourceSnapshotHash
+      || binding.normalizedDatasetHash !== bundle.normalizedDatasetHash
+    : bundle?.sourceLockHash !== OFFICIAL_DEVELOPMENT_TRANCHE_SOURCE_LOCK_HASH
+      || bundle?.sourceSnapshotHash !== OFFICIAL_DEVELOPMENT_TRANCHE_SNAPSHOT_HASH
+      || bundle?.normalizedDatasetHash !== OFFICIAL_DEVELOPMENT_TRANCHE_DATASET_HASH;
   if (!object(bundle) || bundle.schema !== OFFICIAL_DEPLOYMENT_GEOMETRY_DATA_BUNDLE_SCHEMA
     || bundle.bundleHash !== hashStarcraftTmgContract(without(bundle, ["bundleHash"]))
-    || bundle.sourceLockHash !== OFFICIAL_DEVELOPMENT_TRANCHE_SOURCE_LOCK_HASH
-    || bundle.sourceSnapshotHash !== OFFICIAL_DEVELOPMENT_TRANCHE_SNAPSHOT_HASH
-    || bundle.normalizedDatasetHash !== OFFICIAL_DEVELOPMENT_TRANCHE_DATASET_HASH
+    || sourceInvalid
     || bundle.coreRulesHash !== CORE_RULES_HASH
     || bundle.p2pDeploymentSourceHash !== TERRAN_P2P_HASH
-    || bundle.ruleClauses?.length !== 12 || bundle.geometryProfiles?.length !== 10
+    || bundle.ruleClauses?.length !== 12 || bundle.geometryProfiles?.length !== 10 + reviewedProfiles.length
+    || Boolean(binding?.deploymentCardGeometryHash) !== Boolean(reviewedProfiles.length)
+    || reviewedProfiles.some(profile => !HASH_PATTERN.test(profile.reviewedGeometry.entryHash)
+      || profile.reviewedGeometry.bundleHash !== binding?.deploymentCardGeometryHash
+      || profile.geometryHash !== hashStarcraftTmgContract(without(profile, ["geometryHash"])))
     || bundle.geometryProfileIndexHash !== hashStarcraftTmgContract(bundle.geometryProfiles)
     || bundle.counts?.promotedAtoms !== 12
     || bundle.sourcePrecedence?.commandCenterSetupOrderConflictDetected !== true

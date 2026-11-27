@@ -1,0 +1,706 @@
+{
+  "version": 1,
+  "updatedAt": "2026-11-27T09:48:20Z",
+  "ticket": 23,
+  "slice": 249,
+  "completion": "33/36",
+  "remainingSlices": [
+    248,
+    249,
+    250
+  ],
+  "summary": "Wave3 9/16。2.99.12 标记为「待测试人人对战」。Web 已验证 500／2000 分建房和双席重连，45 个单位有独立识别图，25 种游戏动态通讯头像，三族 BGM 与选中反馈已验。",
+  "runPolicy": "长期顺序：Ticket28 Wave3 → 独立 Wave4 增量更新 → F7复盘与AI对战 → 其余Ticket。当前继续 Wave3；两版均需单位图标/头像/语音与战桌BGM验收。付费模型、旧实验及生产发布沿用暂停边界。",
+  "items": [
+    {
+      "id": "environment-retro",
+      "title": "开发环境六项改进",
+      "implementation": {
+        "status": "implemented",
+        "note": "六项环境交付完成；历史验证脚本不批量迁移。",
+        "evidence": [
+          "docs/development/retro-20261112.md"
+        ]
+      },
+      "productHandoff": {
+        "status": "passed",
+        "note": "开发入口、原子更新、范围元数据、真实只读工厂断点恢复已过；不是业务全链准出。",
+        "evidence": [
+          "build/development-retro-20261112/verification/result.json"
+        ]
+      },
+      "liveOutput": {
+        "status": "not_applicable",
+        "note": "开发环境改动不需要模型",
+        "evidence": []
+      },
+      "strategyEffect": {
+        "status": "not_applicable",
+        "note": "不增加业务完成率",
+        "evidence": []
+      }
+    },
+    {
+      "id": "wiki",
+      "title": "WikiSkill",
+      "implementation": {
+        "status": "implemented",
+        "note": "已有增量候选流程",
+        "evidence": [
+          "docs/research/ticket-23-slice-249-wikiskill-method-alignment-2026-11-12.md"
+        ]
+      },
+      "productHandoff": {
+        "status": "partial",
+        "note": "已有工程证据；真实候选事实与干净评价仍有未完成边界",
+        "evidence": [
+          "build/ticket-23-slice-249-method-alignment-20261112/decision-evidence-repair/REPORT.zh-CN.md"
+        ]
+      },
+      "liveOutput": {
+        "status": "produced",
+        "note": "候选已生成，尚未发布；旧评价从R3突击开始，不能证明完整回合策略",
+        "evidence": [
+          "build/ticket-23-slice-249-method-alignment-20261112/decision-evidence-repair/REPORT.zh-CN.md"
+        ]
+      },
+      "strategyEffect": {
+        "status": "inconclusive",
+        "note": "已有无优势结果及受工程问题影响的起点，不能认定改进",
+        "evidence": [
+          "build/ticket-23-slice-249-method-alignment-20261112/decision-evidence-repair/REPORT.zh-CN.md"
+        ]
+      }
+    },
+    {
+      "id": "skillopt",
+      "title": "SkillOpt",
+      "implementation": {
+        "status": "implemented",
+        "note": "原训练器接线",
+        "evidence": [
+          "docs/research/ticket-23-slice-249-whole-game-repair-result-2026-11-12.md"
+        ]
+      },
+      "productHandoff": {
+        "status": "passed",
+        "note": "仅原r24→r27兼容与已存冲锋队形准入已过，不代表完整训练",
+        "evidence": [
+          "build/ticket-23-slice-249-method-alignment-20261112/skillopt-charge-r27/version-compatibility-approved-final.json"
+        ]
+      },
+      "liveOutput": {
+        "status": "partial",
+        "note": "Daelaam基线74/训练27动作；Daybreak基线54/训练0；尚未产出新Skill",
+        "evidence": [
+          "build/ticket-23-slice-249-method-alignment-20261112/decision-evidence-repair/REPORT.zh-CN.md"
+        ]
+      },
+      "strategyEffect": {
+        "status": "not_measured",
+        "note": "尚无新Skill独立效果",
+        "evidence": []
+      }
+    },
+    {
+      "id": "memento",
+      "title": "Memento / 轨迹价值v1",
+      "implementation": {
+        "status": "implemented",
+        "note": "相对分差、跨回合、终局分开计算",
+        "evidence": [
+          "packages/strategy-skills/memento2-observed-value-v1.mjs"
+        ]
+      },
+      "productHandoff": {
+        "status": "passed",
+        "note": "仅离线研究→病例读取→冷恢复；线上Q/训练消费者尚未采用",
+        "evidence": [
+          "build/ticket-23-slice-249-method-alignment-20261112/observed-value-v1/result.json"
+        ]
+      },
+      "liveOutput": {
+        "status": "produced",
+        "note": "只读854个历史动作产生价值表；非新策略、非行动因果",
+        "evidence": [
+          "build/ticket-23-slice-249-method-alignment-20261112/observed-value-v1/REPORT.zh-CN.md"
+        ]
+      },
+      "strategyEffect": {
+        "status": "not_measured",
+        "note": "两盘R5已知问题仅诊断，旧Q不改写",
+        "evidence": []
+      }
+    },
+    {
+      "id": "vista",
+      "title": "VISTA",
+      "implementation": {
+        "status": "implemented",
+        "note": "修复保存页别名、目录与正文交付区分、旧纠错残留",
+        "evidence": [
+          "build/ticket-23-slice-249-method-alignment-20261112/decision-evidence-repair/REPORT.zh-CN.md"
+        ]
+      },
+      "productHandoff": {
+        "status": "passed",
+        "note": "原请求注入回复→父级后继→冷恢复；零真实调用",
+        "evidence": [
+          "build/ticket-23-slice-249-method-alignment-20261112/decision-evidence-repair/vista-green/result.json"
+        ]
+      },
+      "liveOutput": {
+        "status": "blocked",
+        "note": "额度停止，修后真实分析未续行",
+        "evidence": []
+      },
+      "strategyEffect": {
+        "status": "not_measured",
+        "note": "无策略提升结论",
+        "evidence": []
+      }
+    },
+    {
+      "id": "wave3",
+      "title": "Wave3增量更新9/16，四组组件55+44+40+23均有工程证据",
+      "implementation": {
+        "status": "partial",
+        "note": "W3-03 修复合法混编开局拒绝；W3-12 席位查询与 Match 共用特性状态的阵亡结算。",
+        "evidence": [
+          "packages/product-composition/official-release-room-ability-admission-v2.mjs",
+          "packages/product-composition/official-current-product-match-runtime-v1.mjs",
+          "packages/product-composition/official-characteristic-status-component-runtime-v2.mjs",
+          "packages/product-composition/official-unit-lifecycle-family-adapter-v1.mjs",
+          "packages/rule-atoms/official-sabotage-drone-timing-v1.mjs",
+          "packages/rule-atoms/official-seeker-assault-timing-v1.mjs",
+          "packages/product-composition/official-raven-seeker-phase-end-v1.mjs",
+          "packages/product-composition/official-khassar-de-templari-v1.mjs",
+          "build/ticket-28-protoss-wave3-20261120-v1/khassar-fight/REPORT.zh-CN.md",
+          "docs/research/ticket-28-wave3-khassar-supply-and-reserve-ambush-2026-11-25.md",
+          "build/ticket-28-wave3-shared-query-release-v1/result.public.json",
+          "docs/development/wave3/evidence/T28-W3-06.md",
+          "build/ticket-28-wave3-mixed-support-opening/queen/result.public.json",
+          "build/ticket-28-wave3-attached-effect-loss/target/result.public.json"
+        ]
+      },
+      "productHandoff": {
+        "status": "partial",
+        "note": "Wave3 9/16。2.99.12 本机 Web 人人验收通过。500 分可建房，2000 分两席从军表、邀请走到 r4 并重连。162 项新增和 12 项改动已有映射，33 项 FAQ 有执行记录。",
+        "evidence": [
+          "docs/research/ticket-28-wave3-two-scale-maps-2026-11-25.md",
+          "docs/research/ticket-28-wave3-inherited-zerg-standard-v252-2026-11-25.md",
+          "docs/research/ticket-28-wave3-standard-plague-v251-2026-11-24.md",
+          "docs/research/ticket-28-wave3-standard-reactive-creep-v250-2026-11-24.md",
+          "docs/research/ticket-28-wave3-standard-defiler-mound-v249-2026-11-24.md",
+          "docs/research/ticket-28-wave3-standard-defiler-and-ramp-v248-2026-11-24.md",
+          "docs/research/ticket-28-wave3-standard-bombard-2026-11-24.md",
+          "docs/research/ticket-28-wave3-nova-holo-match-v233-2026-11-24.md",
+          "docs/research/ticket-28-wave3-nova-mode-admission-v232-2026-11-24.md",
+          "docs/research/ticket-28-wave3-nova-common-match-v231-2026-11-24.md",
+          "docs/research/ticket-28-wave3-seeker-formal-match-v229-2026-11-24.md",
+          "docs/research/ticket-28-wave3-raven-standard-v228-2026-11-24.md",
+          "docs/research/ticket-28-wave3-raynor-formal-match-v227-2026-11-24.md",
+          "build/ticket-28-protoss-wave3-20261120-v1/khassar-fight/REPORT.zh-CN.md",
+          "build/ticket-28-protoss-wave3-20261120-v1/khassar-fight/result.json",
+          "build/ticket-28-protoss-wave3-20261120-v1/khassar-fight/defender-choice/result.json",
+          "build/ticket-28-protoss-wave3-20261120-v1/khassar-fight/close-ranks/result.json",
+          "build/ticket-28-protoss-wave3-20261120-v1/khassar-fight/legacy-3.162-cold-replay.json",
+          "docs/development/wave3/evidence/T28-W3-03-offline-author-probe-2026-11-22.zh-CN.md",
+          "docs/research/ticket-28-wave3-inherited-ability-admission-audit-2026-11-22.md",
+          "docs/research/ticket-28-wave3-inherited-faction-cards-2026-11-22.md",
+          "docs/research/ticket-28-wave3-kerrigan-targeted-abilities-2026-11-22.md",
+          "docs/research/ticket-28-wave3-kerrigan-leaping-strike-2026-11-22.md",
+          "docs/research/ticket-28-wave3-omega-network-producer-2026-11-22.md",
+          "docs/research/ticket-28-wave3-omega-network-lifecycle-2026-11-22.md",
+          "docs/research/ticket-28-wave3-roachling-infestation-2026-11-22.md",
+          "docs/research/ticket-28-wave3-roachling-linked-actions-2026-11-22.md",
+          "docs/research/ticket-28-wave3-skirmish-release-match-opening-2026-11-22.md",
+          "docs/research/ticket-28-wave3-skirmish-match-phase-lifecycle-2026-11-22.md",
+          "docs/research/ticket-28-wave3-standard-native-phase-and-daelaam-bindings-2026-11-22.md",
+          "docs/research/ticket-28-wave3-standard-fire-sabotage-signed-handoff-2026-11-22.md",
+          "docs/research/ticket-28-wave3-standard-fire-high-ground-scoring-2026-11-22.md",
+          "docs/research/ticket-28-wave3-effective-equipment-admission-2026-11-22.md",
+          "docs/research/ticket-28-wave3-inherited-movement-cards-2026-11-23.md",
+          "docs/research/ticket-28-wave3-inherited-capability-gap-audit-2026-11-23.md",
+          "build/ticket-28-wave3-mission-source-20261121-v1/release-room-integration/wave3-lunge-template-completion-component.public.json",
+          "docs/research/ticket-28-wave3-dropship-signed-lifecycle-2026-11-23.md",
+          "build/ticket-28-wave3-mission-source-20261121-v1/release-room-integration/wave3-dropship-v216-cold.public.json",
+          "docs/research/ticket-28-wave3-pylon-native-entry-2026-11-23.md",
+          "build/ticket-28-wave3-mission-source-20261121-v1/release-room-integration/wave3-pylon-native-entry-signed-cold.public.json",
+          "docs/research/ticket-28-wave3-lunge-ground-clearance-detour-2026-11-23.md",
+          "docs/research/ticket-28-wave3-lunge-ground-grid-shortest-2026-11-23.md",
+          "docs/research/ticket-28-wave3-lunge-ground-forward-2026-11-23.md",
+          "docs/research/ticket-28-wave3-lunge-ground-forward-signed-2026-11-23.md",
+          "docs/research/ticket-28-wave3-lunge-multi-forward-signed-2026-11-24.md",
+          "docs/research/ticket-28-wave3-lunge-short-stop-3-197-2026-11-24.md",
+          "docs/research/ticket-28-wave3-formal-native-binding-gap-v218.md",
+          "build/ticket-28-wave3-mission-source-20261121-v1/release-room-integration/wave3-formal-native-binding-gap-v218.public.json",
+          "docs/research/ticket-28-wave3-queen-presence-formal-v218.md",
+          "build/ticket-28-wave3-mission-source-20261121-v1/release-room-integration/wave3-queen-presence-formal-v218.public.json",
+          "build/ticket-28-wave3-mission-source-20261121-v1/release-room-integration/wave3-inherited-definition-reconciliation-v1.public.json",
+          "docs/research/ticket-28-wave3-lunge-shared-queries-v218.md",
+          "build/ticket-28-wave3-mission-source-20261121-v1/release-room-integration/wave3-lunge-shared-query-v218-signed-v1/result.public.json",
+          "docs/research/ticket-28-wave3-lunge-generated-formation-v218.md",
+          "build/ticket-28-wave3-mission-source-20261121-v1/release-room-integration/wave3-lunge-generated-formation-v218-signed-v1/result.public.json",
+          "docs/research/ticket-28-wave3-khassar-component-closeout-2026-11-23.md",
+          "docs/research/ticket-28-wave3-artefact-reserve-drop-v222-2026-11-23.md",
+          "docs/research/ticket-28-wave3-skirmish-artefact-on-place-v222-2026-11-23.md",
+          "docs/research/ticket-28-wave3-artefact-cocoon-match-v223-2026-11-23.md",
+          "docs/research/ticket-28-wave3-zerg-swarm-v224-2026-11-23.md",
+          "docs/research/ticket-28-wave3-brood-instinct-ranged-v3207-2026-11-23.md",
+          "docs/research/ticket-28-wave3-storm-marker-community-measurement-2026-11-24.md",
+          "build/ticket-28-wave3-mission-source-20261121-v1/geometry-measurement-intake-20261124/storm-community-marker-30mm-v1/measurement.public.json",
+          "build/ticket-28-wave3-mission-source-20261121-v1/geometry-measurement-intake-20261124/storm-community-marker-30mm-v1/result.public.json",
+          "build/ticket-28-wave3-mission-source-20261121-v1/geometry-measurement-intake-20261124/storm-community-marker-30mm-v1/lifecycle-result.public.json",
+          "docs/research/ticket-28-wave3-storm-assault-same-name-2026-11-24.md",
+          "build/ticket-28-wave3-mission-source-20261121-v1/geometry-measurement-intake-20261124/storm-community-marker-30mm-v1/assault-same-name-v3216/result.public.json",
+          "build/ticket-28-wave3-mission-source-20261121-v1/geometry-measurement-intake-20261124/storm-community-marker-30mm-v1/assault-same-name-v3216/equivalent/result.public.json",
+          "docs/research/ticket-28-wave3-raven-cross-product-geometry-2026-11-24.md",
+          "build/ticket-28-terran-wave3-20261117-v1/raven-detection-railguns/cross-product-geometry-v21/source-checkpoint.public.json",
+          "build/ticket-28-terran-wave3-20261117-v1/raven-detection-railguns/cross-product-geometry-v21/verification-stop-4.public.json",
+          "build/ticket-28-wave3-mission-source-20261121-v1/geometry-measurement-intake-20261124/storm-official-marker-32mm-v3/cast-preview.public.json",
+          "build/ticket-28-terran-wave3-20261117-v1/raven-detection-railguns/tabletop-assembly-v1/component-closeout.public.json",
+          "build/ticket-28-terran-wave3-20261117-v1/raven-detection-railguns/tabletop-assembly-v1/detection-railguns/detection/result.json",
+          "build/ticket-28-terran-wave3-20261117-v1/raven-detection-railguns/tabletop-assembly-v1/detection-railguns/railguns/result.json",
+          "build/ticket-28-terran-wave3-20261117-v1/raven-detection-railguns/tabletop-assembly-v1/detection-railguns/cold-replay.json",
+          "build/ticket-28-terran-wave3-20261117-v1/raven-detection-railguns/tabletop-assembly-v1/anti-armour-corvid/corvid-discount/result.json",
+          "build/ticket-28-terran-wave3-20261117-v1/raven-detection-railguns/tabletop-assembly-v1/anti-armour-corvid/corvid-regular/result.json",
+          "build/ticket-28-terran-wave3-20261117-v1/raven-detection-railguns/tabletop-assembly-v1/anti-armour-corvid/cold-replay.json",
+          "build/ticket-28-terran-wave3-20261117-v1/raven-detection-railguns/tabletop-assembly-v1/entry-turret/compile/result.json",
+          "build/ticket-28-terran-wave3-20261117-v1/raven-detection-railguns/tabletop-assembly-v1/entry-turret/raven-ordinary/result.json",
+          "build/ticket-28-terran-wave3-20261117-v1/raven-detection-railguns/tabletop-assembly-v1/entry-turret/raven-neutral/result.json",
+          "build/ticket-28-terran-wave3-20261117-v1/raven-detection-railguns/tabletop-assembly-v1/entry-turret/turret-assault/result.json",
+          "build/ticket-28-terran-wave3-20261117-v1/raven-detection-railguns/tabletop-assembly-v1/entry-turret/cold-replay.json",
+          "docs/research/ticket-28-wave3-generated-zerg-range-2026-11-25.md",
+          "docs/research/ticket-28-wave3-creep-displacement-formal-v222-2026-11-23.md",
+          "docs/research/ticket-28-wave3-standard-creep-entry-v261-2026-11-25.md",
+          "docs/research/ticket-28-wave3-creep-disengage-v261-2026-11-25.md",
+          "docs/research/ticket-28-wave3-match-functional-coverage-2026-11-25.md",
+          "docs/research/ticket-28-wave3-khassar-supply-and-reserve-ambush-2026-11-25.md",
+          "docs/research/ticket-28-wave3-match-incremental-pass-2026-11-25.md",
+          "docs/research/ticket-28-wave3-match-remaining-six-2026-11-26.md",
+          "build/ticket-28-wave3-shared-query-release-v1/result.public.json",
+          "build/ticket-28-wave3-author-query-23NNX1/result.public.json",
+          "build/ticket-28-wave3-replan-release-rqE85S/result.public.json",
+          "build/ticket-28-wave3-author-map-binding-0jeeIE/result.public.json",
+          "build/ticket-28-wave3-optical-target-query/2.99.1/result.public.json",
+          "docs/development/wave3/evidence/T28-W3-progress-2026-11-26.md",
+          "build/ticket-28-wave3-setup-builder-web/result.public.json",
+          "build/ticket-28-wave3-lobby-mission-selection/result.public.json",
+          "build/ticket-28-wave3-release-wide-phases/ability-timing.public.json",
+          "build/ticket-28-wave3-refresh-web/result.public.json",
+          "build/ticket-28-wave3-skill-preparation/result.public.json",
+          "build/ticket-28-wave3-geometry-web/result.public.json",
+          "build/ticket-28-wave3-zerg-current-room/result.public.json",
+          "build/ticket-28-wave3-catalogue-coverage/result.public.json",
+          "build/ticket-28-wave3-experience-release/result.public.json",
+          "build/ticket-28-wave3-release-wide-phases/void-prison/result.public.json",
+          "build/ticket-28-wave3-lobby-mission-selection/guests.public.json",
+          "build/ticket-28-wave3-release-wide-phases/ability-contract.public.json",
+          "build/ticket-28-wave3-release-wide-phases/faction-queries/result.public.json",
+          "build/ticket-28-wave3-release-wide-phases/shade-holo/outside-entry-zone/result.public.json",
+          "build/ticket-28-wave3-historical-plan/result.public.json",
+          "build/ticket-28-wave3-database-web/result.public.json",
+          "build/ticket-28-wave3-board-bgm/result.public.json",
+          "build/ticket-28-wave3-product-rollback/result.public.json",
+          "build/ticket-28-wave3-skill-faction-choices/result.public.json",
+          "build/ticket-28-wave3-database-web/army.public.json",
+          "build/ticket-28-wave3-ravager-query-apply/wave2-acceptance.public.json",
+          "build/ticket-28-wave3-ravager-query-apply/result.public.json",
+          "coordination/wave3/faq-execution-evidence.json",
+          "build/ticket-28-wave3-premade-flight-and-platform/result.public.json",
+          "build/ticket-28-wave3-premade-flight-and-platform/geometry.public.json",
+          "build/ticket-28-wave3-premade-flight-and-platform/reinforcement-place/clear-enemy-gap/result.public.json",
+          "build/ticket-28-wave3-premade-flight-and-platform/assault-paths.public.json",
+          "build/ticket-28-wave3-premade-flight-and-platform/daybreak/result.public.json",
+          "build/ticket-28-wave3-premade-flight-and-platform/daybreak/mixed-coherency/result.public.json",
+          "build/ticket-28-wave3-spatial-candidate-rejections/result.public.json",
+          "build/ticket-28-wave3-spatial-candidate-rejections/teach.public.json",
+          "build/ticket-28-wave3-gap-input/legacy.public.json",
+          "build/ticket-28-wave3-gap-input/move/final-receipts.public.json",
+          "build/ticket-28-wave3-gap-input/charge/final-receipts.public.json",
+          "build/ticket-28-wave3-gap-input/fight/final-receipts.public.json",
+          "build/ticket-28-wave3-creator-token-loss/verified-capabilities.public.json",
+          "build/ticket-28-wave3-mixed-support-opening/sentry/result.public.json",
+          "build/ticket-28-wave3-mixed-support-opening/planning-admission/result.public.json",
+          "build/ticket-28-wave3-attached-effect-loss/expiry/result.public.json",
+          "docs/development/wave3/evidence/T28-W3-web-human-staging.zh-CN.md"
+        ]
+      },
+      "liveOutput": {
+        "status": "not_run",
+        "note": "真实Skill生产和AI对局待14/16及额度恢复。",
+        "evidence": []
+      },
+      "strategyEffect": {
+        "status": "not_measured",
+        "note": "当前为来源与规则工程交付，未执行策略评价。",
+        "evidence": []
+      }
+    },
+    {
+      "id": "roster-plan-teach",
+      "title": "T27/S272 军表与 Plan／Teach，P0–P6 验收 3/7",
+      "implementation": {
+        "status": "partial",
+        "note": "P2 同源首轮 Setup 动作目录按需读取，四组正文减少3.00%～17.65%，关键输入与输出合同一致，原件及作者按行读取已工程验证；策略效果待。 首轮修复两组同源输入正文另减35.56%～35.63%，授权、证据及输出架构精确。 P5 库存审核的明确预算比值从原文绑定两项数字。 修复种子 Plan 续写碰撞，事件按 Plan 版本生成。 P2 固定表初始生成保存8个升级地址及当前Setup精确目录，已用正常读取回交。 P4 补齐双臂同源 Builder 差额并作六项来源保护。 P4/P5 可选比较复审与调度共用已匹配备选审计事实槽，纠正历史“未审计”漏拦。 P6 暂停快照共用正式导出器，增加确证未发与用量未知的边界。 P4/P6 阻断盲写的冻结敌表历史导入和冷读取。 P5/P6 共享派发边界读取旧账，角色重组前保留同一原请求供对账。 P6 同指纹重试的报告按实际派发回执归属；未归属回复保留原件和去重用量。 P2 可编辑空表作者续读保留同源 Setup 按需目录。 P4 共享比较投影保留来源武器顺序及射击策略，已覆盖作者和复审。 P4 经验发布复用射击序列比较校验，捕获实测参与方、武器顺序、样本数与三项期望。 P4 条件经验读回附原生指标、武器序列和适用范围的精确角色地址，先校验原件身份。 P6 统一脱敏覆盖编码 Prompt 内层凭据与私有字段，并保留符合产品调查合同的公开委派。 P5 显式恢复优先使用实际派发账本，阻断旧快照覆盖已返回响应；重试发送前核对持久晚到记录。 P5 正常返回的本地回复按物理派发/原输入/输出合同与用量校验后接回同工作单。 P5 普通产品续行取得写锁后先复用同一物理身份校验接回本地正常回复，再做初始化和首次调度。 P6 提交报告按实际角色已读和保存事件核验 Teach 来源，直连原 Prompt。 P2 空表首轮发送编码对完全相同的工具证明范围复用同请求引用，定点版本化并保留旧账显式编码。 P5 正式 Secure 适配器关闭发送前事件持久化失败造成的假 unknown。发送前保留同尝试未发送终态，发送中未知判断原样。 P4 空表原生拒绝无预算前值，候选预览为可核验无单位无卡起点补精确零支出，未赋予空表合法。 P2/P4 待发首个Teach的当期原生计分和Supply读资格进入共享调度，去旧场景绕行；原有已发出请求保留。 P5 审核按实际已读参与方来源派生盲写与已知敌表语义，消除要求使用实验载体解释真实敌表的错配。 P6 报告请求页展开已保存但无传输轨迹的原始角色回合，保持传输统计单独口径。 P3 有界联合时序增加显式双边突击准备模式，旧单边合同保留，同一Native规则器。 P4/P5 修复已保存任务得分比较被错误要求武器参与方，真两臂计分证据修前拒绝、修后通过，并继续拒绝错臂及非法编号。",
+        "evidence": [
+          "docs/ticket-27-slice-272-p6-commit-lineage-2026-11-20.md",
+          "build/slice272-p6-commit-lineage-20261120/tool-evidence-verification.json",
+          "docs/ticket-27-slice-272-p5-r15-recovery-2026-11-21.md",
+          "docs/ticket-27-slice-272-p4-comparison-candidate-audit-2026-11-21.md",
+          "docs/ticket-27-slice-272-p2-lineage-navigation-2026-11-21.md",
+          "build/slice272-p6-commit-lineage-20261120/tool-lineage-verification.json",
+          "docs/ticket-27-slice-272-p6-launch-without-teach-reopen-2026-11-21.md",
+          "build/slice272-p2-setup-action-navigation-RivPkx/verification.json",
+          "docs/ticket-27-slice-272-p4-joint-evidence-delivery-2026-11-21.md",
+          "packages/roster-strategist/pregame-temporal-outcome-v1.mjs",
+          "docs/ticket-27-slice-272-p5-joint-root-repair-2026-11-21.md",
+          "packages/roster-strategist/roster-workflow-graph-v1.mjs",
+          "packages/roster-strategist/roster-workflow-laboratory-v1.mjs",
+          "docs/ticket-27-slice-272-p5-temporal-repair-scope-2026-11-21.md",
+          "docs/ticket-27-slice-272-p2-first-round-repair-prompt-2026-11-21.md",
+          "packages/roster-strategist/roster-role-communication-v1.mjs",
+          "docs/ticket-27-slice-272-p4-p5-budget-authority-2026-11-21.md",
+          "packages/roster-strategist/roster-workflow-draft-v1.mjs",
+          "docs/ticket-27-slice-272-p2-p4-p6-fixed-author-teach-2026-11-21.md",
+          "packages/roster-strategist/roster-role-communication-v1.mjs",
+          "docs/ticket-27-slice-272-p2-fixed-author-navigation-2026-11-21.md",
+          "packages/roster-strategist/roster-workflow-candidate-source-v1.mjs",
+          "docs/ticket-27-slice-272-p4-roster-comparison-delta-2026-11-21.md",
+          "packages/roster-strategist/roster-comparison-premises-v1.mjs",
+          "docs/ticket-27-slice-272-p4-closure-candidate-facts-2026-11-21.md",
+          "scripts/export-roster-workflow-public-report-v1.mjs",
+          "scripts/roster-workflow-public-report-template.html",
+          "docs/ticket-27-slice-272-p6-paused-product-report-2026-11-21.md",
+          "packages/roster-strategist/roster-opponent-knowledge-v1.mjs",
+          "docs/ticket-27-slice-272-p4-blind-experience-boundary-2026-11-21.md",
+          "packages/roster-planning-workspace/roster-workflow-provider-boundary-v1.mjs",
+          "packages/roster-strategist/roster-workflow-read-role-v1.mjs",
+          "docs/ticket-27-slice-272-p5-prepared-dispatch-ledger-2026-11-21.md",
+          "docs/ticket-27-slice-272-p6-physical-reply-lineage-2026-11-21.md",
+          "docs/ticket-27-slice-272-p2-editable-initial-readback-2026-11-21.md",
+          "docs/ticket-27-slice-272-p4-ranged-sequence-sensitivity-2026-11-21.md",
+          "docs/ticket-27-slice-272-p4-ranged-experience-2026-11-21.md",
+          "docs/ticket-27-slice-272-p4-experience-author-read-2026-11-21.md",
+          "docs/ticket-27-slice-272-p6-public-report-sanitization-2026-11-21.md",
+          "docs/ticket-27-slice-272-p5-returned-dispatch-recovery-2026-11-21.md",
+          "docs/ticket-27-slice-272-p5-returned-reply-consumption-2026-11-21.md",
+          "docs/ticket-27-slice-272-p5-returned-reply-start-2026-11-21.md",
+          "docs/ticket-27-slice-272-p6-teach-commit-lineage-2026-11-21.md",
+          "docs/ticket-27-slice-272-p2-first-author-proof-scope-encoding-2026-11-22.md",
+          "docs/ticket-27-slice-272-p5-pre-egress-observer-recovery-2026-11-22.md",
+          "docs/ticket-27-slice-272-p4-empty-draft-preview-to-teach-2026-11-22.md",
+          "docs/ticket-27-slice-272-p2-p4-teach-current-fact-handoff-2026-11-22.md",
+          "packages/roster-strategist/roster-opponent-knowledge-v1.mjs",
+          "docs/ticket-27-slice-272-p5-r7-six-domain-return-2026-11-22.md",
+          "scripts/roster-workflow-public-report-template.html",
+          "docs/ticket-27-slice-272-p6-r8-room-and-report-2026-11-22.md",
+          "docs/ticket-27-slice-272-p4-dual-assault-planner-validation-2026-11-22.md",
+          "packages/roster-strategist/roster-comparison-observation-v1.mjs"
+        ]
+      },
+      "productHandoff": {
+        "status": "partial",
+        "note": "四组同一冻结数据的正式 r0 已走到首轮作者输入。实际请求、编码正文及回应合同保存，外发前暂停并冷读。同图敌表8/0，已有工具回执不重复。真实生成、正式验收及开局待。 P4 局部控点已通过事实汇总、局部 Teach、作者六份实际预备请求及冷读交接，真实采用未执行。 P5 两组省略根引用的联合查询首次停点已补产品准备委托，两份预备请求、两份原生准备后继和冷读复编通过，续接原查询时固定原语义并验证真实准备来源。 P6 两份历史正式产物的逐步报告离线浏览抽验通过，新鲜生成待验。 P4 候选预览、确认及冷读已按真实旧案例隔离复现；P5 满预算隔离产品预算事实审核→汇合→回交→局部存档→复审已通过，其他审核仍未验。 固定表正式建稿至首轮作者及局部 Teach 的隔离验证通过：原生审计可读、锁表拒绝、纯 Plan 保存、Teach 读取当前摘要，真实生成待。 固定表首轮／同一续读正文减少16.18%／7.89%，仍保读值和合同，未发付费调用。 D r31 原句复现；复审预备请求和可选比较终止门同源，准确事实下保留作者取舍。 四份 r0 快照实际逐页浏览通过；正式导出拒绝未验收草稿，旧 r8 输出原件完备。 旧 Daelaam 参考与当前盲写对手匹配10/10；实际 HTTP/Journey/Core 隔离验证；公开实验假设和已知组保留。 完整产品工厂用达拉姆正式暂停副本复验 GET200／旧敌表导入409，隔离与原工作流、旅程和轨迹哈希一致。 完整达拉姆产品在注入未决账目的隔离副本重组前停，原请求与费用保留；干净分支正式暂停。 达拉姆历史10组实物派发对照、隔离迟到及原件缺失的浏览验证通过。 两组完整产品r0续读正文减少17.52%／2.97%，精确原件、首轮和原断点一致。 P4 DS r31 已存作者／复审的隔离输入编译通过，两组原生比较数值与阈值保持一致。 P4 两份历史原件通过隔离工作流归档和正式 HTTP/Journey 按双方单位冷读；旧比较与原件一致。 P4 两份历史原件经发布、重新打开、角色读回编码及实际按编号读取到原生标量与条件，导航未额外授予读资格；零付费。 P6 r8 正式历史产物重导出 77/77 Prompt 原字节、26/26 工具包、8/8 提交及证据链接一致，源状态只读。 P5 用同一份r19物理状态实物复现并验证隔离HTTP/Journey与发送口双边：已返回零入队零传输，未决仍可授权处理。 P5 历史r19的Teach请求#5经正式恢复接口、冷启动与实际角色消费，产生与e203逐字段相同的提案，零模型；缺件/错源/重复拒绝。 P5 普通 /run 用已保存r19 Teach到evidence_ready，原提案与显式恢复同一内容地址；缺件保留待对账，零模型。 P6 r19 17/19提交可核对 Teach 送达；e230实际有提案读回、Builder审计选择及军表/Plan联合提交580→770矿。 P4 用e230实物通过当前Native重审和联合提交冷读。相同770矿审计/Plan，旧源与未读拒绝；中间草案仅目标未满，终审未排。 r19同源Native重审2000矿及六域回执哈希一致；错图、错流程、缺回执和缺/异图终审拒绝。开局验收读取探针未建房。 r19/r8最终保留有独立复审及原Prompt直达，离线浏览实证；两臂部署收益仍未证。 P4可选Native发分检查点经正式工具编译、执行、存档与冷读；未满足联合目标仍保留精确奖分，控制/限额不推断奖分。 P4已结算任务分使用源编号配对读取，r8原生双臂1:1差0；未知、跨轮与手填拒绝，既有火力对照无变化。 P4双臂发分比较已进入事实汇总、Teach、作者三份同产品待发请求。按编号读到原生1/1，缺件/错源/无访问抑制，未调用模型。 P6 当前代码四组外发前验收4/4：三组隐藏实际敌表，公开组8/8；Hold Position、地图、响应合同和两个已存工具结果保持绑定。首轮编码少2.30%～17.15%，零模型／建房；真实生成与策略结果待。 P2 四组外发前各减少8,102字节，全文还原、原上下文/Schema、冷原件一致，旧固定表两份和三角色旧请求原字节不变；真实采用待。 P5 R1-DS隔离产品运行→发送前写失败→冷恢复同原请求→再次运行到无网络边界通过，零未知费用授权，旧v1精确重试和有界网络重试通过。 P6 历史r19首轮拒绝与修正军表同源重审。现产品拒绝旧作用域回复，合法候选在隔离入口建中间草案，未带旧Plan；新版实际采纳待验。 P4/P6 当前空表隔离作者读证→当前真实Builder预览→候选确认→r1/Plan v1→Teach发前通过。注入作者回复、零模型；冷编Teach有当前事实补入，未实际回复。 P2/P4 r1隔离缺计分明确持有；恢复真实回执后Teach读到6起始供给与Setup可用0，实际补读路线、保存测试提案，作者待发请求逐项收回同一提案。 P4 当前Teach提案到作者实际取证和联合提交。离线模拟作者两次有效回复，读取同源680矿两臂并采用其一，真实Builder审后r1 160矿/Plan v1 → r2 680矿/Plan v2，条件路线与未知保留，冷读通过。 P3/P4 R1-DS r2 一次当前Marine到中央任务点原生几何查询、正式作者发前送达、冷读通过；仍未测完整编队、占点和计分，旧冻结数据，零外发。 P3/P4 R1-DS r2 正式有限预算第一页24/24仅升级至810矿；经现有容量卡与单位合并 Builder 审核取得合法2000矿155气，当前产品实际送达#177，Codex一次代答后原生复审及r3/Plan v3联合提交和冷读通过。计分、损失预算、Teach准出及实战待。 P4 R1-DS r3 产品早期Teach读回部署段及Plan结构后给出提案，作者实际消费并提交r4条件计分目标与2供给止损。产品资源作者选Tech Lab，预览确认后r5/Plan v5为2000矿200气，10支单位不变，机械与资源门通过及冷读，当前版局部质疑已排。完整Teach/比较/终审待。 P4 R1-DS r5 正式调度通过早期质疑与完整Teach，单批实读4段Plan，保存首支Marine不使用Tech Lab的R2中央整队到达必要问题及冷读。旧离线作者断言留下的superseded provider_entered仍挡后继，内存对照定位，原状态保留。P3同源只读部署边与中央坐标已证，Setup合法初始化及整队动作待。 P3 R1-DS r5 已用同Setup合法私有首轮初始化后做限定单单位Native搜索，找到不花Tech Lab的R2突击中央整队见证，玩家一先手分支有证、另一分支未覆盖；分块实际事实角色读回6字段、摘要evidence_ready，作者采用仍待旧离线未决处理。 P5 有据终止旧离线作者pending不重开原写入者，错源与已发送反例通过；P4修复局部复核误派六域，三项局部复核通过且提前派发0；完整Teach后作者读取原生见证并提交r6条件计分路线，2000矿200气不变，冷读；终审和对局待。 P4 R1-DS r6 当前留案复核、完整Teach、作者实际读冻结规则后r7一次补齐四支装备用途与反制预案；2000矿／200气同军表；冷读；未查新Native未开局，六域和正式对比待。 P4/P5 R1-DS r7 经保留复核、完整Teach与作者保留，正式六域入队。装备域两个子项已实际消费，五项装备用途规则匹配、七项抽取事实均与原生军表吻合，一处自然语言分组待澄清。零外发，军表和Plan不变，整体仍未准出。 P5 R1-DS r7 六域17项已落盘，一处Marine分组不明由产品自动交回作者。局部Plan提交r8，军表及Builder审计原样保留；r8冷读，正式保留决定已入队。零付费／建房，当前未准出。 P5/P6 R1-DS r8 比较、Teach、作者和六域复审完成，库存29段12条均原生吻合，正式HTTP accepts 并冷读六域收据；2000矿/200气、军表及计划正文不变。隔离代答，零付费、零建房，实际独立生产和对局仍暂停。 P6 r8 正式开局接口到房间创建前接线通过，旧修订和Daybreak配置拒绝；报告从正式隔离原件生成，浏览验证78个角色回合及库存Prompt。四组实际r0均仍暂停。 P3 R1-DS r8 对照复用同军表首轮，补虫族获胜且仍选人族先动的合法第二回合中央见证；同原人族先手的四步空间命令，刷新未测范围，Native保存冷读。零模型/建房，正式接受快照未改。 P3同一虫族赢先手的r8隔离父态，另验虫族两阶段选自己先动再跳过，Marine同空间命令至R2突击，第5点全竞争单位查询1:0归人族，未结算VP。29回执冷复原、仅一次只读查询，未提交Plan或建房。 P4 r8新先动证据经正式工单五个Native路径及对照条件送达作者，一次离线代答存retain、evidence_ready；冷读军表/Plan不变。策略收益、独立生成未验。 P5同源先动证据经局部Teach→作者明确收窄中央复核触发，Plan v8→v9真实保存且冷读。军表2000矿200气不变，只留scoreRoute与invalidationTriggers待复核，零付费/建房，隔离未准出。 P2/P5 v9正式终审六域入队。计分真实请求复现紧凑导航被二次包装，修源后只两批读取加一次离线结论，conditional/future_condition冷读；11其余工单不动，未准出。 P5 v9沿已存计分断点补反制conditional和连续性supported两域，三次离线回复及冷读，继承原计分结果共3/6域、地图／装备／损失待验，原军表Plan不变。 P5 v9续存地图到达/8.3与损失两域，三份同源原件按原绑定挂载，四次离线答与冷读。终审5/6仅余装备原子及父汇总，未准出。 P5/P6 v9隔离装备6子项11检查父汇总及12条库存原生匹配，六审域冷读齐备。正式准出读出装备/对手缺冻结披露、策略比较未开始，未准出。同源盲写材料已定位，零付费/建房。 P5/P6 v9同源盲写挂载，产品仅重开装备/对手；对手二审闭合，装备子项二审待。正式策略Teach提出第二Goliath中央支援vs留备，原Run发布提案后作者ready；零付费/对局，比较未执行。 P4/P5 v9 单次Codex代答走正式作者消费与落盘，保留第二Goliath第二轴和1项可选比较。原生任务点VP已有读取但作者方向及比较主体未接齐。零外发／开房／原生动作，未测策略，未准出。 P4/P5 v9原生任务分判据注册／计分方和回合方法合同／结果回绑接线已验。Workspace Run一次离线答保存并排独立复核，冷读；旧1:1、错轮、缺结算、缺当前实验归属边界已核。实地两臂、复核及策略效果待，零外发/开房。 P4/P5 v9任务分价值复核29条及三项检查，排方法；方法正式Prompt 1.4.0。补隔离副本两份未截断Native Builder目录后，复用原答一条并排独立方法预检；判据与草案冷读一致。两次离线代答；零付费/原生动作/开局，实地对照待。 P4/P5 v9方法预检13/13后正式产品规划、读后确认、原生共同候选准备已执行。复现复合候选编译只送己方，显式敌方假设未入Native回执。原军表Plan不改，两臂未执行。三次离线代答、零付费和开局。 P4/P5明确双侧候选绑定、Native必选Creep拒绝、局部补一张Accelerating Creep和同产品冷打开通过。假设Hydralisk保持；旧原件、正式军表、Plan v9与主线保留。候选结果汇总就绪，尚无两臂实测。 P3–P5正式事实回交三条、方法工单就绪；同源冷读R2旧前缀只有Marine。原虫族Pass前分叉，隔离Native两侧合法部署与收尾共3条；R1三队同场、中央0:0，无付费/开局/计分，冷恢复通过。待有界双边跨轮和原生两臂。 P3–P5一次离线代答与隔离Native验证取得两种先攻骰分支R2突击共同见证，Marine和Hydralisk争第5点1:2，第二台Goliath在场；53状态、52转移零失败。共同终态待正式方法绑定，合法射击及两臂任务分待测，双边前瞻收窄尚未计时。 P4 R2共同见证以36动作逐态匹配并保存差量，零空间重搜，冷读 Goliath→Hydralisk Autocannon 合法；同父态无射击／射击 Native 实际发分 7／11条回执原件核验。任务主指标0／0无实质差异，总分0:1→1:0来自阻止虫族争点和击毁1 Supply；四点控制一致。还未进正式独立审核或Plan作者。零付费／开局。 P4/P5 隔离正式工单从预声明 R2 两臂登记166/167→实际目录→4个精确原件读取→确认已保存差值工单。正式工具两臂0/0匹配共同父态，no_material_difference，冷读匹配，事实汇总就绪。四次本地代答，零模型费/原生动作/开局；独立复审、作者处置、实测效果和新鲜正式生产待。 P5 Goliath R2正式事实汇总、三个局部谓词回答、六项原件复审、三项覆盖通过。同产品正式比较周期把目的、结果及复审送达作者，作者正式保存 retain，原军表和Plan v9不变，冷读通过并排战略复审。16次本地代答，零付费/新原生动作/开局。仍需战略复审和新鲜验收，不证明整体策略提升。 P5 旧冻结v9比较策略复审两项条件及装备域六子项11检查通过，同产品冷读六域齐备 readyForRelease=true；原工作流、军表和Plan一致，未实际准出，未证策略提升。八份离线答复，零付费/原生动作/开局，正式新鲜生成待。 P6 旧数据隔离v9已由正式产品入口注册、接受，六域验收及冷读；中文HTML归档60对存档角色原件，含24份本轮比较回复、3个工具工单及4份补充Native原件。两项策略字段收窄证据条件，军表不变，策略提升未证。零付费/开局/新增Native动作；新鲜端到端生成与分组实战待。 P6 新鲜产品隔离空表 r0→r1 900矿60气→r2 2000矿180气（11支），8次本地代答，经一次局部Schema纠错、两次实际预览/确认及早期Teach→同作者联合改军表和Plan。冷读验证r2与20气Native候选前置，中文逐步报告8对完整Prompt与5工具。尚未赛前准出，下一步续同一断点，不改Wave3导航。 P4–P6 同一新空表隔离续至r3，Native无20气直接追加；读两卡规则后Barracks→TechLab，2000矿200气11支，Plan v3同步。完整Teach与36项比较价值审核保存。修比较纠错泄漏Host假设，用实际失败请求在正式执行器发送前定点复验。20对累计真实脱敏角色原件，零外发/开局；两臂测量和终审待。 P4/P5 同一r3实际通过方法预检、候选构造和事实回交，自动排下一工单；累计27对产品Prompt与离线代答，安全暂停。两臂射击测量、正式终审未执行。 P3/P4 r3候选Inspect返回R1 Setup，原生第一回合准备ok。共用前置误当单臂门已定点修复，等待同产品复用保存结果及后继、冷读。累计32对离线回合；两臂预期未测。 P3/P4 正式产品冷启动复用已保存共用准备，原动作次数仍1，实际后继Inspect到R1开始并派发第33份事实Prompt。验证进程内存耗尽停在本地待消费答复，实测两臂待。 P3/P4 第33份离线摘要按原请求重接并消费，自动排作者策略工单；冷开同r3并正式暂停。33对完整脱敏实物Prompt及13个工具原件已导出，零外部派发和原生准备/菜单重跑。",
+        "evidence": [
+          "build/slice272-p6-commit-lineage-20261120/verification.json",
+          "build/ticket-27-slice-272-p5-r15-recovery-2026-11-21/verification.json",
+          "build/ticket-27-slice-272-p4-comparison-candidate-audit-2026-11-21/verification.json",
+          "build/ticket-27-slice-272-p2-lineage-navigation-2026-11-21/verification.json",
+          "build/ticket-27-slice-272-p6-room-admission-scope-2026-11-21/verification.json",
+          "build/slice272-p6-current-rules-preflight-4sEqZq/verification.json",
+          "build/slice272-p6-current-matrix-ru1xvw/verification.json",
+          "build/slice272-p6-current-matrix-ru1xvw/first-author-verification.json",
+          "build/slice272-p4-joint-role-delivery-5tg0vB/verification.json",
+          "build/slice272-p4-joint-role-delivery-5tg0vB/cold-evidence-read.json",
+          "build/slice272-p5-joint-root-repair-HALHe6/verification.json",
+          "build/slice272-p5-joint-root-repair-HALHe6/repair-role-delivery.json",
+          "build/slice272-p5-temporal-repair-scope-ugWKcJ/verification.json",
+          "build/slice272-p5-temporal-repair-scope-ugWKcJ/repair-role-delivery.json",
+          "build/slice272-p2-temporal-repair-prompt-xt6Eew/repair-role-delivery.json",
+          "build/slice272-p2-temporal-repair-prompt-xt6Eew/projection-boundaries.json",
+          "build/slice272-p6-commit-lineage-20261120/browser-verification.json",
+          "build/slice272-p4-candidate-authority-nT8qpo/review-verification.json",
+          "build/slice272-p4-candidate-authority-nT8qpo/full-army-budget-repair-closed-loop.json",
+          "build/slice272-p6-fixed-author-U0AJEC/fixed-author-teach-verification.json",
+          "build/slice272-p6-fixed-author-U0AJEC/fixed-author-navigation-verification.json",
+          "build/slice272-p4-closure-candidate-proof-ItL3pM/verification.json",
+          "build/slice272-p6-checkpoint-report-MIz8vH/verification.json",
+          "build/slice272-p4-blind-experience-7T9CGK/verification.json",
+          "build/slice272-p4-blind-experience-product-SQr10o/verification.json",
+          "build/slice272-p5-dispatch-journal-conflict-Yy3RMC/verification.json",
+          "build/slice272-p6-physical-reply-lineage-bLxLjJ/verification.json",
+          "build/slice272-p2-editable-setup-readback-AxxHrl/verification.json",
+          "build/slice272-p4-ranged-sequence-sensitivity-20261121/verification.json",
+          "build/slice272-p4-ranged-experience-B7MtuH/verification.json",
+          "build/slice272-p4-experience-author-read-OBnu8t/verification.json",
+          "build/slice272-p6-public-report-sanitization-MyAdLb/verification.json",
+          "build/slice272-p6-public-report-sanitization-MyAdLb/r8-report/index.html",
+          "build/slice272-p5-returned-dispatch-M6s9dZ/verification.json",
+          "build/slice272-p5-returned-reply-consumption-OWPURa/verification.json",
+          "build/slice272-p5-returned-reply-start-gNrLic/verification.json",
+          "build/slice272-p6-teach-commit-lineage-cX6RzX/verification.json",
+          "build/slice272-p6-teach-commit-lineage-cX6RzX/r19-report/index.html",
+          "build/slice272-p4-joint-commit-e230-2190YF/verification.json",
+          "docs/ticket-27-slice-272-p4-joint-commit-e230-2026-11-21.md",
+          "docs/ticket-27-slice-272-p6-acceptance-scope-2026-11-21.md",
+          "build/slice272-p6-acceptance-scope-green-mo8VYm/verification.json",
+          "docs/ticket-27-slice-272-p6-final-strategy-2026-11-21.md",
+          "build/slice272-p6-final-strategy-PAR7xs/verification.json",
+          "docs/ticket-27-slice-272-p4-native-scoring-checkpoint-2026-11-22.md",
+          "build/slice272-p4-scoring-tool-verification-TP8usJ/verification.json",
+          "docs/ticket-27-slice-272-p4-native-award-comparison-2026-11-22.md",
+          "build/slice272-p4-award-delta-SI3pST/combined-verification.json",
+          "docs/ticket-27-slice-272-p4-mission-award-role-delivery-2026-11-22.md",
+          "build/slice272-p4-mission-award-role-delivery-c0gze7/verification.json",
+          "docs/ticket-27-slice-272-p6-current-product-egress-2026-11-22.md",
+          "build/slice272-p6-current-egress-YAWLrd/verification.json",
+          "build/slice272-p6-current-egress-YAWLrd/public-packet-verification.json",
+          "build/slice272-p6-current-egress-vu80Pp/verification.json",
+          "build/slice272-p6-current-egress-vu80Pp/cold-and-legacy-verification.json",
+          "build/slice272-p6-current-egress-h9RxSs/verification.json",
+          "build/slice272-p6-current-egress-WG3t0l/verification.json",
+          "docs/ticket-27-slice-272-p6-historical-first-draft-current-builder-2026-11-22.md",
+          "build/slice272-p6-current-egress-pNuWCP/verification.json",
+          "build/slice272-p6-current-egress-1bRdsc/verification.json",
+          "build/slice272-p6-current-egress-Wy1z86/author-builder-teach-audit.public.json",
+          "build/slice272-p6-current-egress-Wy1z86/budget-boundary-verification.json",
+          "build/slice272-p6-current-egress-29yGgv/verification.json",
+          "build/slice272-p6-current-egress-zqTCVr/verification.json",
+          "docs/ticket-27-slice-272-p4-current-teach-builder-joint-revision-2026-11-22.md",
+          "build/slice272-p6-current-egress-lNiIkL/verification.json",
+          "docs/ticket-27-slice-272-p3-current-r2-marine-route-2026-11-22.md",
+          "build/slice272-p6-current-egress-C0rKJH/verification.json",
+          "docs/ticket-27-slice-272-p4-capacity-2000-joint-commit-2026-11-22.md",
+          "build/slice272-p6-current-egress-dwbnQh/exact-budget-verification.json",
+          "build/slice272-p6-current-egress-dwbnQh/capacity-author-verification.json",
+          "docs/ticket-27-slice-272-p4-full-budget-teach-return-2026-11-22.md",
+          "build/slice272-p6-current-egress-J9dSGC/verification.json",
+          "build/slice272-p4-gas-confirmation-v2ahQB/verification.json",
+          "docs/ticket-27-slice-272-p4-full-teach-central-admission-2026-11-22.md",
+          "build/slice272-p6-current-egress-sthHSi/verification.json",
+          "build/slice272-p3-central-route-source-BkLRsN/handoff-diagnosis.public.json",
+          "docs/ticket-27-slice-272-p3-r5-central-arrival-witness-2026-11-22.md",
+          "build/slice272-p3-central-arrival-L24ZdY/verification.json",
+          "build/slice272-p3-central-fact-finish-MGJYlm/verification.json",
+          "docs/ticket-27-slice-272-p4-p5-central-adoption-and-review-routing-2026-11-22.md",
+          "build/slice272-p5-retired-offline-resume-JF1b0I/verification.json",
+          "build/slice272-p4-retention-review-scope-gFne2i/verification.json",
+          "build/slice272-p4-after-teach-adopt-oVmloK/verification.json",
+          "docs/ticket-27-slice-272-p4-r7-equipment-and-counter-2026-11-22.md",
+          "build/slice272-p4-r6-current-sequence-GALaaP/verification.json",
+          "build/slice272-p4-r7-equipment-counter-7W0oTH/verification.json",
+          "docs/ticket-27-slice-272-p5-r7-domain-admission-2026-11-22.md",
+          "build/slice272-p4-r7-review-admission-Crlgjh/verification.json",
+          "build/slice272-p5-r7-atomic-review-4V0VYz/verification.json",
+          "docs/ticket-27-slice-272-p5-r7-six-domain-return-2026-11-22.md",
+          "build/slice272-p5-r8-cold-successor-hUgitV/verification.json",
+          "docs/ticket-27-slice-272-p5-r8-inventory-recheck-2026-11-22.md",
+          "build/slice272-p6-r8-cold-accepted-Z3fxoJ/verification.json",
+          "docs/ticket-27-slice-272-p6-r8-room-and-report-2026-11-22.md",
+          "build/slice272-p6-r8-workflow-report-D5MqrD/verification.json",
+          "build/slice272-p6-r8-workflow-report-D5MqrD/report/index.html",
+          "docs/ticket-27-slice-272-p3-r8-matched-initiative-2026-11-22.md",
+          "build/slice272-p3-r8-alternate-initiative-native-vKI2qW/matched-initiative.public.json",
+          "docs/ticket-27-slice-272-p3-r8-first-actor-counterfactual-2026-11-22.md",
+          "docs/ticket-27-slice-272-p4-r8-first-actor-author-handoff-2026-11-22.md",
+          "docs/ticket-27-slice-272-p5-r8-teach-trigger-revision-2026-11-22.md",
+          "docs/ticket-27-slice-272-p2-p5-r9-review-navigation-2026-11-22.md",
+          "docs/ticket-27-slice-272-p5-r9-counter-continuity-2026-11-22.md",
+          "docs/ticket-27-slice-272-p5-r9-map-loss-2026-11-22.md",
+          "docs/ticket-27-slice-272-p5-r9-component-and-release-gates-2026-11-22.md",
+          "docs/ticket-27-slice-272-p5-r9-opponent-and-strategy-handoff-2026-11-22.md",
+          "docs/ticket-27-slice-272-p5-r9-owner-scoring-gap-2026-11-22.md",
+          "build/slice272-p5-r9-participant-and-comparison-20261122/strategy-decision/verification.json",
+          "docs/ticket-27-slice-272-p4-mission-award-author-binding-2026-11-22.md",
+          "build/slice272-p4-award-author-bind-20261122-r3/cold-remaining/verification.json",
+          "docs/ticket-27-slice-272-p4-award-value-and-method-2026-11-22.md",
+          "build/slice272-p4-award-value-and-method-20261122-method-sources/method-persistence.public.json",
+          "docs/ticket-27-slice-272-p4-goliath-native-candidate-boundary-2026-11-22.md",
+          "build/slice272-p4-goliath-native-preflight-20261122-full-product/candidate-lineage.public.json",
+          "docs/ticket-27-slice-272-p4-hypothetical-opponent-binding-2026-11-22.md",
+          "build/slice272-p4-goliath-native-preflight-20261122-opponent-bound-card-repair/candidate-persistence.public.json",
+          "docs/ticket-27-slice-272-p4-goliath-shared-native-deploy-2026-11-22.md",
+          "build/slice272-p4-goliath-shared-parent-20261122-deploy/cold-verification.json",
+          "build/slice272-p4-dual-side-assault-20261122/verification.json",
+          "docs/ticket-27-slice-272-p4-goliath-r2-award-comparison-2026-11-22.md",
+          "build/slice272-p4-goliath-r2-award-pair-20261122/source-audit.public.json",
+          "docs/ticket-27-slice-272-p5-goliath-r2-formal-comparison-handoff-2026-11-22.md",
+          "build/slice272-p5-goliath-r2-formal-handoff-20261122/focused-purpose/formal-comparison-result.public.json",
+          "docs/ticket-27-slice-272-p5-goliath-r2-source-review-and-retain-2026-11-22.md",
+          "build/slice272-p5-goliath-r2-formal-handoff-20261122/focused-purpose/p5-return-author-decision-cold-proof.json",
+          "docs/ticket-27-slice-272-p5-goliath-r2-strategy-review-and-release-gate-2026-11-22.md",
+          "build/slice272-p5-goliath-r2-formal-handoff-20261122/focused-purpose/p5-final-review-cold-verification.json",
+          "docs/ticket-27-slice-272-p6-v9-accepted-product-report-2026-11-22.md",
+          "build/slice272-p6-v9-formal-product-bVpVdB/cold-verification.json",
+          "build/slice272-p6-v9-formal-product-bVpVdB/report-verification.json",
+          "docs/ticket-27-slice-272-p6-empty-to-reviewed-draft-2026-11-22.md",
+          "build/slice272-p6-offline-empty-g8jkQo/cold-verification.json",
+          "build/slice272-p6-offline-empty-g8jkQo/report/index.html",
+          "docs/ticket-27-slice-272-p5-p6-r3-gas-teach-and-criterion-2026-11-22.md",
+          "build/slice272-p6-offline-empty-g8jkQo/r3-checkpoint-verification.json",
+          "build/slice272-p6-offline-empty-g8jkQo/report-r3/index.html",
+          "docs/ticket-27-slice-272-p4-r3-autocannon-shared-candidate-2026-11-22.md",
+          "docs/ticket-27-slice-272-p3-p4-r3-native-preparation-gate-2026-11-22.md",
+          "docs/ticket-27-slice-272-p3-p4-r3-native-preparation-recovery-2026-11-22.md"
+        ]
+      },
+      "liveOutput": {
+        "status": "partial",
+        "note": "已有 r19 与 r8 正式产物，均有历史工程干预；无新增付费请求。",
+        "evidence": [
+          "build/slice272-fresh-product-p6-zoWmYP/accepted.json",
+          "build/slice272-fresh-stability-p6-x1edlf/accepted.json"
+        ]
+      },
+      "strategyEffect": {
+        "status": "not_measured",
+        "note": "P4 同源联合部署与移动：r19和r8各6个第2回合确认分支，均无两点见证。r8有3分支控标记3，r19无，均达100状态上限，仍有前沿。尚无策略提升或实战证据。 r8 历史 Teach 改变部署，作者摘要误引候选矿耗已分开登记。 Goliath／第五支 Marine 对照，作者与独立复审实际请求收到 +5 模型、−1 Supply、−10 矿；采用效果及对局待。 P4 旧样本中第四批武器额外移除1 Supply达103/256，Goliath 相对 Marine 差值由0.46094到0.86328；适用当前冻结条件，计划采用和实战效果待证。 同r8地图及军表的固定底盘原生对照中，4支与第1+4支均控3，前3/前2不控，1均不控。更少入场的时序、发分与实战仍待。 r8同冻结源第一、第四支按原路径独立走到第2回合实际控标记3并原生得1VP，36回执；条件为无对手介入、相同先手。四支原存档仅至控点，策略采用与实战待。 r8同军表双臂实际发分均为R1 0:0／R2 1:0，两支省2 Supply、少12在场模型。44条新增四支回执，前43状态与旧分支一致；实战反制、作者采纳及策略效果待。",
+        "evidence": [
+          "build/ticket-27-slice-272-p5-r15-recovery-2026-11-21/verification.json",
+          "build/ticket-27-slice-272-p4-comparison-candidate-audit-2026-11-21/verification.json",
+          "docs/ticket-27-slice-272-p4-matched-opening-2026-11-21.md",
+          "build/slice272-p4-paired-opening-hEylgN/matched-opening.json",
+          "build/slice272-p4-paired-opening-hEylgN/common-map-control.json",
+          "docs/ticket-27-slice-272-p4-joint-opening-2026-11-21.md",
+          "build/slice272-p4-joint-opening-ffScPR/paired-joint-check.json",
+          "build/slice272-p6-commit-lineage-20261120/r8-teach-deployment-authority-check.json",
+          "build/slice272-p4-verified-roster-delta-SuMCv8/verification.json",
+          "build/slice272-p4-ranged-sequence-sensitivity-20261121/verification.json",
+          "docs/ticket-27-slice-272-p4-same-roster-marker-control-2026-11-21.md",
+          "build/slice272-p4-fixed-control-FMosvx/verification.json",
+          "docs/ticket-27-slice-272-p4-two-marine-score-2026-11-21.md",
+          "build/slice272-p4-two-marine-native-b8iXVY/verification.json",
+          "docs/ticket-27-slice-272-p4-matched-opening-actual-score-2026-11-21.md",
+          "build/slice272-p4-four-marine-native-OdsMbv/paired-verification.json",
+          "docs/ticket-27-slice-272-p3-r8-matched-initiative-2026-11-22.md",
+          "build/slice272-p3-r8-alternate-initiative-native-vKI2qW/verification.json"
+        ]
+      }
+    }
+  ],
+  "next": [
+    "玩家从 /match 验收 Web 人人对战。M25 等待原生测试机。",
+    "W3-03/02 优先把现有棋盘的真实工厂、规则和任务接入规划发布，保留策略包来源检查；随后用离线答复验两类 Journey。",
+    "W3-12 按消费者核对持续光环与召唤物的适用规则，再针对有差异的能力做席位查询和房间后继验证。",
+    "W3-14 已准备 17 份 Skill 的 70 个输入；真实生成、副官实答和人机／机机等待用户指定模型。M25 等设备，PostgreSQL 等实库。"
+  ],
+  "navigation": [
+    {
+      "when": "查询旧版与 Wave3 建房、战桌拦截的原因、适用范围和证据",
+      "title": "正式对战事实清单",
+      "path": "docs/development/wave3/match-facts.zh-CN.md"
+    },
+    {
+      "when": "查看 Wave3 前后长任务、顺序和恢复条件",
+      "title": "Project D 长任务路线图",
+      "path": "docs/development/wave3/project-continuation-roadmap-2026-11-22.zh-CN.md"
+    },
+    {
+      "when": "版本更新全部子项与后续汇报编号",
+      "title": "Ticket28完整工作清单",
+      "path": "docs/development/wave3/work-breakdown-2026-11-15.zh-CN.md"
+    },
+    {
+      "when": "由sol逐项开发Wave3",
+      "title": "Wave3详细开发与接线手册",
+      "path": "docs/development/wave3/README.md"
+    },
+    {
+      "when": "Wave3更新范围、开发量与验收",
+      "title": "Ticket28增量方案v2",
+      "path": "docs/ticket-28-wave3-incremental-update-plan-v2-2026-11-12.md"
+    },
+    {
+      "when": "日常读取",
+      "title": "有限当前上下文",
+      "path": "scripts/inspect-development-context.mjs"
+    },
+    {
+      "when": "查看进度各层证据",
+      "title": "唯一当前状态源",
+      "path": "coordination/current-development.json"
+    },
+    {
+      "when": "本轮环境工具与续验用法",
+      "title": "开发工作台",
+      "path": "docs/development/workbench.md"
+    },
+    {
+      "when": "查看本轮改动与验证",
+      "title": "环境改进交付记录",
+      "path": "docs/development/retro-20261112.md"
+    },
+    {
+      "when": "实验范围与比较条件",
+      "title": "学习评价范围登记",
+      "path": "coordination/learning-evaluation-scopes.json"
+    },
+    {
+      "when": "复盘业务后续",
+      "title": "原方法开发计划",
+      "path": "docs/research/ticket-23-slice-249-faithful-method-development-plan-2026-11-10.md"
+    },
+    {
+      "when": "确实需要历史停点",
+      "title": "归档入口",
+      "path": "docs/history/development-context-20261112/README.md"
+    },
+    {
+      "when": "新增角色或恢复路径",
+      "title": "工程先行",
+      "path": "docs/ticket-27-slice-272-engineering-first-role-dataflow-v1-2026-10-29.md"
+    },
+    {
+      "when": "声明产品完成",
+      "title": "消费端与验收标准",
+      "path": "docs/ticket-27-slice-272-implementation-standard-2026-11-04.md"
+    },
+    {
+      "when": "T27 当前证据",
+      "title": "r3 共用准备恢复及实际后继菜单",
+      "path": "docs/ticket-27-slice-272-p3-p4-r3-native-preparation-recovery-2026-11-22.md"
+    },
+    {
+      "when": "四组当前 P6 产品入口",
+      "title": "首轮待发 Prompt 与开局校验",
+      "path": "docs/ticket-27-slice-272-p6-current-product-egress-2026-11-22.md"
+    }
+  ],
+  "dataUpdateAssessment": {
+    "ticket": 28,
+    "status": "implementation_in_progress",
+    "workItems": 16,
+    "implementedWorkItems": 6,
+    "document": "docs/ticket-28-wave3-incremental-update-plan-v2-2026-11-12.md",
+    "observedVersions": {
+      "unitsVersion": 83,
+      "cardsVersion": 84,
+      "rulesVersion": 50,
+      "faqVersion": "1.3"
+    },
+    "productionDataUnchanged": true,
+    "paidCalls": 0,
+    "handbook": "docs/development/wave3/README.md",
+    "implementationPlan": "coordination/wave3/implementation-plan.json",
+    "handoff": "docs/development/wave3/SOL-HANDOFF.zh-CN.md",
+    "definitionInventory": "coordination/wave3/new-definition-inventory.json",
+    "handbookReady": true,
+    "completedWorkItems": 6,
+    "primaryDataSource": "official_command_center_army_builder_firestore",
+    "pdfRole": "reference",
+    "candidateSourceIndex": "build/ticket-28-wave3-source-candidate-20261112-v1/source-index.json",
+    "candidateDataset": "build/ticket-28-wave3-source-candidate-20261112-v1/compiled/dataset.json",
+    "currentItem": "T28-W3-12",
+    "corePdfMatchesLegacy": true,
+    "nextImplementationItem": "W3-12 按标记的具名来源核对创造者阵亡后的移除、留场（STAY）与延迟效果，并比对当前棋位的查询和实际结算。",
+    "identityRegistry": "content/source-releases/wave3-20261112-feature-registry-v2.json",
+    "releaseCandidate": "content/source-releases/wave3-20261112-catalogue-release-v2.json",
+    "currentReport": "docs/development/wave3/evidence/T28-W3-12.md",
+    "currentSourceReview": "content/source-releases/wave3-20261124-raven-assembly/source.json"
+  },
+  "activeWork": {
+    "id": "T28-W3-15"
+  }
+}

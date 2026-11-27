@@ -43,7 +43,7 @@ function normalized(value) {
 }
 function statusName(value) {
   return normalized(object(value)
-    ? value.statusName || value.name || value.keyword || value.status
+    ? value.statusName || value.name || value.keyword || value.status || value.label
     : value);
 }
 function hasStatus(piece, name) {
@@ -52,6 +52,10 @@ function hasStatus(piece, name) {
 }
 function validate(input) {
   verifyOfficialStatusStayInPlayDataBundleV1(input.statusStayInPlayDataBundle);
+  const supported = input.statusStayInPlayDataBundle.supportedProcedures;
+  if (supported && !supported.includes(input.procedureKind)) {
+    fail("STATUS_STAY_IN_PLAY_PROCEDURE_NOT_ADMITTED", input.procedureKind);
+  }
   const state = input.state;
   if (!object(state) || !Array.isArray(state.pieces) || !object(state.players)
     || !object(state.board) || !Array.isArray(state.board.tokens)
@@ -238,7 +242,11 @@ export function resolveOfficialOnCreepStateV1(input = {}) {
   });
 }
 
-function siegeProfiles(piece) {
+function siegeProfiles(piece, bundle) {
+  if (bundle.schema === "starcraft_tmg_official_siege_mode_data_bundle_v2") {
+    return exactProfile(piece, bundle.siegeModeCarrierRegistry.entries,
+      "SIEGE_MODE_UNIT_SOURCE_MISMATCH").profiles;
+  }
   const profiles = piece.siegeModeProfileSet;
   if (!Array.isArray(profiles) || profiles.length < 1
     || piece.siegeModeProfileSetHash !== hashStarcraftTmgContract(profiles)) {
@@ -260,7 +268,7 @@ export function resolveOfficialSiegeModeRulesV1(input = {}) {
     fail("SIEGE_MODE_QUERY_INVALID", piece.id);
   }
   const active = hasStatus(piece, "siege_mode");
-  const profiles = siegeProfiles(piece);
+  const profiles = siegeProfiles(piece, bundle);
   const profileEligibility = profiles.map((entry) => ({
     profileId: entry.profileId, profileName: String(entry.profileName || entry.profileId),
     requiresSiegeMode: entry.requiresSiegeMode,
@@ -287,6 +295,29 @@ export function resolveOfficialSiegeModeRulesV1(input = {}) {
   });
 }
 
+function siegeRulesForPiece(state, piece) {
+  const bundle = state?.officialSiegeModeDataBundle || state?.officialStatusStayInPlayDataBundle;
+  if (!activePiece(piece) || !bundle?.siegeModeCarrierRegistry.entries
+    .some(entry => entry.recordKey === piece.officialUnitRecordKey)) return null;
+  return resolveOfficialSiegeModeRulesV1({ state, pieceId: piece.id,
+    statusStayInPlayDataBundle: bundle, procedureKind: "evaluate_siege_mode_rules",
+    rulesOwnedStateRequested: true });
+}
+
+export function assertOfficialSiegeModeActionAllowedV1(state, piece, actionType) {
+  if (siegeRulesForPiece(state, piece)?.forbiddenActionTypes.includes(actionType)) {
+    fail("SIEGE_MODE_FORBIDS_ACTION", actionType);
+  }
+}
+
+export function isOfficialSiegeModeWeaponEligibleV1(state, piece, weaponName) {
+  const rules = siegeRulesForPiece(state, piece);
+  if (!rules) return true;
+  const weapon = rules.profileEligibility.find(row => row.profileName === weaponName);
+  if (!weapon) fail("SIEGE_MODE_WEAPON_SOURCE_MISSING", weaponName);
+  return weapon.eligible;
+}
+
 export function resolveOfficialSiegeModeReserveRemovalV1(input = {}) {
   const { state, bundle } = validate(input);
   const piece = pieceFor(state, input.pieceId);
@@ -300,11 +331,14 @@ export function resolveOfficialSiegeModeReserveRemovalV1(input = {}) {
     (marker?.targetPieceId === piece.id || marker?.affectedPieceId === piece.id)
       && statusName(marker) === "siege_mode"
   )).map((marker) => nonEmpty(marker.id, "SIEGE_MODE_MARKER_ID_REQUIRED")).sort();
+  const sizePatch = bundle.schema === "starcraft_tmg_official_siege_mode_data_bundle_v2"
+    ? { sizeCharacteristic: exactProfile(piece, bundle.siegeModeCarrierRegistry.entries,
+      "SIEGE_MODE_UNIT_SOURCE_MISMATCH").printedSize } : {};
   return result({
     schema: "starcraft_tmg_official_siege_mode_reserve_removal_v1",
     procedureKind: "remove_siege_mode_on_reserve", pieceId: piece.id,
     siegeModeRemoved: true, returnToReservesRemovesStatus: true,
-    mutation: { piecePatches: [patch(piece, { statuses })],
+    mutation: { piecePatches: [patch(piece, { statuses, ...sizePatch })],
       removeBoardTokenIds: [], removeEffectMarkerIds },
     statusStayInPlayDataBundleHash: bundle.bundleHash,
     clientSuppliedMutationAccepted: false, trainingTruth: false,
@@ -324,18 +358,12 @@ function requiresShielded(entry) {
     && normalized(entry.requiresStatus || entry.requiredStatus) === "shielded";
 }
 
-export function resolveOfficialShieldedDependenciesV1(input = {}) {
-  const { state, bundle } = validate(input);
-  const piece = pieceFor(state, input.pieceId);
-  const event = latestShieldLossEvent(state, piece.id);
-  if (input.procedureKind !== "resolve_shielded_dependencies" || !event
-    || hasStatus(piece, "shielded")
-    || input.triggerEventHash !== hashStarcraftTmgContract(event)) {
-    fail("SHIELDED_DEPENDENCY_TRIGGER_INVALID", piece.id);
-  }
+export function collectOfficialShieldedDependentCleanupV1(state, piece, options = {}) {
   const set = {};
   const endedEffects = [];
-  for (const field of EFFECT_FIELDS) {
+  const fields = options.includeCurrentProductEffects === true
+    ? [...EFFECT_FIELDS, 'officialAbilityEffects'] : EFFECT_FIELDS;
+  for (const field of fields) {
     const entries = Array.isArray(piece[field]) ? piece[field] : [];
     const kept = [];
     entries.forEach((entry, index) => {
@@ -346,11 +374,24 @@ export function resolveOfficialShieldedDependenciesV1(input = {}) {
     });
     if (kept.length !== entries.length) set[field] = kept;
   }
-  const removeEffectMarkerIds = state.board.effectMarkers.filter((marker) => (
+  const removeEffectMarkerIds = (state.board?.effectMarkers || []).filter((marker) => (
     (marker?.targetPieceId === piece.id || marker?.affectedPieceId === piece.id)
       && requiresShielded(marker)
   )).map((marker) => nonEmpty(marker.id,
     "SHIELDED_DEPENDENCY_MARKER_ID_REQUIRED")).sort();
+  return { set, endedEffects, removeEffectMarkerIds };
+}
+
+export function resolveOfficialShieldedDependenciesV1(input = {}) {
+  const { state, bundle } = validate(input);
+  const piece = pieceFor(state, input.pieceId);
+  const event = latestShieldLossEvent(state, piece.id);
+  if (input.procedureKind !== "resolve_shielded_dependencies" || !event
+    || hasStatus(piece, "shielded")
+    || input.triggerEventHash !== hashStarcraftTmgContract(event)) {
+    fail("SHIELDED_DEPENDENCY_TRIGGER_INVALID", piece.id);
+  }
+  const { set, endedEffects, removeEffectMarkerIds } = collectOfficialShieldedDependentCleanupV1(state, piece);
   return result({
     schema: "starcraft_tmg_official_shielded_dependency_resolution_v1",
     procedureKind: "resolve_shielded_dependencies", pieceId: piece.id,

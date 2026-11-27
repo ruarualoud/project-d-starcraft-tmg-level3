@@ -303,13 +303,13 @@ function applyPiecePatch(state, patch) {
     for (const field of modelPatch.deleteFields || []) delete model[field];
   }
 }
-function removeExactArtifacts(entries, ids, code) {
+function removeExactArtifacts(entries, ids, code, idField = 'id') {
   const remove = new Set(ids || []);
   if (remove.size !== (ids || []).length
-    || [...remove].some((id) => !entries.some((entry) => entry?.id === id))) {
+    || [...remove].some((id) => !entries.some((entry) => entry?.[idField] === id))) {
     fail(code);
   }
-  return entries.filter((entry) => !remove.has(entry.id));
+  return entries.filter((entry) => !remove.has(entry[idField]));
 }
 function runtimeHash(state, options) {
   const value = String(options.matchBinding?.rulesRuntimeBinding?.runtimeHash
@@ -319,12 +319,15 @@ function runtimeHash(state, options) {
   }
   return value;
 }
-function applyMutation(state, mutation, options) {
+export function applyOfficialReserveLifecyclePieceMutationV1(state, mutation, { boardTokenIdField = 'id' } = {}) {
   for (const patch of mutation.piecePatches || []) applyPiecePatch(state, patch);
   state.board.tokens = removeExactArtifacts(state.board.tokens,
-    mutation.removeBoardTokenIds || [], "RESERVE_LIFECYCLE_TOKEN_PATCH_STALE");
+    mutation.removeBoardTokenIds || [], "RESERVE_LIFECYCLE_TOKEN_PATCH_STALE", boardTokenIdField);
   state.board.effectMarkers = removeExactArtifacts(state.board.effectMarkers,
     mutation.removeEffectMarkerIds || [], "RESERVE_LIFECYCLE_MARKER_PATCH_STALE");
+}
+function applyMutation(state, mutation, options) {
+  applyOfficialReserveLifecyclePieceMutationV1(state, mutation);
   if ((mutation.piecePatches || []).length > 0
     && Number(state.round) >= 2 && object(state.officialRoundSupplyState)) {
     state.officialRoundSupplyState = createOfficialRoundSupplyStateV1({

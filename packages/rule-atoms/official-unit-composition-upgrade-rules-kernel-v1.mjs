@@ -182,7 +182,8 @@ export function resolveOfficialUnitUpgradeSelectionV1(input = {}) {
       entry.applicationKind === "unit_wide")).length,
     mineralCost: selectedUpgrades.reduce((sum, entry) => sum + entry.mineralCost, 0),
     upgradeSelectionSetComplete: true,
-    onlyPart12ListedUpgradeEntriesPurchased: true,
+    onlyPart12ListedUpgradeEntriesPurchased: bundle.usageScope !== 'army_building',
+    ...(bundle.usageScope === 'army_building' ? { purchaseCatalogueAuthority: 'official_army_builder' } : {}),
     sameUpgradeEntryPurchasedMoreThanOnce: false,
     unitWideDefaultAppliedToEveryStartingModel: selectedUpgrades
       .filter((entry) => entry.applicationKind === "unit_wide")
@@ -281,7 +282,8 @@ export function resolveOfficialCompleteArmyCompositionUpgradeAuditV1(input = {})
   exactlyOneListedCompositionPerUnitValidated: true,
   unlistedModelCountsRejected: true,
   startingSupplySlotOccupancyValidated: true,
-  onlyPart12ListedUpgradesPurchased: true,
+  onlyPart12ListedUpgradesPurchased: bundle.usageScope !== 'army_building',
+  ...(bundle.usageScope === 'army_building' ? { purchaseCatalogueAuthority: 'official_army_builder' } : {}),
   distinctUpgradeEntryAndSpecialistAssignmentValidated: true,
   rulesOwnedCountsSupplySlotsCostsAndUpgradeApplication: true,
   clientSuppliedCompositionUpgradeTotalsAccepted: false,

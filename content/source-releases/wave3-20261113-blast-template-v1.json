@@ -1,0 +1,33 @@
+{
+  "schema": "starcraft_tmg_template_geometry_asset_v2",
+  "semanticVersion": "2.0.1",
+  "templateType": "blast",
+  "geometry": {
+    "shape": "circle",
+    "diameterMilliInches": 5000,
+    "radiusMilliInches": 2500,
+    "diameterMm": 127,
+    "radiusMm": 63.5
+  },
+  "scope": {
+    "recordKey": "army_units:siege_tank",
+    "weaponName": "Shock Cannon"
+  },
+  "sourceSnapshotHash": "4412c17faaebaff04b117d1ddc666d1cdd939eca420a22f861c7c944f1179c8c",
+  "normalizedDatasetHash": "718057e86ac4f93a72c06b8e4d8f4d851ba33ee04c9dddea33e966eda9fe6685",
+  "dimensionEvidence": {
+    "authority": "user_confirmed_component_dimension",
+    "confirmedAt": "2026-11-13",
+    "confirmation": "不要纠结这个尺寸了，这个就是对的",
+    "diameterInches": 5
+  },
+  "placementRule": {
+    "coreRulebookHash": "27639c562e6db9777dd9ba984d0c9f9b581841ec30166848e021f893cd00ea54",
+    "section": "8.7.6",
+    "alignment": "maximum_primary_base_coverage",
+    "targetPoint": "primary_target_model_base_centre",
+    "templateCentreMayDifferFromTargetPoint": true
+  },
+  "trainingTruth": false,
+  "assetHash": "d6615086a74f95ff07b8bb940fa02d074264a672a9390dd1f5020fedcaf924cb"
+}

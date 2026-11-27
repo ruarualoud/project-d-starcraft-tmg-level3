@@ -1,0 +1,1242 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-11-14T12:39:29.754Z",
+  "scope": "只读入口索引，无运行/测试/发布证明。实际源码变化后按需更新，不作为新的生产阻断合同。",
+  "rootPolicy": "所有path相对当前活动工作树；externalDependency记录已授权只读共享依赖，不得误改",
+  "proposedModule": {
+    "path": "packages/source-data/official-release-context-v2.mjs",
+    "status": "implemented_partial_consumer_rollout",
+    "note": "发布/身份底座与旧来源Native已过，完整Wave3消费者待组件"
+  },
+  "externalDependency": {
+    "importer": "packages/authoritative-engine/transition-v1.mjs",
+    "specifier": "../../../scripts/starcraft-tmg-rules-v0.mjs",
+    "lexicalPath": "/Users/rualoud/Downloads/codex_project/project-d/starcraft-tmg-level3/.worktrees/scripts/starcraft-tmg-rules-v0.mjs",
+    "realPath": "/Users/rualoud/Downloads/codex_project/project-d/scripts/starcraft-tmg-rules-v0.mjs",
+    "access": "read_only"
+  },
+  "entries": [
+    {
+      "path": "packages/authoritative-engine/transition-v1.mjs",
+      "exports": [
+        "projectStarcraftTmgFiniteActionV1",
+        "createStarcraftTmgAuthoritativeEngine"
+      ],
+      "imports": [],
+      "importsScope": "本轮读取的相关imports子集，不是完整依赖闭包",
+      "purpose": "权威动作校验/执行入口",
+      "notes": [
+        "createStarcraftTmgAuthoritativeEngine options.rulesRuntime为现有注入点",
+        "静态旧Rules相对导入经符号链接解析至主仓库共享脚本，旧路径保持只读"
+      ]
+    },
+    {
+      "path": "packages/product-composition/official-standard-room-factory-v1.mjs",
+      "exports": [
+        "createOfficialStandard2000BalancedTerrainPlanV1",
+        "completeOfficialRoomDraftV1",
+        "buildOfficialRoomArmyAuditV1",
+        "createOfficialRoomCardResourcesV1",
+        "createOfficialRoomPieceFromRosterUnitV1",
+        "createOfficialStandardRoomInitialStateAuthorityV1",
+        "verifyOfficialStandardRoomInitialStateAuthorityV1"
+      ],
+      "imports": [
+        "../roster-strategist/army-builder-query-port-v1.mjs",
+        "./official-competitive-map-semantic-room-freeze-v1.mjs",
+        "./official-premade-map-room-source-v1.mjs"
+      ],
+      "importsScope": "本轮读取的相关imports子集，不是完整依赖闭包"
+    },
+    {
+      "path": "packages/product-composition/official-skirmish-500-room-factory-v1.mjs",
+      "exports": [
+        "createOfficialSkirmish500BalancedTerrainPlanV1",
+        "createOfficialSkirmish500RoomInitialStateAuthorityV1",
+        "createOfficialSkirmish500RoomViewerProjectionsV1",
+        "verifyOfficialSkirmish500RoomInitialStateAuthorityV1"
+      ],
+      "imports": [
+        "../room-runtime/in-memory-room-v1.mjs",
+        "../source-data/official-ability-effect-ir-v1.mjs",
+        "./official-selected-roster-ability-runtime-v1.mjs",
+        "./official-ability-effect-runtime-v1.mjs",
+        "./official-current-product-ability-denominator-v1.mjs",
+        "./official-current-product-ability-coverage-release-v1.mjs",
+        "./official-standard-room-factory-v1.mjs",
+        "./official-competitive-map-semantic-room-freeze-v1.mjs",
+        "./official-premade-map-room-source-v1.mjs"
+      ],
+      "importsScope": "本轮读取的相关imports子集，不是完整依赖闭包"
+    },
+    {
+      "path": "packages/product-composition/official-current-product-action-runtime-composition-v1.mjs",
+      "exports": [
+        "composeOfficialCurrentProductActionRuntimeV1",
+        "verifyOfficialCurrentProductActionRuntimeCompositionV1"
+      ],
+      "imports": [
+        "../source-data/official-ability-effect-ir-v1.mjs",
+        "./official-ability-effect-runtime-v1.mjs",
+        "./official-current-product-ability-coverage-release-v1.mjs",
+        "./official-current-product-ability-denominator-v1.mjs",
+        "./official-selected-roster-ability-runtime-v1.mjs"
+      ],
+      "importsScope": "本轮读取的相关imports子集，不是完整依赖闭包"
+    },
+    {
+      "path": "packages/product-composition/official-current-product-ability-coverage-release-v1.mjs",
+      "exports": [
+        "createOfficialCurrentProductAbilityCoverageReleaseV1",
+        "verifyOfficialCurrentProductAbilityCoverageReleaseV1"
+      ],
+      "imports": [
+        "../source-data/official-ability-effect-ir-v1.mjs",
+        "./official-ability-effect-runtime-v1.mjs",
+        "./official-current-product-ability-denominator-v1.mjs"
+      ],
+      "importsScope": "本轮读取的相关imports子集，不是完整依赖闭包"
+    },
+    {
+      "path": "packages/product-composition/official-selected-roster-ability-runtime-v1.mjs",
+      "exports": [
+        "createOfficialSelectedRosterAbilityImplementationBindingsV1",
+        "getOfficialSelectedRosterCombatProfileV1",
+        "createOfficialSelectedRosterAbilitySourceBundleV1",
+        "verifyOfficialSelectedRosterAbilitySourceBundleV1",
+        "enumerateOfficialSelectedRosterAbilityActionsV1",
+        "instantiateOfficialSelectedRosterAbilityActionV1",
+        "previewOfficialSelectedRosterAbilityActionV1",
+        "queryOfficialSelectedRosterAbilityV1",
+        "projectOfficialOmegaWormPieceV1",
+        "applyOfficialSelectedRosterAbilityActionV1",
+        "resolveOfficialSelectedRosterAbilityModifiersV1",
+        "assertOfficialSelectedRosterCoreActionWindowV1",
+        "openOfficialSelectedRosterAfterActionWindowV1",
+        "consumeOfficialSelectedRosterFirstWeaponModifierV1",
+        "cleanupOfficialSelectedRosterAbilityEffectsV1",
+        "createOfficialSelectedRosterAbilityRuntimeV1",
+        "verifyOfficialSelectedRosterAbilityRuntimeDescriptorV1"
+      ],
+      "imports": [
+        "../rule-atoms/official-phase-activation-availability-v1.mjs"
+      ],
+      "importsScope": "本轮读取的相关imports子集，不是完整依赖闭包"
+    },
+    {
+      "path": "packages/product-composition/roster-planning-product-module-v1.mjs",
+      "exports": [
+        "candidateRoomRecipe",
+        "roomMapMatchesPlanBinding",
+        "rosterPlanMatchesSelectedBudgetV1",
+        "agentSelectedScoreRouteRevisionsAllowedV1",
+        "createRosterPlanningProductModuleV1"
+      ],
+      "imports": [
+        "../roster-strategist/roster-workflow-operation-contracts-v1.mjs",
+        "./official-standard-room-factory-v1.mjs",
+        "../../scripts/support/official-development-tranche-source-lock-fixture-v1.mjs",
+        "../strategy-skills/portable-foundational-skill-pack-loader-v2.mjs",
+        "../../content/skill-generation/ticket-18-portable-strategy-pack-v2.mjs",
+        "../roster-strategist/army-builder-query-port-v1.mjs",
+        "../roster-planning-workspace/roster-decision-product-journey-v1.mjs",
+        "../roster-strategist/pregame-map-evidence-port-v1.mjs",
+        "../roster-planning-workspace/roster-decision-workflow-store-v1.mjs",
+        "../roster-planning-workspace/roster-workflow-provider-boundary-v1.mjs",
+        "../roster-planning-workspace/preset-roster-journey-v1.mjs",
+        "../roster-strategist/iterative-roster-product-port-v1.mjs"
+      ],
+      "importsScope": "本轮读取的相关imports子集，不是完整依赖闭包",
+      "purpose": "统一Builder/Plan/Room产品构造器",
+      "notes": [
+        "当前直接loadOfficialDevelopmentTrancheSourceLockFixtureV1，不是已接Wave3的证明"
+      ]
+    },
+    {
+      "path": "packages/room-runtime/in-memory-room-v1.mjs",
+      "exports": [
+        "starcraftTmgVisibleRosterSideKeysV2",
+        "projectStarcraftTmgStateForViewerV2",
+        "projectStarcraftTmgStateForViewerV3",
+        "createStarcraftTmgRoomRuntime"
+      ],
+      "imports": [
+        "../authoritative-engine/transition-v1.mjs",
+        "../room-store/room-store-v1.mjs",
+        "./battle-workbench-score-rules-query-v1.mjs"
+      ],
+      "importsScope": "本轮读取的相关imports子集，不是完整依赖闭包"
+    },
+    {
+      "path": "packages/online-agent-session/room-backed-spatial-rules-query-adapter-v1.mjs",
+      "exports": [
+        "describeStarcraftTmgActionParameterRepairContextV1",
+        "createStarcraftTmgRoomBackedSpatialRulesQueryAdapterV1"
+      ],
+      "imports": [
+        "../authoritative-engine/transition-v1.mjs",
+        "./ranged-activation-probability-runtime-v1.mjs",
+        "./ranged-activation-query-contract-v1.mjs",
+        "./readonly-query-kinds-v1.mjs",
+        "./readonly-query-worker-batch-v1.mjs",
+        "./spatial-query-contracts-v1.mjs",
+        "../roster-strategist/pregame-map-evidence-port-v1.mjs",
+        "./static-formation-query-v1.mjs"
+      ],
+      "importsScope": "本轮读取的相关imports子集，不是完整依赖闭包",
+      "purpose": "房间支持的规则/几何/概率工具",
+      "notes": [
+        "需同步inline和worker，不能只改Prompt投影"
+      ]
+    },
+    {
+      "path": "packages/online-agent-session/spatial-action-query-runtime-v1.mjs",
+      "exports": [
+        "createStarcraftTmgNativeSpatialQueryToolV1",
+        "projectStarcraftTmgSpatialParameterDomainsV1",
+        "createStarcraftTmgSpatialActionQueryRuntimeV1"
+      ],
+      "imports": [
+        "./melee-probability-query-parameters-v1.mjs",
+        "../authoritative-engine/transition-v1.mjs",
+        "./native-action-capability-reference-v1.mjs",
+        "./ranged-activation-query-contract-v1.mjs",
+        "./readonly-query-kinds-v1.mjs",
+        "./spatial-query-contracts-v1.mjs"
+      ],
+      "importsScope": "本轮读取的相关imports子集，不是完整依赖闭包"
+    },
+    {
+      "path": "packages/online-agent-session/combat-estimation-runtime-v1.mjs",
+      "exports": [
+        "estimateStarcraftTmgAttackProbabilityV1",
+        "createStarcraftTmgAttackProbabilityBatchV1",
+        "estimateStarcraftTmgFireZoneExchangeV1",
+        "describeStarcraftTmgFireAttackSelectionV1",
+        "createStarcraftTmgFireExchangeWorkV1",
+        "createStarcraftTmgFireExchangeWorkPlannerV1",
+        "createStarcraftTmgFireExchangeWorkEvaluatorV1",
+        "finishStarcraftTmgFireExchangeWorkV1"
+      ],
+      "imports": [
+        "./melee-probability-query-parameters-v1.mjs",
+        "../authoritative-engine/transition-v1.mjs"
+      ],
+      "importsScope": "本轮读取的相关imports子集，不是完整依赖闭包"
+    },
+    {
+      "path": "packages/roster-strategist/pregame-scene-laboratory-v1.mjs",
+      "exports": [
+        "inspectPregameRequiredArgumentsV1",
+        "assertPregameInspectInputV1",
+        "assertPregameProbabilityInputV1",
+        "normalizePregameThreatExchangeInputV1",
+        "projectPregameFormationParentRepairV1",
+        "assertPregameFormationSelectionSourceV1",
+        "describePregameWorkflowInputContractsV1",
+        "describePregameMathParameterSchemaV1",
+        "describePregameMathInputContractsV1",
+        "describePregameScenarioInputContractV1",
+        "assertPregameScenarioIntentV1",
+        "assertPregameStartOfRoundScenarioInputV1",
+        "describePregameNativeInstantiationRepairV1",
+        "parsePregameNativeActionInputV1",
+        "projectPregameQueryBoardV1",
+        "projectPregameSpatialRelationshipV1",
+        "createPregameSceneLaboratoryV1",
+        "verifyPregameSceneLaboratoryDescriptorV1",
+        "verifyPregameLabSpatialReceiptV1",
+        "verifyPregameLabProbabilityReceiptV1",
+        "verifyPregameLabMathReceiptV1",
+        "verifyPregameLabThreatExchangeReceiptV1",
+        "verifyPregameLabScenarioBranchReceiptV1",
+        "verifyPregameLabSameStateABReceiptV1",
+        "verifyPregameLabMissionScoringAuthorityReceiptV1",
+        "verifyPregameLabMutationZeroProofV1"
+      ],
+      "imports": [
+        "./roster-budget-branch-query-v1.mjs",
+        "./pregame-native-temporal-ports-v1.mjs",
+        "./army-builder-query-port-v1.mjs",
+        "./pregame-query-repair-contract-v1.mjs",
+        "../authoritative-engine/transition-v1.mjs",
+        "../online-agent-session/scene-query-service-v1.mjs",
+        "../online-agent-session/spatial-query-contracts-v1.mjs",
+        "../online-agent-session/spatial-action-query-runtime-v1.mjs",
+        "./army-builder-query-port-v1.mjs",
+        "./pregame-map-evidence-port-v1.mjs",
+        "./native-ability-reference-v1.mjs",
+        "../online-agent-session/room-backed-spatial-rules-query-adapter-v1.mjs"
+      ],
+      "importsScope": "本轮读取的相关imports子集，不是完整依赖闭包"
+    },
+    {
+      "path": "packages/roster-strategist/army-builder-query-port-v1.mjs",
+      "exports": [
+        "projectArmyBuilderMenuSourceCoverageV1",
+        "projectArmyBuilderResourceOptionsV1",
+        "classifyArmyBuilderRulesErrorV1",
+        "resolveArmyBuilderPurchasableUpgradeV1",
+        "createOfficialArmyBuilderQueryPortV1",
+        "verifyOfficialArmyBuilderQueryPortDescriptorV1",
+        "verifyArmyBuilderRosterVerdictV1",
+        "verifyArmyBuilderRejectionReceiptV1"
+      ],
+      "imports": [],
+      "importsScope": "本轮读取的相关imports子集，不是完整依赖闭包",
+      "notes": [
+        "可选unitCardSupplyDataBundle或release资源unitCharacteristics绑定inspectUnitCardSupply；语义输入recordKey/currentModels，Host绑定来源；声明场景不等于实战状态。"
+      ]
+    },
+    {
+      "path": "packages/roster-planning-workspace/roster-decision-product-journey-v1.mjs",
+      "exports": [
+        "rosterProductConstructionTeachInputV1",
+        "reconcileRosterProductOwnerBoundaryV1",
+        "createRosterDecisionProductJourneyV1",
+        "prepareRosterProductNextStageV1"
+      ],
+      "imports": [
+        "../roster-strategist/roster-budget-capability-recovery-v1.mjs",
+        "./roster-workflow-provider-boundary-v1.mjs",
+        "../roster-strategist/roster-workflow-read-role-v1.mjs",
+        "../roster-strategist/roster-workflow-author-handoff-v1.mjs",
+        "./roster-workflow-acceptance-v1.mjs",
+        "./roster-workflow-acceptance-store-v1.mjs",
+        "../roster-strategist/roster-workflow-read-context-v1.mjs",
+        "../roster-strategist/roster-workflow-graph-v1.mjs",
+        "../roster-strategist/roster-workflow-input-delivery-v1.mjs",
+        "../roster-strategist/roster-read-only-query-recovery-v1.mjs",
+        "../roster-strategist/roster-workflow-laboratory-v1.mjs",
+        "../roster-strategist/roster-workflow-candidate-context-v1.mjs"
+      ],
+      "importsScope": "本轮读取的相关imports子集，不是完整依赖闭包"
+    },
+    {
+      "path": "packages/roster-planning-workspace/roster-decision-workspace-run-v1.mjs",
+      "exports": [
+        "projectRosterUnissuedOrderRecoveryV1",
+        "prepareRosterWorkflowMethodCompilationV1",
+        "projectRosterOrderCorrectionTaskV1",
+        "createRosterCompletionRevalidationV1",
+        "createRosterComparisonPreflightWorkV1",
+        "createRosterDecisionWorkspaceRunV1"
+      ],
+      "imports": [
+        "../roster-strategist/roster-workflow-candidate-preview-v1.mjs",
+        "../roster-strategist/roster-budget-branch-query-v1.mjs",
+        "./roster-decision-workflow-store-v1.mjs",
+        "../roster-strategist/roster-decision-workflow-v1.mjs",
+        "../roster-strategist/roster-workflow-replacement-settlement-v1.mjs",
+        "../roster-strategist/roster-workflow-read-role-v1.mjs",
+        "../roster-strategist/roster-workflow-order-failure-v1.mjs",
+        "../roster-strategist/roster-workflow-investigation-decision-v1.mjs",
+        "../roster-strategist/roster-workflow-laboratory-v1.mjs",
+        "../roster-strategist/roster-workflow-plan-blocks-v1.mjs",
+        "../roster-strategist/roster-workflow-receipt-view-v1.mjs",
+        "../roster-strategist/roster-workflow-draft-v1.mjs"
+      ],
+      "importsScope": "本轮读取的相关imports子集，不是完整依赖闭包"
+    },
+    {
+      "path": "packages/source-data/official-command-center-adapter-v1.mjs",
+      "purpose": "官方数据解码/规范化",
+      "exports": [
+        "classifyOfficialCommandCenterRecord",
+        "createOfficialCommandCenterDataset",
+        "verifyOfficialCommandCenterDataset",
+        "getOfficialCurrentProductRecord"
+      ],
+      "inspection": "只读词法索引；未import运行模块"
+    },
+    {
+      "path": "packages/source-data/official-development-tranche-source-lock-v1.mjs",
+      "purpose": "旧发布锁，只读兼容基线",
+      "exports": [
+        "OFFICIAL_DEVELOPMENT_TRANCHE_SOURCE_LOCK_SCHEMA",
+        "OFFICIAL_DEVELOPMENT_TRANCHE_SOURCE_LOCK_HASH",
+        "OFFICIAL_DEVELOPMENT_TRANCHE_SNAPSHOT_HASH",
+        "OFFICIAL_DEVELOPMENT_TRANCHE_DATASET_HASH",
+        "verifyOfficialDevelopmentTrancheSourceLockV1"
+      ],
+      "inspection": "只读词法索引；未import运行模块"
+    },
+    {
+      "path": "packages/source-data/official-source-import-workflow-v4.mjs",
+      "purpose": "候选stage/发布选择/回滚ledger",
+      "exports": [
+        "STARCRAFT_TMG_SOURCE_IMPORT_WORKFLOW_V4",
+        "createStarcraftTmgSourceRevisionManifestV4",
+        "createStarcraftTmgVerifiedSourceRevisionManifestV4",
+        "verifyStarcraftTmgSourceRevisionManifestV4",
+        "createStarcraftTmgSourceImportCommandV4",
+        "classifyStarcraftTmgSourceRevisionDiffV4",
+        "createStarcraftTmgExplicitSourceImportWorkflowV4",
+        "replayStarcraftTmgSourceImportLedgerV4"
+      ],
+      "inspection": "只读词法索引；未import运行模块"
+    },
+    {
+      "path": "packages/source-data/official-latest-data-binding-v1.mjs",
+      "purpose": "来源认证及新旧房间版本绑定",
+      "exports": [
+        "OFFICIAL_DATA_SOURCE_ID",
+        "OFFICIAL_DATA_CERTIFICATION_PURPOSE",
+        "certifyOfficialDataSnapshot",
+        "verifyOfficialDataCertification",
+        "selectOfficialLatestDataSnapshot",
+        "createOfficialRoomDataBinding",
+        "resolveHistoricalRoomDataBinding"
+      ],
+      "inspection": "只读词法索引；未import运行模块"
+    },
+    {
+      "path": "packages/source-data/official-ability-effect-ir-v1.mjs",
+      "purpose": "源定义到IR与现有hash身份",
+      "exports": [
+        "officialAbilitySourceFeatureHashV1",
+        "createOfficialAbilityEffectIrCatalogueV1",
+        "verifyOfficialAbilityEffectIrCatalogueV1",
+        "listOfficialAbilityEffectDefinitionsV1"
+      ],
+      "inspection": "T28-W3-02阶段实现，证据范围见当前报告"
+    },
+    {
+      "path": "packages/source-data/official-model-base-geometry-data-bundle-v1.mjs",
+      "purpose": "底座几何数据目录",
+      "exports": [
+        "OFFICIAL_MODEL_BASE_GEOMETRY_DATA_BUNDLE_SCHEMA",
+        "OFFICIAL_MODEL_BASE_GEOMETRY_CORE_RULEBOOK_HASH",
+        "OFFICIAL_MODEL_BASE_GEOMETRY_P2P_HASHES",
+        "createOfficialModelBaseGeometryDataBundleV1",
+        "verifyOfficialModelBaseGeometryDataBundleV1",
+        "getOfficialModelBaseGeometryProfileV1",
+        "OFFICIAL_MODEL_BASE_GEOMETRY_DATA_BUNDLE_SCHEMA_V2",
+        "createOfficialModelBaseGeometryDataBundleV2",
+        "verifyOfficialModelBaseGeometryDataBundleV2",
+        "getOfficialReleaseModelBaseGeometryBundleV2"
+      ],
+      "inspection": "2026-11-12新增具名V2接口，实际源码与定点验证已核对；V1保留原具名契约"
+    },
+    {
+      "path": "packages/product-composition/official-current-product-ability-denominator-v1.mjs",
+      "purpose": "定义分母及覆盖归属",
+      "exports": [
+        "OFFICIAL_CURRENT_PRODUCT_ABILITY_DENOMINATOR_SCHEMA",
+        "OFFICIAL_CURRENT_PRODUCT_ABILITY_DENOMINATOR_VERSION",
+        "createOfficialCurrentProductAbilityDenominatorV1",
+        "verifyOfficialCurrentProductAbilityDenominatorV1",
+        "listOfficialCurrentProductAbilityGapsV1"
+      ],
+      "inspection": "只读词法索引；未import运行模块"
+    },
+    {
+      "path": "packages/product-composition/official-current-product-match-runtime-v1.mjs",
+      "purpose": "任务与回合运行时",
+      "exports": [
+        "OFFICIAL_CURRENT_PRODUCT_MATCH_RUNTIME_ID",
+        "OFFICIAL_CURRENT_PRODUCT_MATCH_RUNTIME_VERSION",
+        "createOfficialCurrentProductMatchRuntimeV1",
+        "createOfficialCurrentProductScaledMatchRuntimeV1"
+      ],
+      "inspection": "只读词法索引；未import运行模块"
+    },
+    {
+      "path": "packages/rule-atoms/official-mission-runtime-v2.mjs",
+      "purpose": "任务生命周期与计分",
+      "exports": [],
+      "inspection": "只读词法索引；未import运行模块"
+    },
+    {
+      "path": "packages/room-store/sqlite-room-store-v1.mjs",
+      "purpose": "房间持久化",
+      "exports": [
+        "createSqliteStarcraftTmgRoomStore"
+      ],
+      "inspection": "只读词法索引；未import运行模块"
+    },
+    {
+      "path": "packages/http-adapter/handler-v1.mjs",
+      "purpose": "真实HTTP产品入口",
+      "exports": [
+        "STARCRAFT_TMG_LEVEL3_HTTP_VERSION",
+        "STARCRAFT_TMG_LEVEL3_API_PREFIX",
+        "STARCRAFT_TMG_LEVEL3_CHARACTER_ASSET_PREFIX",
+        "STARCRAFT_TMG_LEVEL3_MAX_BODY_BYTES",
+        "createStarcraftTmgLevel3HttpAdapter"
+      ],
+      "inspection": "只读词法索引；未import运行模块"
+    },
+    {
+      "path": "packages/roster-planning-workspace/roster-planning-workspace-http-v1.mjs",
+      "purpose": "写表及Plan产品HTTP入口",
+      "exports": [
+        "ROSTER_PLANNING_WORKSPACE_HTTP_MODULE",
+        "ROSTER_PLANNING_WORKSPACE_API_PREFIX",
+        "ROSTER_PLANNING_WORKSPACE_HTTP_VERSION",
+        "createRosterPlanningWorkspaceHttpAdapterV1",
+        "cloneForHttp"
+      ],
+      "inspection": "只读词法索引；未import运行模块"
+    },
+    {
+      "path": "packages/roster-planning-workspace/preset-roster-journey-v1.mjs",
+      "purpose": "固定表Plan外层产品",
+      "exports": [
+        "PRESET_ROSTER_JOURNEY_VERSION",
+        "presetRosterSourceReviewRequestV1",
+        "isPresetRosterJourneyAcceptedV1",
+        "createPresetRosterJourneyV1"
+      ],
+      "inspection": "只读词法索引；未import运行模块"
+    },
+    {
+      "path": "packages/roster-strategist/pregame-map-evidence-port-v1.mjs",
+      "purpose": "地图证据与路线入口",
+      "exports": [
+        "PREGAME_MAP_EVIDENCE_PORT_V1",
+        "PREGAME_TARGET_REACHABILITY_INTERPRETATION_V1",
+        "PREGAME_MAP_WORKFLOW_CONTRACTS_V1",
+        "describePregameMapParameterSchemaV1",
+        "inspectPregameMapWorkflowArgumentsV1",
+        "projectPregameMapRouteRequestV1",
+        "projectPregameOfficialBaseIdentityV1",
+        "projectPregameTargetReachabilityV1",
+        "evaluatePregameMapReadinessV1",
+        "projectPregameMapPhysicalFactsV1",
+        "createPregameMapEvidencePortV1"
+      ],
+      "inspection": "只读词法索引；未import运行模块"
+    },
+    {
+      "path": "packages/online-agent-session/spatial-query-contracts-v1.mjs",
+      "purpose": "工具语义保证/适用域",
+      "exports": [
+        "STARCRAFT_TMG_CURRENT_ACTION_REFERENCE_CONTRACT_V1",
+        "inspectStarcraftTmgCurrentActionReferenceV1",
+        "STARCRAFT_TMG_MARKER_CONTROL_ARGUMENT_CONTRACT_V1",
+        "inspectStarcraftTmgMarkerControlArgumentsV1",
+        "STARCRAFT_TMG_SPATIAL_QUERY_CONTRACTS_V1",
+        "STARCRAFT_TMG_SPATIAL_QUERY_KINDS_V1",
+        "STARCRAFT_TMG_DELEGATED_SPATIAL_QUERY_KINDS_V1",
+        "STARCRAFT_TMG_RETIRED_SPATIAL_QUERY_KINDS_V1",
+        "starcraftTmgSpatialQueryRequiresDomainV1",
+        "inspectStarcraftTmgSpatialQueryResultV1"
+      ],
+      "inspection": "只读词法索引；未import运行模块"
+    },
+    {
+      "path": "packages/online-agent-session/spatial-query-prompt-projection-v1.mjs",
+      "purpose": "模型实际可见查询说明",
+      "exports": [
+        "SPATIAL_QUERY_PROMPT_PROJECTION_V1",
+        "projectStarcraftTmgIncomingFireEstimateForPromptV1",
+        "shareStarcraftTmgFormationFireFactsForPromptV1",
+        "restoreStarcraftTmgFormationFireFactsForPromptV1",
+        "projectStarcraftTmgTerrainFactsForPromptV1",
+        "deduplicateStarcraftTmgSpatialPromptReceiptsV1"
+      ],
+      "inspection": "只读词法索引；未import运行模块"
+    },
+    {
+      "path": "packages/online-agent-session/spatial-query-receipt-contract-v1.mjs",
+      "purpose": "原生查询回执合同",
+      "exports": [
+        "spatialQueryReceiptRejectionV1"
+      ],
+      "inspection": "只读词法索引；未import运行模块"
+    },
+    {
+      "path": "packages/online-agent-session/readonly-query-kinds-v1.mjs",
+      "purpose": "可并行只读查询种类",
+      "exports": [
+        "STARCRAFT_TMG_INDEPENDENT_READONLY_QUERY_KINDS_V1"
+      ],
+      "inspection": "只读词法索引；未import运行模块"
+    },
+    {
+      "path": "packages/online-agent-session/readonly-query-worker-v1.mjs",
+      "purpose": "worker读取和执行",
+      "exports": [],
+      "inspection": "只读词法索引；未import运行模块"
+    },
+    {
+      "path": "packages/online-agent-session/readonly-query-worker-batch-v1.mjs",
+      "purpose": "worker批量调度与结果汇合",
+      "exports": [
+        "evaluateStarcraftTmgReadonlyQueriesInWorkersV1"
+      ],
+      "inspection": "只读词法索引；未import运行模块"
+    },
+    {
+      "path": "packages/strategy-skills/incremental-skill-freshness-runtime-v1.mjs",
+      "purpose": "已有内存增量算法，需正式持久化消费",
+      "exports": [
+        "STARCRAFT_TMG_INCREMENTAL_SKILL_FRESHNESS_VERSION",
+        "createStarcraftTmgIncrementalSkillFreshnessRuntimeV1"
+      ],
+      "inspection": "只读词法索引；未import运行模块"
+    },
+    {
+      "path": "packages/strategy-skills/online-strategy-skill-registry-v1.mjs",
+      "purpose": "线上Skill组合选择",
+      "exports": [
+        "STARCRAFT_TMG_ONLINE_STRATEGY_SKILL_REGISTRY_VERSION",
+        "createStarcraftTmgOnlineStrategySkillSnapshotV1",
+        "assertStarcraftTmgOnlineStrategySkillSnapshotV1",
+        "createStarcraftTmgOnlineStrategySkillRegistryV1"
+      ],
+      "inspection": "只读词法索引；未import运行模块"
+    },
+    {
+      "path": "packages/strategy-skills/sqlite-strategy-release-store-v1.mjs",
+      "purpose": "本地策略版本持久化",
+      "exports": [
+        "STARCRAFT_TMG_SQLITE_STRATEGY_RELEASE_STORE_VERSION",
+        "STARCRAFT_TMG_SQLITE_STRATEGY_RELEASE_SCHEMA_FINGERPRINT",
+        "createSqliteStarcraftTmgStrategyReleaseStoreV1"
+      ],
+      "inspection": "只读词法索引；未import运行模块"
+    },
+    {
+      "path": "packages/strategy-skills/postgres-strategy-release-store-v1.mjs",
+      "purpose": "生产SQL adapter",
+      "exports": [
+        "STARCRAFT_TMG_POSTGRES_STRATEGY_RELEASE_STORE_VERSION",
+        "STARCRAFT_TMG_POSTGRES_STRATEGY_RELEASE_COLUMN_LAYOUT",
+        "STARCRAFT_TMG_POSTGRES_STRATEGY_RELEASE_SCHEMA_FINGERPRINT",
+        "createPostgresStarcraftTmgStrategyReleaseStoreV1"
+      ],
+      "inspection": "只读词法索引；未import运行模块"
+    },
+    {
+      "path": "packages/strategy-skills/strategy-release-store-contract-v1.mjs",
+      "purpose": "存储同构合同",
+      "exports": [
+        "STARCRAFT_TMG_STRATEGY_RELEASE_STORE_VERSION",
+        "STARCRAFT_TMG_STRATEGY_RELEASE_STORE_METHODS",
+        "assertStarcraftTmgStrategyReleaseStoreV1",
+        "createStarcraftTmgStrategyReleaseStoreV1",
+        "hashStarcraftTmgStrategyReleaseStoreValueV1"
+      ],
+      "inspection": "只读词法索引；未import运行模块"
+    },
+    {
+      "path": "packages/client-domain/native-action-form-v1.mjs",
+      "purpose": "合法原生动作表单",
+      "exports": [
+        "describeNativeActionFormV1",
+        "nativeActionFormDefaultsV1",
+        "compileNativeActionFormValuesV1"
+      ],
+      "inspection": "只读词法索引；未import运行模块"
+    },
+    {
+      "path": "packages/client-domain/battle-workbench-v1.mjs",
+      "purpose": "单位/对战信息面板",
+      "exports": [
+        "STARCRAFT_TMG_BATTLE_WORKBENCH_VERSION",
+        "projectStarcraftTmgBattleWorkbenchV1",
+        "isStarcraftTmgBattleWorkbenchSnapshotV1"
+      ],
+      "inspection": "只读词法索引；未import运行模块"
+    },
+    {
+      "path": "packages/client-domain/battle-workbench-probability-v1.mjs",
+      "purpose": "概率面板",
+      "exports": [
+        "STARCRAFT_TMG_PROBABILITY_WORKBENCH_VERSION",
+        "projectStarcraftTmgProbabilityWorkbenchV1",
+        "isStarcraftTmgProbabilityWorkbenchV1"
+      ],
+      "inspection": "只读词法索引；未import运行模块"
+    },
+    {
+      "path": "packages/client-domain/battle-workbench-threat-v1.mjs",
+      "purpose": "威胁面板",
+      "exports": [
+        "STARCRAFT_TMG_THREAT_WORKBENCH_VERSION",
+        "projectStarcraftTmgThreatWorkbenchV1",
+        "isStarcraftTmgThreatWorkbenchV1"
+      ],
+      "inspection": "只读词法索引；未import运行模块"
+    },
+    {
+      "path": "packages/client-domain/battle-workbench-write-palette-v1.mjs",
+      "purpose": "前端动作编译入口",
+      "exports": [
+        "STARCRAFT_TMG_WRITE_PALETTE_VERSION",
+        "STARCRAFT_TMG_CURRENT_RULE_GRAPH_INDEX_V1",
+        "isDirectlyNamedTokenMarkerRuleAtomV1",
+        "classifyStarcraftTmgWriteSheetEntryV1",
+        "projectStarcraftTmgWritePaletteV1",
+        "isStarcraftTmgWritePaletteV1"
+      ],
+      "inspection": "只读词法索引；未import运行模块"
+    },
+    {
+      "path": "apps/starcraft-tmg-battle-lab/app.mjs",
+      "purpose": "Web页面入口",
+      "exports": [],
+      "inspection": "只读词法索引；未import运行模块"
+    },
+    {
+      "path": "apps/starcraft-tmg-battle-lab/battle-lab-runtime-v1.mjs",
+      "purpose": "Web房间操作",
+      "exports": [
+        "STARCRAFT_TMG_BATTLE_LAB_MOUNT_VERSION",
+        "readStarcraftTmgTrustedBattleLabProviderV1",
+        "dispatchStarcraftTmgTrustedBattleLabProviderV1",
+        "subscribeStarcraftTmgTrustedBattleLabProviderV1",
+        "createStarcraftTmgBattleLabRuntime"
+      ],
+      "inspection": "只读词法索引；未import运行模块"
+    },
+    {
+      "path": "scripts/lib/product-boundary-check.mjs",
+      "purpose": "可恢复的具名工程边界验证",
+      "exports": [
+        "runProductBoundaryCheck"
+      ],
+      "inspection": "只读词法索引；未import运行模块"
+    },
+    {
+      "path": "scripts/lib/development-context.mjs",
+      "purpose": "原子写当前状态和短任务记录",
+      "exports": [
+        "navigationBudgets",
+        "validateNavigation",
+        "assertNavigation",
+        "readBounded",
+        "readJson",
+        "boundedOutput",
+        "atomicWrite",
+        "prependRecord",
+        "validateProgress",
+        "experimentCoverage",
+        "renderCurrent",
+        "writeCurrent"
+      ],
+      "inspection": "只读词法索引；未import运行模块"
+    },
+    {
+      "path": "scripts/support/official-wave3-source-candidate-v1.mjs",
+      "purpose": "T28-W3-01离线来源冻结及待审stage入口",
+      "exports": [
+        "diffOfficialWave3DatasetsV1",
+        "stageOfficialWave3SourceCandidateV1"
+      ],
+      "inspection": "T28-W3-01实际执行记录在候选目录"
+    },
+    {
+      "path": "scripts/verify-wave3-source-candidate-v1.mjs",
+      "purpose": "T28-W3-01已执行来源/Schema/冷读检查",
+      "exports": [],
+      "inspection": "T28-W3-01实际执行记录在候选目录"
+    },
+    {
+      "path": "scripts/verify-wave3-source-persistence-v1.mjs",
+      "purpose": "T28-W3-01已执行部分保存恢复检查",
+      "exports": [],
+      "inspection": "T28-W3-01实际执行记录在候选目录"
+    },
+    {
+      "path": "packages/source-data/official-ability-identity-v2.mjs",
+      "exports": [
+        "createOfficialAbilityIdentityRegistryV2",
+        "reviseOfficialAbilityIdentityRegistryV2",
+        "compileOfficialAbilityIdentityCatalogueV2",
+        "resolveOfficialAbilityIdentityV2"
+      ],
+      "inspection": "T28-W3-02阶段实现，证据范围见当前报告"
+    },
+    {
+      "path": "packages/source-data/official-release-context-v2.mjs",
+      "exports": [
+        "createOfficialReleaseManifestV2",
+        "verifyOfficialReleaseManifestV2",
+        "createOfficialReleaseResolverV2",
+        "officialReleaseQueryScopeV2",
+        "assertOfficialReleaseSourceV2",
+        "bindOfficialReleaseRulesRuntimeV2",
+        "assertOfficialReleaseQueryBindingV2"
+      ],
+      "inspection": "T28-W3-02阶段实现，证据范围见当前报告"
+    },
+    {
+      "path": "packages/source-data/sqlite-official-release-store-v1.mjs",
+      "exports": [
+        "createSqliteOfficialReleaseStoreV1"
+      ],
+      "inspection": "T28-W3-02阶段实现，证据范围见当前报告"
+    },
+    {
+      "path": "scripts/verify-wave3-release-context-v2.mjs",
+      "exports": [],
+      "inspection": "T28-W3-02阶段实现，证据范围见当前报告"
+    },
+    {
+      "path": "scripts/verify-wave3-release-native-consumers-v2.mjs",
+      "exports": [],
+      "inspection": "T28-W3-02阶段实现，证据范围见当前报告"
+    },
+    {
+      "path": "scripts/verify-wave3-scene-release-scope-v2.mjs",
+      "exports": [],
+      "inspection": "T28-W3-02定点验证，见当前报告"
+    },
+    {
+      "path": "scripts/verify-wave3-release-source-version-v2.mjs",
+      "exports": [],
+      "inspection": "T28-W3-02定点验证，见当前报告"
+    },
+    {
+      "path": "packages/source-data/official-faq-version-delta-v1.mjs",
+      "exports": [
+        "parseOfficialFaqDocumentV1",
+        "alignOfficialFaqQuestionsV1",
+        "compileOfficialFaqVersionDeltaV1"
+      ],
+      "purpose": "04冻结问答的逐问对账和05工作清单输入，非战斗执行器",
+      "notes": [
+        "新旧序号是本版位置，跨版按问题语义和人工核对映射。",
+        "删除线有效答案和旧索引页脚噪声显式登记，不修改原件。"
+      ]
+    },
+    {
+      "path": "packages/source-data/official-battlefield-asset-component-profile-v1.mjs",
+      "purpose": "来源化物理token/模板目录与精确缺件",
+      "exports": [
+        "createOfficialBattlefieldAssetComponentProfileV1",
+        "verifyOfficialBattlefieldAssetComponentProfileV1",
+        "getOfficialBattlefieldAssetComponentFootprintV1",
+        "createOfficialBattlefieldAssetComponentProfileV2",
+        "verifyOfficialBattlefieldAssetComponentProfileV2",
+        "getOfficialReleaseBattlefieldAssetComponentProfileV2"
+      ],
+      "inspection": "2026-11-12实际源码和具名产品验证核对"
+    },
+    {
+      "path": "packages/client-domain/battlefield-token-public-contract-v1.mjs",
+      "purpose": "浏览器安全Native token公开字段合同",
+      "exports": [
+        "OFFICIAL_BATTLEFIELD_TOKEN_SCHEMA",
+        "OFFICIAL_BATTLEFIELD_TOKEN_PUBLIC_FIELDS_V1"
+      ],
+      "inspection": "2026-11-12实际源码和具名产品验证核对"
+    },
+    {
+      "path": "packages/rule-atoms/official-high-ground-final-placement-policy-v13.mjs",
+      "exports": [
+        "OFFICIAL_HIGH_GROUND_FINAL_PLACEMENT_POLICY_V13",
+        "hasOfficialHighGroundFinalPlacementPolicyV13",
+        "projectOfficialHighGroundFinalPlacementStateV13"
+      ],
+      "purpose": "显式高地终点策略，与旧绑定隔离"
+    },
+    {
+      "path": "packages/rule-atoms/official-semantic-surface-support-v1.mjs",
+      "exports": [
+        "deriveOfficialSemanticSurfaceSupportV1",
+        "deriveOfficialFinalPlacementSurfaceSupportV13"
+      ],
+      "purpose": "完整路径支撑与明确动作终点的高地支撑"
+    },
+    {
+      "path": "packages/product-composition/official-current-product-match-runtime-v7.mjs",
+      "exports": [
+        "OFFICIAL_CURRENT_PRODUCT_MATCH_RUNTIME_V7_ID",
+        "createOfficialCurrentProductMatchRuntimeV7"
+      ],
+      "purpose": "显式FAQ组件，1.7高地、1.8圆模型间隙、1.9地面地形净空；缺省保持旧描述符"
+    },
+    {
+      "path": "packages/rule-atoms/official-gap-place-geometry-kernel-v1.mjs",
+      "exports": [
+        "certifyOfficialGapPlaceGeometryPlanV1",
+        "deriveOfficialRoundModelGapMouthsV1"
+      ],
+      "purpose": "间隙事实与原隔离Place/Gap证明；新Host入口从当前圆模型计算边界，Native负责完整移动"
+    },
+    {
+      "path": "packages/rule-atoms/official-model-gap-transit-policy-v13.mjs",
+      "exports": [
+        "OFFICIAL_MODEL_GAP_TRANSIT_POLICY_V13",
+        "hasOfficialModelGapTransitPolicyV13",
+        "projectOfficialModelGapTransitStateV13",
+        "allowsOfficialModelGapSweepV13",
+        "OFFICIAL_PHYSICAL_GAP_TRANSIT_POLICY_V13",
+        "usesOfficialGroundSizeClearanceV13",
+        "getOfficialGroundSizeClearanceDiameterV13",
+        "createOfficialGroundSizeClearanceFootprintV13"
+      ],
+      "purpose": "显式1.0圆模型间隙与2.0地面Size净空组件，保持完整底盘终点并拒绝版本错绑"
+    },
+    {
+      "path": "packages/rule-atoms/official-movement-clearance-contract-v13.mjs",
+      "exports": [
+        "OFFICIAL_MODEL_GAP_TRANSIT_POLICY_V13",
+        "OFFICIAL_PHYSICAL_GAP_TRANSIT_POLICY_V13",
+        "hasOfficialModelGapTransitPolicyV13",
+        "projectOfficialModelGapTransitStateV13",
+        "usesOfficialGroundSizeClearanceV13",
+        "getOfficialGroundSizeClearanceDiameterV13",
+        "isOfficialGroundTerrainTraversalBlockedV13",
+        "OFFICIAL_LARGE_TERRAIN_REMOVAL_POLICY_V1",
+        "hasOfficialLargeTerrainRemovalPolicyV1"
+      ],
+      "purpose": "纯净空合同，当前Size及来源化Large特征供Host通行证、查询与实际路径统一消费；终点仍按实际底盘。"
+    },
+    {
+      "path": "packages/rule-atoms/official-model-base-geometry-rules-kernel-v1.mjs",
+      "exports": [
+        "createOfficialCoherencyLinkEvaluatorV1",
+        "createOfficialHypotheticalCoherencyLinkEvaluatorV1",
+        "evaluateOfficialCoherencyPlacementV1",
+        "evaluateOfficialHypotheticalCoherencySnapshotV1"
+      ],
+      "purpose": "实际终点连续性与队形/假设连线，共用地面净空和真实地形单元；高差组合按06专项验收"
+    },
+    {
+      "path": "packages/source-data/official-unit-card-supply-data-bundle-v1.mjs",
+      "exports": [
+        "createOfficialUnitCardSupplyDataBundleV2",
+        "verifyOfficialUnitCardSupplyDataBundleV2"
+      ],
+      "notes": [
+        "显式release源绑定并与Builder/几何同源核对；共用旧解析/计算，缺尺寸用geometryStatus表达。"
+      ],
+      "imports": [],
+      "importsScope": "相关入口子集"
+    },
+    {
+      "path": "packages/source-data/official-roster-disclosure-data-bundle-v1.mjs",
+      "exports": [
+        "createOfficialRosterDisclosureDataBundleV2",
+        "verifyOfficialRosterDisclosureDataBundleV2"
+      ],
+      "notes": [
+        "按新release构造装备/披露，复用未变化Part9政策，旧V1锁保持；产品维修2.0.1定点回归通过。"
+      ],
+      "imports": [],
+      "importsScope": "本轮相关接口子集"
+    },
+    {
+      "path": "packages/source-data/official-status-stay-in-play-data-bundle-v1.mjs",
+      "exports": [
+        "createOfficialSiegeModeDataBundleV2"
+      ],
+      "notes": [
+        "只接Siege两种procedure；源Tank武器模式资格来自API，不能替代完整移动/射击消费者。"
+      ],
+      "imports": [],
+      "importsScope": "本轮相关接口子集"
+    },
+    {
+      "path": "packages/product-composition/official-release-roster-state-v2.mjs",
+      "exports": [
+        "createOfficialReleaseRosterStateV2"
+      ],
+      "notes": [
+        "实际Builder审计→注册→装备/单位构造，附来源化ActionRoute、Terrain/LOS和SelectedAbility实例资料，仍为待部署状态。"
+      ],
+      "imports": [],
+      "importsScope": "本轮相关接口子集"
+    },
+    {
+      "path": "packages/product-composition/official-characteristic-status-component-runtime-v2.mjs",
+      "exports": [
+        "createOfficialCharacteristicStatusComponentRuntimeV2"
+      ],
+      "notes": [
+        "显式来源定义子集经同IR与状态族接Native组件；2.0.1模式/维修保持旧hash。可选spatialState启用2.1.0实际移动/结束激活，已通过声明场景与冷恢复。完整match、Large地形移除及实际武器/预备队消费者待接。",
+        "2.2.0显式Large地形策略，实际move/Token保留/结束激活/冷恢复首轮通过；其它动作和完整IR绑定待接。",
+        "显式includePrecisionChoices接入2.6.0分阶段选择；Native数值型正例已通过"
+      ],
+      "imports": [],
+      "importsScope": "本轮相关接口子集"
+    },
+    {
+      "path": "packages/product-composition/official-characteristic-status-family-adapter-v1.mjs",
+      "exports": [
+        "createOfficialCharacteristicStatusFamilySourceBundleV2"
+      ],
+      "notes": [
+        "增加Mode Toggle组合；HEAL显式同步普通单位HP及拒绝多余target，源修复已过定点Native组件验收。",
+        "Aftershock在Siege+Assault按权威当前目标Size设置各批次伤害，2.9.0独立Native门通过。Heavy Plating掷后选择另待。"
+      ],
+      "imports": [],
+      "importsScope": "本轮相关接口子集"
+    },
+    {
+      "path": "packages/source-data/official-terrain-los-data-bundle-v1.mjs",
+      "exports": [
+        "createOfficialTerrainLosDataBundleV1",
+        "createOfficialTerrainLosDataBundleV2",
+        "verifyOfficialTerrainLosDataBundleV1"
+      ],
+      "purpose": "旧26单位锁保持，新45单位按release与冻结核心核验Size/LOS来源。"
+    },
+    {
+      "path": "packages/rule-atoms/official-status-stay-in-play-rules-kernel-v1.mjs",
+      "exports": [
+        "assertOfficialSiegeModeActionAllowedV1",
+        "isOfficialSiegeModeWeaponEligibleV1"
+      ],
+      "purpose": "Siege同一来源事实供空间、冲锋、射击和近战消费者使用；完整武器/预备队流程仍需单独Native验收。"
+    },
+    {
+      "path": "packages/product-composition/official-logical-terrain-groups-v1.mjs",
+      "exports": [
+        "resolveOfficialLogicalGrassRemovalV1",
+        "resolveOfficialLogicalLargeTerrainRemovalV1"
+      ],
+      "purpose": "按setup冻结的逻辑组完整成员展开Grass或Large移除，来源和完整性失败关闭。"
+    },
+    {
+      "path": "packages/product-composition/official-selected-roster-spatial-action-runtime-v1.mjs",
+      "exports": [
+        "validateOfficialSelectedRosterRelocationGeometryV1",
+        "applyOfficialLargeTerrainRemovalV1"
+      ],
+      "purpose": "空间与近战位移共用Large来源检查/移除投影/提交；move已过Native，其它窗口待专项验收。"
+    },
+    {
+      "path": "packages/product-composition/official-blast-template-attack-runtime-v1.mjs",
+      "exports": [
+        "createOfficialBlastTemplateAttackRuntimeV1"
+      ],
+      "imports": [
+        "./official-selected-roster-ranged-action-runtime-v1.mjs",
+        "./official-reaction-family-adapter-v1.mjs"
+      ],
+      "importsScope": "本轮模板攻击共享消费子集",
+      "purpose": "单Tank圆形BT Native批次、伤亡选择与可恢复父帧",
+      "notes": [
+        "通过组件工厂includeTemplateAttacks显式接入2.5.0",
+        "声明主目标/模板位置，工程编译来源/骰子与后继",
+        "Point Defense/Precision选择及带反应来源正例待闭合，完整match尚待接线"
+      ]
+    },
+    {
+      "path": "packages/product-composition/official-blast-template-coverage-runtime-v1.mjs",
+      "exports": [
+        "verifyOfficialBlastTemplateGeometryAssetV1",
+        "createOfficialBlastTemplateCoverageRuntimeV1"
+      ],
+      "imports": [
+        "./official-selected-roster-ranged-action-runtime-v1.mjs",
+        "./official-ranged-terrain-projection-v1.mjs"
+      ],
+      "importsScope": "本轮覆盖几何与目标资格共享子集",
+      "purpose": "来源绑定的5英寸圆形BT最大覆盖与基础骰池查询",
+      "notes": [
+        "2.4只读查询证据保持，2.5实际攻击采用单位目标资格版本",
+        "实际伤害复用相同覆盖结果"
+      ]
+    },
+    {
+      "path": "packages/product-composition/official-ranged-terrain-projection-v1.mjs",
+      "exports": [
+        "projectOfficialRangedTerrainForLosV1"
+      ],
+      "imports": [
+        "../rule-atoms/official-elevation-effective-size-rules-kernel-v1.mjs"
+      ],
+      "importsScope": "地形投影必要依赖",
+      "purpose": "数值射击与模板共同地形/开口几何投影",
+      "notes": [
+        "移动类型与LOS独立；权威棋盘保持只读投影"
+      ]
+    },
+    {
+      "path": "packages/product-composition/official-ranged-precision-choice-runtime-v1.mjs",
+      "exports": [
+        "createOfficialRangedPrecisionChoiceRuntimeV1"
+      ],
+      "imports": [
+        "../authoritative-engine/referee-crypto-v1.mjs"
+      ],
+      "importsScope": "来源射击delegate由组件工厂注入",
+      "purpose": "显式选择池生命周期，旧Precision与新护甲掷后TOUGH",
+      "notes": [
+        "显式includePrecisionChoices启用2.6.0；旧默认候选保持原绑定",
+        "Goliath真实购买来源正例已过；Tank模板真实来源正例待接",
+        "查询ranged_precision_preview与实际实例化使用同入口"
+      ]
+    },
+    {
+      "path": "packages/product-composition/official-point-defense-attack-context-v1.mjs",
+      "exports": [
+        "OFFICIAL_POINT_DEFENSE_PARENT_KEY",
+        "officialPointDefenseFactsHashV1",
+        "readOfficialPointDefenseParentV1",
+        "projectOfficialCompletedPointDefenseV1"
+      ],
+      "imports": [
+        "../authoritative-engine/referee-crypto-v1.mjs"
+      ],
+      "importsScope": "范围效果与父帧绑定",
+      "purpose": "防守选骰的来源父帧校验及同武器已完成减骰事实",
+      "notes": [
+        "排除Native递增计数及日志，保留当前棋盘/卡牌/回合/阶段绑定",
+        "只供已声明武器的主目标，溅射不重复触发"
+      ]
+    },
+    {
+      "path": "packages/product-composition/official-point-defense-choice-runtime-v1.mjs",
+      "exports": [
+        "createOfficialPointDefenseChoiceRuntimeV1"
+      ],
+      "imports": [
+        "./official-selected-roster-ranged-action-runtime-v1.mjs",
+        "./official-point-defense-attack-context-v1.mjs"
+      ],
+      "importsScope": "复用实际移除与同源范围效果",
+      "purpose": "攻击声明→防守方按来源选骰→掷骰前移除→同武器后继",
+      "notes": [
+        "显式2.7.0组件",
+        "三个Native场景及冷恢复已通过，生成技能与完整match待接"
+      ]
+    },
+    {
+      "path": "packages/product-composition/official-roster-weapon-component-adapter-v1.mjs",
+      "exports": [
+        "createOfficialRosterWeaponComponentAdapterV1"
+      ],
+      "imports": [
+        "./official-ranged-family-adapter-v1.mjs"
+      ],
+      "importsScope": "来源IR与现有数值/模板执行器之间的精确接线",
+      "purpose": "显式武器定义绑定到Ability IR Router，统一来源预演与实际Apply",
+      "notes": [
+        "2.8.0 read/compile和Twin装甲消费已过，BT映射源修完成但余项待授权验证",
+        "注册能力与当前模式可用菜单分离；模板域通过执行器的actor/weapon注册表映射profile",
+        "正式完整match仍待，不能用本候选替换已过2.7.0准出状态"
+      ]
+    },
+    {
+      "path": "packages/product-composition/official-ranged-choice-context-v1.mjs",
+      "exports": [
+        "officialRangedChoiceFactsHashV1",
+        "readOfficialRangedChoiceParentV1",
+        "officialRangedDefenderContinuationSideV1"
+      ],
+      "purpose": "Precision/TOUGH保存父帧与Point Defense嵌套交接资格",
+      "imports": [],
+      "importsScope": "本次涉及的直接入口",
+      "notes": [
+        "3.0.0组件仅远程/BT消费者通过，完整match待"
+      ]
+    },
+    {
+      "path": "packages/rule-atoms/official-armour-choice-kernel-v1.mjs",
+      "exports": [
+        "inspectOfficialArmourChoiceV1",
+        "resolveOfficialArmourChoiceV1"
+      ],
+      "purpose": "Ranged/Melee共用护甲失败骰与TOUGH转换",
+      "imports": [],
+      "importsScope": "当前修改入口"
+    },
+    {
+      "path": "packages/product-composition/official-melee-pool-choice-runtime-v1.mjs",
+      "exports": [
+        "createOfficialMeleePoolChoiceRuntimeV1",
+        "createOfficialAutomaticHitsPoolChoiceRuntimeV1"
+      ],
+      "purpose": "近战/IMPACT/HITS共用保存分池及目标拥有者选择",
+      "imports": [],
+      "importsScope": "当前修改入口"
+    },
+    {
+      "path": "packages/product-composition/official-automatic-hits-runtime-v1.mjs",
+      "exports": [
+        "createOfficialAutomaticHitsRuntimeV1"
+      ],
+      "purpose": "Source主动HITS实际护甲、伤亡、Supply损失与原激活后继",
+      "imports": [],
+      "importsScope": "当前修改入口",
+      "notes": [
+        "3.3.0仅Shadow Strike声明500分场景通过，额外反应与完整match待"
+      ]
+    },
+    {
+      "path": "packages/rule-atoms/official-armour-roll-ordinal-v1.mjs",
+      "exports": [
+        "OFFICIAL_ARMOUR_ROLL_ORDINAL_POLICY_V1",
+        "hasOfficialArmourRollOrdinalPolicyV1",
+        "inspectOfficialArmourRollOrdinalsV1",
+        "recordOfficialArmourRollV1",
+        "resolveOfficialArmourRollActivationIdV1"
+      ],
+      "purpose": "实际Armour Pool按激活/回合计数，来源查询与Native伤害消费者共用",
+      "imports": [],
+      "importsScope": "当前修改入口",
+      "notes": [
+        "显式3.4.0政策，当前激活窗口或射击父帧持有身份，额外激活生产者需提供activationId"
+      ]
+    },
+    {
+      "path": "packages/rule-atoms/official-armour-threshold-policy-v1.mjs",
+      "exports": [
+        "OFFICIAL_ARMOUR_THRESHOLD_POLICY_V1",
+        "hasOfficialArmourThresholdPolicyV1",
+        "planOfficialArmourThresholdV1",
+        "consumeOfficialArmourThresholdV1"
+      ],
+      "purpose": "新来源同一有效护甲阈值用于Ranged/BT、Melee/Impact与HITS准备和执行",
+      "imports": [],
+      "importsScope": "当前修改入口",
+      "notes": [
+        "3.5.0显式Source政策，旧发布默认保持绑定；Native证明范围见armour-threshold/scope.json"
+      ]
+    },
+    {
+      "path": "packages/product-composition/official-reaction-family-adapter-v1.mjs",
+      "exports": [
+        "createOfficialReactionFamilySourceBundleV2",
+        "createOfficialReactionFamilyAdapterV1",
+        "createOfficialReactionFamilyDefinitionBindingsV1"
+      ],
+      "purpose": "冻结Wave2显式反应来源编译、IR注册与原生反应窗口",
+      "imports": [],
+      "importsScope": "当前修改入口",
+      "notes": [
+        "3.6.0仅Immortal Shield Overcharge声明窗口通过；真实攻击触发及原Armour池后继待"
+      ]
+    },
+    {
+      "path": "packages/rule-atoms/official-multi-model-casualty-resolution-kernel-v1.mjs",
+      "exports": [
+        "createOfficialMultiModelCasualtyResolutionKernelV1"
+      ],
+      "purpose": "通用伤亡域，支持来源指定maximumCasualties和超额伤害丢弃",
+      "imports": [],
+      "importsScope": "当前修改入口",
+      "notes": [
+        "Concentrated Fire fixed-roll check and prior59receipt replay passed; Native CF attack pending"
+      ]
+    },
+    {
+      "path": "packages/product-composition/official-corrosive-bile-runtime-v1.mjs",
+      "exports": [
+        "createOfficialCorrosiveBileSourceV1",
+        "createOfficialCorrosiveBileRuntimeV1"
+      ],
+      "imports": [
+        "../rule-atoms/official-battlefield-token-marker-rules-kernel-v1.mjs",
+        "../rule-atoms/official-model-base-geometry-rules-kernel-v1.mjs",
+        "../rule-atoms/official-card-build-payment-rules-kernel-v1.mjs",
+        "./official-selected-roster-ability-runtime-v1.mjs"
+      ],
+      "importsScope": "本次来源／付款／几何与激活消费者子集",
+      "purpose": "Ravager Corrosive Bile Source、Native生产者与条件几何投影",
+      "notes": [
+        "Roster includeCorrosiveBile显式启用",
+        "release purpose area_ability_component确保加载同版battlefieldAssets",
+        "组件3.27；阶段末HITS消费者仍待，完整定义保持partial"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,116 @@
+{
+  "schema": "starcraft_tmg_battlefield_component_references_v1",
+  "version": "1.0.0",
+  "sourceDatasetHash": "718057e86ac4f93a72c06b8e4d8f4d851ba33ee04c9dddea33e966eda9fe6685",
+  "sourceSnapshotHash": "4412c17faaebaff04b117d1ddc666d1cdd939eca420a22f861c7c944f1179c8c",
+  "sourceFiles": {
+    "StarCraft-Zerg-Ravager_EN.pdf": {
+      "ref": "build/ticket-28-wave3-source-candidate-20261112-v1/raw/StarCraft-Zerg-Ravager_EN.pdf",
+      "url": "https://starcraft-tmg.com/files/downloads/StarCraft-Zerg-Ravager_EN.pdf",
+      "byteHash": "3f13cb8b9c61ccd9740d8f32e65e7c5f97174426a746bde00751e6404c030792",
+      "byteLength": 11397422
+    },
+    "StarCraft-Zerg-Defiler_EN.pdf": {
+      "ref": "build/ticket-28-wave3-source-candidate-20261112-v1/raw/StarCraft-Zerg-Defiler_EN.pdf",
+      "url": "https://starcraft-tmg.com/files/downloads/StarCraft-Zerg-Defiler_EN.pdf",
+      "byteHash": "6b407306300fdb56deaf37b1bd3552df4822716a5aa55ca19a746055abc339c0",
+      "byteLength": 8842782
+    },
+    "StarCraft-Zerg-Zagara_EN.pdf": {
+      "ref": "build/ticket-28-wave3-source-candidate-20261112-v1/raw/StarCraft-Zerg-Zagara_EN.pdf",
+      "url": "https://starcraft-tmg.com/files/downloads/StarCraft-Zerg-Zagara_EN.pdf",
+      "byteHash": "e166ddf1abde6edcd085fec871f748f1ba0e97923ebcda059b920396bc7de8d7",
+      "byteLength": 13146890
+    },
+    "StarCraft-Protoss-High-Templar_EN.pdf": {
+      "ref": "build/ticket-28-wave3-source-candidate-20261112-v1/raw/StarCraft-Protoss-High-Templar_EN.pdf",
+      "url": "https://starcraft-tmg.com/files/downloads/StarCraft-Protoss-High-Templar_EN.pdf",
+      "byteHash": "fd13955b19732d118e2029f9807dd60ee88791efc888637e2df8851e6a5d2b40",
+      "byteLength": 10425608
+    }
+  },
+  "components": [
+    {
+      "componentKind": "corrosive_bile",
+      "recordKey": "army_units:ravager",
+      "abilityName": "Corrosive Bile",
+      "baseShape": "round",
+      "baseWidthMm": 32,
+      "baseDepthMm": 32,
+      "sourceId": "StarCraft-Zerg-Ravager_EN.pdf",
+      "pdfPage": 10,
+      "heading": "RAVAGER CORROSIVE BILE",
+      "printedBase": "32mm",
+      "visuallyReviewed": true
+    },
+    {
+      "componentKind": "dark_swarm",
+      "recordKey": "army_units:defiler",
+      "abilityName": "Gestate Dark Swarm",
+      "baseShape": "round",
+      "baseWidthMm": 32,
+      "baseDepthMm": 32,
+      "sourceId": "StarCraft-Zerg-Defiler_EN.pdf",
+      "pdfPage": 11,
+      "heading": "DARK SWARM TOKEN",
+      "printedBase": "32mm",
+      "visuallyReviewed": true
+    },
+    {
+      "componentKind": "bile_bomb",
+      "recordKey": "army_units:bile_launcher",
+      "abilityName": "Bombard",
+      "baseShape": "round",
+      "baseWidthMm": 32,
+      "baseDepthMm": 32,
+      "sourceId": "StarCraft-Zerg-Zagara_EN.pdf",
+      "pdfPage": 11,
+      "heading": "BILE BOMB TOKEN",
+      "printedBase": "32mm",
+      "visuallyReviewed": true
+    }
+  ],
+  "unresolvedComponents": [
+    {
+      "componentKind": "ravager_burrow",
+      "recordKey": "army_units:ravager",
+      "abilityName": "Deep Tunnel",
+      "required": "Actual token outline and physical dimensions",
+      "reason": "BURROW_TOKEN_FOOTPRINT_UNSPECIFIED",
+      "sourceId": "StarCraft-Zerg-Ravager_EN.pdf"
+    },
+    {
+      "componentKind": "psionic_storm",
+      "recordKey": "army_units:high_templar",
+      "abilityName": "Psionic Storm",
+      "required": "Actual removable central token outline and dimensions",
+      "reason": "STORM_TOKEN_FOOTPRINT_UNSPECIFIED",
+      "sourceId": "StarCraft-Protoss-High-Templar_EN.pdf",
+      "pdfPage": 10
+    },
+    {
+      "componentKind": "plague_blast_template",
+      "recordKey": "army_units:defiler",
+      "abilityName": "Plague",
+      "required": "Template outer coverage outline and dimensions",
+      "reason": "PLAGUE_TEMPLATE_FOOTPRINT_UNSPECIFIED",
+      "sourceId": "StarCraft-Zerg-Defiler_EN.pdf",
+      "pdfPage": 11
+    },
+    {
+      "componentKind": "psionic_storm_blast_template",
+      "recordKey": "army_units:high_templar",
+      "abilityName": "Psionic Storm",
+      "required": "Template outer coverage outline and dimensions",
+      "reason": "STORM_TEMPLATE_FOOTPRINT_UNSPECIFIED",
+      "sourceId": "StarCraft-Protoss-High-Templar_EN.pdf",
+      "pdfPage": 10
+    }
+  ],
+  "policy": {
+    "freezeDuringDevelopment": true,
+    "inferredDimensionsAllowed": false,
+    "componentGraphicsAreNotScaleDrawings": true
+  },
+  "manifestHash": "e86ef6326bc557404836aaf09bec020afbb6acce08c1d8502ccbd224ddad6812"
+}

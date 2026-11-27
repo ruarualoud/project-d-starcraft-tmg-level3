@@ -10,10 +10,73 @@ import {
   resolveOfficialCompleteArmyCompositionUpgradeAuditV1,
   verifyOfficialUnitCompositionUpgradeResultV1,
 } from "../rule-atoms/official-unit-composition-upgrade-rules-kernel-v1.mjs";
+import { verifyOfficialUnitCardSupplyDataBundleV1 } from
+  "../source-data/official-unit-card-supply-data-bundle-v1.mjs";
+import { resolveOfficialUnitCardLayoutV1, resolveOfficialCurrentSupplyValueV1,
+  resolveOfficialStartingSupplySlotsV1 } from
+  "../rule-atoms/official-unit-card-supply-rules-kernel-v1.mjs";
 
 export const ARMY_BUILDER_QUERY_PORT_MODULE =
   "packages/roster-strategist/army-builder-query-port-v1.mjs";
-export const ARMY_BUILDER_QUERY_PORT_VERSION = "1.0.1";
+export const ARMY_BUILDER_QUERY_PORT_VERSION = "1.0.2";
+// One scope for newly enumerated menus and read-only legacy menu navigation.
+// An eligibility projection must not imply that omitted gameplay is absent.
+export const ARMY_BUILDER_MENU_SOURCE_COVERAGE_V1 = Object.freeze({
+  version:1,completeGameplayRules:false,
+  includedDimensions:Object.freeze(['purchase_identity','eligibility','cost','composition','army_slots']),
+  omittedRuleDimensions:Object.freeze(['card_abilities_and_payment','unit_and_upgrade_effects','weapons_and_timing']),
+  instruction:'This menu enumerates purchase addresses, costs, compositions and slots, NOT complete gameplay effects. Missing effects in a row do not mean the component has no effect. In particular, a tactical card cannot be assessed as slot capacity only from armySlotsAdded. For a choice whose benefit depends on an omitted effect, read that component\'s exact frozen rule source, including its conditions/payment/timing. A relevant source-backed conditional trade-off is enough; no exhaustive card scan or experiment is required. Sources do not rank strategy, and this boundary neither mandates purchase nor certifies a tactical effect as executable.'
+});
+export function projectArmyBuilderMenuSourceCoverageV1(directory=[]){
+  const menu=directory.find(e=>e.id==='product:builder-menu');
+  if(!menu)return null;
+  const ruleSources=directory.flatMap(e=>{
+    const match=/^support-source:(tactical_cards:[^:]+):([a-f0-9]{64})$/u.exec(e.id);
+    return match?[{recordKey:match[1],sourceRecordHash:match[2],
+      evidenceNumber:e.number,artifactRef:e.artifactRef,pointer:'/rule',bodyRead:false}]:[];
+  });
+  return {kind:'builder_menu_source_coverage',...ARMY_BUILDER_MENU_SOURCE_COVERAGE_V1,
+    menuEvidenceId:menu.id,menuArtifactRef:menu.artifactRef,ruleSources,
+    navigationOnly:true,originalReceiptModified:false,
+    sourceBoundary:'Use the existing read_evidence interface and delivered directory. These are exact source handles, not new observations, proof of having read a body, or permission to cite an unread rule. An empty source index is not proof that an effect does not exist.'};
+}
+// Deterministic purchase-space facts. These are not an audit of the extended
+// army and never rank a card's effect. Selected rows cannot masquerade as the
+// whole menu; a second copy of a selected card is deliberately not suggested.
+export function projectArmyBuilderResourceOptionsV1({menu,candidateInput,amounts,menuSource=null}){
+  if(menu?.faction?.recordKey!==candidateInput?.factionRecordKey
+    ||menu?.scale?.scaleId!==candidateInput?.scaleId||menu?.mineralBudget!==candidateInput?.mineralBudget
+    ||!Array.isArray(menu?.tacticalCandidates)||!Array.isArray(candidateInput?.tacticalCardRecordKeys)
+    ||!['limit','spent','unspent'].every(k=>Number.isFinite(amounts?.[k])&&amounts[k]>=0))return null;
+  const selected=new Set(candidateInput.tacticalCardRecordKeys),rows=menu.tacticalCandidates;
+  const unselected=rows.filter(c=>!selected.has(c.recordKey));
+  return {kind:'builder_unselected_card_budget_facts',version:2,source:structuredClone(menuSource),
+    factionRecordKey:candidateInput.factionRecordKey,scaleId:candidateInput.scaleId,
+    gasAmounts:structuredClone(amounts),selectedCardRecordKeys:[...selected],
+    unselectedWithinGasBudget:unselected.filter(c=>Number.isFinite(c.vespeneGasCost)&&c.vespeneGasCost>=0&&c.vespeneGasCost<=amounts.unspent)
+      .map(c=>{
+        const pointer='/tacticalCandidates/'+rows.indexOf(c);
+        const sourceAt=field=>menuSource?{...structuredClone(menuSource),pointer:pointer+'/'+field}:null;
+        const grants=c.armySlotsAdded;
+        const validGrants=object(grants)&&Object.keys(grants).length>0
+          &&Object.values(grants).every(value=>Number.isInteger(value)&&value>=0);
+        // The Native menu deliberately calls this armySlotsAdded. Preserve
+        // that direction through the compact role view; it is NOT slot usage
+        // or a purchase prerequisite. Missing source data stays unknown.
+        return {recordKey:c.recordKey,cardName:c.cardName,vespeneGasCost:c.vespeneGasCost,
+          gasAfterAddition:amounts.spent+c.vespeneGasCost,sourceCardProfileHash:c.sourceCardProfileHash,
+          purchaseCost:{amount:c.vespeneGasCost,unit:'vespene_gas'},
+          slotCapacityGranted:validGrants?clone(grants):null,
+          factSources:{purchaseCost:sourceAt('vespeneGasCost'),
+            slotCapacityGranted:validGrants?sourceAt('armySlotsAdded'):null},
+          factCoverage:{slotCapacity:validGrants?'native_menu_capacity_grant'
+            :grants===undefined||grants===null?'missing_source_field':'invalid_source_field',
+            abilityUseCost:'not_provided_by_menu',purchaseRequirements:'requires_candidate_audit'}};
+      }),
+    unknownCostRecordKeys:unselected.filter(c=>!Number.isFinite(c.vespeneGasCost)).map(c=>c.recordKey),
+    menuTruncated:menu.bounds?.truncated!==false,legalityApproved:false,strategyRanked:false,
+    instruction:'These UNSELECTED frozen-menu cards fit the remaining gas by arithmetic only. Native Builder must audit an actual addition; other restrictions/effects/payment/timing are not proved by this list. Read the exact card sources from builder_menu_source_coverage before weighing their role. Selected cards are listed separately; judging only them cannot establish no relevant addition. No forced purchase, no assertion of a winning card, no duplicate-card permission and no new observation/accepted Plan.'};
+}
 export const ARMY_BUILDER_CANDIDATE_INPUT_CONTRACT_V1 = freezeDeep({
   type:'object',required:['sideKey','scaleId','mineralBudget','factionRecordKey','tacticalCardRecordKeys','units'],
   properties:{sideKey:{type:'string',minLength:1},scaleId:{type:'string',minLength:1,description:'Exact scaleId from the frozen scale catalogue'},
@@ -32,12 +95,19 @@ export const ARMY_BUILDER_CANDIDATE_INPUT_CONTRACT_V1 = freezeDeep({
               upgradeName:{type:'string',minLength:1},upgradeInstanceId:{type:'string',minLength:1},nominatedModelId:{type:'string',minLength:1}}}}}}}},
   instruction:'This is candidate ADDRESSING, not a legality verdict. Keep all chosen cards/units/upgrades explicit; Native kernels alone judge eligibility, costs and slots. No missing identity/upgrade field is silently repaired.'
 });
+// Canonical selector values; query identity and defaults remain Host-owned.
+export const ARMY_BUILDER_CHOICE_PARAMETERS_V1=Object.freeze({type:'object',additionalProperties:false,required:[],properties:{
+ scaleId:{type:'string',minLength:1},factionRecordKey:{type:'string',minLength:1},mineralBudget:{type:'integer',minimum:0,maximum:Number.MAX_SAFE_INTEGER}
+}});
+
 export const ARMY_BUILDER_QUERY_PORT_DESCRIPTOR_SCHEMA =
   "starcraft_tmg_army_builder_query_port_descriptor_v1";
 export const ARMY_BUILDER_ROSTER_VERDICT_SCHEMA =
   "starcraft_tmg_army_builder_roster_verdict_v1";
 export const ARMY_BUILDER_REJECTION_RECEIPT_SCHEMA =
   "starcraft_tmg_army_builder_rejection_receipt_v1";
+export const armyBuilderConstraintDiagnosticEvidenceIdV1=originalArtifactRef=>
+  'builder-constraint-diagnostic:'+hashStarcraftTmgContract({originalArtifactRef,version:1});
 export const ARMY_BUILDER_SCALE_CATALOGUE_RECEIPT_SCHEMA =
   "starcraft_tmg_army_builder_scale_catalogue_receipt_v1";
 export const ARMY_BUILDER_FACTION_CATALOGUE_RECEIPT_SCHEMA =
@@ -62,6 +132,9 @@ const HASH_PATTERN = /^[a-f0-9]{64}$/u;
 const RULES_ERROR_PATTERN = /^([A-Z][A-Z0-9_]*)(?::([\s\S]*))?$/u;
 
 const REJECTION_CLASSIFICATIONS = Object.freeze([
+  { pattern: /^UNIQUE_UNIT_COPY_LIMIT_EXCEEDED/u, rejectionKind: "unique_unit" },
+  { pattern: /^ARMY_MUTUALLY_EXCLUSIVE_UNITS/u, rejectionKind: "unit_variant" },
+  { pattern: /^ARMY_EXACTLY_ONE_TACTICAL_GROUP_REQUIRED/u, rejectionKind: "tactical_group" },
   { pattern: /^FACTION_TAG_MISMATCH/u, rejectionKind: "faction_eligibility" },
   { pattern: /^EXACTLY_ONE_FACTION_CARD_REQUIRED/u, rejectionKind: "faction_card" },
   { pattern: /^SELECTED_FACTION_CARD_/u, rejectionKind: "faction_card" },
@@ -147,9 +220,36 @@ function factionLayout(profile) {
     profileHash: profile.profileHash };
 }
 
+// The design preflight consumes the frozen Builder menu; execution consumes
+// the full frozen bundle. Both must resolve purchase identities identically.
+// This only addresses a selection. Rules still judge eligibility/cost/slots.
+export function resolveArmyBuilderPurchasableUpgradeV1(profiles,recordKey,rawUpgrade) {
+  if (rawUpgrade.purchasableUpgradeProfileId !== undefined
+    && rawUpgrade.purchasableUpgradeProfileId !== null) {
+    return profiles.find(entry => entry.purchasableUpgradeProfileId
+      === String(rawUpgrade.purchasableUpgradeProfileId)) || null;
+  }
+  const upgradeName = nonEmpty(rawUpgrade.upgradeName,
+    'ARMY_BUILDER_CANDIDATE_UPGRADE_UNKNOWN');
+  const profile = profiles.find(entry => entry.recordKey === recordKey
+    && entry.upgradeName === upgradeName) || null;
+  if (!profile) candidateFail('ARMY_BUILDER_CANDIDATE_UPGRADE_UNKNOWN',`${recordKey}:${upgradeName}`);
+  return profile;
+}
+
 export function createOfficialArmyBuilderQueryPortV1(input = {}) {
   const bundle = input.unitCompositionUpgradeDataBundle;
   verifyOfficialUnitCompositionUpgradeDataBundleV1(bundle);
+  const manifest = input.releaseContext?.manifest;
+  let releaseBinding = null;
+  if (manifest) {
+    if (manifest.source?.snapshotHash !== bundle.sourceSnapshotHash
+      || manifest.source?.datasetHash !== bundle.normalizedDatasetHash) {
+      fail('ARMY_BUILDER_RELEASE_SOURCE_MISMATCH');
+    }
+    releaseBinding = { releaseId: manifest.releaseId, manifestHash: manifest.manifestHash,
+      sourceSnapshotHash: bundle.sourceSnapshotHash, normalizedDatasetHash: bundle.normalizedDatasetHash };
+  }
   if (!Object.isFrozen(bundle)) {
     fail("ARMY_BUILDER_PORT_BUNDLE_NOT_FROZEN");
   }
@@ -157,6 +257,28 @@ export function createOfficialArmyBuilderQueryPortV1(input = {}) {
     "ARMY_BUILDER_PORT_INVALID");
   const armyBundle = bundle.armyResourceBudgetDataBundle;
   const factionBundle = armyBundle.factionArmyEligibilityDataBundle;
+  const unitFacts = input.unitCardSupplyDataBundle
+    || input.releaseContext?.resources?.unitCharacteristics || null;
+  if (unitFacts) {
+    verifyOfficialUnitCardSupplyDataBundleV1(unitFacts);
+    const purchaseUnits = factionBundle.unitDataBundle;
+    if (unitFacts.sourceSnapshotHash !== bundle.sourceSnapshotHash
+      || unitFacts.normalizedDatasetHash !== bundle.normalizedDatasetHash
+      || unitFacts.unitProfiles.length !== purchaseUnits.unitProfiles.length
+      || (input.releaseContext?.resources?.unitCharacteristics
+        && input.releaseContext.resources.unitCharacteristics.bundleHash !== unitFacts.bundleHash)) {
+      fail("ARMY_BUILDER_UNIT_FACTS_SOURCE_MISMATCH");
+    }
+    for (const facts of unitFacts.unitProfiles) {
+      const purchase = purchaseUnits.unitProfiles.find(row => row.recordKey === facts.recordKey);
+      if (!purchase || purchase.sourceRecordHash !== facts.sourceRecordHash
+        || purchase.payloadHash !== facts.payloadHash
+        || hashStarcraftTmgContract(purchase.compositions) !== hashStarcraftTmgContract(facts.compositions)
+        || hashStarcraftTmgContract(purchase.supplyProfile) !== hashStarcraftTmgContract(facts.supplyProfile)) {
+        fail("ARMY_BUILDER_UNIT_FACTS_CONTENT_MISMATCH", facts.recordKey);
+      }
+    }
+  }
   const descriptorBody = {
     schema: ARMY_BUILDER_QUERY_PORT_DESCRIPTOR_SCHEMA,
     portId,
@@ -176,12 +298,18 @@ export function createOfficialArmyBuilderQueryPortV1(input = {}) {
     factionArmyEligibilityDataBundleHash: factionBundle.bundleHash,
     providerCalls: 0,
     trainingTruth: false,
+    ...(releaseBinding ? { releaseBinding } : {}),
+    ...(bundle.sourceBinding ? { sourceBinding: clone(bundle.sourceBinding), usageScope: 'army_building' } : {}),
+    ...(unitFacts ? { unitCardSupplyDataBundleHash: unitFacts.bundleHash,
+      unitFactsQuery: "inspectUnitCardSupply" } : {}),
   };
   const descriptor = freezeDeep({ ...descriptorBody,
     descriptorHash: hashStarcraftTmgContract(descriptorBody) });
 
   function sharedReceiptFields() {
     return { portId, portVersion: ARMY_BUILDER_QUERY_PORT_VERSION,
+      ...(releaseBinding ? { releaseBinding: clone(releaseBinding) } : {}),
+      ...(bundle.sourceBinding ? { sourceBinding: clone(bundle.sourceBinding) } : {}),
       candidateInputContract: clone(ARMY_BUILDER_CANDIDATE_INPUT_CONTRACT_V1),
       unitCompositionUpgradeDataBundleHash: bundle.bundleHash,
       readOnly: true, providerCalls: 0, trainingTruth: false };
@@ -192,6 +320,28 @@ export function createOfficialArmyBuilderQueryPortV1(input = {}) {
       entry.recordKey === recordKey));
     if (!profile) candidateFail(code, String(recordKey || ""));
     return profile;
+  }
+
+  function inspectUnitCardSupply(request = {}) {
+    if (!unitFacts) fail("ARMY_BUILDER_UNIT_FACTS_NOT_BOUND");
+    if (!object(request) || Object.keys(request).some(key => !["recordKey", "currentModels"].includes(key))
+      || typeof request.recordKey !== "string" || !request.recordKey
+      || !Number.isSafeInteger(request.currentModels) || request.currentModels < 0) {
+      fail("ARMY_BUILDER_UNIT_FACTS_REQUEST_INVALID");
+    }
+    const shared = { unitCardSupplyDataBundle: unitFacts, recordKey: request.recordKey };
+    const layout = resolveOfficialUnitCardLayoutV1({ ...shared, rulesOwnedLayoutRequested: true });
+    const profile = unitFacts.unitProfiles.find(row => row.recordKey === request.recordKey);
+    return hashedReceipt({ schema: "starcraft_tmg_army_builder_unit_supply_receipt_v2",
+      ...sharedReceiptFields(), unitCardSupplyDataBundleHash: unitFacts.bundleHash,
+      declaredModelCount: request.currentModels, actualRoomStateRead: false,
+      layout, currentSupply: resolveOfficialCurrentSupplyValueV1({ ...shared,
+        currentModels: request.currentModels, isDestroyed: request.currentModels === 0,
+        rulesOwnedCurrentModelCountRequested: true }),
+      startingCompositions: profile.compositions.map(row => resolveOfficialStartingSupplySlotsV1({
+        ...shared, compositionKind: row.kind, rulesOwnedCompositionRequested: true })),
+      provesMovementLegality: false, provesMarkerControl: false,
+    }, "receiptHash");
   }
 
   function listEngagementScales() {
@@ -267,6 +417,8 @@ export function createOfficialArmyBuilderQueryPortV1(input = {}) {
             profileHash: entry.profileHash }));
         return { recordKey: unit.recordKey, unitId: unit.unitId,
           unitName: unit.unitName, factionTag: unit.factionTag,
+          ...(bundle.sourceBinding ? { isUnique: factionBundle.armyCandidateProfiles
+            .find(entry => entry.recordKey === unit.recordKey)?.isUnique === true } : {}),
           armySlotType: unit.armySlotType,
           unitCompositionReferenceProfileHash: unit.profileHash,
           compositionOptions: unit.compositionOptions.map((option) => ({
@@ -290,11 +442,13 @@ export function createOfficialArmyBuilderQueryPortV1(input = {}) {
     const body = { schema: ARMY_BUILDER_CHOICE_ENUMERATION_RECEIPT_SCHEMA,
       ...sharedReceiptFields(),
       faction: factionLayout(faction), scale: clone(scale),
+      ...(bundle.sourceBinding ? { armyBuildingConstraints: clone(factionBundle.armyBuildingConstraints) } : {}),
       mineralBudget,
       vespeneLimitForBudget: mineralBudget === null ? null : {
         numerator: mineralBudget * scale.vespeneRatio.numerator,
         denominator: scale.vespeneRatio.denominator },
       tacticalCandidates, unitCandidates,
+      sourceCoverage: clone(ARMY_BUILDER_MENU_SOURCE_COVERAGE_V1),
       denominators: { eligibleTacticalCount: tacticalCandidates.length,
         eligibleUnitCount: unitCandidates.length, compositionOptionCount,
         purchasableUpgradeCount,
@@ -394,22 +548,8 @@ export function createOfficialArmyBuilderQueryPortV1(input = {}) {
         if (!object(rawUpgrade)) {
           candidateFail("ARMY_BUILDER_CANDIDATE_UPGRADE_INVALID", unitInstanceId);
         }
-        let profile = null;
-        if (rawUpgrade.purchasableUpgradeProfileId !== undefined
-          && rawUpgrade.purchasableUpgradeProfileId !== null) {
-          profile = bundle.purchasableUpgradeProfiles.find((entry) => (
-            entry.purchasableUpgradeProfileId
-              === String(rawUpgrade.purchasableUpgradeProfileId))) || null;
-        } else {
-          const upgradeName = nonEmpty(rawUpgrade.upgradeName,
-            "ARMY_BUILDER_CANDIDATE_UPGRADE_UNKNOWN");
-          profile = bundle.purchasableUpgradeProfiles.find((entry) => (
-            entry.recordKey === recordKey && entry.upgradeName === upgradeName)) || null;
-          if (!profile) {
-            candidateFail("ARMY_BUILDER_CANDIDATE_UPGRADE_UNKNOWN",
-              `${recordKey}:${upgradeName}`);
-          }
-        }
+        const profile = resolveArmyBuilderPurchasableUpgradeV1(
+          bundle.purchasableUpgradeProfiles, recordKey, rawUpgrade);
         const entry = {
           upgradeInstanceId: rawUpgrade.upgradeInstanceId === undefined
             ? `${unitInstanceId}-upgrade-${index + 1}`
@@ -501,6 +641,7 @@ export function createOfficialArmyBuilderQueryPortV1(input = {}) {
         rejectionKind: classification.rejectionKind,
         portErrorCode: null, portErrorDetail: null,
         rulesErrorCode, rulesErrorDetail,
+        ...(error.constraintDiagnostics?{constraintDiagnostics:clone(error.constraintDiagnostics)}:{}),
         rawRulesErrorMessage: message,
         rulesAuthority: ARMY_BUILDER_LEGALITY_AUTHORITY.completeArmyAudit,
         candidateHash });
@@ -530,6 +671,7 @@ export function createOfficialArmyBuilderQueryPortV1(input = {}) {
     listFactionChoices,
     enumerateArmyBuildingChoices,
     evaluateRosterCandidate,
+    ...(unitFacts ? { inspectUnitCardSupply } : {}),
   });
 }
 

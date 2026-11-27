@@ -2,12 +2,12 @@
 // review, reconstruct a verdict from numbers, or promote it to a production Skill.
 import {loadRosterProductHypothesisChallengeV1} from './roster-hypothesis-cycle-v1.mjs';
 import {createRosterWorkflowOwnershipIndexV1} from '../roster-strategist/roster-workflow-ownership-v1.mjs';
-import {rosterWorkflowBindingsMatchV1} from '../roster-strategist/roster-decision-workflow-v1.mjs';
+import {rosterExperienceApplicabilityV1} from '../roster-strategist/roster-conditional-experience-bindings-v1.mjs';
 const copy=structuredClone;
 const prefix='conditional-conclusion:';
 
 export function projectRosterConditionalConclusionV1({memory,purpose,purposeSource,sourceReview,scope,observations=[]}){
-  if(!memory?.comparisonResolved||!memory.ownerReturned||memory.comparisonResolutionKind==='reviewed_optional_retention'||memory.staleDependencyWorkIds?.length
+  if(!memory?.comparisonResolved||!memory.ownerReturned||['reviewed_optional_retention','reviewed_deferred_hypothesis'].includes(memory.comparisonResolutionKind)||memory.staleDependencyWorkIds?.length
     ||!memory.experiment?.acceptedForStrategy||memory.experiment.unresolvedQuestions?.length
     ||!memory.experiment.conclusion||!memory.owner?.outcomeRef||!memory.owner.decision
     ||!memory.review?.resultRef||!purpose||!purposeSource?.resultRef||!sourceReview?.resultRef)return null;
@@ -51,7 +51,7 @@ export async function archiveRosterConditionalConclusionV1({workflow,store}){
   // caller-supplied "passed" flags or new archive-specific model judge.
   const challenge=await loadRosterProductHypothesisChallengeV1({state,draft:await store.get(state.draftRef),readArtifact:store.get,includeArchiveSources:true});
   const memory=challenge?.comparisonMemory;
-  if(!memory?.comparisonResolved||!memory.ownerReturned||memory.comparisonResolutionKind==='reviewed_optional_retention')return null;
+  if(!memory?.comparisonResolved||!memory.ownerReturned||['reviewed_optional_retention','reviewed_deferred_hypothesis'].includes(memory.comparisonResolutionKind))return null;
   const id=`${prefix}${memory.cycleId}:${memory.owner?.outcomeRef}:${memory.review?.resultRef}`;
   const existing=state.evidence.find(entry=>entry.id===id);if(existing)return existing;
   const observations=[],owner=createRosterWorkflowOwnershipIndexV1(state);
@@ -75,7 +75,7 @@ export async function queryRosterConditionalConclusionsV1({state,store,query=''}
     const record=await store.get(entry.artifactRef);
     if(record?.schema!=='roster_conditional_experience_conclusion_v1')continue;
     entries.push({evidenceId:entry.id,artifactRef:entry.artifactRef,
-      sourceBindingsMatchCurrent:rosterWorkflowBindingsMatchV1(entry.bindings,state.scope),
+      ...rosterExperienceApplicabilityV1(entry.bindings,state.scope),
       usableWithoutApplicabilityReview:false,record});
   }
   return {schema:'roster_conditional_conclusion_query_v1',entries,

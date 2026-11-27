@@ -10,7 +10,12 @@ import {
 } from "../source-data/official-summon-data-bundle-v1.mjs";
 import { resolveOfficialCurrentSupplyValueV1 } from
   "./official-unit-card-supply-rules-kernel-v1.mjs";
+import { verifyOfficialRoundSupplyStateV1 } from './official-round-supply-state-v1.mjs';
+import { projectOfficialDeploymentSupplyV1 } from './official-deployment-supply-projection-v1.mjs';
+import { deriveOfficialModelSurfacePlacementV2 } from './official-engagement-graph-v2.mjs';
 import {
+  createOfficialPhysicalFootprintV1,
+  evaluateOfficialPhysicalFootprintRelationV1,
   evaluateOfficialBaseMeasurementV1,
   evaluateOfficialCoherencyPlacementV1,
 } from "./official-model-base-geometry-rules-kernel-v1.mjs";
@@ -72,6 +77,55 @@ function footprintBounds(footprint) {
 function phaseMarker(piece, phase) {
   return { ...(piece.activatedPhases || {}), [phase]: true };
 }
+function currentBundle(bundle) { return bundle.schema === 'starcraft_tmg_official_summon_data_bundle_v2'; }
+
+function currentSupply(bundle, state, sideKey, summoned) {
+  // Require a bound capacity. The shared projection's legacy default of zero
+  // is not enough to establish the mission's Supply Pool for a new SUMMON.
+  if (!state.officialMissionSupplyProfile) fail('SUMMON_MISSION_SUPPLY_SOURCE_REQUIRED');
+  verifyOfficialRoundSupplyStateV1({ state, roundSupplyState: state.officialRoundSupplyState,
+    missionSupplyProfile: state.officialMissionSupplyProfile, rulesRuntimeHash: state.officialRoundSupplyState?.rulesRuntimeHash });
+  const supply = exactCurrentSupply(bundle, summoned);
+  const pool = projectOfficialDeploymentSupplyV1(state, sideKey, summoned.id);
+  if (pool.mode !== 'unlimited' && pool.committed > pool.capacity) fail('SUMMON_SUPPLY_STATE_OVER_CAP');
+  return result({ schema: 'starcraft_tmg_official_summon_supply_resolution_v2', round: Number(state.round), sideKey,
+    summonedPieceId: summoned.id, summonedRecordKey: summoned.officialUnitRecordKey,
+    summonedCurrentModels: summoned.currentModels, summonedCurrentSupplyValue: supply.currentSupplyValue,
+    summonedCurrentSupplyResolutionHash: supply.resultHash, supplyMode: pool.mode, supplyPool: pool.capacity,
+    totalCurrentSupplyBefore: pool.committed, totalCurrentSupplyAfter: pool.committed + pool.requestedSupply,
+    availableSupplyBefore: pool.available, summonAllowed: pool.poolRequirementSatisfied,
+    sufficientAvailableSupply: pool.poolRequirementSatisfied, contextualSupplyProjection: pool.unitSupply,
+    roundSupplyStateHash: state.officialRoundSupplyState.roundSupplyStateHash,
+    onlyBattlefieldCurrentSupplyCounts: true, summonedSupplyCountsAfterDeployment: true,
+    clientSuppliedSupplyAccepted: false, trainingTruth: false });
+}
+
+export function assertOfficialReserveArrivalOutsideOpponentZoneV1(state, sideKey, placements) {
+  const binding = state.officialDeploymentGeometryBinding;
+  const opponent = sideKey === 'player1' ? 'player2' : 'player1';
+  const segments = binding?.entryEdgesByPlayer?.[opponent]?.segments;
+  if (binding?.schema !== 'starcraft_tmg_official_deployment_geometry_binding_v1'
+    || binding.bindingHash !== hashStarcraftTmgContract(Object.fromEntries(Object.entries(binding).filter(([key]) => key !== 'bindingHash')))
+    || binding.battlefield?.widthInches !== state.board?.widthInches || binding.battlefield?.heightInches !== state.board?.heightInches
+    || !['red', 'blue'].includes(binding.colourByPlayer?.[opponent])
+    || !Array.isArray(segments) || !segments.length) fail('SUMMON_ASSIGNED_DEPLOYMENT_REQUIRED');
+  for (const segment of segments) {
+    const zone = segment.zoneRectangle;
+    if (!zone || ![zone.xMin, zone.xMax, zone.yMin, zone.yMax].every(Number.isFinite)
+      || zone.xMin >= zone.xMax || zone.yMin >= zone.yMax) fail('SUMMON_ASSIGNED_ZONE_INVALID');
+    const footprint = createOfficialPhysicalFootprintV1({ objectId: segment.segmentId, kind: 'opponent_zone_of_influence',
+      shape: 'rectangle', center: { xMilliInches: Math.round((zone.xMin + zone.xMax) * 500),
+        yMilliInches: Math.round((zone.yMin + zone.yMax) * 500) },
+      widthMilliInches: Math.round((zone.xMax - zone.xMin) * 1000),
+      depthMilliInches: Math.round((zone.yMax - zone.yMin) * 1000), rotationDegrees: 0 });
+    for (const row of placements) {
+      const relation = evaluateOfficialPhysicalFootprintRelationV1({ left: row.footprint, right: footprint });
+      if (relation.overlappingInteriors || relation.minimumSeparationMilliInches <= 0) fail('SUMMON_OPPONENT_ZONE_OF_INFLUENCE', row.modelId);
+    }
+  }
+  return { opponentColor: binding.colourByPlayer[opponent], deploymentBindingHash: binding.bindingHash,
+    opponentZoneOfInfluenceExcluded: true, assignedZoneSegmentIds: segments.map(row => row.segmentId) };
+}
 
 export function resolveOfficialSummonedUnitClassificationV1(input = {}) {
   const bundle = bundleFor(input);
@@ -103,6 +157,7 @@ export function resolveOfficialSummonSupplyV1(input = {}) {
     || input.clientSuppliedSummonedCurrentSupply !== undefined) {
     fail("SUMMON_SUPPLY_REQUEST_INVALID");
   }
+  if (currentBundle(bundle)) return currentSupply(bundle, state, sideKey, summoned);
   const gameplay = state.officialGameplayDataBundle;
   verifyOfficialGameplayDataBundleV1(gameplay);
   const mission = gameplay.missionScoringProfile;
@@ -183,23 +238,36 @@ export function resolveOfficialSummonPlacementV1(input = {}) {
     target: { kind: "model", unitId: projected.id, modelId: placement.leadingModelId },
     dataBundle: bundle.modelBaseGeometryDataBundle });
   if (contact.baseToBaseContact !== true) fail("SUMMON_LEADING_MODEL_PARENT_B2B_REQUIRED");
-  const color = state.officialMissionSetupBinding?.seatColorAssignment?.[sideKey];
-  if (!['red', 'blue'].includes(color)) fail("SUMMON_DEPLOYMENT_COLOR_REQUIRED", sideKey);
-  const opponentColor = color === "red" ? "blue" : "red";
-  const boardHeight = Math.round(Number(state.board?.heightInches) * 1000);
-  const depth = bundle.ruleConstants.zoneOfInfluenceDepthMilliInches;
-  if (!Number.isSafeInteger(boardHeight) || boardHeight <= depth) fail("SUMMON_BOARD_INVALID");
-  for (const row of placement.placements) {
-    const bounds = footprintBounds(row.footprint);
-    const violation = opponentColor === "red" ? bounds.minY <= depth : bounds.maxY >= boardHeight - depth;
-    if (violation) fail("SUMMON_OPPONENT_ZONE_OF_INFLUENCE", row.modelId);
+  const assignedZone = currentBundle(bundle) ? assertOfficialReserveArrivalOutsideOpponentZoneV1(state, sideKey, placement.placements) : null;
+  const color = assignedZone ? null : state.officialMissionSetupBinding?.seatColorAssignment?.[sideKey];
+  if (!assignedZone) {
+    if (!['red', 'blue'].includes(color)) fail("SUMMON_DEPLOYMENT_COLOR_REQUIRED", sideKey);
+    const opponentColor = color === "red" ? "blue" : "red";
+    const boardHeight = Math.round(Number(state.board?.heightInches) * 1000);
+    const depth = bundle.ruleConstants.zoneOfInfluenceDepthMilliInches;
+    if (!Number.isSafeInteger(boardHeight) || boardHeight <= depth) fail("SUMMON_BOARD_INVALID");
+    for (const row of placement.placements) {
+      const bounds = footprintBounds(row.footprint);
+      const violation = opponentColor === "red" ? bounds.minY <= depth : bounds.maxY >= boardHeight - depth;
+      if (violation) fail("SUMMON_OPPONENT_ZONE_OF_INFLUENCE", row.modelId);
+    }
   }
-  const finalModelPositions = placement.placements.map((row) => ({
-    modelId: row.modelId, xMilliInches: row.footprint.center.xMilliInches,
-    yMilliInches: row.footprint.center.yMilliInches,
-    rotationDegrees: row.footprint.rotationDegrees,
-    footprintHash: row.footprint.footprintHash,
-  }));
+  if (currentBundle(bundle)) {
+    for (const model of projected.models) {
+      const surface = deriveOfficialModelSurfacePlacementV2(tempState, { pieceId: projected.id, modelId: model.id });
+      model.elevation = surface.elevation;
+      model.supportTerrainIds = [...surface.supportTerrainIds];
+      model.adjacentAccessPointIds = [...surface.adjacentAccessPointIds];
+    }
+  }
+  const finalModelPositions = placement.placements.map(row => {
+    const model = projected.models.find(entry => entry.id === row.modelId);
+    return { modelId: row.modelId, xMilliInches: row.footprint.center.xMilliInches,
+      yMilliInches: row.footprint.center.yMilliInches, rotationDegrees: row.footprint.rotationDegrees,
+      footprintHash: row.footprint.footprintHash,
+      ...(currentBundle(bundle) ? { elevation: model.elevation, supportTerrainIds: model.supportTerrainIds,
+        adjacentAccessPointIds: model.adjacentAccessPointIds } : {}) };
+  });
   return result({ schema: "starcraft_tmg_official_summon_placement_resolution_v1",
     sideKey, parentPieceId: parent.id, summonedPieceId: summoned.id,
     leadingModelId: placement.leadingModelId,
@@ -207,7 +275,8 @@ export function resolveOfficialSummonPlacementV1(input = {}) {
     finalModelPositions, placementResultHash: placement.resultHash,
     parentContactMeasurementHash: contact.resultHash,
     leadingModelBaseToBaseWithParent: true, remainingModelsInCoherency: true,
-    enemyEngagementRangeExcluded: true, opponentColor,
+    enemyEngagementRangeExcluded: true, opponentColor: assignedZone?.opponentColor || (color === 'red' ? 'blue' : 'red'),
+    ...(assignedZone ? { assignedZone } : {}),
     opponentZoneOfInfluenceExcluded: true,
     allCurrentRoundAndRectangularBaseGeometryChecked: true,
     clientSuppliedPlacementResultAccepted: false, trainingTruth: false });
@@ -218,9 +287,11 @@ export function resolveOfficialSummonDeploymentV1(input = {}) {
   const sideKey = nonEmpty(input.sideKey, "SUMMON_SIDE_REQUIRED");
   const parent = pieceFor(state, input.parentPieceId, "SUMMON_PARENT_REQUIRED");
   const summoned = pieceFor(state, input.summonedPieceId);
-  const definition = bundle.summonKeywordDefinition;
-  if (summoned.officialUnitRecordKey !== "army_units:roachling"
-    || parent.officialUnitRecordKey !== definition.recordKey) {
+  const definition = currentBundle(bundle) ? bundle.currentDeploymentDefinitions.find(row => row.sourceDefinitionId === input.sourceDefinitionId)
+    : bundle.summonKeywordDefinition;
+  if (!definition || summoned.officialUnitRecordKey !== (definition.summonedUnitRecordKey || 'army_units:roachling')
+    || parent.officialUnitRecordKey !== definition.recordKey
+    || currentBundle(bundle) && (parent.sourceRecordHash !== definition.sourceRecordHash || parent.officialPayloadHash !== definition.payloadHash)) {
     fail("SUMMON_KEYWORD_CURRENT_CARRIER_MISMATCH");
   }
   const trigger = eventForHash(state, input.triggerEventHash,
@@ -228,7 +299,8 @@ export function resolveOfficialSummonDeploymentV1(input = {}) {
   if (trigger.type !== "special_ability_resolved" || trigger.sideKey !== sideKey
     || trigger.pieceId !== parent.id || trigger.abilityName !== definition.definitionName
     || trigger.abilityDefinitionHash !== definition.definitionHash
-    || trigger.summonedUnitRecordKey !== summoned.officialUnitRecordKey) {
+    || trigger.summonedUnitRecordKey !== summoned.officialUnitRecordKey
+    || currentBundle(bundle) && trigger.sourceDefinitionId !== definition.sourceDefinitionId) {
     fail("SUMMON_SPECIAL_ABILITY_TRIGGER_INVALID");
   }
   const supply = resolveOfficialSummonSupplyV1({ state, summonDataBundle: bundle,
@@ -244,7 +316,9 @@ export function resolveOfficialSummonDeploymentV1(input = {}) {
     if (!position) fail("SUMMON_PLACEMENT_MODEL_INVALID", model.id);
     return { ...model, xInches: position.xMilliInches / 1000,
       yInches: position.yMilliInches / 1000,
-      baseRotationDegrees: position.rotationDegrees, isOnField: true };
+      baseRotationDegrees: position.rotationDegrees, isOnField: true,
+      ...(currentBundle(bundle) ? { elevation: position.elevation, supportTerrainIds: position.supportTerrainIds,
+        adjacentAccessPointIds: position.adjacentAccessPointIds } : {}) };
   });
   const set = { isOnField: true, isInReserves: false, isSummoned: true,
     summonParentPieceId: parent.id, summonTriggerEventHash: input.triggerEventHash,

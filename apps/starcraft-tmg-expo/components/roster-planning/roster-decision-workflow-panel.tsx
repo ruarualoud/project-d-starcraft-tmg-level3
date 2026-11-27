@@ -1,7 +1,7 @@
 // P6: real new-Run projection. No local fake progress, model text or Plan.
 import React, { useEffect, useState } from 'react';
-import { View, Text, Pressable, ScrollView, StyleSheet } from 'react-native';
-import { rosterPlanningClient } from '@/lib/roster-planning/roster-planning-client-v1';
+import { View, Text, Pressable, ScrollView, StyleSheet, Linking } from 'react-native';
+import { useMatchPlanningClient } from '@/lib/roster-planning/match-setup-context';
 
 const statusZh: Record<string, string> = {
   draft: '未启动', running: '执行中', interrupted: '执行中断，可从断点继续', paused: '已安全暂停', blocked: '需处理停点', ready_for_release: '发布审核通过',
@@ -12,11 +12,13 @@ const sectionZh: Record<string, string> = {
   counterResponses: '预设反制', invalidationTriggers: '何时重新规划',
 };
 export function RosterDecisionWorkflowPanel({ initialWorkflow, lang, onError, onChanged }: any) {
+  const rosterPlanningClient = useMatchPlanningClient();
   const [workflow, setWorkflow] = useState(initialWorkflow);
   const [tab, setTab] = useState<'plan' | 'roster' | 'trace'>('plan');
   const [trace, setTrace] = useState<any[]>([]);
   const [openedTrace, setOpenedTrace] = useState<any>(null);
   const [busy, setBusy] = useState(false);
+  const [matchMode, setMatchMode] = useState<'user_vs_agent' | 'human_vs_human' | 'agent_vs_agent'>('user_vs_agent');
   const [section, setSection] = useState('publicSummaryText');
   const zh = lang !== 'en', id = workflow.workflowId;
   useEffect(() => {
@@ -111,7 +113,26 @@ export function RosterDecisionWorkflowPanel({ initialWorkflow, lang, onError, on
       </>}
       <Text style={s.muted}>{zh ? `待处理工作 ${active.length} · 实际证据 ${workflow.evidenceCount}` : `${active.length} pending · ${workflow.evidenceCount} evidence records`}</Text>
       {active.slice(0, 8).map((work: any) => <Text key={work.id} style={s.small}>{work.role} · {work.status}</Text>)}
-      <Text style={s.muted}>{workflow.readyForRelease ? (zh ? '当前版本发布审核通过，等待最终验收；尚未启动对战房间。' : 'Current version passed release review and awaits acceptance; no room started.') : (zh ? '尚未正式准出，不会自动启动对战。' : 'Not admitted; battle will not start automatically.')}</Text>
+      {workflow.readyForRelease && <View style={s.card}>
+        <Text style={s.title}>{zh ? '用这份军表开始对局' : 'Play this roster'}</Text>
+        <View style={s.tabs}>{([
+          ['user_vs_agent', zh ? '我对 AI' : 'Human vs AI'],
+          ['human_vs_human', zh ? '双人对战' : 'Two players'],
+          ['agent_vs_agent', zh ? 'AI 自博弈' : 'AI vs AI'],
+        ] as const).map(([mode, label]) => <Pressable key={mode}
+          onPress={() => setMatchMode(mode)} style={[s.tab, matchMode === mode && s.selected]}>
+          <Text style={s.small}>{label}</Text>
+        </Pressable>)}</View>
+        <Pressable testID="decision-workflow-launch-room" disabled={busy} style={s.button}
+          onPress={async () => {
+            setBusy(true);
+            try { const result = await rosterPlanningClient.launchWorkflowRoom(id, matchMode);
+              await Linking.openURL(result.match.joinUrl);
+            } catch (error) { onError(error); }
+            finally { setBusy(false); }
+          }}><Text style={s.buttonText}>{busy ? (zh ? '正在准备房间…' : 'Preparing…') : (zh ? '开始对局' : 'Start match')}</Text></Pressable>
+      </View>}
+      {!workflow.readyForRelease && <Text style={s.muted}>{zh ? '计划尚未完成，不会自动启动对战。' : 'Plan is not ready; battle will not start automatically.'}</Text>}
     </ScrollView>
   </View>;
 }

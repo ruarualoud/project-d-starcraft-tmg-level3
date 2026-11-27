@@ -4,6 +4,7 @@
 
 import { projectCompetitiveMapRoomFreezeSummaryV1 } from
   "./competitive-map-admission-contract-v1.mjs";
+import { OFFICIAL_BATTLEFIELD_TOKEN_PUBLIC_FIELDS_V1 } from './battlefield-token-public-contract-v1.mjs';
 
 function object(value) {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
@@ -24,6 +25,29 @@ export const STARCRAFT_TMG_VIEWER_PROJECTION_V3_TOP_LEVEL_KEYS = Object.freeze([
   "schemaVersion", "room", "viewer", "control", "matchBinding",
   "authorityVersion", "state", "training",
 ]);
+
+const PUBLIC_MATCH_BINDING_FIELDS = Object.freeze([
+  "schemaVersion", "matchId", "gameId", "roomId", "rulesVersion", "dataVersion",
+  "rngSchemeId", "sourceSnapshotHash", "dataSnapshotHash", "rulesArtifactHash",
+  "executorArtifactHash", "geometryArtifactHash", "actionSchemaHash", "refereeKeyId",
+  "refereePublicKeyFingerprint", "rulesRuntimeBinding", "releaseBinding", "rulesDisplayBinding",
+  "productionReady", "bindingHash", "refereeSignature",
+]);
+
+export const OPTIONAL_PUBLIC_MATCH_BINDING_FIELDS = Object.freeze(["releaseBinding"]);
+export const REQUIRED_PUBLIC_MATCH_BINDING_FIELDS = Object.freeze(
+  PUBLIC_MATCH_BINDING_FIELDS.filter(key => !OPTIONAL_PUBLIC_MATCH_BINDING_FIELDS.includes(key)),
+);
+
+// Keep the wire order and deep-copy nested contracts. Older signed rooms omit the release.
+export function projectStarcraftTmgPublicMatchBindingV3(binding) {
+  const projected = {};
+  for (const key of PUBLIC_MATCH_BINDING_FIELDS) {
+    if (OPTIONAL_PUBLIC_MATCH_BINDING_FIELDS.includes(key) && !binding[key]) continue;
+    projected[key] = key === "productionReady" ? binding[key] === true : clone(binding[key]);
+  }
+  return projected;
+}
 
 // Optional, own-team-only extension. A plan may verify a locked roster
 // against the current Room without exposing the full private Builder recipe
@@ -93,6 +117,8 @@ export const STARCRAFT_TMG_VIEWER_STATE_V3_FIELDS = Object.freeze([
   "officialBattlefieldSetup", "officialBalancedTerrainSetupCertificate",
   "officialDeploymentGeometryBinding", "officialRoundSupplyState",
   "officialTerrainHeightTierLedger", "officialBattlefieldTokenMarkerRegistry",
+  "officialHighGroundFinalPlacementPolicy",
+  "officialModelGapTransitPolicy",
   "officialAbilityTimingPriorityDataBundle", "officialArmyResourceBudgetDataBundle",
   "officialBalancedTerrainRulesDataBundle", "officialBattlefieldTokenMarkerRulesDataBundle",
   "officialCardBuildPaymentDataBundle", "officialCombatProfileBundle",
@@ -115,6 +141,10 @@ export const STARCRAFT_TMG_VIEWER_STATE_V3_FIELDS = Object.freeze([
 ]);
 
 export const STARCRAFT_TMG_V3_FROZEN_PUBLIC_WHOLE_TREE_FIELDS = Object.freeze([
+  "officialModelGapTransitPolicy",
+  "officialHighGroundFinalPlacementPolicy",
+  // Host-created public rules/geometry. Token reconstruction needs this shape.
+  "officialBattlefieldTokenMarkerRegistry",
   "officialAbilityTimingPriorityDataBundle", "officialArmyResourceBudgetDataBundle",
   "officialBalancedTerrainRulesDataBundle", "officialBattlefieldTokenMarkerRulesDataBundle",
   "officialCardBuildPaymentDataBundle", "officialCombatProfileBundle",
@@ -136,6 +166,7 @@ const POINT_KEYS = new Set(["x", "y", "z", "xInches", "yInches", "zInches",
   "xMilliInches", "yMilliInches", "zMilliInches", "rotationDegrees",
   "baseRotationDegrees"]);
 const AREA_KEYS = new Set([
+  ...OFFICIAL_BATTLEFIELD_TOKEN_PUBLIC_FIELDS_V1,
   "schemaVersion", "schema", "id", "terrainId", "markerId", "tokenId", "number",
   "name", "label", "kind", "terrainKind", "markerKind", "markerRole", "markerType",
   "tokenKind", "shape", "sideKey", "controlSideKey", "previousControlSideKey",
@@ -154,8 +185,8 @@ const AREA_KEYS = new Set([
   "blocksLineOfSight", "blocksPlacement", "impassable", "landingAllowed",
   "standableHorizontalSurface", "stayInPlay", "endsWhenSourceDestroyed",
   "physicalPresence", "statusEffectHash", "terrainHash", "markerHash", "tokenHash",
-  "rulesTruth", "trainingTruth", "coordinate", "center", "point", "footprint",
-  "originalFootprint", "rulesFootprint", "rulesFootprintMilliInches", "baseGeometry",
+  "rulesTruth", "trainingTruth", "coordinate", "center", "centre", "point", "footprint",
+  "originalFootprint", "footprintCells", "rulesFootprint", "rulesFootprintMilliInches", "baseGeometry",
   "elevationSurface", "vertices", "openings", "accessPoints", "engagementGeometry",
   "missionMarkerControlGeometry", "specialTerrainAgreement", "terrainElevationAgreement",
   "setupAgreement",
@@ -181,6 +212,7 @@ const GAME_KEYS = new Set([
   "controllerSideKey", "armySideKey", "unitName", "factionTag", "unitType", "profileSize",
   "printedSize", "sizeCharacteristic", "baseShape", "baseMm", "baseWidthMm",
   "baseDepthMm", "baseWidthInches", "baseDepthInches", "baseRotationDegrees",
+  "baseHorizontalArmDepthInches", "baseVerticalArmWidthInches", "baseLocalVerticesMilliInches",
   "measurementBaseKind", "usesFlightStand", "isOnField", "isOnBattlefield",
   "isInReserves", "isSummoned", "currentModels", "maxModels", "currentSupply",
   "supply", "cost", "mineralCost", "damage", "damageMarker", "hitPoints",
@@ -309,9 +341,9 @@ const RATIONAL_KEYS = new Set(["numerator", "denominator"]);
 
 function area(value) {
   return pick(value, AREA_KEYS, (child, key) => {
-    if (["coordinate", "center", "point"].includes(key)) return pick(child, POINT_KEYS);
+    if (["coordinate", "center", "centre", "point"].includes(key)) return pick(child, POINT_KEYS);
     if (AREA_CHILDREN.has(key)) return area(child);
-    if (["vertices", "openings", "accessPoints"].includes(key)) {
+    if (["vertices", "openings", "accessPoints", "footprintCells"].includes(key)) {
       return Array.isArray(child) ? child.map(area) : [];
     }
     return object(child) ? area(child) : clone(child);
@@ -324,6 +356,12 @@ function game(value, allowed = GAME_KEYS) {
   return pick(value, allowed, (child, key) => {
     if (["footprint", "rulesFootprint", "rulesFootprintMilliInches", "baseGeometry"].includes(key)) return area(child);
     if (["coordinate", "center", "point"].includes(key)) return pick(child, POINT_KEYS);
+    if (key === "baseLocalVerticesMilliInches") {
+      return Array.isArray(child) ? child.map(vertex => ({
+        xMilliInches: Number.isSafeInteger(vertex?.xMilliInches) ? vertex.xMilliInches : null,
+        yMilliInches: Number.isSafeInteger(vertex?.yMilliInches) ? vertex.yMilliInches : null,
+      })) : null;
+    }
     if (key === "activatedPhases" || key === "passedPhases") return pick(child, PHASE_KEYS);
     return game(child, allowed);
   });

@@ -1,3 +1,5 @@
+import {withExperimentQuotaStopV1} from './experiment-quota-stop-v1.mjs';
+import {selectPostgameProceduralEntriesV1} from '../strategy-skills/postgame-procedural-skill-v1.mjs';
 import { mkdir } from "node:fs/promises";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
@@ -41,6 +43,8 @@ import { createStarcraftTmgLiveFlashDecisionPortV1 } from
   "./live-flash-decision-port-v1.mjs";
 import { STARCRAFT_TMG_LIVE_REQUEST_OUTPUT_LIMIT } from
   "./live-output-capacity-policy-v1.mjs";
+import { assertPostgameExperienceSnapshotV1, createPostgameExperienceMemoryPortV1 } from
+  "../strategy-skills/postgame-experience-memory-v1.mjs";
 import { STARCRAFT_TMG_PROVIDER_INPUT_RESERVATION_LIMIT_UNITS,
   STARCRAFT_TMG_PROVIDER_PROMPT_ARTIFACT_MAX_BYTES } from
   "../secure-provider-runtime/provider-egress-contract-v1.mjs";
@@ -87,7 +91,7 @@ function onlineRoomBinding(binding) {
   };
 }
 
-function routedStrategySnapshot(entries, ownFaction, opponentFaction) {
+export function routedStrategySnapshot(entries, ownFaction, opponentFaction, experienceSnapshot = null) {
   const routed = entries.filter((entry) => entry.role === "general"
     || (entry.role === "faction"
       && entry.factionRecordKey === ownFaction)
@@ -100,6 +104,7 @@ function routedStrategySnapshot(entries, ownFaction, opponentFaction) {
     || routed.filter((entry) => entry.role === "matchup").length !== 1) {
     throw new TypeError("live opponent requires general, faction and directed matchup Skills");
   }
+  routed.push(...selectPostgameProceduralEntriesV1(entries, ownFaction, opponentFaction));
   const body = {
     schemaVersion:
       `${STARCRAFT_TMG_LIVE_OPPONENT_PROVIDER_STACK_VERSION}.strategy-snapshot`,
@@ -113,6 +118,7 @@ function routedStrategySnapshot(entries, ownFaction, opponentFaction) {
       role: entry.role,
     })),
     skills: routed.map((entry) => clone(entry.skill)),
+    ...(experienceSnapshot ? { experienceSnapshot: clone(experienceSnapshot) } : {}),
     frozenForMatch: true,
     skillsMayOverrideRules: false,
     trainingTruth: false,
@@ -128,7 +134,11 @@ export async function createStarcraftTmgLiveOpponentProviderStackV1(
   const seatKey = required(options.seatKey, "seatKey");
   const matchBinding = options.matchBinding;
   const spatialQueryPort = options.spatialQueryPort;
-  const memoryQueryPort = options.memoryQueryPort || null;
+  const experienceSnapshot = assertPostgameExperienceSnapshotV1(options.experienceSnapshot, seatKey);
+  const memoryQueryPort = createPostgameExperienceMemoryPortV1({
+    base: options.memoryQueryPort || null, snapshot: experienceSnapshot,
+    scope: { roomId, seatKey, matchBindingHash: matchBinding?.bindingHash },
+  });
   const strategyEntries = Array.isArray(options.strategyEntries)
     ? options.strategyEntries : [];
   const ownFaction = required(options.ownFaction, "ownFaction");
@@ -160,7 +170,7 @@ export async function createStarcraftTmgLiveOpponentProviderStackV1(
     ?? Math.min(315_000, transportTimeoutMs + 15_000));
   const bundle = options.characterBundle || createKerriganPrimalProductBundleV1();
   const strategySkillSnapshot = routedStrategySnapshot(strategyEntries,
-    ownFaction, opponentFaction);
+    ownFaction, opponentFaction, experienceSnapshot);
   const principalSessionRef = `live-opponent-principal-${randomUUID()}`;
   const principalScopeHash = hashStarcraftTmgContract({
     roomId, seatKey, principalSessionRef,
@@ -276,10 +286,17 @@ export async function createStarcraftTmgLiveOpponentProviderStackV1(
     now,
   });
   const scopedSupervisor = executionScope.wrapSupervisor(supervisorCore);
-  const supervisor = freeze({
-    sendTurn(input) { return scopedSupervisor.sendTurn(input, context); },
+  const supervisor = freeze(withExperimentQuotaStopV1({
+    async sendTurn(input) {
+      if(options.onPromptArtifact){
+        const stored=promptArtifactStore.resolve(input.promptAssemblyRef);
+        if(!stored.ok)throw new Error(stored.reason);
+        await options.onPromptArtifact(stored.artifact);
+      }
+      return scopedSupervisor.sendTurn(input, context);
+    },
     readState(input) { return scopedSupervisor.readState(input, context); },
-  });
+  }, {file:options.experimentQuotaStopFile,providerId:"deepseek"}));
   await durableGateway.initialize({
     recoveryIdempotencyKeyHash: hashStarcraftTmgContract({
       roomId,
@@ -297,6 +314,7 @@ export async function createStarcraftTmgLiveOpponentProviderStackV1(
     filename: path.join(dataDirectory, "live-decisions.sqlite"),
   });
   const decisionPort = createStarcraftTmgLiveFlashDecisionPortV1({
+    strategyHarnessPort: options.strategyHarnessPort || null,
     providerSupervisor: supervisor,
     providerAttemptObserver: {
       observe(input) { return durableGateway.observeAttempt(input); },

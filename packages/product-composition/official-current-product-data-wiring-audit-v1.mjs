@@ -2,7 +2,8 @@ import { createOfficialSelectedRosterAbilityDefinitionBindingsV1 } from
   "./official-ability-effect-runtime-v1.mjs";
 import { createOfficialBattlefieldAssetFamilyDefinitionBindingsV1 } from
   "./official-battlefield-asset-family-adapter-v1.mjs";
-import { createOfficialCharacteristicStatusFamilyDefinitionBindingsV1 } from
+import { createOfficialCharacteristicStatusFamilyDefinitionBindingsV1,
+  resolveOfficialEffectiveCombatProfileV1 } from
   "./official-characteristic-status-family-adapter-v1.mjs";
 import { createOfficialMatchLifecycleFamilyDefinitionBindingsV1 } from
   "./official-match-lifecycle-family-adapter-v1.mjs";
@@ -588,15 +589,16 @@ function auditSelectedPieceData(state, blockingFindings) {
       }
     }
     if (combatProfile) {
+      const effectiveProfile = resolveOfficialEffectiveCombatProfileV1(state, piece);
       for (const model of piece.models || []) {
         const wounds = Number(model.remainingWounds);
         if (!Number.isFinite(wounds) || wounds < 0
-          || wounds > Number(combatProfile.hitPoints)
+          || wounds > Number(effectiveProfile.hitPoints)
           || (model.isDestroyed === true && wounds !== 0)
           || (model.isDestroyed !== true && wounds <= 0)) {
           woundStateMismatches.push({ pieceId: piece.id, modelId: model.id,
             recordKey, remainingWounds: model.remainingWounds,
-            hitPoints: combatProfile.hitPoints });
+            hitPoints: effectiveProfile.hitPoints });
         }
       }
     }

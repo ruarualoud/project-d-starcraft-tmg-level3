@@ -118,7 +118,7 @@ export function recoverRosterFailedProviderOutputV1(record) {
     || !Number.isSafeInteger(record.roundIndex)
     || typeof record.contextHash !== "string"
     || !object(record.outputContractRef)) return null;
-  const normalized = normalizeProviderJsonDocumentV1(record.rawText);
+  const normalized = normalizeProviderJsonDocumentV1(record.rawText, {allowOuterContainerSuffix:true});
   // The common normalizer owns grammar-only recovery; do not whitelist one
   // historical defect here and strand other complete paid replies.
   if (normalized.kind === "none" || normalized.text === record.rawText) {
@@ -383,10 +383,33 @@ export async function createRosterPlanningSecureDeliberationFactoryV1(
             await onEvent?.({ type: "provider_dispatch", dispatch: clone(dispatch),
               at: new Date().toISOString() });
           };
-          // The caller must persist these events before egress. Failure at
-          // either barrier returns without calling the physical Worker.
-          await recordDispatch("reserved");
-          await recordDispatch("sending", { costStatus: "unknown" });
+          const recordPreEgress = async () => {
+            try {
+              await recordDispatch("reserved");
+              await recordDispatch("sending", { costStatus: "unknown" });
+            } catch (cause) {
+              // A journal/observer error here occurs before worker.send.
+              // Close this same attempt as unsent when the sink can record it.
+              // If the sink still fails, preserve the original error and let
+              // recovery rely on whatever was actually written to the ledger.
+              const code = "ROSTER_WORKSPACE_PROVIDER_PREFLIGHT_EVENT_FAILED";
+              try {
+                await recordDispatch("definitely_not_sent", {
+                  costStatus: "not_sent",
+                  transportFailure: { code, requestDefinitelyNotSent: true,
+                    requestMayHaveBeenSent: false, physicalAttempts: 0 },
+                });
+              } catch {
+                throw cause;
+              }
+              throw Object.assign(new Error("ROSTER_WORKSPACE_PROVIDER_SEND_FAILED", { cause }), {
+                code: "ROSTER_WORKSPACE_PROVIDER_SEND_FAILED",
+                dispatchOutcome: "not_dispatched",
+                detail: { stage: "provider_preflight_event", code },
+              });
+            }
+          };
+          await recordPreEgress();
           let result;
           for (let networkRecoveryAttempt = 0; ; networkRecoveryAttempt++) {
           try {
@@ -451,8 +474,7 @@ export async function createRosterPlanningSecureDeliberationFactoryV1(
                 ...(notSent ? { retryOfNotSentRequestId: old.requestId } : {
                   retryOfRequestId: old.requestId, retryAuthorizationId: recovery.retryAuthorizationId }),
                 networkRecoveryVersion: 1 };
-              await recordDispatch('reserved');
-              await recordDispatch('sending', { costStatus: 'unknown' });
+              await recordPreEgress();
               sentAttempts++;
               continue;
             }
@@ -547,7 +569,8 @@ export async function createRosterPlanningSecureDeliberationFactoryV1(
           if (!usage) await failure("ROSTER_WORKSPACE_PROVIDER_USAGE_UNKNOWN");
           const rawText = outputText(payload);
           if (!rawText) await failure("ROSTER_WORKSPACE_OUTPUT_MISSING");
-          const normalized = normalizeProviderJsonDocumentV1(rawText);
+          // Only reached after the completed-status and usage guards above.
+          const normalized = normalizeProviderJsonDocumentV1(rawText, {allowOuterContainerSuffix:true});
           let decoded;
           try { decoded = JSON.parse(normalized.text); }
           catch {

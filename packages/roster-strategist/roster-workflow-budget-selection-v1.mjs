@@ -1,6 +1,7 @@
 // A model selects an immutable Builder branch; Host copies it, never retypes it.
 // The same resolver is used before author confirmation and at the Run commit.
 import {isDeepStrictEqual} from 'node:util';
+import {projectRosterWorkflowSelectionEchoV1} from './roster-workflow-draft-v1.mjs';
 import {hashStarcraftTmgContract as hash} from '../authoritative-engine/referee-crypto-v1.mjs';
 import {rosterWorkflowBindingsMatchV1} from './roster-decision-workflow-v1.mjs';
 import {rosterAuditedCandidateSourceV1} from './roster-workflow-candidate-source-v1.mjs';
@@ -16,7 +17,7 @@ export async function resolveRosterWorkflowBudgetSelectionV1({decision,draft,sta
     selection=exactSelection??mutation?.rosterBranchSelection;
   if(!selection)return null;
   if(draft.mode==='fixed')fail('ROSTER_WORKFLOW_FIXED_ARMY_MUTATION_FORBIDDEN');
-  if(exactSelection&&mutation.rosterBranchSelection||mutation.unitsToUpsert.length||mutation.unitIdsToRemove.length||mutation.tacticalCardRecordKeys!==null)
+  if(exactSelection&&mutation.rosterBranchSelection)
     fail('ROSTER_WORKFLOW_BRANCH_SELECTION_EDIT_CONFLICT',{
       instruction:'Choose ONE rosterCandidateSelection, rosterBranchSelection, or explicit unit/card edits. Plan edits remain independent.'});
   const entry=state.evidence[selection.sourceEvidenceNumber-1];
@@ -39,14 +40,19 @@ export async function resolveRosterWorkflowBudgetSelectionV1({decision,draft,sta
     // verdict. Copying it is safe only because the commit re-audits it.
   }else{
     const factualBindings=Object.fromEntries(Object.entries(original.bindings??{}).filter(([key])=>key!=='plan'));
-    if(!rosterWorkflowBindingsMatchV1(factualBindings,state.scope)
-      ||value?.receipt?.sourceCandidateHash!==hash(draft.candidateInput))
+    const privateBaseline=value?.request?.candidateInput;
+    const sourceMatches=value?.receipt?.sourceCandidateHash===hash(draft.candidateInput)
+      ||privateBaseline&&hash(privateBaseline)===value?.receipt?.sourceCandidateHash
+        &&['sideKey','factionRecordKey','scaleId','mineralBudget'].every(k=>privateBaseline[k]===draft.candidateInput[k]);
+    if(!rosterWorkflowBindingsMatchV1(factualBindings,state.scope)||!sourceMatches)
       fail('ROSTER_WORKFLOW_BRANCH_SOURCE_STALE',{
         instruction:'This branch belongs to another factual candidate/rules/source. Select a current Builder branch or propose explicit edits; Plan-only wording does not invalidate the same factual candidate.'});
     if(value.operation!=='builder_branches')fail('ROSTER_WORKFLOW_BRANCH_SOURCE_KIND_INVALID');
     const index=value.receipt.branches.findIndex(b=>b.branchId===selection.branchId),branch=value.receipt.branches[index];
     if(!branch)fail('ROSTER_WORKFLOW_BRANCH_NOT_FOUND');
     candidateInput=branch.candidateInput;candidatePointer=`/receipt/branches/${index}/candidateInput`;
+    if(['sideKey','factionRecordKey','scaleId','mineralBudget'].some(k=>candidateInput[k]!==draft.candidateInput[k])
+      ||branch.candidateHash!==hash(candidateInput))fail('ROSTER_WORKFLOW_BRANCH_CANDIDATE_MISMATCH');
   }
   const sameSource=id=>id===original.id||id===entry.id||id?.replace(/^tool-view:/,'tool:')===original.id;
   let delivered=false;
@@ -57,12 +63,29 @@ export async function resolveRosterWorkflowBudgetSelectionV1({decision,draft,sta
   }
   if(!delivered)delivered=Object.values(assignmentInputs).some(input=>input.source==='evidence'
     &&sameSource(input.evidenceId)&&input.status==='read'&&containsCandidate(input.value,candidateInput));
+  // Initial assignment bodies are also delivered evidence. The role accepts
+  // them, so the commit must read the SAME immutable sent requests rather
+  // than recognizing only explicit follow-up read operations. A directory,
+  // deferred input or today's reconstructed assignment is not delivery.
+  if(!delivered)for(const call of [...(work.operationState?.calls??[])].reverse()){
+    if(!call.requestRef||!call.replyRef)continue;
+    const request=await store.get(call.requestRef);
+    const assignment=request.promptNodes?.find(node=>node.kind==='workflow_role_assignment'
+      &&(!work.id||node.workId===work.id));
+    if(Object.values(assignment?.inputs??{}).some(input=>input.source==='evidence'
+      &&sameSource(input.evidenceId)&&input.status==='read'&&containsCandidate(input.value,candidateInput))){
+      delivered=true;break;
+    }
+  }
   if(!delivered)fail('ROSTER_WORKFLOW_BRANCH_CANDIDATE_NOT_DELIVERED',{
     // candidatePointer belongs to the ORIGINAL source. A view may not expose
     // /request (and must never be mistaken for a different candidate body).
     read:{evidenceNumber:state.evidence.findIndex(e=>e.id===original.id)+1,pointer:candidatePointer},
     instruction:'Read this exact candidate, then confirm or revise the selection. A branch directory or claimed 1860/2000 total is not the candidate body; do not copy unit/upgrades from memory.'});
+  const echo=projectRosterWorkflowSelectionEchoV1({mutation,candidateInput,baseline:draft.candidateInput});
   return {candidateInput:structuredClone(candidateInput),receipt:{...selection,sourceEvidenceId:original.id,
+    ...(echo.proof?{selectionEcho:echo.proof}:{}),
+    ...(echo.planUnitBindings.length?{planUnitBindings:echo.planUnitBindings}:{}),
     sourceArtifactRef:original.artifactRef,candidatePointer,candidateHash:hash(candidateInput),
     ...(exactSelection?{selectionKind:'audited_candidate',historicalProposalOnly:true,
       originalBindings:structuredClone(original.bindings??{})}:{}),

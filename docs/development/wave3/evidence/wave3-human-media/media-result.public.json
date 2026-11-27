@@ -1,0 +1,29 @@
+{
+  "roomId": "product-48e12391-3cf4-4576-af3f-5c05e33186e5",
+  "seats": [
+    {
+      "side": "player1",
+      "portraits": 1,
+      "music": [
+        {
+          "src": "/assets/soundtrack/terran-one.mp3",
+          "duration": 533.067256
+        }
+      ],
+      "defilerVoice": true
+    },
+    {
+      "side": "player2",
+      "portraits": 1,
+      "music": [
+        {
+          "src": "/assets/soundtrack/terran-one.mp3",
+          "duration": 533.067256
+        }
+      ],
+      "defilerVoice": true
+    }
+  ],
+  "providerCalls": 0,
+  "decodedImages": 115
+}

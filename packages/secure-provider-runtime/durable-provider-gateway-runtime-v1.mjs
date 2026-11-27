@@ -245,6 +245,7 @@ function providerRequest({ attemptId, artifact, userMessage, gateway }) {
     promptNodes: artifact.nodes.filter((entry) =>
       entry.nodeType !== "user-message"),
     userMessage,
+    ...(artifact.visualInputs !== undefined ? {visualInputs:clone(artifact.visualInputs)} : {}),
     responseContract: {
       allowedChannels: clone(contract.allowedChannels),
       decisionCandidateSource: requiredString(

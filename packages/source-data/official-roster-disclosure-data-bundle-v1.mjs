@@ -7,6 +7,7 @@ import {
 } from "./official-development-tranche-source-lock-v1.mjs";
 import { getOfficialCurrentProductRecord } from
   "./official-command-center-adapter-v1.mjs";
+import { assertOfficialReleaseSourceV2 } from "./official-release-context-v2.mjs";
 import {
   createOfficialUnitCompositionUpgradeDataBundleV1,
   verifyOfficialUnitCompositionUpgradeDataBundleV1,
@@ -33,6 +34,25 @@ const SECTION_EXPECTATIONS = Object.freeze([
     sectionHash: "1f2597a70e74733b7e2b013e0482c4e582e4325a0f358a6f2b83c95d7afd30bf",
     contentHash: "870dd59ff856be91aea775dd0bce30787ae4e132559fea94a1ba0ee92eee7cab" }),
 ]);
+
+const ROSTER_VISIBILITY_POLICY = Object.freeze({
+    tournamentRulesPackOverridesCoreDefault: true,
+    coreDefaultMode: "open", closedModeRequiresEveryPlayerAgreement: true,
+    anyPlayerDeclinesClosedMode: "open", closedRosterPreGameVisibility: "hidden",
+    factionAndTacticalCardsAlwaysFaceUp: true,
+    deployedUnitIdentityUpgradesAndWeaponSwapsImmediatelyPublic: true,
+    onTableUnitCardAndAssociatedTacticalCardsInspectable: true,
+    viewerProjectionMustNotContainUndeployedOpponentRosterEntries: true,
+  });
+const EQUIPMENT_DISCLOSURE_POLICY = Object.freeze({
+    accurateRepresentationExpectedWherePossible: true,
+    unrepresentedEquipmentDeclaredAtDeployment: true,
+    unrepresentedEquipmentRepeatedBeforeRelevantAction: true,
+    fullOnTableEquipmentKnowledgeRight: true,
+    missingDisclosureConduct: "unsportsmanlike_conduct",
+    authorityDerivesExpectedLoadoutFromDefaultEquipmentAndSelectedUpgrades: true,
+    clientSuppliedExpectedLoadoutAccepted: false,
+  });
 
 function clause(atomId, clauseId, sourceTextHash) {
   const body = { atomId, clauseIds: Object.freeze([clauseId]),
@@ -207,24 +227,8 @@ export function createOfficialRosterDisclosureDataBundleV1(input = {}) {
     unitCardInspectionProfileIndexHash:
       hashStarcraftTmgContract(unitCardInspectionProfiles),
     unitCompositionUpgradeDataBundle, audit,
-    rosterVisibilityPolicy: {
-      tournamentRulesPackOverridesCoreDefault: true,
-      coreDefaultMode: "open", closedModeRequiresEveryPlayerAgreement: true,
-      anyPlayerDeclinesClosedMode: "open", closedRosterPreGameVisibility: "hidden",
-      factionAndTacticalCardsAlwaysFaceUp: true,
-      deployedUnitIdentityUpgradesAndWeaponSwapsImmediatelyPublic: true,
-      onTableUnitCardAndAssociatedTacticalCardsInspectable: true,
-      viewerProjectionMustNotContainUndeployedOpponentRosterEntries: true,
-    },
-    equipmentDisclosurePolicy: {
-      accurateRepresentationExpectedWherePossible: true,
-      unrepresentedEquipmentDeclaredAtDeployment: true,
-      unrepresentedEquipmentRepeatedBeforeRelevantAction: true,
-      fullOnTableEquipmentKnowledgeRight: true,
-      missingDisclosureConduct: "unsportsmanlike_conduct",
-      authorityDerivesExpectedLoadoutFromDefaultEquipmentAndSelectedUpgrades: true,
-      clientSuppliedExpectedLoadoutAccepted: false,
-    },
+    rosterVisibilityPolicy: ROSTER_VISIBILITY_POLICY,
+    equipmentDisclosurePolicy: EQUIPMENT_DISCLOSURE_POLICY,
     sourcePolicy: { captureMode: "slice_75_single_official_capture_lock",
       refreshDuringDevelopment: false, repositoryFallbackAllowed: false,
       commandCenterRole: "current_unit_card_and_selected_upgrade_equipment_identity",
@@ -238,6 +242,9 @@ export function createOfficialRosterDisclosureDataBundleV1(input = {}) {
 }
 
 export function verifyOfficialRosterDisclosureDataBundleV1(bundle) {
+  if (bundle?.schema === "starcraft_tmg_official_roster_disclosure_data_bundle_v2") {
+    return verifyOfficialRosterDisclosureDataBundleV2(bundle);
+  }
   if (!object(bundle) || bundle.schema !== OFFICIAL_ROSTER_DISCLOSURE_DATA_BUNDLE_SCHEMA
     || bundle.sourceLockHash !== OFFICIAL_DEVELOPMENT_TRANCHE_SOURCE_LOCK_HASH
     || bundle.sourceSnapshotHash !== OFFICIAL_DEVELOPMENT_TRANCHE_SNAPSHOT_HASH
@@ -285,6 +292,115 @@ export function verifyOfficialRosterDisclosureDataBundleV1(bundle) {
     || new Set(bundle.ruleClauses.map((entry) => entry.atomId)).size !== 13
     || bundle.ruleClauses.some((entry) => !/^[a-f0-9]{64}$/u.test(
       entry.candidateSequenceHash))) fail("ROSTER_DISCLOSURE_DENOMINATOR_INVALID");
+  return true;
+}
+
+export function createOfficialRosterDisclosureDataBundleV2({ dataset, snapshot,
+  releaseContext, unitCompositionUpgradeDataBundle, legacyPolicyBundle } = {}) {
+  const manifest = assertOfficialReleaseSourceV2(releaseContext, { dataset, snapshot });
+  if (legacyPolicyBundle !== undefined) {
+    verifyOfficialRosterDisclosureDataBundleV1(legacyPolicyBundle);
+    if (legacyPolicyBundle.schema !== OFFICIAL_ROSTER_DISCLOSURE_DATA_BUNDLE_SCHEMA) {
+      fail("ROSTER_DISCLOSURE_RELEASE_SOURCE_MISMATCH");
+    }
+  }
+  verifyOfficialUnitCompositionUpgradeDataBundleV1(unitCompositionUpgradeDataBundle);
+  if (unitCompositionUpgradeDataBundle.sourceSnapshotHash !== dataset.sourceSnapshotHash
+    || unitCompositionUpgradeDataBundle.normalizedDatasetHash !== dataset.datasetHash) {
+    fail("ROSTER_DISCLOSURE_RELEASE_SOURCE_MISMATCH");
+  }
+  const part9 = exactPart9Sections(dataset);
+  const profiles = compileUnitCardInspectionProfiles(dataset, unitCompositionUpgradeDataBundle);
+  const body = {
+    schema: "starcraft_tmg_official_roster_disclosure_data_bundle_v2", version: "2.0.0",
+    sourceBinding: { releaseId: manifest.releaseId, sourceSnapshotHash: dataset.sourceSnapshotHash,
+      normalizedDatasetHash: dataset.datasetHash },
+    sourceLockHash: manifest.source.sourceRevisionHash,
+    sourceSnapshotHash: dataset.sourceSnapshotHash, normalizedDatasetHash: dataset.datasetHash,
+    officialRulesVersion: dataset.dataVersions.rulesVersion,
+    officialUnitsVersion: dataset.dataVersions.unitsVersion,
+    officialCardsVersion: dataset.dataVersions.cardsVersion,
+    ruleSectionRecord: part9.record, ruleSections: part9.sections,
+    ruleSectionIndexHash: hashStarcraftTmgContract(part9.sections), ruleClauses: RULE_CLAUSES,
+    ruleClauseIndexHash: hashStarcraftTmgContract(RULE_CLAUSES),
+    unitCardInspectionProfiles: profiles, unitCardInspectionProfileIndexHash: hashStarcraftTmgContract(profiles),
+    unitCompositionUpgradeDataBundle,
+    audit: { ruleClauseCount: RULE_CLAUSES.length, part9SectionCount: part9.sections.length,
+      unitCardInspectionProfileCount: profiles.length,
+      defaultEquipmentProfileCount: profiles.reduce((sum, row) => sum + row.defaultEquipmentCount, 0),
+      purchasableUpgradeProfileCount: unitCompositionUpgradeDataBundle.purchasableUpgradeProfiles.length },
+    // exactPart9Sections above validates the frozen source for these policies.
+    rosterVisibilityPolicy: structuredClone(legacyPolicyBundle?.rosterVisibilityPolicy
+      ?? ROSTER_VISIBILITY_POLICY),
+    equipmentDisclosurePolicy: structuredClone(legacyPolicyBundle?.equipmentDisclosurePolicy
+      ?? EQUIPMENT_DISCLOSURE_POLICY),
+    sourcePolicy: { refreshDuringDevelopment: false, repositoryFallbackAllowed: false,
+      commandCenterRole: "current_unit_card_and_selected_upgrade_equipment_identity",
+      pdfRole: "reference_and_verified_core_disclosure_rules" },
+    productionRoomEligible: false,
+    rulesTruth: "official_team_roster_visibility_equipment_disclosure_source_index", trainingTruth: false,
+  };
+  const bundle = freezeDeep({ ...body, bundleHash: hashStarcraftTmgContract(body) });
+  verifyOfficialRosterDisclosureDataBundleV2(bundle);
+  return bundle;
+}
+
+export function createOfficialRoomRosterDisclosureDataBundleV1({
+  dataset, snapshot, releaseContext,
+} = {}) {
+  if (!releaseContext || dataset?.datasetHash === OFFICIAL_DEVELOPMENT_TRANCHE_DATASET_HASH) {
+    return createOfficialRosterDisclosureDataBundleV1({ dataset });
+  }
+  const manifest = assertOfficialReleaseSourceV2(releaseContext, { dataset, snapshot });
+  const builder = releaseContext.resources?.armyBuilder;
+  const integrity = manifest.components?.armyBuilder?.integrity;
+  if (!builder || integrity?.field !== "bundleHash" || integrity.value !== builder.bundleHash) {
+    fail("ROSTER_DISCLOSURE_RELEASE_BUILDER_INVALID");
+  }
+  return createOfficialRosterDisclosureDataBundleV2({
+    dataset, snapshot, releaseContext, unitCompositionUpgradeDataBundle: builder,
+  });
+}
+
+export function verifyOfficialRosterDisclosureDataBundleV2(bundle) {
+  const units = bundle?.unitCompositionUpgradeDataBundle;
+  verifyOfficialUnitCompositionUpgradeDataBundleV1(units);
+  if (bundle.schema !== "starcraft_tmg_official_roster_disclosure_data_bundle_v2"
+    || bundle.version !== "2.0.0" || !bundle.sourceBinding?.releaseId
+    || bundle.sourceSnapshotHash !== units.sourceSnapshotHash
+    || bundle.normalizedDatasetHash !== units.normalizedDatasetHash
+    || bundle.sourceBinding.sourceSnapshotHash !== bundle.sourceSnapshotHash
+    || bundle.sourceBinding.normalizedDatasetHash !== bundle.normalizedDatasetHash
+    || bundle.ruleSectionRecord?.payloadHash !== PART9.payloadHash
+    || bundle.ruleSectionRecord.sourceRecordHash !== PART9.sourceRecordHash
+    || bundle.ruleSectionIndexHash !== hashStarcraftTmgContract(bundle.ruleSections)
+    || bundle.ruleClauseIndexHash !== hashStarcraftTmgContract(RULE_CLAUSES)
+    || hashStarcraftTmgContract(bundle.ruleClauses) !== hashStarcraftTmgContract(RULE_CLAUSES)
+    || !Array.isArray(bundle.unitCardInspectionProfiles)
+    || bundle.unitCardInspectionProfiles.length !== units.unitCompositionProfiles.length
+    || bundle.unitCardInspectionProfileIndexHash !== hashStarcraftTmgContract(bundle.unitCardInspectionProfiles)
+    || bundle.rosterVisibilityPolicy?.coreDefaultMode !== "open"
+    || bundle.equipmentDisclosurePolicy?.clientSuppliedExpectedLoadoutAccepted !== false
+    || bundle.sourcePolicy?.refreshDuringDevelopment !== false
+    || bundle.sourcePolicy?.repositoryFallbackAllowed !== false
+    || bundle.productionRoomEligible !== false || bundle.trainingTruth !== false
+    || bundle.bundleHash !== hashStarcraftTmgContract(without(bundle, ["bundleHash"]))) {
+    fail("ROSTER_DISCLOSURE_DATA_BUNDLE_V2_INVALID");
+  }
+  const keys = new Set();
+  for (const profile of bundle.unitCardInspectionProfiles) {
+    const unit = units.unitCompositionProfiles.find(row => row.recordKey === profile.recordKey);
+    if (!unit || keys.has(profile.recordKey) || profile.sourceRecordHash !== unit.sourceRecordHash
+      || profile.payloadHash !== unit.payloadHash
+      || profile.profileHash !== hashStarcraftTmgContract(without(profile, ["profileHash"]))
+      || profile.unitCardPayloadHash !== hashStarcraftTmgContract(profile.unitCardPayload)
+      || profile.defaultEquipment.length !== profile.defaultEquipmentCount
+      || profile.defaultEquipment.some(row => row.profileHash
+        !== hashStarcraftTmgContract(without(row, ["profileHash"])))) {
+      fail("ROSTER_DISCLOSURE_UNIT_CARD_PROFILE_INVALID", profile?.recordKey);
+    }
+    keys.add(profile.recordKey);
+  }
   return true;
 }
 

@@ -8,6 +8,8 @@ import { verifyOfficialAbilityEffectIrCatalogueV1 } from
   "../source-data/official-ability-effect-ir-v1.mjs";
 import { verifyOfficialCurrentProductAbilityDenominatorV1 } from
   "./official-current-product-ability-denominator-v1.mjs";
+import { openOfficialSelectedRosterSpecialAbilityWindowV1 } from
+  "./official-selected-roster-ability-runtime-v1.mjs";
 
 export const OFFICIAL_TERRAN_UNIQUE_FAMILY_ADAPTER_ID =
   "official-terran-unique-family-adapter-v1";
@@ -143,7 +145,113 @@ export function createOfficialTerranUniqueFamilySourceBundleV1(input = {}) {
   return bundle;
 }
 
+const freedomFightersDefinitionId = 'unit:jim_raynor/freedom-fighters-any-phase@1';
+const freedomFightersSourceText = "The Supply Value of all Friendly Units Within 8\" of this Unit cannot be reduced below 1 for Contesting Mission Markers and completing objectives.";
+const explicitTerranSchema = 'starcraft_tmg_official_terran_unique_family_source_bundle_v2';
+export const OFFICIAL_ADDITIONAL_SUPPLY_DEPOTS_DEFINITION_ID = 'card:supply_depot/additional-supply-depots-any@1';
+export const OFFICIAL_MEDIC_FACILITIES_ID = 'unit:medic/advanced-medic-facilities-any-phase@1';
+const medicFacilitiesText = "This Unit’s Supply Value counts as 0 when calculating the Supply Pool.";
+const additionalSupplyDepotsText = 'Additional Supply Depots <Active> <Movement Phase>: The active Unit’s Supply Value is improved by 1 for Controlling and Contesting Mission Markers and completing objectives.';
+const missionSupplyContexts = ['mission_marker_control', 'objective_completion'];
+
+export function createOfficialTerranMissionSupplyBundleV2(catalogue, definitionIds) {
+  verifyOfficialAbilityEffectIrCatalogueV1(catalogue);
+  if (!Array.isArray(definitionIds) || !definitionIds.some(id => [OFFICIAL_ADDITIONAL_SUPPLY_DEPOTS_DEFINITION_ID, OFFICIAL_MEDIC_FACILITIES_ID].includes(id))
+    || new Set(definitionIds).size !== definitionIds.length
+    || definitionIds.some(id => ![freedomFightersDefinitionId, OFFICIAL_ADDITIONAL_SUPPLY_DEPOTS_DEFINITION_ID, OFFICIAL_MEDIC_FACILITIES_ID].includes(id))) {
+    fail('TERRAN_UNIQUE_MISSION_SUPPLY_SELECTION_INVALID');
+  }
+  const routes = definitionIds.map(id => {
+    if (id === freedomFightersDefinitionId) return createOfficialTerranFreedomFightersBundleV2(catalogue).routes[0];
+    const definition = catalogue.definitions.find(row => row.definitionId === id);
+    if (id === OFFICIAL_MEDIC_FACILITIES_ID) {
+      if (definition?.sourceText !== medicFacilitiesText || definition.recordKey !== 'army_units:medic'
+        || definition.sourceKind !== 'unit_feature' || definition.activationKind !== 'passive' || definition.phase !== 'any') {
+        fail('TERRAN_UNIQUE_MEDIC_SOURCE_INVALID');
+      }
+      return compileRoute(definition);
+    }
+    if (definition?.sourceText !== additionalSupplyDepotsText || definition.phase !== 'movement'
+      || definition.activationKind !== 'active' || definition.sourceKind !== 'card_feature'
+      || definition.recordKey !== 'tactical_cards:supply_depot') fail('TERRAN_UNIQUE_DEPOT_SOURCE_INVALID');
+    return compileRoute(definition);
+  }).sort((left, right) => left.definitionId.localeCompare(right.definitionId));
+  const bundle = seal({ schema: explicitTerranSchema, semanticVersion: definitionIds.includes(OFFICIAL_MEDIC_FACILITIES_ID) ? '2.2.0' : '2.1.0',
+    sourceSnapshotHash: catalogue.sourceSnapshotHash, normalizedDatasetHash: catalogue.normalizedDatasetHash,
+    sourceCatalogueHash: catalogue.catalogueHash, routeCount: routes.length, routes,
+    definitionIds: routes.map(route => route.definitionId),
+    coveredSourceFeatureHashes: routes.map(route => route.sourceFeatureHash).sort(),
+    archetypeCounts: Object.fromEntries(routes.map(route => [route.effectKind, 1])),
+    contextSpecificSupplyNeverMutatesCurrentSupply: true, sourceRefreshPerformed: false, trainingTruth: false }, 'bundleHash');
+  verifyOfficialTerranUniqueFamilySourceBundleV1(bundle);
+  return bundle;
+}
+
+function verifyReleaseMissionSupplyBundle(bundle) {
+  const routes = bundle.routes;
+  const depot = routes?.find(route => route.definitionId === OFFICIAL_ADDITIONAL_SUPPLY_DEPOTS_DEFINITION_ID);
+  const freedom = routes?.find(route => route.definitionId === freedomFightersDefinitionId);
+  const medic = routes?.find(route => route.definitionId === OFFICIAL_MEDIC_FACILITIES_ID);
+  if ((!depot && !medic) || Boolean(medic) !== (bundle.semanticVersion === '2.2.0')
+    || routes.length !== [depot, freedom, medic].filter(Boolean).length || bundle.routeCount !== routes.length
+    || medic && (medic.sourceText !== medicFacilitiesText || medic.recordKey !== 'army_units:medic'
+      || medic.sourceKind !== 'unit_feature' || medic.activationKind !== 'passive' || medic.phase !== 'any'
+      || medic.effectKind !== 'supply_pool_zero' || medic.replacementSupply !== 0)
+    || depot && (depot.sourceText !== additionalSupplyDepotsText || depot.recordKey !== 'tactical_cards:supply_depot'
+    || depot.sourceKind !== 'card_feature' || depot.activationKind !== 'active' || depot.phase !== 'movement'
+    || depot.effectKind !== 'mission_supply_bonus_active' || depot.modifier !== 1
+    || depot.effectExpiresAt !== 'round_end' || depot.oncePerRound !== true)
+    || freedom && (freedom.sourceText !== freedomFightersSourceText || freedom.recordKey !== 'army_units:jim_raynor'
+      || freedom.sourceKind !== 'unit_feature' || freedom.activationKind !== 'passive' || freedom.phase !== 'any'
+      || freedom.effectKind !== 'mission_supply_floor' || freedom.minimumSupply !== 1 || freedom.rangeMilliInches !== 8000)
+    || routes.some(route => !isDeepStrictEqual(route.contexts, route === medic ? ['supply_pool_calculation'] : missionSupplyContexts) || route.trainingTruth !== false
+      || route.routeHash !== hashStarcraftTmgContract(without(route, ['routeHash'])))
+    || !isDeepStrictEqual(bundle.definitionIds, routes.map(route => route.definitionId).sort())
+    || !isDeepStrictEqual(bundle.coveredSourceFeatureHashes, routes.map(route => route.sourceFeatureHash).sort())
+    || !isDeepStrictEqual(bundle.archetypeCounts, Object.fromEntries(routes.map(route => [route.effectKind, 1])))
+    || bundle.contextSpecificSupplyNeverMutatesCurrentSupply !== true || bundle.sourceRefreshPerformed !== false
+    || bundle.trainingTruth !== false || bundle.bundleHash !== hashStarcraftTmgContract(without(bundle, ['bundleHash']))) {
+    fail('TERRAN_UNIQUE_MISSION_SUPPLY_SOURCE_INVALID');
+  }
+  return true;
+}
+
+export function createOfficialTerranFreedomFightersBundleV2(catalogue) {
+  verifyOfficialAbilityEffectIrCatalogueV1(catalogue);
+  const definition = catalogue.definitions.find(row => row.definitionId === freedomFightersDefinitionId);
+  if (definition?.sourceText !== freedomFightersSourceText || definition.phase !== 'any'
+    || definition.activationKind !== 'passive' || definition.sourceKind !== 'unit_feature') {
+    fail('TERRAN_UNIQUE_FREEDOM_FIGHTERS_SOURCE_INVALID');
+  }
+  const route = compileRoute(definition);
+  const bundle = seal({ schema: explicitTerranSchema, semanticVersion: '2.0.0',
+    sourceSnapshotHash: catalogue.sourceSnapshotHash, normalizedDatasetHash: catalogue.normalizedDatasetHash,
+    sourceCatalogueHash: catalogue.catalogueHash, routeCount: 1,
+    routes: [route], definitionIds: [route.definitionId], coveredSourceFeatureHashes: [route.sourceFeatureHash],
+    archetypeCounts: { mission_supply_floor: 1 },
+    contextSpecificSupplyNeverMutatesCurrentSupply: true, sourceRefreshPerformed: false, trainingTruth: false }, 'bundleHash');
+  verifyOfficialTerranUniqueFamilySourceBundleV1(bundle);
+  return bundle;
+}
+
 export function verifyOfficialTerranUniqueFamilySourceBundleV1(bundle) {
+  if (bundle?.schema === explicitTerranSchema) {
+    if (['2.1.0', '2.2.0'].includes(bundle.semanticVersion)) return verifyReleaseMissionSupplyBundle(bundle);
+    const route = bundle.routes?.[0];
+    if (!route || bundle.semanticVersion !== '2.0.0' || bundle.routeCount !== 1 || bundle.routes?.length !== 1
+      || bundle.trainingTruth !== false || route.trainingTruth !== false
+      || route.definitionId !== freedomFightersDefinitionId || route.sourceText !== freedomFightersSourceText
+      || route.rangeMilliInches !== 8000 || route.recordKey !== 'army_units:jim_raynor'
+      || route.effectKind !== 'mission_supply_floor' || route.minimumSupply !== 1
+      || !isDeepStrictEqual(route.contexts, ['mission_marker_control', 'objective_completion'])
+      || !isDeepStrictEqual(bundle.definitionIds, [route.definitionId])
+      || !isDeepStrictEqual(bundle.coveredSourceFeatureHashes, [route.sourceFeatureHash])
+      || route.routeHash !== hashStarcraftTmgContract(without(route, ['routeHash']))
+      || bundle.bundleHash !== hashStarcraftTmgContract(without(bundle, ['bundleHash']))) {
+      fail('TERRAN_UNIQUE_FREEDOM_FIGHTERS_SOURCE_INVALID');
+    }
+    return true;
+  }
   if (!object(bundle) || bundle.schema !== OFFICIAL_TERRAN_UNIQUE_FAMILY_BUNDLE_SCHEMA
     || bundle.semanticVersion !== OFFICIAL_TERRAN_UNIQUE_FAMILY_ADAPTER_VERSION
     || bundle.routeCount !== 4 || bundle.routes?.length !== 4
@@ -182,9 +290,9 @@ function used(state, route, pieceId) {
 function actionRoute(bundle) {
   return bundle.routes.find((entry) => entry.effectKind === "mission_supply_bonus_active");
 }
-function enumerate(bundle, state, options = {}) {
-  const sideKey = String(options.sideKey || state.activeSideKey || "");
+function enumerateActiveDomains(bundle, state, sideKey) {
   const route = actionRoute(bundle);
+  if (!route) return [];
   const cards = (state.cardResources?.[sideKey] || []).filter((card) => (
     card.officialCardRecordKey === route.recordKey && card.readiness === "ready"));
   const window = state.selectedRosterActivationWindow;
@@ -194,7 +302,7 @@ function enumerate(bundle, state, options = {}) {
     && piece.activatedPhases?.movement !== true
     && (!window || (window.sideKey === sideKey && window.pieceId === piece.id
       && window.phase === "movement")) && !used(state, route, piece.id));
-  const domains = cards.flatMap((card) => actors.map((piece) => seal({
+  return cards.flatMap((card) => actors.map((piece) => seal({
     schemaVersion: "starcraft_tmg_official_parameter_domain_v1",
     semanticVersion: "1.0.0",
     parameterKind: OFFICIAL_TERRAN_UNIQUE_FAMILY_PARAMETER_KIND,
@@ -213,6 +321,10 @@ function enumerate(bundle, state, options = {}) {
     rulesTruth: "official_current_product_terran_unique_parameter_domain",
     trainingTruth: false,
   }, "domainId")));
+}
+function enumerate(bundle, state, options = {}) {
+  const sideKey = String(options.sideKey || state.activeSideKey || "");
+  const domains = enumerateActiveDomains(bundle, state, sideKey);
   return freezeDeep({
     schemaVersion: "starcraft_tmg_official_terran_unique_legal_space_v1",
     runtimeId: OFFICIAL_TERRAN_UNIQUE_FAMILY_ADAPTER_ID,
@@ -272,6 +384,9 @@ function apply(bundle, stateInput, request = {}) {
   const card = state.cardResources[action.sideKey].find((entry) => (
     entry.cardInstanceId === action.terranUniquePlan.sourceInstanceId));
   if (!card || card.readiness !== "ready") fail("TERRAN_UNIQUE_SOURCE_CARD_NOT_READY");
+  if (bundle.schema === explicitTerranSchema && bundle.semanticVersion === '2.1.0') {
+    openOfficialSelectedRosterSpecialAbilityWindowV1(state, action.sideKey, piece.id, state.phase);
+  }
   card.readiness = "exhausted";
   const effect = seal({ schema: "starcraft_tmg_official_contextual_supply_effect_v1",
     effectKind: "contextual_supply_bonus", sourceDefinitionId: route.definitionId,

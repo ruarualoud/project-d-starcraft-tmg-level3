@@ -9,7 +9,12 @@
 // Keychain→isolated Worker attachment itself makes zero Provider calls; paid
 // requests require a subsequent explicit Generate action in the Web UI.
 
+import { battlefieldSoundtrack } from '../packages/client-domain/battlefield-soundtrack-v1.mjs';
 import http from "node:http";
+import {compileFrozenWave3SkillRefreshV1} from '../packages/strategy-skills/wave3-frozen-skill-refresh-v1.mjs';
+import {createSqliteStarcraftTmgStrategyReleaseStoreV1} from '../packages/strategy-skills/sqlite-strategy-release-store-v1.mjs';
+import {verifyOfficialReleaseManifestV2} from '../packages/source-data/official-release-context-v2.mjs';
+import {seal} from '../packages/skill-production/common.mjs';
 import { mkdir, readFile, stat } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -38,6 +43,8 @@ const MIME_TYPES = Object.freeze({
   ".png": "image/png",
   ".svg": "image/svg+xml",
   ".webp": "image/webp",
+  ".ogg": "audio/ogg",
+  ".mp3": "audio/mpeg",
   ".woff": "font/woff",
   ".woff2": "font/woff2",
 });
@@ -136,27 +143,180 @@ export async function createRosterWorkspaceServerV1(input = {}) {
     || path.join(ROOT, "apps/starcraft-tmg-expo/dist");
   const dataDirectory = input.dataDirectory || DEFAULT_DATA_DIRECTORY;
   await mkdir(dataDirectory, { recursive: true, mode: 0o700 });
-  const module = await createRosterPlanningProductModuleV1({
+  let module = null, modulePromise = null;
+  const scopedModules = new Map();
+  const previews = new Map();
+  const planningBoards = new Map();
+
+  function planningBoard(setup) {
+    const selected = setup.wave3MatchSetup;
+    const key = [selected.id, selected.sourceHash, selected.version].join('/');
+    if (!planningBoards.has(key)) {
+      const pending = createRosterPlanningProductModuleV1({
+        ...setup, root: input.root || ROOT, operation: 'board_queries',
+      }).catch(error => { planningBoards.delete(key); throw error; });
+      planningBoards.set(key, pending);
+    }
+    return planningBoards.get(key);
+  }
+  const skillRefreshByRelease = new Map();
+  async function preparedSkillRefresh(selected) {
+    const root = input.root || ROOT;
+    const manifest = verifyOfficialReleaseManifestV2(JSON.parse(await readFile(path.join(root,selected.releaseRef),'utf8')));
+    if (manifest.manifestHash !== selected.sourceHash) throw Error('PRODUCT_ROOM_RELEASE_SOURCE_CHANGED');
+    if (!skillRefreshByRelease.has(manifest.manifestHash)) {
+      skillRefreshByRelease.set(manifest.manifestHash,compileFrozenWave3SkillRefreshV1(root,manifest));
+    }
+    return skillRefreshByRelease.get(manifest.manifestHash);
+  }
+  function setupPreview(setup) {
+    const selected = setup.wave3MatchSetup;
+    const key = [selected.id,selected.sourceHash,selected.version].join('/');
+    if (!previews.has(key)) {
+      const pending = planningBoard(setup).then(board => {
+          const map = board.mapEvidencePort.summarizeMap({queryId:'builder-setup'});
+          const deployment = board.mapEvidencePort.deploymentGeometry({queryId:'builder-deployment'});
+          if (map.resultStatus !== 'certified_map_summary' || deployment.resultStatus !== 'certified_deployment_geometry') {
+            throw Error('PRODUCT_SETUP_GEOMETRY_UNAVAILABLE');
+          }
+          return {ok:true,catalogue:board.readBuilderCatalogue(),setup:{id:selected.id,mission:selected.mission,
+            deployment:selected.deployment,scale:selected.scale,minerals:selected.minerals,mapBinding:map.mapBinding,
+            releaseBinding:board.releaseBinding,missionMarkers:map.missionMarkers,deploymentGeometry:deployment.deploymentGeometry}};
+        }).catch(error=>{previews.delete(key);throw error;});
+      previews.set(key,pending);
+    }
+    return previews.get(key);
+  }
+  const openModule = (overrides = {}) => createRosterPlanningProductModuleV1({
     root: input.root || ROOT,
     fixtureRoot: input.fixtureRoot || input.root || ROOT,
     dataDirectory,
     mapConfiguration: input.mapConfiguration || null,
+    wave3MatchSetup: input.wave3MatchSetup,
+    referenceArmyRecipes: input.referenceArmyRecipes,
+    releaseResolver: input.releaseResolver,
+    releaseId: input.releaseId,
     deliberationFactory: input.deliberationFactory || null,
     roomLaunchPort: input.roomLaunchPort || null,
     enableIterativeDraft: Boolean(input.deliberationFactory
-      && input.mapConfiguration),
+      && (overrides.mapConfiguration || input.mapConfiguration)),
+    ...overrides,
   });
+  const getModule = () => modulePromise ||= openModule().then(value => { module = value; return value; });
+  function scopedModule(setup) {
+    // The same setup ID can be offered on a different frozen release after a restart.
+    const key = [setup.wave3MatchSetup.id, setup.wave3MatchSetup.sourceHash, setup.wave3MatchSetup.version].join('.');
+    if (!scopedModules.has(key)) {
+      const opening = openModule({...setup,dataDirectory:path.join(dataDirectory,'match-setups',key)})
+        .catch(error => { scopedModules.delete(key); throw error; });
+      scopedModules.set(key,opening);
+    }
+    return scopedModules.get(key);
+  }
+  if (!input.lazyWorkspace) await getModule();
   const server = http.createServer(async (request, response) => {
     try {
       const origin = `http://${request.headers.host || "127.0.0.1"}`;
       const url = new URL(request.url || "/", origin);
+      if (url.pathname === "/assets/soundtrack/catalog.json") {
+        const tracks = await Promise.all(battlefieldSoundtrack.map(async track => {
+          const local = await stat(path.join(dataDirectory, "soundtrack", track.id + ".mp3"))
+            .then(info => info.isFile() && info.size > 0, () => false);
+          return { id: track.id, installed: local };
+        }));
+        sendJson(response, 200, { tracks });
+        return;
+      }
+      const recording = battlefieldSoundtrack.find(track => track.localPath === url.pathname);
+      if (recording && await serveFile(response, {
+        root: path.join(dataDirectory, "soundtrack"), relativePath: recording.id + ".mp3",
+      })) return;
       const hasBody = ["POST", "PUT", "PATCH"].includes(
         request.method || "GET");
       const requestBody = hasBody
         ? await readRequestBody(request)
         : { rawBody: Buffer.alloc(0), body: {}, bodyBytes: 0 };
+      // Optional composition seam: the same product origin owns room and
+      // companion routes. The workspace remains the sole Plan implementation.
+      if (input.productHandler) {
+        const result = await input.productHandler({ method: request.method,
+          pathname: url.pathname, query: url.searchParams,
+          headers: request.headers, ...requestBody });
+        if (result) {
+          if (result.rawBody || result.binary) {
+            response.writeHead(result.status, result.headers);
+            response.end(result.rawBody || result.body);
+          } else sendJson(response, result.status, result.response);
+          return;
+        }
+      }
       if (url.pathname.startsWith(ROSTER_PLANNING_WORKSPACE_API_PREFIX)) {
-        const result = await module.handle({
+        const setupId = request.headers['x-starcraft-match-setup'];
+        let setup;
+        if (setupId !== undefined) {
+          if (typeof setupId !== 'string' || !setupId || !input.planningInputsForSetup) {
+            sendJson(response,422,{ok:false,reason:'PRODUCT_SETUP_UNKNOWN'});
+            return;
+          }
+          setup = input.planningInputsForSetup(setupId);
+        }
+        if (setup && request.method === 'POST' && url.pathname === ROSTER_PLANNING_WORKSPACE_API_PREFIX + '/skill-refresh-preview') {
+          const {impact,preparation} = await preparedSkillRefresh(setup.wave3MatchSetup);
+          const preview = seal({schema:'wave3_skill_refresh_preview_v1',releaseHash:preparation.releaseHash,
+            impact,runtimeAccepted:false,trainingTruth:false});
+          const store = input.strategyReleaseStore || createSqliteStarcraftTmgStrategyReleaseStoreV1({
+            filename:path.join(dataDirectory,'skill-refresh.sqlite')});
+          try {
+            await store.putArtifact({artifactId:'wave3-refresh:'+preview.hash,kind:preview.schema,
+              artifact:preview,expectedHash:preview.hash,createdAt:impact.binding.sourceCapturedAt});
+            await store.putArtifact({artifactId:'wave3-preparation:'+preparation.hash,kind:preparation.schema,
+              artifact:preparation,expectedHash:preparation.hash,createdAt:impact.binding.sourceCapturedAt});
+            sendJson(response,200,{ok:true,previewHash:preview.hash,releaseHash:preview.releaseHash,preparation,existingSkills:impact.existingSkills,
+              sectionCount:impact.sectionCount,affected:impact.affected,unrepresentedFactions:impact.unrepresentedFactions});
+          } finally {if (!input.strategyReleaseStore) await store.close();}
+          return;
+        }
+        if (setup && request.method === 'GET' && url.pathname === ROSTER_PLANNING_WORKSPACE_API_PREFIX + '/skill-refresh-section') {
+          const {preparation, sectionInput, factionChoicesForSection, inspectFactionChoice} =
+            await preparedSkillRefresh(setup.wave3MatchSetup);
+          if (url.searchParams.get('preparation') !== preparation.hash) {
+            sendJson(response,409,{ok:false,reason:'SKILL_PREPARATION_BINDING_MISMATCH'}); return;
+          }
+          const packet=sectionInput(url.searchParams.get('skillId'),url.searchParams.get('section'));
+          if (!packet) {sendJson(response,404,{ok:false,reason:'SKILL_SECTION_UNKNOWN'}); return;}
+          const faction = url.searchParams.get('faction');
+          const recordKey = url.searchParams.get('record');
+          if (faction === null && recordKey === null) {
+            const lookups = factionChoicesForSection(packet.skillId);
+            sendJson(response,200,{ok:true,packet,lookups:{eligibleFactions:lookups, parameters:['faction','record']}});
+            return;
+          }
+          if (!factionChoicesForSection(packet.skillId).includes(faction)) {
+            sendJson(response,422,{ok:false,reason:'SKILL_SECTION_FACTION_OUT_OF_SCOPE'}); return;
+          }
+          const board = await planningBoard(setup);
+          const choice = inspectFactionChoice({packet, faction, recordKey, builder:board.armyBuilderPort, setup:setup.wave3MatchSetup});
+          if (!choice) {sendJson(response,404,{ok:false,reason:'SKILL_SECTION_CHOICE_INELIGIBLE'}); return;}
+          sendJson(response,200,{ok:true,choice}); return;
+        }
+        if (setup && request.method === 'POST' && url.pathname === ROSTER_PLANNING_WORKSPACE_API_PREFIX + '/historical-plan-impact') {
+          const {inspectHistoricalPlan}=await preparedSkillRefresh(setup.wave3MatchSetup);
+          try {
+            const impact=inspectHistoricalPlan(requestBody.body?.plan,setup.wave3MatchSetup);
+            sendJson(response,200,{ok:true,impact});
+          } catch(error) {
+            if (error.message==='WAVE3_PLAN_REFRESH_ORIGIN_UNSUPPORTED') sendJson(response,409,{ok:false,reason:error.message});
+            else if (String(error.code??error.message).startsWith('ROSTER_'))
+              sendJson(response,422,{ok:false,reason:'ROSTER_PLAN_INVALID'});
+            else throw error;
+          }
+          return;
+        }
+        if (setup && request.method === 'GET' && url.pathname === ROSTER_PLANNING_WORKSPACE_API_PREFIX + '/match-setup') {
+          sendJson(response,200,await setupPreview(setup));
+          return;
+        }
+        const result = await (await (setup ? scopedModule(setup) : getModule())).handle({
           method: request.method,
           pathname: url.pathname,
           query: url.searchParams,
@@ -176,15 +336,16 @@ export async function createRosterWorkspaceServerV1(input = {}) {
       });
       response.end(body);
     } catch (error) {
-      sendJson(response, error?.message === "PAYLOAD_TOO_LARGE" ? 413 : 500, {
-        ok: false,
-        error: error instanceof Error ? error.message : String(error),
-      });
+      const reason = error instanceof Error ? error.message : String(error);
+      const status = reason === 'PRODUCT_SETUP_NOT_FOUND' ? 404
+        : reason === "WAVE3_PLANNING_QUALIFIED_STRATEGY_RELEASE_REQUIRED" ? 409
+        : reason === "PAYLOAD_TOO_LARGE" ? 413 : 500;
+      sendJson(response, status, {ok: false, error: reason});
     }
   });
   await new Promise((resolve, reject) => {
     server.once("error", reject);
-    server.listen(0, "127.0.0.1", resolve);
+    server.listen(input.port ?? 0, "127.0.0.1", resolve);
   });
   const address = server.address();
   if (!address || typeof address !== "object") {
@@ -200,7 +361,8 @@ export async function createRosterWorkspaceServerV1(input = {}) {
     liveRoomLaunchAttached: Boolean(input.roomLaunchPort),
     async close() {
       await new Promise((resolve) => server.close(resolve));
-      await module.closeDecisionWorkflows();
+      const opened = await Promise.allSettled([modulePromise, ...scopedModules.values()].filter(Boolean));
+      await Promise.all(opened.filter(row => row.status === 'fulfilled').map(row => row.value.closeDecisionWorkflows()));
     },
   };
 }

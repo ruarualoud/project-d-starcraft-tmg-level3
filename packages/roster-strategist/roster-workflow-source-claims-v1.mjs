@@ -8,7 +8,8 @@ import {rosterInquiryReviewStageMismatchV1} from './roster-inquiry-review-stage-
 import {rosterSourceConditionDeliveryGapV1} from './roster-experiment-source-repair-v1.mjs';
 import {rosterSavedMeasurementScopeGapV1} from './roster-measurement-assessment-scope-v1.mjs';
 import {batchRosterSourceChecksV1,rosterSourceCheckBindingV1} from './roster-source-check-batches-v1.mjs';
-export const ROSTER_MATERIAL_SOURCE_CLAIM_CONTRACT_VERSION_V1=9;
+import {rosterSourceScopeExtensionV1,rosterSourceScopeConditionHashV1} from './roster-source-scope-extension-v1.mjs';
+export const ROSTER_MATERIAL_SOURCE_CLAIM_CONTRACT_VERSION_V1=10;
 const contractVersion=ROSTER_MATERIAL_SOURCE_CLAIM_CONTRACT_VERSION_V1;
 const clone=value=>structuredClone(value);
 const verdicts=new Set(['supported','conditional','needs_evidence','requires_revision']);
@@ -23,12 +24,29 @@ async function sameAuthorScope({state,previous,conditions,store}){
   const original=(await store.get(author.resultRef)).value?.experimentConclusion;
   return !!original&&hash(original.conditions??[])===hash(conditions);
 }
-async function findCachedClaim({state,owner,sourceHash,sourceHashForVersion=()=>sourceHash,hashFor,store,sourceNumbers,conditions,excludedIds=new Set()}){
+async function findCachedClaim({state,owner,sourceHash,sourceHashForVersion=()=>sourceHash,hashFor,store,sourceNumbers,conditions,excludedIds=new Set(),eligibleIds=null,answerRef=null,legacyReviewContext=null}){
   for(const previous of [...state.work].reverse()){
-    if(excludedIds.has(previous.id))continue;
-    const binding=rosterSourceCheckBindingV1(previous,hashFor(previous.materialClaimContractVersion));
-    if(![1,2,3,4,5,6,7,8,contractVersion].includes(previous.materialClaimContractVersion)
-      ||binding?.hash!==hashFor(previous.materialClaimContractVersion)
+    if(excludedIds.has(previous.id)||(eligibleIds&&!eligibleIds.has(previous.id)))continue;
+    if(answerRef&&previous.inputs?.claimScope?.value?.originalAnswerRef!==answerRef)continue;
+    let expectedHash=hashFor(previous.materialClaimContractVersion);
+    let binding=rosterSourceCheckBindingV1(previous,expectedHash);
+    // Older fingerprints included the parent's coverage question even though
+    // the independent source judge never received it. Verify the OLD key in
+    // its actual saved parent, with unchanged delivered review semantics.
+    if(!binding&&legacyReviewContext&&previous.materialClaimContractVersion<10){
+      for(const parent of state.work.filter(w=>w.sourceFidelityMode==='atomic_claims_v1'
+        &&w.materialClaimReviewIds?.includes(previous.id))){
+        if(['comparisonPurpose','comparisonDecisionContract'].some(key=>
+          hash(parent.inputs[key]??null)!==hash(legacyReviewContext[key]??null)))continue;
+        const candidateHash=hashFor(previous.materialClaimContractVersion,parent.inputs.question);
+        const candidate=rosterSourceCheckBindingV1(previous,candidateHash);
+        const criterion=previous.inputs.review?.value?.obligations?.find(o=>o.checkId===candidate?.checkId)?.criterion;
+        if(!candidate||criterion?.replace(/^For claimBatch\.assertions\[\d+\] ONLY: /u,'')!==legacyReviewContext.criterion)continue;
+        expectedHash=candidateHash;binding=candidate;break;
+      }
+    }
+    if(![1,2,3,4,5,6,7,8,9,contractVersion].includes(previous.materialClaimContractVersion)
+      ||binding?.hash!==expectedHash
       ||binding?.sourceHash!==sourceHashForVersion(previous.materialClaimContractVersion)||previous.role!=='roster_workflow_final_review'
       ||previous.status!=='evidence_ready'||!previous.resultRef
       ||!rosterWorkflowBindingsMatchV1(previous.bindings,owner.bindings))continue;
@@ -50,6 +68,25 @@ async function findCachedClaim({state,owner,sourceHash,sourceHashForVersion=()=>
   return null;
 }
 
+// A proven repair of a missing continuation scope changes coverage, not an
+// unchanged source assertion. Only the exact prior root's passed claim checks
+// may use their original question hash. Hypotheses and new assertions do not.
+function previousContinuationClaimScope({state,owner,root}){
+  const repair=root.sourceReviewRepairHandoff,question=root.inputs?.question?.value;
+  if(question?.authorizationScope!=='saved_continuation_predicates'
+    ||question.continuationSource?.continuationWorkId!==owner.id
+    ||repair?.reviewId!==root.sourceReviewRecheckOf||repair?.ownerId!==owner.id)return null;
+  if(!repair.staleRequests?.some(r=>r.workId===repair.reviewId&&r.missingInquiryStage
+    &&r.authorizationScope==='saved_continuation_predicates'&&r.unassignedPredicateErrors?.length))return null;
+  const previous=state.work.find(w=>w.id===root.sourceReviewRecheckOf);
+  if(previous?.experimentSourceReviewOf!==owner.id||previous.status!=='evidence_ready'
+    ||!previous.resultRef||!rosterWorkflowBindingsMatchV1(previous.bindings,owner.bindings)
+    ||!previous.inputs?.question||!previous.materialClaims?.length)return null;
+  for(const key of ['comparisonPurpose','comparisonDecisionContract'])
+    if(hash(previous.inputs[key]??null)!==hash(root.inputs[key]??null))return null;
+  return {question:previous.inputs.question,eligibleIds:new Set(previous.materialClaims.map(c=>c.reviewId))};
+}
+
 export async function createRosterSourceClaimReviewV1({state,owner,conclusion,sources,root,store}){
   const excludedIds=new Set([...state.work,root].flatMap(w=>
     (w.sourceReviewRepairHandoff?.staleRequests??[]).map(r=>r.workId)));
@@ -62,8 +99,14 @@ export async function createRosterSourceClaimReviewV1({state,owner,conclusion,so
     instruction:'These are the author-declared conditions applying to each assertion, copied unchanged, NOT independent evidence. Use them to resolve scoped terms such as measured arm and to delimit the claimed result; verify the conditions against the cited sources. Do not require every sentence to repeat them. They cannot erase an explicitly false quantity, subject, group result, mechanism or contradiction. Mere repetition/style preferences are not missing factual proof. Do not expand this local assertion into proof of an expressly unmeasured alternative.'}};
   const headers=[...text.matchAll(/^\s*\d+\)[^：\n]*：/gmu)].map(m=>({index:m.index,text:m[0]}));
   const sourceHash=hash(sources.map(s=>({id:s.projection.value.sourceEvidenceId,ref:s.projection.value.sourceArtifactRef})));
-  const question=root.inputs.question;
+  const question=root.inputs.question,previousScope=previousContinuationClaimScope({state,owner,root});
+  const scopeExtension=await rosterSourceScopeExtensionV1({state,owner,root,conclusion,readArtifact:store.get});
+  const scopePrior=scopeExtension&&state.work.find(w=>w.id===scopeExtension.previousReviewId);
+  let inheritedScopeCount=0;
   const criterion=root.inputs.review.value.obligations.find(c=>c.checkId==='source_fidelity').criterion;
+  const materialCriterion=criterion+" Check ONLY this exact assertion under the supplied author conditions in claimScope, checking those conditions against sources. Treat its explicit subjects and metric ownership literally. A source row naming one attacker is not an explicitly claimed group result; scope cannot erase a contradiction. Do not invent an unqualified/global claim from a scoped measured result or require repetitive phrasing. A zero in a finite sampled estimate is not by itself a proof of impossibility. Preserve justified conditional statements and correctly attributed approximate values.";
+  const sourceReviewContext={criterion:materialCriterion,comparisonPurpose:root.inputs.comparisonPurpose??null,
+    comparisonDecisionContract:root.inputs.comparisonDecisionContract??null};
   const sourceInput=s=>({source:'evidence',id:s.projection.id,pointer:'',
     ...(!rosterWorkflowBindingsMatchV1(s.projection.bindings,owner.bindings)?{scopeUsage:'historical_reference'}:{})});
   const sourceDirectory=sources.map(s=>({sourceEvidenceId:s.projection.value.sourceEvidenceId,
@@ -85,12 +128,25 @@ export async function createRosterSourceClaimReviewV1({state,owner,conclusion,so
     // retain the whole source context. Older hashes remain explicitly readable.
     const localSourceHash=hash((selected.length?selected:sources).map(s=>({id:s.projection.value.sourceEvidenceId,ref:s.projection.value.sourceArtifactRef})));
     const sourceHashForVersion=version=>version>=4?localSourceHash:sourceHash;
-    const hashFor=version=>hash({version,text:part.segment,heading,sourceHash:sourceHashForVersion(version),question,
-      ...(version>=9?{conditions}:{})}),claimHash=hashFor(contractVersion);
+    const hashFor=(version,assignedQuestion=question,assignedConditions=conditions)=>hash({version,text:part.segment,heading,sourceHash:sourceHashForVersion(version),
+      ...(version>=10?{sourceReviewContext}:{question:assignedQuestion}),
+      ...(version>=9?{conditions:assignedConditions}:{})}),claimHash=hashFor(contractVersion);
     const sourceNumbers=new Set((selected.length?selected:sources).flatMap(s=>[s.originalNumber,...s.citedNumbers]));
-    const cached=await findCachedClaim({state,owner,sourceHash,sourceHashForVersion,hashFor,store,sourceNumbers,conditions,excludedIds});
+    let cached=await findCachedClaim({state,owner,sourceHash,sourceHashForVersion,hashFor,store,sourceNumbers,conditions,excludedIds,legacyReviewContext:sourceReviewContext});
+    if(!cached&&previousScope)cached=await findCachedClaim({state,owner,sourceHash,sourceHashForVersion,
+      hashFor:version=>hashFor(version,previousScope.question),store,sourceNumbers,conditions,excludedIds,
+      eligibleIds:previousScope.eligibleIds,answerRef:owner.resultRef});
+    let scopeExtensionInherited=false;
+    if(!cached&&scopeExtension){
+      cached=await findCachedClaim({state,owner,sourceHash,sourceHashForVersion,
+        hashFor:(version,q=question)=>hashFor(version,q,scopeExtension.previousConditions),store,sourceNumbers,
+        conditions:scopeExtension.previousConditions,excludedIds,legacyReviewContext:sourceReviewContext,
+        eligibleIds:new Set(scopePrior.materialClaims.map(c=>c.reviewId))});
+      if(cached){scopeExtensionInherited=true;inheritedScopeCount++;}
+    }
     const id=cached?.id??`${root.id}:claim:${claims.length}`;
     claims.push({text:part.segment,start:part.index,end:part.index+part.segment.length,heading,hash:claimHash,reviewId:id,
+      ...(scopeExtensionInherited?{scopeExtensionInherited:true}:{}),
       checkBinding:{hash:cached?.materialClaimHash??claimHash,sourceHash:cached?.materialClaimSourceHash??localSourceHash,
         checkId:cached?.materialClaimCheckId??'source_fidelity',
         contractVersion:cached?.materialClaimContractVersion??contractVersion},
@@ -116,6 +172,7 @@ export async function createRosterSourceClaimReviewV1({state,owner,conclusion,so
       ruleJobs.push({id:matrixId,role:'roster_workflow_final_review',bindings:owner.bindings,
         sourceFieldMatrixHash:fieldHash,sourceFieldMatrixVersion:1,materialClaimReviewOf:owner.id,
         inputs:{claimScope:clone(claimScope),...(root.inputs.comparisonPurpose?{comparisonPurpose:clone(root.inputs.comparisonPurpose)}:{}),
+          ...(root.inputs.comparisonDecisionContract?{comparisonDecisionContract:clone(root.inputs.comparisonDecisionContract)}:{}),
           question:{source:'literal',value:{scope:'structured_ability_field_alignment',
           instruction:'Compare ONLY this exact assertion to each source ability. A shared qualifier attached to a list of effects applies to EACH named effect. Explicitly check phase, Active/Reaction/Passive, trigger, target restrictions, range and payment. A generally correct conclusion about unmeasured benefits does not excuse a wrong mechanism. Never rewrite the assertion into what the source says before judging it.'}},
           claim:{source:'literal',value:{exactText:part.segment,originalAnswerRef:owner.resultRef,start:part.index,end:part.index+part.segment.length}},
@@ -128,6 +185,7 @@ export async function createRosterSourceClaimReviewV1({state,owner,conclusion,so
     }
     if(cached)continue;
     const inputs={claimScope:clone(claimScope),...(root.inputs.comparisonPurpose?{comparisonPurpose:clone(root.inputs.comparisonPurpose)}:{}),
+      ...(root.inputs.comparisonDecisionContract?{comparisonDecisionContract:clone(root.inputs.comparisonDecisionContract)}:{}),
       question:{source:'literal',value:{scope:'one_material_source_assertion',
       instruction:'Check only the exact assertion, not the whole experiment or section. Overall question coverage and process completeness belong to the separate parent review. A pure strategic preference is advisory, not a claimed measurement; verify any empirical premise it actually asserts.'}},
       claim:{source:'literal',value:{exactText:part.segment,
@@ -139,7 +197,7 @@ export async function createRosterSourceClaimReviewV1({state,owner,conclusion,so
         instruction:'Read exact relevant sources by their stable numbers. These are cited sources, not all automatically true; proposal/Plan text is not Rules evidence.'}},
       review:{source:'literal',value:{experimentalSourceReviewVersion:4,materialClaimContractVersion:contractVersion,requirementClassificationVersion:1,acceptanceStageContractVersion:2,
         instruction:'Classify follow-up questions relative to THIS exact assertion. A missing source-backed current premise remains necessary_fact. A future legal choice or outcome is not a missing measurement unless this assertion actually promises that measurement; retain it as an explicitly justified future_condition or optional_probe. Never mark a missing current route, cost or causal comparison answered merely to pass. Do not require the whole Plan or future match as a source assertion prerequisite.',
-        obligations:[{checkId:'source_fidelity',criterion:criterion+' Check ONLY this exact assertion under the supplied author conditions in claimScope, checking those conditions against sources. Treat its explicit subjects and metric ownership literally. A source row naming one attacker is not an explicitly claimed group result; scope cannot erase a contradiction. Do not invent an unqualified/global claim from a scoped measured result or require repetitive phrasing. A zero in a finite sampled estimate is not by itself a proof of impossibility. Preserve justified conditional statements and correctly attributed approximate values.'}]}}};
+        obligations:[{checkId:'source_fidelity',criterion:materialCriterion}]}}};
     const priorRoot=root.sourceReviewRecheckOf&&state.work.find(w=>w.id===root.sourceReviewRecheckOf);
     const priorClaim=priorRoot?.materialClaims?.find(c=>c.text===part.segment);
     const priorWork=priorClaim&&state.work.find(w=>w.id===priorClaim.reviewId);
@@ -181,6 +239,7 @@ export async function createRosterSourceClaimReviewV1({state,owner,conclusion,so
       ...(cached?{reusedResultRef:cached.resultRef}:{})});
     if(cached)continue;
     const inputs={...(root.inputs.comparisonPurpose?{comparisonPurpose:clone(root.inputs.comparisonPurpose)}:{}),
+      ...(root.inputs.comparisonDecisionContract?{comparisonDecisionContract:clone(root.inputs.comparisonDecisionContract)}:{}),
       question:{source:'literal',value:{scope:'one_local_hypothesis_verdict',
       instruction:'Check this proposed verdict against the actual declared design and measured sources. This is not final army/Plan selection or global optimality.'}},
       hypothesisAssessment:{source:'literal',value:clone(assessment)},
@@ -194,6 +253,36 @@ export async function createRosterSourceClaimReviewV1({state,owner,conclusion,so
     jobs.push({id,role:'roster_workflow_final_review',bindings:owner.bindings,materialClaimReviewOf:owner.id,
       materialClaimContractVersion:contractVersion,materialClaimHash:claimHash,materialClaimSourceHash:sourceHash,inputs});
   }
+  if(inheritedScopeCount)for(const condition of scopeExtension.addedConditions){
+    const sourcePointer='/experimentConclusion/conditions/'+condition.index;
+    const claimHash=rosterSourceScopeConditionHashV1({scope:scopeExtension,condition,sourceHash});
+    const cached=await findCachedClaim({state,owner,sourceHash,hashFor:()=>claimHash,store,excludedIds,
+      conditions:scopeExtension.previousConditions});
+    const id=cached?.id??root.id+':scope-condition:'+condition.index;
+    claims.push({kind:'scope_extension_condition',sourcePointer,text:condition.text,hash:claimHash,reviewId:id,
+      checkBinding:{hash:cached?.materialClaimHash??claimHash,sourceHash,
+        checkId:cached?.materialClaimCheckId??'source_fidelity',contractVersion},
+      ...(cached?{reusedResultRef:cached.resultRef}:{})});
+    if(cached)continue;
+    const inputs={
+      claimScope:{source:'literal',value:{...clone(claimScope.value),
+        originalAnswerRef:scopeExtension.previousResultRef,conditions:clone(scopeExtension.previousConditions),
+        instruction:claimScope.value.instruction+' The new condition being checked is NOT a premise. Verify only that added assertion under the previous conditions; the previous successful source checks do not approve it.'}},
+      question:{source:'literal',value:{scope:'one_added_scope_condition',sourcePointer,
+        instruction:'Check ONLY the added scope assertion. No global strategy choice, new experiment or future-round expansion.'}},
+      claim:{source:'literal',value:{exactText:condition.text,sourcePointer,originalAnswerRef:owner.resultRef,
+        originalAnswerEvidence:{sourceEvidenceId:'role:'+owner.id,pointer:sourcePointer,
+          instruction:'Author proposal only; not independent evidence.'}}},
+      sourceDirectory:{source:'literal',value:{entries:sourceDirectory,directoryIsNotARead:true}},
+      review:{source:'literal',value:{experimentalSourceReviewVersion:4,materialClaimContractVersion:contractVersion,
+        requirementClassificationVersion:1,acceptanceStageContractVersion:2,
+        obligations:[{checkId:'source_fidelity',criterion:materialCriterion}]}}
+    };
+    sources.forEach((s,i)=>{inputs['selectedSource'+i]=sourceInput(s);});
+    jobs.push({id,role:'roster_workflow_final_review',bindings:owner.bindings,materialClaimReviewOf:owner.id,
+      materialClaimContractVersion:contractVersion,materialClaimHash:claimHash,materialClaimSourceHash:sourceHash,inputs});
+  }
+
   const batchedJobs=batchRosterSourceChecksV1({jobs,claims,rootId:root.id});
   const inputs=Object.fromEntries(Object.entries(root.inputs).filter(([key])=>!/^citedSource\d+$/u.test(key)));
   inputs.sourceDirectory={source:'literal',value:{entries:sourceDirectory,directoryIsNotARead:true}};
@@ -204,6 +293,7 @@ export async function createRosterSourceClaimReviewV1({state,owner,conclusion,so
   ruleFields.forEach((c,i)=>{inputs['ruleFieldCheck'+i]={source:'work',id:c.reviewId,pointer:'/value'};});
   for(const job of [...batchedJobs,...ruleJobs])job.inputs.reviewSubject={source:'literal',value:{sourceEvidenceId:'role:'+owner.id}};
   return {...root,inputs,sourceFidelityMode:'atomic_claims_v1',materialClaimContractVersion:contractVersion,
+    ...(inheritedScopeCount?{sourceScopeExtension:scopeExtension}:{}),
     materialClaimSourceHash:sourceHash,materialSegments:segments,materialClaims:claims,materialClaimReviewIds:claims.map(c=>c.reviewId),claimReviews:batchedJobs,
     sourceFieldMatrixVersion:1,materialRuleFields:ruleFields,ruleFieldReviews:ruleJobs};
 }

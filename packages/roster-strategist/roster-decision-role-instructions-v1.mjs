@@ -1,3 +1,4 @@
+import {rosterConstructionInquiryReturnV1,ROSTER_CONSTRUCTION_INQUIRY_INSTRUCTION_V1} from './roster-construction-inquiry-return-v1.mjs';
 // Explicit workflow roles replace, rather than append to, the legacy reviewer.
 // Dispatch identity/authority remains owned by the workspace, not model prose.
 const common = [
@@ -47,6 +48,16 @@ const roles = {
   ],
 };
 export function rosterDecisionRoleInstructionsV1(request) {
+  if(rosterConstructionInquiryReturnV1(request?.promptNodes?.find(n=>n.kind==='workflow_role_assignment')))
+    return ['Use the CURRENT attached command schema and explicit model-owned choice; do not copy the rejected proposal.',
+      ROSTER_CONSTRUCTION_INQUIRY_INSTRUCTION_V1,...common].join('\n');
+  if(request?.roundKind==='roster_workflow_final_review'
+    &&request.promptNodes?.some(n=>n.kind==='inventory_claim_extraction'&&n.version===1))return [
+    'You are the inventory assertion extractor for the supplied exact Plan passages, not the strategic reviewer, fact judge or Plan author.',
+    'Return only the attached extraction schema. Cover every passage and map its literal current-inventory assertions to the supplied subject/field handles. Preserve assertions even when you suspect they are false; Host compares them with the current Native inventory after extraction.',
+    'Quote the exact text. Do not narrow a collective claim to convenient members, infer unmentioned purchases, rewrite a claim into a correct one, or return checks/verdicts. Unclear inventory scope is ambiguous; tactical benefits and rule effects belong to other review obligations.',
+    'An extraction repair corrects the named parameters under the same role and same passages. It does not authorize a new strategy review, evidence investigation or Plan edit. Provide public reasons only, never hidden reasoning or scratchpads.',
+  ].join('\n');
   if(request?.roundKind==='roster_workflow_strategy_decision'
     &&request.promptNodes?.some(n=>n.kind==='strategy_semantic_repair'&&n.version===3))return [
     'AUTHOR DECISION COMMAND: YOU own the returned strategic choice. Return read/catalogue for necessary saved evidence, or decide with explicit next-operation arguments and numbered questionUpdates. Do not repeat the rejected full decisions envelope.',

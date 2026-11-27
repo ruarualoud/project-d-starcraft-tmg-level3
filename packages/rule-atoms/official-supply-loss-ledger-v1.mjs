@@ -61,6 +61,10 @@ function ledgerBody(ledger) {
 }
 
 function classifyCause(events, pieceId, ownerSideKey) {
+  const consume = events.find(event => event?.type === 'consume_model_removed' && event.pieceId === pieceId
+    && event.sideKey === ownerSideKey && event.sourceDefinitionId === 'unit:defiler/consume-any-phase@1');
+  if (consume) return { causeKind: 'consume_resource_payment', causalSideKey: ownerSideKey,
+    attributionStatus: 'exact_rules_owned_self_removal', scoreable: false };
   const disengage = events.find((event) => (
     event?.type === "disengage_casualty"
       && event.pieceId === pieceId
@@ -98,8 +102,21 @@ function classifyCause(events, pieceId, ownerSideKey) {
       scoreable: false,
     };
   }
+  const automaticHits = events.find(event => ['automatic_hits_damage', 'ability_direct_damage'].includes(event?.type)
+    && event.targetId === pieceId && typeof event.sourceDefinitionId === 'string'
+    && Array.isArray(event.casualtyModelIds) && event.casualtyModelIds.length > 0);
+  if (automaticHits) {
+    const causalSideKey = side(automaticHits.sideKey, 'SUPPLY_LOSS_CAUSAL_SIDE_INVALID');
+    if (causalSideKey === ownerSideKey && automaticHits.damageOrigin === 'friendly_special_ability') {
+      return { causeKind: 'friendly_special_ability_damage', causalSideKey,
+        attributionStatus: 'exact_friendly_special_ability_witness', scoreable: false };
+    }
+    return { causeKind: 'opponent_special_ability_damage', causalSideKey,
+      attributionStatus: causalSideKey === ownerSideKey ? 'unresolved_official_source' : 'exact_opponent_special_ability_witness',
+      scoreable: causalSideKey !== ownerSideKey };
+  }
   const attack = events.find((event) => (
-    ["close_combat_attack", "ranged_attack"].includes(event?.type)
+    ["close_combat_attack", "ranged_attack", "impact_damage"].includes(event?.type)
       && event.targetId === pieceId
       && Array.isArray(event.casualtyModelIds)
       && event.casualtyModelIds.length > 0
@@ -185,12 +202,15 @@ export function verifyOfficialSupplyLossLedgerV1(ledger, options = {}) {
       || supplyDelta !== preCurrentSupply - postCurrentSupply
       || ![
         "opponent_attack_damage",
+        "opponent_special_ability_damage",
+        "friendly_special_ability_damage",
+        "consume_resource_payment",
         "out_of_coherency_removal",
         "disengage_removal",
         "unknown_supply_reduction",
       ]
         .includes(entry.causeKind)
-      || !["exact_opponent_attack_witness", "unresolved_official_source"]
+      || !["exact_opponent_attack_witness", "exact_opponent_special_ability_witness", "exact_friendly_special_ability_witness", "exact_rules_owned_self_removal", "unresolved_official_source"]
         .includes(entry.attributionStatus)
       || typeof entry.scoreable !== "boolean"
       || hashStarcraftTmgContract(entryBody(entry)) !== entry.entryHash) {
@@ -199,8 +219,19 @@ export function verifyOfficialSupplyLossLedgerV1(ledger, options = {}) {
     if (entry.causalSideKey !== null) {
       side(entry.causalSideKey, "SUPPLY_LOSS_CAUSAL_SIDE_INVALID");
     }
+    if ((entry.causeKind === 'friendly_special_ability_damage' || entry.attributionStatus === 'exact_friendly_special_ability_witness')
+      && (entry.causeKind !== 'friendly_special_ability_damage' || entry.attributionStatus !== 'exact_friendly_special_ability_witness'
+        || entry.causalSideKey !== ownerSideKey || entry.scoreable)) {
+      fail('SUPPLY_LOSS_LEDGER_ATTRIBUTION_INVALID', String(index + 1));
+    }
+    if ((entry.causeKind === 'consume_resource_payment' || entry.attributionStatus === 'exact_rules_owned_self_removal')
+      && (entry.causeKind !== 'consume_resource_payment' || entry.attributionStatus !== 'exact_rules_owned_self_removal'
+        || entry.causalSideKey !== ownerSideKey || entry.scoreable)) {
+      fail('SUPPLY_LOSS_LEDGER_ATTRIBUTION_INVALID', String(index + 1));
+    }
     if (entry.scoreable === true
-      && (entry.attributionStatus !== "exact_opponent_attack_witness"
+      && (entry.attributionStatus !== (entry.causeKind === "opponent_special_ability_damage"
+        ? "exact_opponent_special_ability_witness" : "exact_opponent_attack_witness")
         || entry.causalSideKey !== otherSide(ownerSideKey))) {
       fail("SUPPLY_LOSS_LEDGER_ATTRIBUTION_INVALID", String(index + 1));
     }

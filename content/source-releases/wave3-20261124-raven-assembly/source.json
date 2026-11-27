@@ -1,0 +1,182 @@
+{
+  "schema": "starcraft_tmg_raven_annotated_assembly_estimate_v1",
+  "scope": "versioned_digital_tabletop_estimate",
+  "source": {
+    "attachmentRef": "content/source-releases/wave3-20261124-raven-assembly/step28.png",
+    "byteLength": 298770,
+    "sha256": "6eb2e82076bac32c94d2d2fd88dcdd9f125e62bc170a6fc64b5a88cb39cdaebc",
+    "basis": "build/ticket-28-wave3-source-candidate-20261112-v1/raw/StarCraft-Terran-Raven_EN.pdf",
+    "basisSHA256": "1444373de1db0180388a19accc6643532a72e8ccd0883b0179e09ce2a5653cfd",
+    "page": 9,
+    "step": 28,
+    "calibratedAxes": "annotated transverse span only",
+    "verifiedOuterSpansMm": [
+      100,
+      100
+    ]
+  },
+  "observations": [
+    {
+      "position": "near_root",
+      "diameterRangeMm": [
+        9,
+        10
+      ],
+      "selectedWidthMm": 9.5
+    },
+    {
+      "position": "half_arm",
+      "diameterRangeMm": [
+        5,
+        6
+      ],
+      "selectedWidthMm": 5.5
+    },
+    {
+      "position": "three_quarter_arm",
+      "diameterRangeMm": [
+        4,
+        4
+      ],
+      "selectedWidthMm": 4
+    },
+    {
+      "position": "near_tip",
+      "diameterRangeMm": [
+        2,
+        2
+      ],
+      "selectedWidthMm": 2
+    }
+  ],
+  "assumptions": {
+    "singleArmVisible": true,
+    "applySameWidthsToAllFourArms": true,
+    "sampleDistancesFromCenterMm": {
+      "half_arm": 25,
+      "three_quarter_arm": 37.5,
+      "near_tip": 50
+    },
+    "innerCornerCoordinatesMm": [
+      4.75,
+      4.75
+    ],
+    "interpolation": "piecewise_linear",
+    "independentDepthScaleObserved": false,
+    "actualPhysicalRavenDimensions": false
+  },
+  "localVerticesMilliInches": [
+    {
+      "xMilliInches": -1968,
+      "yMilliInches": -39
+    },
+    {
+      "xMilliInches": -1476,
+      "yMilliInches": -79
+    },
+    {
+      "xMilliInches": -984,
+      "yMilliInches": -108
+    },
+    {
+      "xMilliInches": -187,
+      "yMilliInches": -187
+    },
+    {
+      "xMilliInches": -108,
+      "yMilliInches": -984
+    },
+    {
+      "xMilliInches": -79,
+      "yMilliInches": -1476
+    },
+    {
+      "xMilliInches": -39,
+      "yMilliInches": -1968
+    },
+    {
+      "xMilliInches": 39,
+      "yMilliInches": -1968
+    },
+    {
+      "xMilliInches": 79,
+      "yMilliInches": -1476
+    },
+    {
+      "xMilliInches": 108,
+      "yMilliInches": -984
+    },
+    {
+      "xMilliInches": 187,
+      "yMilliInches": -187
+    },
+    {
+      "xMilliInches": 984,
+      "yMilliInches": -108
+    },
+    {
+      "xMilliInches": 1476,
+      "yMilliInches": -79
+    },
+    {
+      "xMilliInches": 1969,
+      "yMilliInches": -39
+    },
+    {
+      "xMilliInches": 1969,
+      "yMilliInches": 39
+    },
+    {
+      "xMilliInches": 1476,
+      "yMilliInches": 79
+    },
+    {
+      "xMilliInches": 984,
+      "yMilliInches": 108
+    },
+    {
+      "xMilliInches": 187,
+      "yMilliInches": 187
+    },
+    {
+      "xMilliInches": 108,
+      "yMilliInches": 984
+    },
+    {
+      "xMilliInches": 79,
+      "yMilliInches": 1476
+    },
+    {
+      "xMilliInches": 39,
+      "yMilliInches": 1969
+    },
+    {
+      "xMilliInches": -39,
+      "yMilliInches": 1969
+    },
+    {
+      "xMilliInches": -79,
+      "yMilliInches": 1476
+    },
+    {
+      "xMilliInches": -108,
+      "yMilliInches": 984
+    },
+    {
+      "xMilliInches": -187,
+      "yMilliInches": 187
+    },
+    {
+      "xMilliInches": -984,
+      "yMilliInches": 108
+    },
+    {
+      "xMilliInches": -1476,
+      "yMilliInches": 79
+    },
+    {
+      "xMilliInches": -1968,
+      "yMilliInches": 39
+    }
+  ]
+}

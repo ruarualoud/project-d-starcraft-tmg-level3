@@ -1,3 +1,4 @@
+import { projectOfficialUnitRestrictionsV1 } from './official-unit-restrictions-v1.mjs';
 import { hashStarcraftTmgContract } from
   "../authoritative-engine/referee-crypto-v1.mjs";
 import { verifyOfficialReserveLifecycleDataBundleV1 } from
@@ -38,6 +39,11 @@ function nonEmpty(value, code) {
 function bundles(input) {
   verifyOfficialReserveLifecycleDataBundleV1(input.reserveLifecycleDataBundle);
   verifyOfficialUnitCardSupplyDataBundleV1(input.unitCardSupplyDataBundle);
+  if (input.reserveLifecycleDataBundle.scope === 'current_release_return_to_reserves_only'
+    && (input.reserveLifecycleDataBundle.sourceSnapshotHash !== input.unitCardSupplyDataBundle.sourceSnapshotHash
+      || input.reserveLifecycleDataBundle.normalizedDatasetHash !== input.unitCardSupplyDataBundle.normalizedDatasetHash)) {
+    fail('RESERVE_RETURN_UNIT_SOURCE_MISMATCH');
+  }
   return {
     reserve: input.reserveLifecycleDataBundle,
     unitSupply: input.unitCardSupplyDataBundle,
@@ -127,10 +133,10 @@ function offBattlefieldPatch(piece, patch = {}) {
     })),
   };
 }
-function leftArtifactIds(entries, pieceId) {
+function leftArtifactIds(entries, pieceId, ownerField = 'leftOnBattlefieldByPieceId', idField = 'id') {
   return entries.filter((entry) => (
-    entry?.leftOnBattlefieldByPieceId === pieceId && entry?.stayInPlay !== true
-  )).map((entry) => nonEmpty(entry.id,
+    entry?.[ownerField] === pieceId && entry?.stayInPlay !== true
+  )).map((entry) => nonEmpty(entry[idField],
     "RESERVE_LIFECYCLE_LEFT_ARTIFACT_ID_REQUIRED")).sort();
 }
 function pieceFor(state, pieceId) {
@@ -144,6 +150,9 @@ function common(input, procedureKind) {
     fail("RESERVE_LIFECYCLE_PROCEDURE_KIND_INVALID");
   }
   const { reserve, unitSupply } = bundles(input);
+  if (reserve.scope === 'current_release_return_to_reserves_only' && procedureKind !== 'return_to_reserves') {
+    fail('RESERVE_RETURN_PROCEDURE_OUTSIDE_CURRENT_SCOPE', procedureKind);
+  }
   const state = validateState(input);
   return { reserve, unitSupply, state };
 }
@@ -181,6 +190,9 @@ export function resolveOfficialArmyInitialReservesV1(input = {}) {
 export function resolveOfficialReturnToReservesV1(input = {}) {
   const { reserve, unitSupply, state } = common(input, "return_to_reserves");
   const piece = pieceFor(state, input.pieceId);
+  if (projectOfficialUnitRestrictionsV1(state, piece.id).cannotReturnToReserves) {
+    fail('UNIT_RESTRICTION_RESERVE_RETURN_PROHIBITED', piece.id);
+  }
   if (!live(piece) || piece.isOnField !== true || piece.isInReserves === true
     || !HASH.test(String(input.triggerReceiptHash || ""))
     || input.triggerAuthority !== "rule_effect_resolution") {
@@ -188,12 +200,17 @@ export function resolveOfficialReturnToReservesV1(input = {}) {
   }
   const supply = exactCurrentSupply(piece, unitSupply);
   const retained = retainedState(piece, state);
-  const removeBoardTokenIds = leftArtifactIds(state.board.tokens, piece.id);
-  const removeEffectMarkerIds = leftArtifactIds(state.board.effectMarkers, piece.id);
-  const stayInPlayArtifactIds = [...state.board.tokens, ...state.board.effectMarkers]
-    .filter((entry) => entry?.leftOnBattlefieldByPieceId === piece.id
-      && entry?.stayInPlay === true)
-    .map((entry) => entry.id).sort();
+  const ownership = reserve.artifactOwnership;
+  const removeBoardTokenIds = leftArtifactIds(state.board.tokens, piece.id,
+    ownership?.tokenOwnerField, ownership?.tokenIdField);
+  const removeEffectMarkerIds = leftArtifactIds(state.board.effectMarkers, piece.id,
+    ownership?.effectMarkerOwnerField, ownership?.effectMarkerIdField);
+  const stayInPlayArtifactIds = [
+    ...state.board.tokens.filter(entry => entry?.[ownership?.tokenOwnerField || 'leftOnBattlefieldByPieceId'] === piece.id
+      && entry.stayInPlay === true).map(entry => entry[ownership?.tokenIdField || 'id']),
+    ...state.board.effectMarkers.filter(entry => entry?.[ownership?.effectMarkerOwnerField || 'leftOnBattlefieldByPieceId'] === piece.id
+      && entry.stayInPlay === true).map(entry => entry[ownership?.effectMarkerIdField || 'id']),
+  ].sort();
   return result({
     schema: "starcraft_tmg_official_return_to_reserves_resolution_v1",
     procedureKind: "return_to_reserves", pieceId: piece.id,

@@ -30,7 +30,15 @@ export interface WeaponProfile {
   keywords?: string; // 武器级关键词 (BURST FIRE, PIERCE等)
 }
 
+export interface AbilityTimingFact {
+  definitionId:string;
+  phase:string;
+  phaseOrigin:string;
+  timingHooks:string[];
+}
+
 export interface Upgrade {
+  ruleTiming?: AbilityTimingFact;
   name: string;
   description: string;
   phase?: string;
@@ -69,6 +77,7 @@ export interface UnitCard {
 
 // --- Tactical / Faction Card ---
 export interface CardBoost {
+  ruleTiming?: AbilityTimingFact;
   name: string;
   description: string;
   kind?: 'active' | 'reaction' | 'passive' | string;
@@ -141,6 +150,7 @@ export interface RosterUnit {
 }
 
 export interface ArmyList {
+  officialDatasetHash?: string;
   id: string;
   name: string;
   faction: Faction;

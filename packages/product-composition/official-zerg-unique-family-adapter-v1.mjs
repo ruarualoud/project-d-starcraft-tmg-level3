@@ -14,8 +14,14 @@ import { getOfficialCardBuildPaymentProfileV1 } from
   "../source-data/official-card-build-payment-data-bundle-v1.mjs";
 import { verifyOfficialCurrentProductAbilityDenominatorV1 } from
   "./official-current-product-ability-denominator-v1.mjs";
-import { resolveOfficialMatchLifecycleAbilityResourceCostV1 } from
+import { resolveOfficialMatchLifecycleAbilityResourceCostV1, quoteOfficialSelectedUnitPsionicLinkV1 } from
   "./official-match-lifecycle-family-adapter-v1.mjs";
+import { allowsOfficialAbilityUnitRecipientV13 } from
+  "../rule-atoms/official-structure-targeting-policy-v13.mjs";
+
+export const OFFICIAL_DOMINEERING_PRESENCE_DEFINITION_ID = 'unit:queen/domineering-presence-movement-phase@1';
+const domineeringSourceText = "Select another Friendly Unit Within 6\" (Line of Sight is not required). That Unit’s Supply characteristic is increased by 1 for Controlling and Contesting Mission Markers and completing objectives.";
+const selectedDomineeringSchema = 'starcraft_tmg_official_zerg_unique_domineering_source_bundle_v2';
 
 export const OFFICIAL_ZERG_UNIQUE_FAMILY_ADAPTER_ID =
   "official-zerg-unique-family-adapter-v1";
@@ -160,7 +166,85 @@ export function createOfficialZergUniqueFamilySourceBundleV1(input = {}) {
   return bundle;
 }
 
+export function createOfficialDomineeringPresenceSourceBundleV2(catalogue) {
+  verifyOfficialAbilityEffectIrCatalogueV1(catalogue);
+  const selected = catalogue.definitions.find(row => row.definitionId === OFFICIAL_DOMINEERING_PRESENCE_DEFINITION_ID);
+  if (selected?.recordKey !== 'army_units:queen' || selected.activationKind !== 'active'
+    || selected.phase !== 'movement' || selected.activationText !== '<Active>\n(1 Biomass)'
+    || selected.sourceText !== domineeringSourceText) fail('DOMINEERING_PRESENCE_SOURCE_UNSUPPORTED');
+  const route = compileRoute(selected);
+  return seal({ schema: selectedDomineeringSchema, semanticVersion: '2.0.0',
+    sourceCatalogueHash: catalogue.catalogueHash, sourceSnapshotHash: catalogue.sourceSnapshotHash,
+    normalizedDatasetHash: catalogue.normalizedDatasetHash, dataVersions: clone(catalogue.dataVersions),
+    routeCount: 1, routes: [route], definitionIds: [route.definitionId],
+    coveredSourceFeatureHashes: [route.sourceFeatureHash], archetypeCounts: { mission_supply_bonus_target: 1 },
+    sourceRefreshPerformed: false, trainingTruth: false }, 'bundleHash');
+}
+
+export const OFFICIAL_LAIR_PREDATION_ID = 'card:lair/predation-any@1';
+const selectedPredationSchema = 'starcraft_tmg_official_zerg_unique_predation_source_bundle_v1';
+const predationSourceText = "Predation <Active> <Any Phase>: The active Unit’s Close Combat Weapons gain INSTANT.";
+
+function assertPredationSource(row) {
+  if (row?.definitionId !== OFFICIAL_LAIR_PREDATION_ID || row.recordKey !== 'tactical_cards:lair'
+    || row.definitionName !== 'Predation' || row.activationKind !== 'active' || row.phase !== 'any'
+    || row.sourceKind !== 'card_feature' || row.sourceText !== predationSourceText) fail('PREDATION_SOURCE_UNSUPPORTED');
+}
+
+export function createOfficialLairPredationSourceBundleV1(catalogue, { includeQueen = false } = {}) {
+  verifyOfficialAbilityEffectIrCatalogueV1(catalogue);
+  const source = catalogue.definitions.find(r => r.definitionId === OFFICIAL_LAIR_PREDATION_ID);
+  assertPredationSource(source);
+  const routes = [compileRoute(source)];
+  if (includeQueen) routes.push(...createOfficialDomineeringPresenceSourceBundleV2(catalogue).routes);
+  return seal({ schema: selectedPredationSchema, semanticVersion: '1.0.0', sourceCatalogueHash: catalogue.catalogueHash,
+    sourceSnapshotHash: catalogue.sourceSnapshotHash, normalizedDatasetHash: catalogue.normalizedDatasetHash,
+    dataVersions: clone(catalogue.dataVersions), routeCount: routes.length, routes,
+    definitionIds: routes.map(row => row.definitionId), coveredSourceFeatureHashes: routes.map(row => row.sourceFeatureHash).sort(),
+    archetypeCounts: Object.fromEntries(routes.map(row => [row.effectKind, 1])), sourceRefreshPerformed: false, trainingTruth: false }, 'bundleHash');
+}
+
+function verifySelectedPredation(bundle) {
+  const routes = bundle.routes;
+  if (bundle.semanticVersion !== '1.0.0' || !Array.isArray(routes) || ![1,2].includes(routes.length)
+    || bundle.routeCount !== routes.length || bundle.sourceRefreshPerformed !== false || bundle.trainingTruth !== false
+    || !isDeepStrictEqual(bundle.definitionIds, routes.map(r => r.definitionId))
+    || !isDeepStrictEqual(bundle.coveredSourceFeatureHashes, routes.map(r => r.sourceFeatureHash).sort())
+    || !isDeepStrictEqual(bundle.archetypeCounts, Object.fromEntries(routes.map(r => [r.effectKind, 1])))
+    || bundle.bundleHash !== hashStarcraftTmgContract(without(bundle, ['bundleHash']))) fail('PREDATION_BUNDLE_INVALID');
+  for (const [index, route] of routes.entries()) {
+    const source = { ...route, definitionName: route.abilityName };
+    if (index === 0) assertPredationSource(source);
+    else if (route.definitionId !== OFFICIAL_DOMINEERING_PRESENCE_DEFINITION_ID || route.recordKey !== 'army_units:queen'
+      || route.abilityName !== 'Domineering Presence' || route.sourceText !== domineeringSourceText
+      || route.activationKind !== 'active' || route.phase !== 'movement' || route.sourceKind !== 'unit_feature'
+      || route.activationText !== '<Active>\n(1 Biomass)') fail('DOMINEERING_PRESENCE_SOURCE_UNSUPPORTED');
+    if (!isDeepStrictEqual(route, compileRoute(source))) fail('PREDATION_ROUTE_INVALID');
+  }
+  return true;
+}
+
+function verifySelectedDomineeringPresenceSource(bundle) {
+  const route = bundle.routes?.[0];
+  if (bundle.semanticVersion !== '2.0.0' || bundle.routeCount !== 1 || bundle.routes?.length !== 1
+    || route?.definitionId !== OFFICIAL_DOMINEERING_PRESENCE_DEFINITION_ID || route.sourceText !== domineeringSourceText
+    || route.recordKey !== 'army_units:queen' || route.effectKind !== 'mission_supply_bonus_target'
+    || route.rangeMilliInches !== 6000 || route.lineOfSightRequired !== false || route.modifier !== 1
+    || route.resourceType !== 'BM' || route.printedResourceCost !== 1
+    || !isDeepStrictEqual(route.contexts, ['mission_marker_control', 'objective_completion'])
+    || !isDeepStrictEqual(bundle.definitionIds, [route.definitionId])
+    || !isDeepStrictEqual(bundle.coveredSourceFeatureHashes, [route.sourceFeatureHash])
+    || route.routeHash !== hashStarcraftTmgContract(without(route, ['routeHash']))
+    || bundle.sourceRefreshPerformed !== false || bundle.trainingTruth !== false
+    || bundle.bundleHash !== hashStarcraftTmgContract(without(bundle, ['bundleHash']))) {
+    fail('DOMINEERING_PRESENCE_SOURCE_BUNDLE_INVALID');
+  }
+  return true;
+}
+
 export function verifyOfficialZergUniqueFamilySourceBundleV1(bundle) {
+  if (bundle?.schema === selectedPredationSchema) return verifySelectedPredation(bundle);
+  if (bundle?.schema === selectedDomineeringSchema) return verifySelectedDomineeringPresenceSource(bundle);
   if (!object(bundle) || bundle.schema !== OFFICIAL_ZERG_UNIQUE_FAMILY_BUNDLE_SCHEMA
     || bundle.semanticVersion !== OFFICIAL_ZERG_UNIQUE_FAMILY_ADAPTER_VERSION
     || bundle.routeCount !== 2 || bundle.routes?.length !== 2
@@ -191,11 +275,6 @@ export function createOfficialZergUniqueFamilyDefinitionBindingsV1(bundle) {
   })).sort((left, right) => left.sourceFeatureHash.localeCompare(right.sourceFeatureHash)));
 }
 
-function routeFor(bundle, effectKind) {
-  const route = bundle.routes.find((entry) => entry.effectKind === effectKind);
-  if (!route) fail("ZERG_UNIQUE_ROUTE_MISSING", effectKind);
-  return route;
-}
 function used(state, route, pieceId) {
   return (state.zergUniqueUseHistory || []).some((entry) => (
     Number(entry.round) === Number(state.round) && entry.definitionId === route.definitionId
@@ -234,7 +313,14 @@ function paymentRef(state, card) {
     payloadHash: card.officialPayloadHash, profileHash: profile.profileHash,
     isReady: card.readiness === "ready" };
 }
-function effectiveCost(state, route, actor, consume = false, planHash = null) {
+function effectiveCost(state, route, actor, consume = false, planHash = null, usePsionicLink = false) {
+  if (usePsionicLink) {
+    const quote = quoteOfficialSelectedUnitPsionicLinkV1(state, { sideKey: actor.sideKey,
+      pieceId: actor.id, resourceType: route.resourceType, printedResourceCost: route.printedResourceCost, planHash },
+    { consume });
+    if (!quote) fail('ZERG_UNIQUE_PSIONIC_LINK_PAYMENT_UNAVAILABLE');
+    return quote;
+  }
   if (!route.resourceType) return { effectiveResourceCost: 0,
     resourceCostReduction: 0, discountSourcePieceId: null };
   return state.officialMatchLifecycleFamilySourceBundle
@@ -245,8 +331,7 @@ function effectiveCost(state, route, actor, consume = false, planHash = null) {
     : { effectiveResourceCost: route.printedResourceCost,
       resourceCostReduction: 0, discountSourcePieceId: null };
 }
-function paymentSelections(state, route, actor) {
-  const cost = effectiveCost(state, route, actor).effectiveResourceCost;
+function paymentSelections(state, route, actor, cost) {
   if (cost === 0) return [[]];
   if (cost !== 1) fail("ZERG_UNIQUE_PAYMENT_COST_UNSUPPORTED", String(cost));
   return (state.cardResources?.[actor.sideKey] || []).filter((card) => (
@@ -270,11 +355,19 @@ function domainsForRoute(state, route) {
     return actors.flatMap((actor) => {
       const targets = state.pieces.filter((target) => target.id !== actor.id
         && target.sideKey === actor.sideKey && activePiece(target)
+        && allowsOfficialAbilityUnitRecipientV13(state, target)
         && within(state, actor, target, route.rangeMilliInches))
         .map((target) => target.id).sort();
-      const payments = paymentSelections(state, route, actor);
-      if (targets.length === 0 || payments.length === 0) return [];
-      return [domainFor(state, route, actor.sideKey, actor, actor.id, targets, payments)];
+      if (!targets.length) return [];
+      const cost = effectiveCost(state, route, actor);
+      const discounted = state.officialQueenPsionicLinkSource && cost.effectiveResourceCost === route.printedResourceCost
+        ? quoteOfficialSelectedUnitPsionicLinkV1(state, { sideKey: actor.sideKey, pieceId: actor.id,
+          resourceType: route.resourceType, printedResourceCost: route.printedResourceCost })
+        : null;
+      return [cost, ...(discounted ? [discounted] : [])].flatMap(choice => {
+        const payments = paymentSelections(state, route, actor, choice.effectiveResourceCost);
+        return payments.length ? [domainFor(state, route, actor.sideKey, actor, actor.id, targets, payments, choice)] : [];
+      });
     });
   }
   const domains = [];
@@ -293,10 +386,10 @@ function domainsForRoute(state, route) {
   }
   return domains;
 }
-function domainFor(state, route, sideKey, actor, sourceInstanceId, targetIds, payments) {
+function domainFor(state, route, sideKey, actor, sourceInstanceId, targetIds, payments,
+  cost = effectiveCost(state, route, actor)) {
   const required = ["activeUnitId", "paymentCardInstanceIds"];
   if (targetIds.length > 0) required.push("targetUnitId");
-  const cost = effectiveCost(state, route, actor);
   const resourceCost = freezeDeep({
     resourceType: route.resourceType || null,
     printedResourceCost: route.resourceType ? route.printedResourceCost : 0,
@@ -304,6 +397,7 @@ function domainFor(state, route, sideKey, actor, sourceInstanceId, targetIds, pa
     effectiveResourceCost: route.resourceType
       ? Number(cost.effectiveResourceCost || 0) : 0,
     discountSourcePieceId: cost.discountSourcePieceId || null,
+    ...(cost.psionicLinkDefinitionId ? { psionicLinkDefinitionId: cost.psionicLinkDefinitionId } : {}),
     trainingTruth: false,
   });
   return seal({
@@ -368,6 +462,7 @@ function instantiate(bundle, state, domain, parameters = {}) {
     sourceInstanceId: domain.sourceInstanceId, sideKey: domain.sideKey,
     pieceId: domain.pieceId, effectKind: domain.effectKind,
     canonicalParameters, sourceRouteHash: domain.constraints.sourceRouteHash,
+    ...(domain.constraints.resourceCostsByChoice.default.psionicLinkDefinitionId ? { usePsionicLink: true } : {}),
     rulesTruth: "official_current_product_zerg_unique_plan",
     trainingTruth: false }, "planHash");
   const action = freezeDeep({ actionType: domain.actionType, sideKey: domain.sideKey,
@@ -392,7 +487,7 @@ function applyPayment(state, route, action, events) {
   if (!route.resourceType) return;
   const actor = state.pieces.find((entry) => entry.id === action.pieceId);
   const cost = effectiveCost(state, route, actor, true,
-    action.zergUniquePlan.planHash);
+    action.zergUniquePlan.planHash, action.zergUniquePlan.usePsionicLink === true);
   const cards = action.zergUniquePlan.canonicalParameters.paymentCardInstanceIds
     .map((id) => cardById(state, action.sideKey, id));
   if (cards.some((entry) => !entry)) fail("ZERG_UNIQUE_PAYMENT_CARD_UNKNOWN");
@@ -462,6 +557,14 @@ function apply(bundle, stateInput, request = {}) {
     sourceInstanceId: action.zergUniquePlan.sourceInstanceId,
     effectHash: effect.effectHash, planHash: action.zergUniquePlan.planHash,
     trainingTruth: false });
+  if (bundle.schema === selectedDomineeringSchema || bundle.schema === selectedPredationSchema) {
+    const prior = state.selectedRosterActivationWindow;
+    state.selectedRosterActivationWindow = {
+      schema: "starcraft_tmg_selected_roster_activation_window_v1",
+      round: Number(state.round), phase: state.phase, sideKey: actor.sideKey,
+      pieceId: actor.id, stage: prior?.stage || 'before_action', trainingTruth: false,
+    };
+  }
   events.push({ type: route.effectKind, sourcePieceId: actor.id,
     targetPieceId: target.id, effectHash: effect.effectHash,
     expiresAt: route.effectExpiresAt, trainingTruth: false });
@@ -482,13 +585,13 @@ export function projectOfficialZergUniqueFamilyModifiersV1(bundle, state, reques
   verifyOfficialZergUniqueFamilySourceBundleV1(bundle);
   const piece = state.pieces?.find((entry) => entry.id === request.pieceId);
   if (!piece) fail("ZERG_UNIQUE_PROJECTION_PIECE_UNKNOWN", String(request.pieceId || ""));
-  const route = routeFor(bundle, "close_combat_instant_active");
+  const route = bundle.routes.find(entry => entry.effectKind === "close_combat_instant_active");
   const effects = (piece.officialAbilityEffects || []).filter((entry) => (
     entry.effectKind === "close_combat_instant"));
   if (effects.some((effect) => effect.schema
       !== "starcraft_tmg_official_close_combat_instant_effect_v1"
-    || effect.sourceDefinitionId !== route.definitionId
-    || effect.sourceFeatureHash !== route.sourceFeatureHash
+    || effect.sourceDefinitionId !== route?.definitionId
+    || effect.sourceFeatureHash !== route?.sourceFeatureHash
     || effect.targetPieceId !== piece.id || effect.expiresAt !== "round_end"
     || effect.trainingTruth !== false
     || effect.effectHash !== hashStarcraftTmgContract(without(effect, ["effectHash"])))) {
@@ -544,7 +647,7 @@ export function createOfficialZergUniqueFamilyAdapterV1(bundle) {
     supportedOperations: ["legal_space", "preview", "apply", "query", "replay"],
     archetypeCounts: { ...bundle.archetypeCounts }, sourceBundleHash: bundle.bundleHash,
     psionicLinkPaymentSeamReused: true,
-    closeCombatInstantConsumerProjectionBound: true,
+    closeCombatInstantConsumerProjectionBound: bundle.schema !== selectedDomineeringSchema,
     legalSpacePreviewApplyReplaySequencePreserved: true,
     rulesAuthority: true, trainingTruth: false,
   });

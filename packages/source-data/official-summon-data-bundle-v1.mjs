@@ -7,6 +7,10 @@ import {
 } from "./official-development-tranche-source-lock-v1.mjs";
 import { getOfficialCurrentProductRecord } from
   "./official-command-center-adapter-v1.mjs";
+import { isDeepStrictEqual } from 'node:util';
+import { assertOfficialReleaseSourceV2 } from './official-release-context-v2.mjs';
+import { createOfficialGeneratedUnitDataBundleV2, verifyOfficialGeneratedUnitDataBundleV2 } from './official-generated-unit-data-bundle-v2.mjs';
+import { getOfficialReleaseModelBaseGeometryBundleV2 } from './official-model-base-geometry-data-bundle-v1.mjs';
 import {
   createOfficialModelBaseGeometryDataBundleV1,
   verifyOfficialModelBaseGeometryDataBundleV1,
@@ -14,6 +18,7 @@ import {
 import {
   createOfficialUnitCardSupplyDataBundleV1,
   getOfficialUnitCardSupplyProfileV1,
+  getOfficialReleaseUnitCardSupplyDataBundleV2,
   verifyOfficialUnitCardSupplyDataBundleV1,
 } from "./official-unit-card-supply-data-bundle-v1.mjs";
 
@@ -142,13 +147,22 @@ function exactDefinition(dataset, recordKey, name, description, deploymentKind) 
 }
 
 export function createOfficialSummonDataBundleV1(input = {}) {
-  const dataset = input.dataset;
-  if (!object(dataset) || dataset.datasetHash !== OFFICIAL_DEVELOPMENT_TRANCHE_DATASET_HASH
-    || dataset.sourceSnapshotHash !== OFFICIAL_DEVELOPMENT_TRANCHE_SNAPSHOT_HASH
-    || dataset.repositoryFallbackAllowed !== false || !Array.isArray(dataset.recordIndex)
-    || !object(dataset.recordsByKey)) fail("SUMMON_DATASET_INVALID");
-  const modelBaseGeometryDataBundle = createOfficialModelBaseGeometryDataBundleV1({ dataset });
-  const unitCardSupplyDataBundle = createOfficialUnitCardSupplyDataBundleV1({ dataset });
+  const { dataset, snapshot, releaseContext } = input;
+  const legacy = dataset?.datasetHash === OFFICIAL_DEVELOPMENT_TRANCHE_DATASET_HASH
+    && dataset?.sourceSnapshotHash === OFFICIAL_DEVELOPMENT_TRANCHE_SNAPSHOT_HASH;
+  const manifest = !legacy && releaseContext
+    ? assertOfficialReleaseSourceV2(releaseContext, { dataset, snapshot }) : null;
+  if (!object(dataset) || (!legacy && !manifest) || dataset.repositoryFallbackAllowed !== false
+    || !Array.isArray(dataset.recordIndex) || !object(dataset.recordsByKey)) {
+    fail("SUMMON_DATASET_INVALID");
+  }
+  if (manifest && manifest.source.references?.core?.byteHash !== OFFICIAL_SUMMON_CORE_RULEBOOK_HASH) {
+    fail("SUMMON_RELEASE_CORE_MISMATCH");
+  }
+  const modelBaseGeometryDataBundle = manifest ? getOfficialReleaseModelBaseGeometryBundleV2(releaseContext)
+    : createOfficialModelBaseGeometryDataBundleV1({ dataset });
+  const unitCardSupplyDataBundle = manifest ? getOfficialReleaseUnitCardSupplyDataBundleV2(releaseContext)
+    : createOfficialUnitCardSupplyDataBundleV1({ dataset });
   const summonedUnitProfiles = SUMMONED_KEYS.map((recordKey) => {
     const record = getOfficialCurrentProductRecord(dataset, recordKey);
     const profile = getOfficialUnitCardSupplyProfileV1(unitCardSupplyDataBundle, recordKey);
@@ -178,11 +192,17 @@ export function createOfficialSummonDataBundleV1(input = {}) {
     `${right.recordKey}:${right.definitionName}`));
   const body = {
     schema: OFFICIAL_SUMMON_DATA_BUNDLE_SCHEMA,
-    sourceLockHash: OFFICIAL_DEVELOPMENT_TRANCHE_SOURCE_LOCK_HASH,
-    sourceSnapshotHash: OFFICIAL_DEVELOPMENT_TRANCHE_SNAPSHOT_HASH,
-    normalizedDatasetHash: OFFICIAL_DEVELOPMENT_TRANCHE_DATASET_HASH,
+    sourceLockHash: manifest?.source.sourceRevisionHash ?? OFFICIAL_DEVELOPMENT_TRANCHE_SOURCE_LOCK_HASH,
+    sourceSnapshotHash: dataset.sourceSnapshotHash, normalizedDatasetHash: dataset.datasetHash,
+    ...(manifest ? { releaseBinding: {
+      releaseId: manifest.releaseId, manifestHash: manifest.manifestHash,
+      sourceRevisionHash: manifest.source.sourceRevisionHash,
+      sourceSnapshotHash: dataset.sourceSnapshotHash, normalizedDatasetHash: dataset.datasetHash,
+    } } : {}),
     coreRulebookHash: OFFICIAL_SUMMON_CORE_RULEBOOK_HASH,
-    officialRulesVersion: "48", officialUnitsVersion: "71", officialCardsVersion: "69",
+    officialRulesVersion: manifest ? dataset.dataVersions.rulesVersion : "48",
+    officialUnitsVersion: manifest ? dataset.dataVersions.unitsVersion : "71",
+    officialCardsVersion: manifest ? dataset.dataVersions.cardsVersion : "69",
     ruleSectionRecords: exactRuleRecords(dataset), ruleClauses: RULE_CLAUSES,
     ruleClauseIndexHash: hashStarcraftTmgContract(RULE_CLAUSES),
     summonedUnitProfiles,
@@ -200,7 +220,7 @@ export function createOfficialSummonDataBundleV1(input = {}) {
       pylonAndPointDefenseDroneUseGenericSummonGeometry: false,
       silentRuleSubstitutionAllowed: false,
     },
-    sourcePolicy: { captureMode: "slice_75_single_official_capture_lock",
+    sourcePolicy: { captureMode: manifest ? "release_manifest_frozen_source" : "slice_75_single_official_capture_lock",
       refreshDuringDevelopment: false, repositoryFallbackAllowed: false,
       corePdfRole: "primary_normative_summon_and_summoned_unit_source",
       commandCenterRole: "current_unit_and_special_ability_carrier_index",
@@ -215,13 +235,30 @@ export function createOfficialSummonDataBundleV1(input = {}) {
 }
 
 export function verifyOfficialSummonDataBundleV1(bundle) {
+  if (bundle?.schema === 'starcraft_tmg_official_summon_data_bundle_v2') return verifyCurrentSummonBundle(bundle);
+  const binding = bundle?.releaseBinding;
+  const sourceInvalid = binding
+    ? !binding.releaseId || !/^[a-f0-9]{64}$/u.test(binding.manifestHash)
+      || !/^[a-f0-9]{64}$/u.test(binding.sourceRevisionHash)
+      || binding.sourceRevisionHash !== bundle.sourceLockHash
+      || binding.sourceSnapshotHash !== bundle.sourceSnapshotHash
+      || binding.normalizedDatasetHash !== bundle.normalizedDatasetHash
+      || [bundle.modelBaseGeometryDataBundle, bundle.unitCardSupplyDataBundle].some(data =>
+        data?.sourceLockHash !== bundle.sourceLockHash
+        || data?.sourceSnapshotHash !== bundle.sourceSnapshotHash
+        || data?.normalizedDatasetHash !== bundle.normalizedDatasetHash)
+    : bundle?.sourceLockHash !== OFFICIAL_DEVELOPMENT_TRANCHE_SOURCE_LOCK_HASH
+      || bundle?.sourceSnapshotHash !== OFFICIAL_DEVELOPMENT_TRANCHE_SNAPSHOT_HASH
+      || bundle?.normalizedDatasetHash !== OFFICIAL_DEVELOPMENT_TRANCHE_DATASET_HASH;
   if (!object(bundle) || bundle.schema !== OFFICIAL_SUMMON_DATA_BUNDLE_SCHEMA
-    || bundle.sourceLockHash !== OFFICIAL_DEVELOPMENT_TRANCHE_SOURCE_LOCK_HASH
-    || bundle.sourceSnapshotHash !== OFFICIAL_DEVELOPMENT_TRANCHE_SNAPSHOT_HASH
-    || bundle.normalizedDatasetHash !== OFFICIAL_DEVELOPMENT_TRANCHE_DATASET_HASH
+    || sourceInvalid
     || bundle.coreRulebookHash !== OFFICIAL_SUMMON_CORE_RULEBOOK_HASH
-    || bundle.officialRulesVersion !== "48" || bundle.officialUnitsVersion !== "71"
-    || bundle.officialCardsVersion !== "69" || bundle.ruleSectionRecords?.length !== 2
+    || (binding
+      ? ![bundle.officialRulesVersion, bundle.officialUnitsVersion, bundle.officialCardsVersion]
+        .every(version => /^\d+$/u.test(String(version)))
+      : bundle.officialRulesVersion !== "48" || bundle.officialUnitsVersion !== "71"
+        || bundle.officialCardsVersion !== "69")
+    || bundle.ruleSectionRecords?.length !== 2
     || bundle.ruleClauses?.length !== 13
     || bundle.ruleClauseIndexHash !== hashStarcraftTmgContract(RULE_CLAUSES)
     || bundle.summonedUnitProfiles?.length !== 3
@@ -257,4 +294,95 @@ export function getOfficialSummonedUnitProfileV1(bundle, recordKey) {
   const profile = bundle.summonedUnitProfiles.find((entry) => entry.recordKey === recordKey);
   if (!profile) fail("SUMMONED_UNIT_PROFILE_REQUIRED", String(recordKey || ""));
   return profile;
+}
+
+const HOLO_SUMMON_DESCRIPTION = 'Resolve the SUMMON (Holo Decoy) effect. Then, Holo Decoy may immediately perform a Move action.';
+export const OFFICIAL_ROACHLING_INFESTATION_DEFINITION_ID = 'unit:corpser__roach_/roachling-infestation-movement-phase@1';
+export const OFFICIAL_ROACHLING_INFESTATION_DESCRIPTION = 'Once per Game. Resolve the SUMMON (Roachling) effect.';
+const ROACHLING_SUMMON_SCOPE = 'current_release_parent_linked_summon_subset';
+const HOLO_SUMMON_SCOPE = 'current_release_holo_decoy_summon_subset';
+const holoSource = {
+  definitionName: 'Holo Decoy', description: HOLO_SUMMON_DESCRIPTION, activation: '<Active>\n(1 Command Point)',
+  summonedUnitRecordKey: 'army_units:holo_decoy', immediateMoveAuthorized: true,
+};
+const CURRENT_SUMMON_SOURCES = Object.freeze({
+  'unit:nova_assault_mode/holo-decoy-movement-phase@1': { ...holoSource, recordKey: 'army_units:nova_assault_mode' },
+  'unit:nova_stealth_mode/holo-decoy-movement-phase@1': { ...holoSource, recordKey: 'army_units:nova_stealth_mode' },
+  [OFFICIAL_ROACHLING_INFESTATION_DEFINITION_ID]: {
+    recordKey: 'army_units:corpser__roach_', definitionName: 'Roachling Infestation',
+    description: OFFICIAL_ROACHLING_INFESTATION_DESCRIPTION, activation: '<Active>\n(2 Biomass)',
+    summonedUnitRecordKey: 'army_units:roachling', immediateMoveAuthorized: false,
+  },
+});
+
+export function createOfficialSummonDataBundleV2({ context, definitionIds } = {}) {
+  assertOfficialReleaseSourceV2(context, context || {});
+  if (!Array.isArray(definitionIds) || !definitionIds.length
+    || new Set(definitionIds).size !== definitionIds.length
+    || definitionIds.some(id => !Object.hasOwn(CURRENT_SUMMON_SOURCES, id))) {
+    fail('SUMMON_CURRENT_EXPLICIT_SUBSET_REQUIRED');
+  }
+  const ruleSectionRecords = exactRuleRecords(context.dataset);
+  const currentDeploymentDefinitions = [...definitionIds].sort().map(id => {
+    const source = CURRENT_SUMMON_SOURCES[id];
+    const record = context.dataset.recordsByKey[source.recordKey];
+    const feature = record?.payload.upgrades.find(row => row.name === source.definitionName);
+    if (feature?.description !== source.description || feature.phase !== 'Movement Phase'
+      || feature.activation !== source.activation) fail('SUMMON_CURRENT_CARRIER_DRIFT', id);
+    return { recordKey: record.recordKey, productName: record.payload.name, sourceRecordHash: record.sourceRecordHash,
+      payloadHash: record.payloadHash, sourceDefinitionId: id, definitionName: feature.name, description: feature.description,
+      definitionHash: hashStarcraftTmgContract(feature), deploymentKind: 'summon_keyword_parent_linked',
+      summonedUnitRecordKey: source.summonedUnitRecordKey, immediateMoveAuthorized: source.immediateMoveAuthorized };
+  });
+  const recordKeys = [...new Set(currentDeploymentDefinitions.map(row => row.summonedUnitRecordKey))];
+  const generated = createOfficialGeneratedUnitDataBundleV2({ context, recordKeys });
+  const body = { schema: 'starcraft_tmg_official_summon_data_bundle_v2', semanticVersion: '2.0.0',
+    sourceSnapshotHash: context.snapshot.snapshotHash, normalizedDatasetHash: context.dataset.datasetHash,
+    dataVersions: structuredClone(context.dataset.dataVersions), ruleSectionRecords, ruleClauses: RULE_CLAUSES,
+    ruleClauseIndexHash: hashStarcraftTmgContract(RULE_CLAUSES), generatedUnitDataBundle: generated,
+    summonedUnitProfiles: generated.profiles, currentDeploymentDefinitions,
+    modelBaseGeometryDataBundle: getOfficialReleaseModelBaseGeometryBundleV2(context),
+    unitCardSupplyDataBundle: context.resources.unitCharacteristics,
+    ruleConstants: { engagementRangeMilliInches: 1000, coherencyRangeMilliInches: 3000 },
+    sourcePolicy: { refreshDuringDevelopment: false, repositoryFallbackAllowed: false,
+      geometryAuthority: 'assigned_deployment_entry_edge_zone_rectangles', supplyAuthority: 'shared_contextual_supply_and_bound_round_supply' },
+    compilerScope: definitionIds.includes(OFFICIAL_ROACHLING_INFESTATION_DEFINITION_ID) ? ROACHLING_SUMMON_SCOPE : HOLO_SUMMON_SCOPE,
+    productionRoomEligible: false, trainingTruth: false };
+  const bundle = freezeDeep({ ...body, bundleHash: hashStarcraftTmgContract(body) });
+  verifyCurrentSummonBundle(bundle);
+  return bundle;
+}
+
+function verifyCurrentSummonBundle(bundle) {
+  const definitions = bundle.currentDeploymentDefinitions;
+  const profiles = bundle.summonedUnitProfiles;
+  if (!Array.isArray(definitions) || !definitions.length || !Array.isArray(profiles)) fail('SUMMON_DATA_BUNDLE_INVALID');
+  const ids = definitions.map(row => row.sourceDefinitionId);
+  const expectedScope = ids.includes(OFFICIAL_ROACHLING_INFESTATION_DEFINITION_ID) ? ROACHLING_SUMMON_SCOPE : HOLO_SUMMON_SCOPE;
+  const recordKeys = [...new Set(definitions.map(row => row.summonedUnitRecordKey))].sort();
+  if (bundle.semanticVersion !== '2.0.0' || bundle.compilerScope !== expectedScope
+    || new Set(ids).size !== definitions.length
+    || definitions.some(row => {
+      if (!Object.hasOwn(CURRENT_SUMMON_SOURCES, row.sourceDefinitionId)) return true;
+      const source = CURRENT_SUMMON_SOURCES[row.sourceDefinitionId];
+      return row.recordKey !== source.recordKey || row.definitionName !== source.definitionName
+        || row.description !== source.description || row.summonedUnitRecordKey !== source.summonedUnitRecordKey
+        || row.immediateMoveAuthorized !== source.immediateMoveAuthorized
+        || row.deploymentKind !== 'summon_keyword_parent_linked' || !/^[a-f0-9]{64}$/u.test(row.definitionHash);
+    })
+    || !isDeepStrictEqual(profiles.map(row => row.recordKey), recordKeys)
+    || !isDeepStrictEqual(profiles, bundle.generatedUnitDataBundle?.profiles)
+    || !isDeepStrictEqual(bundle.ruleClauses, RULE_CLAUSES)
+    || bundle.ruleClauseIndexHash !== hashStarcraftTmgContract(RULE_CLAUSES)
+    || !isDeepStrictEqual(bundle.ruleConstants, { engagementRangeMilliInches: 1000, coherencyRangeMilliInches: 3000 })
+    || !isDeepStrictEqual(bundle.ruleSectionRecords?.map(row => without(row, ['authorityDisposition', 'sourceVersion'])), RULE_RECORDS)
+    || bundle.modelBaseGeometryDataBundle?.sourceSnapshotHash !== bundle.sourceSnapshotHash
+    || bundle.unitCardSupplyDataBundle?.normalizedDatasetHash !== bundle.normalizedDatasetHash
+    || bundle.sourcePolicy?.refreshDuringDevelopment !== false || bundle.sourcePolicy?.repositoryFallbackAllowed !== false
+    || bundle.productionRoomEligible !== false || bundle.trainingTruth !== false
+    || bundle.bundleHash !== hashStarcraftTmgContract(without(bundle, ['bundleHash']))) fail('SUMMON_DATA_BUNDLE_INVALID');
+  verifyOfficialModelBaseGeometryDataBundleV1(bundle.modelBaseGeometryDataBundle);
+  verifyOfficialUnitCardSupplyDataBundleV1(bundle.unitCardSupplyDataBundle);
+  verifyOfficialGeneratedUnitDataBundleV2(bundle.generatedUnitDataBundle);
+  return true;
 }

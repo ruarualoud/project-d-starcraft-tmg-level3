@@ -1,3 +1,4 @@
+import { assertOfficialReleaseQueryBindingV2, assertSameOfficialQueryReleaseV2 } from '../source-data/official-release-context-v2.mjs';
 import { hashStarcraftTmgContract } from
   "../authoritative-engine/transition-v1.mjs";
 import { searchStarcraftTmgLegalFormationOptionsAsyncV1 } from
@@ -19,6 +20,8 @@ import {
   createStarcraftTmgFireExchangeWorkEvaluatorV1,
   finishStarcraftTmgFireExchangeWorkV1,
 } from "./combat-estimation-runtime-v1.mjs";
+import {estimateStarcraftTmgRangedActivationV1} from './ranged-activation-probability-runtime-v1.mjs';
+import {inspectRangedActivationQueryArgumentsV1} from './ranged-activation-query-contract-v1.mjs';
 import { inspectStarcraftTmgActionParametersV1 } from
   "./action-parameter-contract-v1.mjs";
 import { describeOfficialSelectedRosterChargeParameterRepairV1 } from
@@ -30,18 +33,19 @@ import { STARCRAFT_TMG_INDEPENDENT_READONLY_QUERY_KINDS_V1 } from
   "./readonly-query-kinds-v1.mjs";
 import { evaluateStarcraftTmgReadonlyQueriesInWorkersV1 } from
   "./readonly-query-worker-batch-v1.mjs";
-import { STARCRAFT_TMG_DELEGATED_SPATIAL_QUERY_KINDS_V1,
+import { OfficialSpatialProposalRejectionV1 } from '../rule-atoms/official-spatial-proposal-error-v1.mjs';
+import { canReportSpatialCandidateRejectionV1, STARCRAFT_TMG_DELEGATED_SPATIAL_QUERY_KINDS_V1,
   STARCRAFT_TMG_SPATIAL_QUERY_CONTRACTS_V1,
   inspectStarcraftTmgMarkerControlArgumentsV1 } from
   "./spatial-query-contracts-v1.mjs";
 import { inspectOfficialMissionMarkerControlV2 } from
   "../rule-atoms/official-mission-marker-control-kernel-v1.mjs";
 import {inspectOfficialContextualSupplyV1} from '../rule-atoms/official-contextual-supply-projection-v1.mjs';
-import { applyOfficialSelectedRosterSpatialActionV1 } from
+import { applyOfficialSelectedRosterSpatialActionV1, resolveOfficialSelectedRosterDeployStartV1 } from
   "../product-composition/official-selected-roster-spatial-action-runtime-v1.mjs";
 import { createPregameMapEvidencePortV1 } from "../roster-strategist/pregame-map-evidence-port-v1.mjs";
 import { queryStarcraftTmgStaticFormationV1 } from './static-formation-query-v1.mjs';
-import {describeOfficialRelocationParameterFieldsV1,inspectOfficialRelocationPlacementIdsV1} from
+import {describeOfficialRelocationParameterFieldsV1,inspectOfficialRelocationPlacementIdsV1,canonicalOfficialRelocationParameterCoordinatesV1} from
   '../product-composition/official-relocation-parameter-contract-v1.mjs';
 
 export const STARCRAFT_TMG_ROOM_BACKED_SPATIAL_RULES_QUERY_ADAPTER_VERSION =
@@ -98,6 +102,29 @@ function safeFailureDetail(error) {
   return detail && /^[A-Za-z0-9_./-]+$/u.test(detail) ? detail : null;
 }
 
+function nativeSpatialPlan(source) {
+  if (source?.spatialPlan) return source.spatialPlan;
+  if (source?.sourceRuntimeKind === 'spatial') return source.sourceAction?.spatialPlan ?? null;
+  if (source?.sourceRuntimeKind === 'ranged_lunge_continuation') {
+    return source.sourceAction?.moveAction?.spatialPlan ?? null;
+  }
+  return null;
+}
+
+// The public Match and the melee family can each wrap a native resolve_charge.
+function resolvedChargePlacement(action) {
+  for (let entry = action; entry?.actionType === 'resolve_charge'; entry = entry.sourceAction) {
+    const plan = entry.chargeResolutionPlan;
+    if (plan?.schemaVersion === 'starcraft_tmg_selected_roster_charge_resolution_plan_v1'
+      && plan.outcome === 'success' && plan.pieceId === entry.pieceId
+      && plan.geometry?.actionType === 'charge' && plan.geometry.pieceId === plan.pieceId
+      && plan.geometry.completeFormationPlacementChecked === true
+      && plan.geometry.fullBaseBoundaryAndSweptPathChecked === true
+      && plan.geometry.terrainElevationAndAccessChecked === true) return plan;
+  }
+  return null;
+}
+
 function actionPlan(action) {
   const source = object(action?.sourceAction) ? action.sourceAction : action;
   return {
@@ -107,7 +134,7 @@ function actionPlan(action) {
     sourceRuntimeKind: action?.sourceRuntimeKind || null,
     abilityName: action?.abilityName || source?.abilityName || null,
     chance: clone(action?.chance || source?.chance || null),
-    spatialPlan: clone(source?.spatialPlan || null),
+    spatialPlan: clone(nativeSpatialPlan(source) || null),
     rangedPlan: clone(source?.rangedPlan || null),
     meleePlan: clone(source?.meleePlan || null),
     chargePlan: clone(source?.chargePlan || null),
@@ -117,7 +144,12 @@ function actionPlan(action) {
 
 function nativePlacementEvidence(action) {
   const source=action?.sourceAction||action;
-  const spatial=source?.spatialPlan;
+  const spatial=nativeSpatialPlan(source);
+  const charge = resolvedChargePlacement(action);
+  if (charge) return {
+    completeFormationPlacementChecked: true, completeNativePathChecked: true,
+    nativePlanKind: 'chargeResolutionPlan', nativePlanHash: charge.chargeResolutionPlanHash, spatialPlanHash: null,
+  };
   if(spatial?.completeFormationPlacementChecked===true)return {
     completeFormationPlacementChecked:true,completeNativePathChecked:true,
     nativePlanKind:'spatialPlan',nativePlanHash:spatial.spatialPlanHash,
@@ -139,6 +171,7 @@ function nativePlacementEvidence(action) {
 export function describeStarcraftTmgActionParameterRepairContextV1(domain, proposal, failureCode, failureDetail) {
   const declaration = describeOfficialSelectedRosterChargeParameterRepairV1(domain, failureCode, failureDetail);
   if (declaration) return declaration;
+  domain=domain?.sourceDomain||domain?.sourceAction||domain;
   const constraints = object(domain?.constraints) ? domain.constraints : {};
   const parameters = object(proposal?.parameters) ? proposal.parameters : {};
   const leadingModelId = String(parameters.leadingModelId || "");
@@ -146,24 +179,36 @@ export function describeStarcraftTmgActionParameterRepairContextV1(domain, propo
     entry.modelId === leadingModelId) || null;
   const segment = (constraints.entrySegments || []).find((entry) =>
     entry.segmentId === parameters.entrySegmentId) || null;
-  const along = Number(parameters.entryAlongEdgeMilliInches);
+  const rawAlong = parameters.entryAlongEdgeMilliInches;
+  const along = rawAlong == null || rawAlong === "" ? NaN : Number(rawAlong);
   let hostPrependedPathStart = leadingProfile?.startPoint || null;
   if (domain?.actionType === "deploy" && segment && Number.isSafeInteger(along)
     && leadingProfile) {
-    const halfWidth = Math.round(Number(leadingProfile.baseWidthMilliInches) / 2);
-    const halfDepth = Math.round(Number(leadingProfile.baseDepthMilliInches) / 2);
-    hostPrependedPathStart = segment.side === "top"
-      ? { xMilliInches: along,
-        yMilliInches: Number(constraints.battlefieldHeightMilliInches)
-          + halfDepth }
-      : segment.side === "bottom"
-        ? { xMilliInches: along, yMilliInches: -halfDepth }
-        : segment.side === "left"
-          ? { xMilliInches: -halfWidth, yMilliInches: along }
-          : segment.side === "right"
-            ? { xMilliInches: Number(constraints.battlefieldWidthMilliInches)
-              + halfWidth, yMilliInches: along }
-            : null;
+    if (segment.kind === "unit_base_perimeter" || (segment.startInches != null && segment.endInches != null)) {
+      try {
+        const start = resolveOfficialSelectedRosterDeployStartV1(domain, segment, along, leadingProfile);
+        hostPrependedPathStart = { xMilliInches: start.xMilliInches, yMilliInches: start.yMilliInches };
+      } catch (error) {
+        if (String(error?.message).split(":")[0] !== "SELECTED_SPATIAL_ENTRY_POINT_INVALID") throw error;
+        hostPrependedPathStart = null;
+      }
+    } else {
+      // Older menu projections expose only the board side.
+      const halfWidth = Math.round(Number(leadingProfile.baseWidthMilliInches) / 2);
+      const halfDepth = Math.round(Number(leadingProfile.baseDepthMilliInches) / 2);
+      hostPrependedPathStart = segment.side === "top"
+        ? { xMilliInches: along,
+          yMilliInches: Number(constraints.battlefieldHeightMilliInches)
+            + halfDepth }
+        : segment.side === "bottom"
+          ? { xMilliInches: along, yMilliInches: -halfDepth }
+          : segment.side === "left"
+            ? { xMilliInches: -halfWidth, yMilliInches: along }
+            : segment.side === "right"
+              ? { xMilliInches: Number(constraints.battlefieldWidthMilliInches)
+                + halfWidth, yMilliInches: along }
+              : null;
+    }
   }
   const submittedPath = Array.isArray(parameters.path)
     ? parameters.path.map((entry) => ({
@@ -187,6 +232,7 @@ export function describeStarcraftTmgActionParameterRepairContextV1(domain, propo
     schemaVersion: "starcraft_tmg_parameter_repair_context_v1",
     failureCode,
     failureDetail,
+    ...(constraints.geometryDescription?{relocationGeometryDescription:clone(constraints.geometryDescription)}:{}),
     actionType: domain?.actionType || null,
     leadingModelId: leadingModelId || null,
     hostPrependedPathStart,
@@ -233,6 +279,29 @@ function unknown(authority, queryKind, reason, details = {}) {
   });
 }
 
+// A bounded search failure is evidence about the attempted candidates, not a
+// proof that the continuous legal domain is empty. Keep these Native facts in
+// the existing repair envelope so the shared query projection and Planner see
+// the same evidence as backend diagnostics.
+function boundedPlacementSearchContext(result, domain) {
+  const source = domain?.sourceDomain || domain?.sourceAction || domain;
+  return {
+    kind: "bounded_placement_search",
+    domainId: domain.domainId,
+    actionType: source.actionType,
+    pieceId: source.pieceId,
+    attemptedCandidateCount: result.attemptedCandidateCount,
+    failureCounts: clone(result.failureCounts || {}),
+    searchCoverage: clone(result.searchCoverage || null),
+    entrySegments: clone(source.constraints?.entrySegments || []),
+    maxDistanceMilliInches: source.constraints?.maxDistanceMilliInches
+      ?? source.constraints?.geometryDescription?.maxDistanceMilliInches ?? null,
+    noLegalPositionProven: false,
+    entireContinuousDomainExamined: false,
+    doesNotProveProposalLegal: true,
+  };
+}
+
 // Queries and action previews share the Native submission contract. The melee
 // probability endpoint adds targetUnitId for its one-target observation; that
 // field is not a Native fight argument (the allocation selects Native targets).
@@ -269,9 +338,30 @@ export function createStarcraftTmgRoomBackedSpatialRulesQueryAdapterV1(
   const roomStore = options.roomStore;
   // This still fetches the actual persisted row for EVERY authority check.
   // Only an Adapter's private immutable owner can reuse decoded object data.
-  const loadAggregate = roomId => typeof roomStore?.loadOwnedRoom === "function"
-    ? roomStore.loadOwnedRoom(roomId) : roomStore.loadRoom(roomId);
+  const loadAggregate = async roomId => {
+    const aggregate = await (typeof roomStore?.loadOwnedRoom === 'function'
+      ? roomStore.loadOwnedRoom(roomId) : roomStore.loadRoom(roomId));
+    if (aggregate) assertOfficialReleaseQueryBindingV2({ expectedBinding: releaseBinding, aggregate });
+    return aggregate;
+  };
+  function bindQueryRelease(request) {
+    const authority = request?.authority;
+    // Older tool callers have the signed matchBindingHash but no detached release.
+    // Supply the host-owned value; the stored binding and revision are still checked.
+    return releaseBinding && object(authority) && authority.releaseBinding === undefined
+      ? { ...request, authority: { ...authority, releaseBinding } } : request;
+  }
+  async function assertCurrentAuthority(authority) {
+    const aggregate = await loadAggregate(authority.roomId);
+    assertSameOfficialQueryReleaseV2(releaseBinding, authority.releaseBinding);
+    if (!aggregate || authority.seatKey !== seatKey || aggregate.stateRevision !== authority.stateRevision
+      || aggregate.envelope.matchBindingHash !== authority.matchBindingHash || aggregate.envelope.stateHash !== authority.stateHash) {
+      throw Error("RULES_QUERY_AUTHORITY_STALE");
+    }
+  }
   const rulesRuntime = options.rulesRuntime;
+  const releaseBinding = rulesRuntime?.releaseBinding ?? null;
+  if (options.releaseBinding !== undefined) assertSameOfficialQueryReleaseV2(releaseBinding, options.releaseBinding);
   const seatKey = String(options.seatKey || "");
   const formationComparisonBatch = options.formationComparisonBatch
     || compareStarcraftTmgFormationBatchInWorkersV1;
@@ -304,7 +394,7 @@ export function createStarcraftTmgRoomBackedSpatialRulesQueryAdapterV1(
   let probabilitySourceText = null;
   let probabilityBatch = null;
   function preparedProbability(state) {
-    const sourceText = JSON.stringify(state);
+    const sourceText = (releaseBinding?.manifestHash || '') + JSON.stringify(state);
     if (!probabilityBatch || probabilitySourceText !== sourceText) {
       probabilityBatch = createStarcraftTmgAttackProbabilityBatchV1({ state,
         sideKey: seatKey, observePreparation: options.observeChanceContext });
@@ -390,8 +480,9 @@ export function createStarcraftTmgRoomBackedSpatialRulesQueryAdapterV1(
 
   // Only this closure can supply an already-loaded snapshot. The public query
   // never accepts caller-supplied prepared state or a trusted aggregate.
-  async function queryFromOwnedSnapshot(request = {}, ownedAggregate = null,
+  async function queryFromOwnedSnapshot(original = {}, ownedAggregate = null,
     ownedFireResult = null) {
+    const request = bindQueryRelease(original);
     const authority = request.authority;
     const queryKind = String(request.queryKind || "");
     if (!object(authority) || authority.seatKey !== seatKey
@@ -406,7 +497,9 @@ export function createStarcraftTmgRoomBackedSpatialRulesQueryAdapterV1(
     }
     let aggregate;
     try {
+      assertSameOfficialQueryReleaseV2(releaseBinding, authority.releaseBinding);
       aggregate = ownedAggregate || await loadAggregate(authority.roomId);
+      if (aggregate) assertOfficialReleaseQueryBindingV2({ expectedBinding: releaseBinding, aggregate });
     } catch (error) {
       return unknown(authority, queryKind, safeCode(error), {
         failureStage: "read_authoritative_room",
@@ -421,6 +514,25 @@ export function createStarcraftTmgRoomBackedSpatialRulesQueryAdapterV1(
       });
     }
     const args = object(request.arguments) ? request.arguments : {};
+    if(queryKind==='ranged_activation_probability') {
+      const expectedArguments=clone(STARCRAFT_TMG_SPATIAL_QUERY_CONTRACTS_V1[queryKind].arguments);
+      const issue=inspectRangedActivationQueryArgumentsV1(args);
+      if(issue)return unknown(authority,queryKind,'RANGED_ACTIVATION_QUERY_ARGUMENTS_INVALID',{
+        mayRepairSameChoice:true,repairContext:{...issue,expectedArguments,suggestionExecuted:false}});
+      try {
+        const result=await estimateStarcraftTmgRangedActivationV1({...args,
+          state:aggregate.envelope.state,sideKey:seatKey},{shouldStop:options.shouldStopReadQuery,
+          observeProgress:options.observeQueryBatchDiagnostic});
+        if(result.status!=='complete')return unknown(authority,queryKind,result.failures[0]?.code||'RANGED_ACTIVATION_INCOMPLETE',{
+          mayRepairSameChoice:true,repairContext:{expectedArguments,partialResult:result,suggestionExecuted:false,
+            guidance:'This prefix did not complete the declared policy. No unconditional mean exists; do not use completed samples as zero-filled or unbiased results.'}});
+        return freeze({ok:true,authority:clone(authority),queryKind,precision:'advisory_estimate',result,
+          rulesAuthority:false,mutationAuthority:false,confirmationAuthority:false,applyAuthority:false,trainingTruth:false});
+      } catch(error) {
+        return unknown(authority,queryKind,safeCode(error),{mayRepairSameChoice:true,
+          repairContext:{expectedArguments,detail:error.detail??null,suggestionExecuted:false}});
+      }
+    }
     if (queryKind === 'space.solve_static_formation') {
       try {
         const result = queryStarcraftTmgStaticFormationV1({ state: aggregate.envelope.state, arguments: args });
@@ -442,9 +554,35 @@ export function createStarcraftTmgRoomBackedSpatialRulesQueryAdapterV1(
         repairContext:{expectedArguments:clone(STARCRAFT_TMG_SPATIAL_QUERY_CONTRACTS_V1[queryKind].arguments),
           suggestionExecuted:false}});}
     }
+    if (queryKind === 'token.creator_loss' || queryKind === 'unit.status_loss') {
+      const statusLoss=queryKind === 'unit.status_loss';
+      const inspect=statusLoss ? rulesRuntime.queryAttachedEffectLoss : rulesRuntime.queryCreatedTokens;
+      if (!inspect) return unknown(authority,queryKind,statusLoss?'UNIT_STATUS_LIFECYCLE_UNAVAILABLE':'CREATOR_TOKEN_LIFECYCLE_UNAVAILABLE');
+      if (typeof args.unitId !== 'string' || Object.keys(args).length !== 1) {
+        return unknown(authority,queryKind,statusLoss?'STATUS_LOSS_UNIT_ID_REQUIRED':'CREATOR_UNIT_ID_REQUIRED',{mayRepairSameChoice:true,
+          repairContext:{expectedArguments:STARCRAFT_TMG_SPATIAL_QUERY_CONTRACTS_V1[queryKind].arguments}});
+      }
+      try {
+        const result = inspect(aggregate.envelope.state,args.unitId);
+        return freeze({ok:true,authority:clone(authority),queryKind,precision:'exact',result,rulesAuthority:true,
+          mutationAuthority:false,confirmationAuthority:false,applyAuthority:false,trainingTruth:false});
+      } catch (error) { return unknown(authority,queryKind,safeCode(error)); }
+    }
+    if (queryKind === 'ability.timing') {
+      if (!rulesRuntime.queryAbilityTiming) return unknown(authority,queryKind,'ABILITY_TIMING_RUNTIME_UNAVAILABLE');
+      if (Object.keys(args).length !== 1 || typeof args.recordKey !== 'string') {
+        return unknown(authority,queryKind,'ABILITY_TIMING_RECORD_KEY_REQUIRED',{
+          mayRepairSameChoice:true,repairContext:{expectedArguments:STARCRAFT_TMG_SPATIAL_QUERY_CONTRACTS_V1[queryKind].arguments}});
+      }
+      try {
+        const result = rulesRuntime.queryAbilityTiming(args.recordKey);
+        return freeze({ok:true,authority:clone(authority),queryKind,precision:'exact',result,rulesAuthority:true,
+          mutationAuthority:false,confirmationAuthority:false,applyAuthority:false,trainingTruth:false});
+      } catch (error) { return unknown(authority,queryKind,safeCode(error)); }
+    }
     if (queryKind === "map.inspect" || queryKind === "map.route_access") {
       try {
-        const port = createPregameMapEvidencePortV1({ sourceState: aggregate.envelope.state });
+        const port = createPregameMapEvidencePortV1({ sourceState: aggregate.envelope.state, releaseBinding });
         const result = queryKind === "map.inspect"
           ? port.summarizeMap({ queryId: "scene-map-inspect" })
           : port.routeToObjective({ ...args, queryId: "scene-map-route-access" });
@@ -467,11 +605,11 @@ export function createStarcraftTmgRoomBackedSpatialRulesQueryAdapterV1(
     if (queryKind === "mission_marker_control") return inspectMarkerControl(request, aggregate);
     if (queryKind === STARCRAFT_TMG_RELATIONSHIP_QUERY_KIND) {
       try {
-        if (lineOfSightStateHash !== authority.stateHash) {
+        if (lineOfSightStateHash !== (releaseBinding?.manifestHash || '') + authority.stateHash) {
           // A yielding old query can only populate its captured old cache;
           // never clear/reuse that object for a different authoritative state.
           lineOfSightCache = newLineOfSightCache();
-          lineOfSightStateHash = authority.stateHash;
+          lineOfSightStateHash = (releaseBinding?.manifestHash || '') + authority.stateHash;
         }
         const queryCache = lineOfSightCache;
         let completedCache = null;
@@ -555,6 +693,39 @@ export function createStarcraftTmgRoomBackedSpatialRulesQueryAdapterV1(
         findingSeverity: "High",
       });
     }
+    if (queryKind === 'battlefield_token_displacement') {
+      const extended = typeof rulesRuntime.queryBattlefieldTokenDisplacement === 'function';
+      const inspect = extended ? rulesRuntime.queryBattlefieldTokenDisplacement : rulesRuntime.queryCreepDisplacement;
+      if (typeof inspect !== 'function') {
+        return unknown(authority, queryKind, 'BATTLEFIELD_DISPLACEMENT_QUERY_NOT_AVAILABLE_FOR_RELEASE');
+      }
+      const { parameters, tokenId, coordinate, precedingDisplacements } = args;
+      if (!object(parameters) || Object.hasOwn(parameters, 'tokenDisplacements')
+        || typeof tokenId !== 'string' || !tokenId
+        || Object.keys(args).some(key => !['domainId', 'currentLegalSpaceDomain', 'parameters', 'tokenId', 'coordinate',
+          ...(extended ? ['precedingDisplacements'] : [])].includes(key))) {
+        return unknown(authority, queryKind, 'BATTLEFIELD_DISPLACEMENT_QUERY_ARGUMENTS_INVALID');
+      }
+      const invalid = parameterContractFailure(authority, queryKind, domain, {
+        kind: 'parameterized', domainId, parameters,
+      });
+      if (invalid) return invalid;
+      try {
+        const { queryReceiptHash: sourceQueryReceiptHash, ...evidence } =
+          inspect.call(rulesRuntime, aggregate.envelope.state, domain,
+            { parameters, tokenId, coordinate, ...(precedingDisplacements !== undefined ? { precedingDisplacements } : {}) },
+            { matchBinding: aggregate.envelope.matchBinding });
+        return freeze({ ok: true, authority: clone(authority), precision: 'exact', queryKind,
+          result: { ...evidence, domainId, sourceQueryReceiptHash },
+          source: STARCRAFT_TMG_ROOM_BACKED_SPATIAL_RULES_QUERY_ADAPTER_VERSION,
+          rulesAuthority: true, mutationAuthority: false, confirmationAuthority: false,
+          applyAuthority: false, trainingTruth: false });
+      } catch (error) {
+        return unknown(authority, queryKind, safeCode(error), {
+          failureStage: 'inspect_native_token_displacement', mayRepairSameChoice: true,
+        });
+      }
+    }
     if (queryKind === "attack_probability") {
       const invalid = parameterContractFailure(authority, queryKind, domain, {
         kind: 'parameterized', domainId, parameters: args.parameters,
@@ -619,6 +790,11 @@ export function createStarcraftTmgRoomBackedSpatialRulesQueryAdapterV1(
           instantiateOptions: {
             matchBinding: aggregate.envelope.matchBinding,
           },
+          projectDelegatedFormation: (sourceState, action) => {
+            if (action.chance) throw new TypeError("DELEGATED_FORMATION_RANDOM_TRANSITION_UNAVAILABLE");
+            return rulesRuntime.apply(sourceState, action, { matchBinding: aggregate.envelope.matchBinding,
+              postRevision: aggregate.stateRevision + 1 }).state;
+          },
         }, { compareBatch: async jobs => {
           const startedAtMs = Date.now();
           observeFormation({ stage: "formation_comparison_batch_started",
@@ -648,6 +824,7 @@ export function createStarcraftTmgRoomBackedSpatialRulesQueryAdapterV1(
             "RULES_QUERY_NO_LEGAL_FORMATION_OPTION", {
               attemptedCandidateCount: result.attemptedCandidateCount,
               failureCounts: clone(result.failureCounts),
+              repairContext: boundedPlacementSearchContext(result, domain),
               mayRepairSameChoice: false,
             });
         }
@@ -689,6 +866,7 @@ export function createStarcraftTmgRoomBackedSpatialRulesQueryAdapterV1(
             "RULES_QUERY_NO_LEGAL_ASSET_PLACEMENT_OPTION", {
               attemptedCandidateCount: result.attemptedCandidateCount,
               failureCounts: clone(result.failureCounts),
+              repairContext: boundedPlacementSearchContext(result, domain),
               mayRepairSameChoice: false,
             });
         }
@@ -713,24 +891,43 @@ export function createStarcraftTmgRoomBackedSpatialRulesQueryAdapterV1(
         });
       }
     }
-    const proposal = object(args.proposal) ? args.proposal : {
+    const suppliedProposal = object(args.proposal) ? clone(args.proposal) : {
       kind: "parameterized",
       domainId: args.domainId,
       parameters: args.parameters,
     };
-    if (proposal.kind !== "parameterized" || !object(proposal.parameters)) {
+    if (suppliedProposal.kind !== "parameterized" || !object(suppliedProposal.parameters)) {
       return unknown(authority, queryKind,
         "RULES_QUERY_PARAMETERIZED_PROPOSAL_REQUIRED");
     }
+    const proposal = { ...suppliedProposal,
+      parameters: canonicalOfficialRelocationParameterCoordinatesV1(domain, suppliedProposal.parameters) };
     const invalid = parameterContractFailure(authority, queryKind, domain, proposal);
-    if (invalid) return invalid;
+    // A current menu can reserve a field for Rules. Ask Native to confirm this
+    // exact refusal before returning it as evidence about the submitted action.
+    if (invalid && !(canReportSpatialCandidateRejectionV1(queryKind)
+      && invalid.repairContext.fieldIssues.every(issue => issue.code === 'field_computed_by_rules'))) return invalid;
     try {
+      let completion;
+      if (queryKind === 'complete_lunge_move') {
+        if (typeof rulesRuntime.completeLungeMove !== 'function') {
+          return unknown(authority, queryKind, 'LUNGE_COMPLETION_NOT_AVAILABLE_FOR_RELEASE');
+        }
+        completion = rulesRuntime.completeLungeMove(aggregate.envelope.state, domain, proposal.parameters,
+          { matchBinding: aggregate.envelope.matchBinding });
+        if (!completion) return unknown(authority, queryKind,
+          Object.hasOwn(proposal.parameters.move, 'placements')
+            ? 'LUNGE_COMPLETION_NO_CERTIFIED_WITNESS' : 'LUNGE_COMPLETION_NO_CERTIFIED_FORMATION', {
+            mayRepairSameChoice: true,
+          });
+      }
       const instantiated = rulesRuntime.instantiate(
         aggregate.envelope.state,
         domain,
-        proposal.parameters,
+        completion?.canonicalParameters ?? proposal.parameters,
         { matchBinding: aggregate.envelope.matchBinding },
       );
+      if (invalid) return invalid;
       const sourceAction = instantiated.action?.sourceAction || instantiated.action;
       const placementEvidence=nativePlacementEvidence(instantiated.action);
       if ((queryKind==='legal_full_path_movement'&&!placementEvidence.completeNativePathChecked)
@@ -753,7 +950,8 @@ export function createStarcraftTmgRoomBackedSpatialRulesQueryAdapterV1(
         action: actionPlan(instantiated.action),
         actionHash: hashStarcraftTmgContract(instantiated.action),
         completeFormationPlacementChecked:placementEvidence.completeFormationPlacementChecked,
-        automaticFormationPlacementUsed: false,
+        automaticFormationPlacementUsed: completion?.formationGenerated === true,
+        ...(completion ? { witnessGenerated: completion.witnessGenerated } : {}),
         ...(queryKind === "legal_full_path_movement" ? { pathQualification: {
           completeNativePathChecked: true, scope: "supplied_candidate_only",
           spatialPlanHash:placementEvidence.spatialPlanHash,
@@ -788,13 +986,24 @@ export function createStarcraftTmgRoomBackedSpatialRulesQueryAdapterV1(
       });
     } catch (error) {
       const failureCode = safeCode(error);
+      if (invalid && !(error instanceof OfficialSpatialProposalRejectionV1
+        && error.reasonCode === 'SELECTED_SPATIAL_GAP_INPUT_HOST_DERIVED')) return invalid;
+      const repairContext = invalid?.repairContext ?? describeStarcraftTmgActionParameterRepairContextV1(domain, proposal, failureCode, safeFailureDetail(error));
+      if (error instanceof OfficialSpatialProposalRejectionV1 && canReportSpatialCandidateRejectionV1(queryKind)) {
+        return freeze({
+          ok: true, queryKind, authority: clone(authority), precision: 'exact', rulesAuthority: true,
+          result: { proposalAccepted: false, domainId: domain.domainId, scope: 'supplied_candidate_only',
+            reason: error.reasonCode, proposalHash: hashStarcraftTmgContract(suppliedProposal) },
+          repairContext, source: STARCRAFT_TMG_ROOM_BACKED_SPATIAL_RULES_QUERY_ADAPTER_VERSION,
+          mutationAuthority: false, confirmationAuthority: false, applyAuthority: false, trainingTruth: false,
+        });
+      }
       return unknown(authority, queryKind, failureCode, {
         failureStage: "instantiate_current_rules_domain",
         safeFailureClass: safeFailureClass(error),
         proposalHash: hashStarcraftTmgContract(proposal),
         mayRepairSameChoice: true,
-        repairContext: describeStarcraftTmgActionParameterRepairContextV1(domain, proposal, failureCode,
-          safeFailureDetail(error)),
+        repairContext,
       });
     }
   }
@@ -811,7 +1020,8 @@ export function createStarcraftTmgRoomBackedSpatialRulesQueryAdapterV1(
     if (!Array.isArray(requests)) throw new TypeError("RULES_QUERY_BATCH_REQUESTS_REQUIRED");
     const results = new Array(requests.length);
     const groups = new Map();
-    for (const [index, request] of requests.entries()) {
+    for (const [index, original] of requests.entries()) {
+      const request = bindQueryRelease(original);
       // Non-pure queries keep their ordinary source/instantiation path. No
       // formation, branch, final action or mutation is admitted to the pool.
       if (!INDEPENDENT_READONLY_QUERY_KINDS.has(request?.queryKind)
@@ -829,6 +1039,7 @@ export function createStarcraftTmgRoomBackedSpatialRulesQueryAdapterV1(
       const authority = entries[0].request.authority;
       let snapshot;
       try {
+        assertSameOfficialQueryReleaseV2(releaseBinding, authority.releaseBinding);
         const aggregate = await loadAggregate(authority.roomId);
         if (!aggregate || aggregate.envelope?.matchBindingHash !== authority.matchBindingHash
           || aggregate.stateRevision !== authority.stateRevision
@@ -840,7 +1051,9 @@ export function createStarcraftTmgRoomBackedSpatialRulesQueryAdapterV1(
         snapshot = freeze(clone({ stateRevision: aggregate.stateRevision,
           envelope: { state: aggregate.envelope.state,
             stateHash: aggregate.envelope.stateHash,
-            matchBindingHash: aggregate.envelope.matchBindingHash } }));
+            matchBindingHash: aggregate.envelope.matchBindingHash,
+            ...((aggregate.envelope.matchBinding?.releaseBinding || aggregate.envelope.releaseBinding)
+              ? { releaseBinding: aggregate.envelope.matchBinding?.releaseBinding || aggregate.envelope.releaseBinding } : {}) } }));
       } catch (error) {
         for (const entry of entries) results[entry.index] = unknown(authority,
           entry.request.queryKind, safeCode(error), { failureStage: "read_authoritative_room" });
@@ -904,7 +1117,8 @@ export function createStarcraftTmgRoomBackedSpatialRulesQueryAdapterV1(
     return results;
   }
 
-  async function queryFirstExact(request = {}) {
+  async function queryFirstExact(original = {}) {
+    const request = bindQueryRelease(original);
     const authority = request.authority;
     const queryKind = "find_first_legal_parameterized_action";
     if (!object(authority) || authority.seatKey !== seatKey
@@ -926,6 +1140,7 @@ export function createStarcraftTmgRoomBackedSpatialRulesQueryAdapterV1(
     }
     let aggregate;
     try {
+      assertSameOfficialQueryReleaseV2(releaseBinding, authority.releaseBinding);
       aggregate = await loadAggregate(authority.roomId);
     } catch (error) {
       return unknown(authority, queryKind, safeCode(error), {
@@ -985,6 +1200,7 @@ export function createStarcraftTmgRoomBackedSpatialRulesQueryAdapterV1(
   }
 
   return Object.freeze({
+    assertCurrentAuthority,
     metadata: Object.freeze({
       schemaVersion:
         `${STARCRAFT_TMG_ROOM_BACKED_SPATIAL_RULES_QUERY_ADAPTER_VERSION}.metadata`,

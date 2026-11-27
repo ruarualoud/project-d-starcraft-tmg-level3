@@ -1,3 +1,4 @@
+import { ARMY_BUILDER_RELEASE_SCHEMAS_V2, verifyOfficialArmyBuilderReleaseBundleV2 } from './official-army-builder-release-bundle-v2.mjs';
 import { hashStarcraftTmgContract } from
   "../authoritative-engine/referee-crypto-v1.mjs";
 import {
@@ -104,7 +105,7 @@ function exactRuleSectionRecords(dataset) {
 function profile(body) {
   return { ...body, budgetProfileHash: hashStarcraftTmgContract(body) };
 }
-function compileProfiles(dataset, factionBundle) {
+export function compileOfficialArmyBudgetProfilesV2(dataset, factionBundle) {
   const cardBundle = factionBundle.cardDataBundle;
   const unitBundle = factionBundle.unitDataBundle;
   const tacticalBudgetProfiles = cardBundle.cardProfiles.filter((entry) => (
@@ -174,7 +175,7 @@ export function createOfficialArmyResourceBudgetDataBundleV1(input = {}) {
     || !object(dataset.recordsByKey)) fail("ARMY_RESOURCE_BUDGET_DATASET_INVALID");
   const factionArmyEligibilityDataBundle =
     createOfficialFactionArmyEligibilityDataBundleV1({ dataset });
-  const compiled = compileProfiles(dataset, factionArmyEligibilityDataBundle);
+  const compiled = compileOfficialArmyBudgetProfilesV2(dataset, factionArmyEligibilityDataBundle);
   const audit = {
     factionCardCount: factionArmyEligibilityDataBundle.audit.factionCardCount,
     tacticalBudgetProfileCount: compiled.tacticalBudgetProfiles.length,
@@ -242,6 +243,7 @@ export function createOfficialArmyResourceBudgetDataBundleV1(input = {}) {
 }
 
 export function verifyOfficialArmyResourceBudgetDataBundleV1(bundle) {
+  if (bundle?.schema === ARMY_BUILDER_RELEASE_SCHEMAS_V2.budget) return verifyOfficialArmyBuilderReleaseBundleV2(bundle, 'budget');
   if (!object(bundle) || bundle.schema !== OFFICIAL_ARMY_RESOURCE_BUDGET_DATA_BUNDLE_SCHEMA
     || bundle.sourceLockHash !== OFFICIAL_DEVELOPMENT_TRANCHE_SOURCE_LOCK_HASH
     || bundle.sourceSnapshotHash !== OFFICIAL_DEVELOPMENT_TRANCHE_SNAPSHOT_HASH

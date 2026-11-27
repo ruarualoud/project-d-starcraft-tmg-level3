@@ -1,0 +1,47 @@
+{
+  "charge": {
+    "roomId": "creep-charge-v262",
+    "revision": 0,
+    "events": [
+      {
+        "type": "charge_succeeded",
+        "chargeRoll": 5
+      },
+      {
+        "type": "battlefield_token_displaced",
+        "tokenId": "asset:2:creep_token_place:1",
+        "coordinate": {
+          "xMilliInches": 19702,
+          "yMilliInches": 2425
+        }
+      },
+      {
+        "type": "creep_tumor_removed",
+        "tokenId": "asset:2:creep_token_place:1"
+      }
+    ],
+    "sourcePostHash": "dfcb1fd7a324134af1216d07cdea5c7865e7b1e19220855f3998c57f3df437e1"
+  },
+  "closeRanks": {
+    "roomId": "wave2-close-ranks-displacement",
+    "revision": 0,
+    "sourcePostHash": "023acfb015e02b5f58858e7cdad1d9c7cadba6dcc4b494441894ba8917f77312",
+    "events": [
+      {
+        "type": "close_ranks_movement_committed"
+      }
+    ]
+  },
+  "blink": {
+    "roomId": "wave2-displacement-special-blink",
+    "revision": 0,
+    "sourcePostHash": "f0bf9ed9ce8e067fbedc23f11015d2eefee3b5eecd4b8c8131556d2b67e43a44",
+    "events": [
+      {
+        "type": "relocation_ability_resolved",
+        "abilityName": "Blink",
+        "effectKind": "direct_place"
+      }
+    ]
+  }
+}

@@ -8,11 +8,17 @@ export function projectRosterEvidencePathNavigationV1(body,requestedPointer){
   if(typeof requestedPointer!=='string'||!requestedPointer.startsWith('/'))return null;
   const parsed=parseRosterTeachEvidencePathV1(requestedPointer);
   if(!parsed||!parsed.keys.length)return null;
-  let node=body,index=0;
-  while(index<parsed.keys.length&&object(node)&&Object.hasOwn(node,parsed.keys[index]))node=node[parsed.keys[index++]];
+  let node=body,index=0,parent=null,parentKeys=[];
+  while(index<parsed.keys.length&&object(node)&&Object.hasOwn(node,parsed.keys[index])){
+    parent=node;parentKeys=parsed.keys.slice(0,index);node=node[parsed.keys[index++]];
+  }
   if(index===parsed.keys.length)return null;
   const prefix=parsed.keys.slice(0,index),suffix=parsed.keys.slice(index),candidatePointers=[];
-  const queue=[{node,keys:prefix,depth:0}];let visited=0,searchTruncated=false;
+  // A real null/scalar is still a successful path prefix. Search only its
+  // nearest containing object for sibling result envelopes; never treat null
+  // as zero, replace the selected address or grant a read of a suggestion.
+  const searchRoot=object(node)?node:parent,searchKeys=object(node)?prefix:parentKeys;
+  const queue=[{node:searchRoot,keys:searchKeys,depth:0}];let visited=0,searchTruncated=false;
   // A local bounded address search, not a scan through the workflow/history.
   for(let cursor=0;cursor<queue.length;cursor++){
     if(visited++>=256){searchTruncated=true;break;}
@@ -29,6 +35,7 @@ export function projectRosterEvidencePathNavigationV1(body,requestedPointer){
   }
   const keys=object(node)?Object.keys(node):[];
   return {kind:'exact_source_path_navigation',version:1,nearestExistingPointer:pointer(prefix),
+    searchRootPointer:pointer(searchKeys),searchRootKeys:object(searchRoot)?Object.keys(searchRoot).slice(0,64):[],
     availableKeys:keys.slice(0,64),availableKeysTruncated:keys.length>64,
     candidatePointers,searchTruncated,capabilityAbsenceProven:false,bodyRead:false,
     instruction:'Only the requested JSON address is missing. This is NOT evidence that a tool, rule, or capability is absent. Candidate pointers exist in this SAME source, but are navigation only, not completed reads or permission to execute. Explicitly read the relevant path before drawing a capability conclusion; zero suggestions is not proof of absence. Existing execution and experiment-scope restrictions remain unchanged.'};

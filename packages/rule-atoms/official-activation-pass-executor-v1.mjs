@@ -1,3 +1,6 @@
+import { listOfficialPoisonousEssenceMarksV1 } from './official-poisonous-essence-marks-v1.mjs';
+import { isOfficialReleaseDroneAssaultDueV1 } from './official-sabotage-drone-timing-v1.mjs';
+import { pendingOfficialSeekerControllersV1 } from './official-seeker-assault-timing-v1.mjs';
 import { hasOfficialPhaseActivationAvailableV1 } from
   "./official-phase-activation-availability-v1.mjs";
 
@@ -87,6 +90,36 @@ function nextPhase(phase) {
 }
 
 function completePhase(state, phase) {
+  const moundPolicy = state.officialPoisonousEssencePolicy;
+  if (phase === 'assault' && moundPolicy && state.officialReleaseMoundAssaultTiming === moundPolicy.policyHash
+    && listOfficialPoisonousEssenceMarksV1(state, moundPolicy).some(mark => !mark.resolved)) {
+    for (const side of ['player1', 'player2']) state.players[side].passedPhases.assault = true;
+    state.officialDeferredMoundAssaultRound = Number(state.round);
+    state.activeSideKey = state.firstPlayerSideKey;
+    return [{ type: 'phase_completion_deferred', phase, activeSideKey: state.activeSideKey, reason: 'poisonous_essence_assault_end' }];
+  }
+  if (phase === 'assault' && state.officialReleaseBileAssaultTiming
+    && state.officialReleaseBileAssaultTiming === state.officialCorrosiveBileDamagePolicy?.policyHash
+    && state.pendingCorrosiveBileEffects?.some(effect => !effect.consumed && effect.round === Number(state.round))) {
+    for (const side of ['player1', 'player2']) state.players[side].passedPhases.assault = true;
+    state.officialDeferredBileAssaultRound = Number(state.round);
+    state.activeSideKey = state.firstPlayerSideKey;
+    return [{ type: 'phase_completion_deferred', phase, activeSideKey: state.activeSideKey, reason: 'corrosive_bile_assault_end' }];
+  }
+  const due = state.officialSeekerAssaultTiming && phase === 'assault' ? pendingOfficialSeekerControllersV1(state) : null;
+  if (due?.controllerSideKey) {
+    for (const side of ["player1", "player2"]) state.players[side].passedPhases.assault = true;
+    state.activeSideKey = due.controllerSideKey;
+    state.officialDeferredSeekerAssaultRound = Number(state.round);
+    return [{ type: "phase_completion_deferred", phase, activeSideKey: state.activeSideKey,
+      reason: "raven_seeker_assault_end" }];
+  }
+  if (phase === 'assault' && isOfficialReleaseDroneAssaultDueV1(state)) {
+    for (const side of ['player1','player2']) state.players[side].passedPhases.assault = true;
+    state.activeSideKey = state.firstPlayerSideKey;
+    state.officialDeferredDroneAssaultRound = Number(state.round);
+    return [{type:'phase_completion_deferred', phase, activeSideKey:state.activeSideKey, reason:'sabotage_drone_assault_end'}];
+  }
   const markerAssignments = {
     player1: markUnactivatedOnTableUnits(state, "player1", phase),
     player2: markUnactivatedOnTableUnits(state, "player2", phase),
@@ -218,6 +251,12 @@ export function settleOfficialAlternatingPhaseAfterActivationV1(stateInput, opti
   };
 }
 
+export function isOfficialFirstPlayerMarkerClaimProhibitedV1(state, sideKey) {
+  const lock = state.firstPlayerClaimLock;
+  return lock?.preventsOtherSideClaim === true && lock.round === Number(state.round)
+    && lock.phase === state.phase && lock.sideKey !== sideKey;
+}
+
 export function applyOfficialActivationPassV1(stateInput, actionInput, options = {}) {
   validateState(stateInput);
   if (!object(actionInput) || actionInput.actionType !== "pass") fail("PASS_ACTION_INVALID");
@@ -238,9 +277,10 @@ export function applyOfficialActivationPassV1(stateInput, actionInput, options =
   state.players[sideKey].passedPhases[phase] = true;
   state.firstPassSideByPhase = state.firstPassSideByPhase || {};
   const firstPass = !state.firstPassSideByPhase[phase];
+  const markerClaimProhibited = firstPass && isOfficialFirstPlayerMarkerClaimProhibitedV1(state, sideKey);
   if (firstPass) {
     state.firstPassSideByPhase[phase] = sideKey;
-    state.firstPlayerSideKey = sideKey;
+    if (!markerClaimProhibited) state.firstPlayerSideKey = sideKey;
   }
   const markedPieceIds = markUnactivatedOnTableUnits(state, sideKey, phase);
   const events = [{
@@ -249,12 +289,16 @@ export function applyOfficialActivationPassV1(stateInput, actionInput, options =
     phase,
     passKind,
     firstPass,
+    ...(markerClaimProhibited ? { markerClaimProhibited } : {}),
     firstPlayerSideKey: state.firstPlayerSideKey,
     markedPieceIds,
   }];
   const otherSideKey = sideKey === "player1" ? "player2" : "player1";
   if (sidePassed(state, otherSideKey, phase)) {
-    events.push(...completePhase(state, phase));
+    if (options.deferPhaseCompletion === true) {
+      state.activeSideKey = state.firstPlayerSideKey;
+      events.push({ type: "phase_completion_deferred", phase, activeSideKey: state.activeSideKey });
+    } else events.push(...completePhase(state, phase));
   } else {
     state.activeSideKey = otherSideKey;
   }
@@ -278,4 +322,13 @@ export function applyOfficialActivationPassV1(stateInput, actionInput, options =
     rulesTruth: "movement_and_assault_pass_only",
     trainingTruth: false,
   };
+}
+
+export function completeOfficialDeferredActivationPhaseV1(stateInput, phase) {
+  validateState(stateInput);
+  if (stateInput.phase !== phase || !SUPPORTED_PHASES.includes(phase)
+    || !["player1", "player2"].every(side => sidePassed(stateInput, side, phase))) fail("DEFERRED_PHASE_NOT_COMPLETE");
+  const state = clone(stateInput);
+  const events = completePhase(state, phase);
+  return { state, events };
 }

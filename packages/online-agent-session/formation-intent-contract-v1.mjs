@@ -8,6 +8,10 @@ export const STATIC_FORMATION_OBJECTIVE_CONTRACT_V1 = Object.freeze({
   targetIds: 'optional array of exact target IDs; default[]',
   unsupportedIntent: 'correctable error; never silently replaced with balanced',
 });
+export const STATIC_FORMATION_OBJECTIVES_INPUT_SCHEMA_V1=Object.freeze({type:'array',items:{type:'object',additionalProperties:false,required:['kind'],properties:{
+  kind:{type:'string',enum:STARCRAFT_TMG_FORMATION_OBJECTIVE_KINDS},
+  weight:{type:'integer',minimum:1,maximum:5},targetIds:{type:'array',items:{type:'string',minLength:1}}
+}}});
 export const STATIC_FORMATION_OBJECTIVES_CONTRACT_V1=Object.freeze([STATIC_FORMATION_OBJECTIVE_CONTRACT_V1]);
 export const STATIC_FORMATION_JOINT_SEARCH_DEFAULTS_V1=Object.freeze({maximumOptions:6,maximumEvaluations:128});
 export function normalizeExplicitStaticFormationObjectivesV1(value) {

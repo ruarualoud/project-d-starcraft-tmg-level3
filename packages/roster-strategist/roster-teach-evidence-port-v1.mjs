@@ -260,8 +260,9 @@ export function projectRosterTeachEvidenceReferencesV1(evidenceReceipts,
       references.push(createRosterToolReceiptReferenceV1({
         referenceId: `teachref-${evidence.challengeId}-${references.length + 1}`,
         receiptKind: kind(source.kind), status: "attached", receiptHash,
-        toolId, querySummaryText: `Teach ${evidence.challengeId}: ${source.kind}; `
-          + `result ${receipt.resultStatus}; unknown remains unknown`,
+        toolId, querySummaryText: receipt.queryReceipt?.status === 'rejected'
+          ? `Teach ${evidence.challengeId}: supplied candidate ${receipt.queryReceipt.result.proposalHash} rejected (${receipt.queryReceipt.reason}); other candidates untested`
+          : `Teach ${evidence.challengeId}: ${source.kind}; result ${receipt.resultStatus}; unknown remains unknown`,
       }));
     }
     if (!evidence.sourceReceipt) {

@@ -12,6 +12,7 @@ import {projectRosterEvidenceReadNavigationV1} from './roster-evidence-path-navi
 import {projectRosterWorkflowReviewContextV1} from './roster-workflow-review-context-v1.mjs';
 import {projectRosterLocalObligationInputsV1} from './roster-review-data-questions-v1.mjs';
 import {projectRosterNativeChoiceSourcesV1} from './roster-native-choice-sources-v1.mjs';
+import {projectRosterWorkflowAuthorDraftInputV1} from './roster-workflow-draft-v1.mjs';
 export {rosterComparisonObservationCoverageErrorsV1} from './roster-comparison-observation-sources-v1.mjs';
 
 // Publish once per draft. These are the existing deterministic source-fact
@@ -75,6 +76,13 @@ export async function projectRosterWorkflowRoleSourceInputsV1({assignment,state,
   const entry=state.evidence.find(e=>e.id===prefix+'v'+sourceFactsVersion)
     ??state.evidence.find(e=>e.id===prefix+'v2')??state.evidence.find(e=>e.id===prefix+'v1');
   const inputs=entry?{...assignment.inputs,decisionEvidenceDirectory:{source:'literal',value:await readArtifact(entry.artifactRef)}}:{...assignment.inputs};
+  // Retaining a draft is a real author decision but does not create a commit.
+  // Its later investigation citations therefore cannot live only in the
+  // once-per-revision committed lineage. A later Plan-only edit must not erase
+  // that discovery path either. Preserve the old author's historical identity;
+  // each cited measurement keeps its own bindings and explicit read requirement.
+  const retained=await projectRosterWorkflowRetainedDecisionSourcesV1({state,readArtifact});
+  if(retained)inputs.retainedDecisionEvidenceDirectory={source:'literal',value:retained};
   if(['roster_workflow_experiment_planner','roster_workflow_strategy_decision','roster_workflow_local_teach'].includes(assignment.role)){
     const prior=projectRosterPriorInvestigationEvidenceV1({state,
       work:state.work.find(w=>w.id===(assignment.workId??assignment.id))});
@@ -105,9 +113,24 @@ export async function projectRosterWorkflowRoleSourceInputsV1({assignment,state,
   // instruction. This changes neither the rejected request nor its diagnosis
   // record, and never executes a tool or edits a model proposal.
   const task=inputs.task?.value,failure=task?.failure;
+  if(failure?.operation==='candidate_context'&&!inputs.frozenParticipantSource){
+    const repair=state.work.find(w=>w.id===(assignment.workId??assignment.id));
+    const tool=state.work.find(w=>w.id===repair?.repairOf);
+    const owner=state.work.find(w=>w.id===tool?.experimentOwnerId);
+    const source=owner?.inputs?.frozenParticipantSource;
+    const entry=source?.source==='evidence'&&source.pointer===''&&state.evidence.find(e=>e.id===source.id);
+    if(tool?.inputs?.request?.value?.comparisonBinding&&entry?.artifactRef
+      &&[assignment.scope,owner.bindings,entry.bindings].every(value=>rosterWorkflowBindingsMatchV1(value,state.scope))){
+      const value=await readArtifact(entry.artifactRef);
+      if(value?.schema==='roster_participant_source_v2'&&value.sourceStateHash===state.scope.source)
+        inputs.frozenParticipantSource={source:'evidence',evidenceId:entry.id,evidenceNumber:state.evidence.indexOf(entry)+1,
+          artifactRef:entry.artifactRef,pointer:'',status:'read',validity:'current',conditions:entry.conditions,value};
+    }
+  }
   if(failure?.operation&&typeof projectToolRepair==='function'){
     const queryRepair=projectToolRepair(failure);
     if(queryRepair)inputs.task={...inputs.task,value:{...task,
+      ...(queryRepair.nativeRuleRejection?{instruction:queryRepair.instruction}:{}),
       failure:{...failure,queryRepair},
       currentRepairContract:{originalFailureUnchanged:true,source:'current_executable_tool_adapter',
         instruction:'failure.detail records the original execution; failure.queryRepair is the current source-owned repair interface for those same inputs. Follow its precise inputProblem when present. No request was modified or retried; strategic choices and facts are unchanged.'}}};
@@ -117,6 +140,19 @@ export async function projectRosterWorkflowRoleSourceInputsV1({assignment,state,
   // or overwrite a historical assigned draft. This is shared by all consumers.
   if(state.draftRef){
     const draft=await readArtifact(state.draftRef);
+    // Every strategic OWNER needs the same committed whole draft, including
+    // the after-applied-revision investigation return. That constructor carries
+    // a summary, which has the army but not Plan content. Do not depend on each
+    // producer remembering to copy this input, or add global Plan to fact roles.
+    // This is a fresh request projection; saved requests and work stay intact.
+    if(assignment.role==='roster_workflow_strategy_decision'){
+      const wholeDraft=projectRosterWorkflowAuthorDraftInputV1(draft);
+      if(draft.revision!==state.draftRevision||!rosterWorkflowBindingsMatchV1(assignment.scope,state.scope))
+        throw Object.assign(Error('ROSTER_WORKFLOW_AUTHOR_DRAFT_SCOPE_MISMATCH'),{dispatchOutcome:'not_dispatched'});
+      if(inputs.wholeDraft&&!isDeepStrictEqual(inputs.wholeDraft.value,wholeDraft.value))
+        throw Object.assign(Error('ROSTER_WORKFLOW_AUTHOR_DRAFT_INPUT_CONFLICT'),{dispatchOutcome:'not_dispatched'});
+      inputs.wholeDraft=wholeDraft;
+    }
     const auditEntry=state.evidence.find(e=>e.id===`draft:r${state.draftRevision}:builder`
       &&e.artifactRef===draft.builderVerdictRef);
     if(auditEntry){
@@ -155,6 +191,52 @@ export async function projectRosterWorkflowRoleSourceInputsV1({assignment,state,
   if(inputs.proposedDesign||inputs.comparisonPurpose||inputs.comparisonDesignGoal)
     inputs.comparisonStageOwnership={source:'literal',value:rosterComparisonStageOwnershipV1()};
   return inputs;
+}
+
+async function projectRosterWorkflowRetainedDecisionSourcesV1({state,readArtifact}){
+  const roots=[];
+  const sameFactContext=bindings=>['army','rules','map','source'].every(key=>
+    typeof bindings?.[key]==='string'&&bindings[key]===state.scope[key]);
+  for(const work of state.work){
+    if(work.role!=='roster_workflow_strategy_decision'||!['evidence_ready','superseded'].includes(work.status)
+      ||work.operationState?.pending||!work.resultRef||!Number.isInteger(work.draftRevision)
+      ||work.draftRevision>state.draftRevision||!sameFactContext(work.bindings))continue;
+    const id='role:'+work.id,entry=state.evidence.find(e=>e.id===id);
+    if(!entry||!sameFactContext(entry.bindings)
+      ||!rosterWorkflowBindingsMatchV1(entry.bindings,work.bindings))continue;
+    const [result,published]=await Promise.all([readArtifact(work.resultRef),readArtifact(entry.artifactRef)]);
+    if(result.kind!=='proposal'||!isDeepStrictEqual(result.value,published)
+      ||!published.decisions?.some(d=>d.disposition==='retain'&&d.mutation==null))continue;
+    roots.push({workId:work.id,evidenceId:id,evidenceNumber:state.evidence.indexOf(entry)+1,
+      resultRef:work.resultRef,decisionKind:'retain',draftRevision:work.draftRevision,
+      validity:rosterWorkflowBindingsMatchV1(entry.bindings,state.scope)?'current':'historical'});
+  }
+  if(!roots.length)return null;
+  // The follow-up reviewer may cite the full investigation while its author
+  // cites only the final result. Retain that explicit resolutionDecision edge,
+  // not an inferred prose/domain association or a prior review's approval.
+  const retainedIds=new Set(roots.map(r=>r.workId));
+  for(const work of state.work){
+    const resolution=work.inputs?.resolutionDecision;
+    if(work.role!=='roster_workflow_final_review'||resolution?.source!=='work'
+      ||resolution.pointer!=='/value'||!retainedIds.has(resolution.id)
+      ||!['evidence_ready','superseded'].includes(work.status)||work.operationState?.pending
+      ||!work.resultRef||!Number.isInteger(work.draftRevision)||work.draftRevision>state.draftRevision
+      ||!sameFactContext(work.bindings))continue;
+    const id='role:'+work.id,entry=state.evidence.find(e=>e.id===id);
+    if(!entry||!sameFactContext(entry.bindings)
+      ||!rosterWorkflowBindingsMatchV1(entry.bindings,work.bindings))continue;
+    const [result,published]=await Promise.all([readArtifact(work.resultRef),readArtifact(entry.artifactRef)]);
+    if(!isDeepStrictEqual(result.value,published))continue;
+    roots.push({workId:work.id,evidenceId:id,evidenceNumber:state.evidence.indexOf(entry)+1,
+      resultRef:work.resultRef,sourceKind:'review_of_retained_decision',retainedWorkId:resolution.id,
+      draftRevision:work.draftRevision,
+      validity:rosterWorkflowBindingsMatchV1(entry.bindings,state.scope)?'current':'historical'});
+  }
+  const closure=await projectRosterEvidenceReferenceClosureV1({state,readArtifact,rootIds:roots.map(r=>r.evidenceId)});
+  return {schema:'roster_retained_decision_evidence_directory_v1',version:2,draftRevision:state.draftRevision,
+    roots,...closure,directoryIsNotARead:true,acceptanceGranted:false,
+    instruction:'These exact saved citations belong to completed retain decisions and their explicitly linked follow-up reviews with the SAME army, rules, map and source context. A retain decision causes no Plan commit; later Plan-only edits must not hide its investigation evidence. Historical roots retain their original Plan revision and do NOT approve the current Plan. Each entry keeps its own current/historical binding: read the needed original evidenceNumber and actual limits before asserting a fact. Author reasoning and prior reviews are fallible proposals, not Rules authority or approval. Check whether each measurement covers the present claim; do not repeat an experiment solely because the committed-decision directory predates it. This navigation neither marks bodies read nor clears any unresolved question.'};
 }
 
 export async function projectRosterWorkflowDecisionEvidenceLineageV1({state,readArtifact}){

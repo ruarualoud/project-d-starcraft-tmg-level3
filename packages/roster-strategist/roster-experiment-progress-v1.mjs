@@ -1,9 +1,22 @@
+import {isCompletedPregameTemporalObservationV1} from './pregame-temporal-outcome-v1.mjs';
+import {JOINT_TEMPORAL_VERSION} from './pregame-joint-temporal-v1.mjs';
 // P3 progress is a comparison of actual requests/results, not a model's claim
 // that an anchor is "new". This module selects no strategy or geometry.
 import {isDeepStrictEqual} from 'node:util';
+import {isRosterReadOnlyObservationV1} from './roster-read-only-query-recovery-v1.mjs';
 import {projectRosterWorkflowStateReferenceV1} from './roster-workflow-state-reference-v1.mjs';
 import {projectRosterStaticFormationResultDirectoryV1,projectRosterStaticFormationOptionV1} from './roster-workflow-receipt-view-v1.mjs';
 import {rosterWorkflowBindingsMatchV1} from './roster-decision-workflow-v1.mjs';
+import {PREGAME_BOUNDED_ARRIVAL_CONTROL_VERSION} from './pregame-bounded-arrival-control-v1.mjs';
+import {SINGLE_UNIT_TEMPORAL_VERSION} from './pregame-single-unit-temporal-v1.mjs';
+import {projectPregameTemporalOutcomeV1} from './pregame-temporal-outcome-v1.mjs';
+import {PREGAME_COMBAT_QUERY_IMPLEMENTATION_VERSION} from './pregame-scene-laboratory-v1.mjs';
+import {rosterWorkflowChoiceContractV1} from './roster-workflow-graph-v1.mjs';
+import {findRosterNativeParentInspectionV1} from './roster-native-choice-sources-v1.mjs';
+import {ARMY_BUILDER_QUERY_PORT_VERSION} from './army-builder-query-port-v1.mjs';
+import {hashStarcraftTmgContract as hash} from '../authoritative-engine/referee-crypto-v1.mjs';
+import {ROSTER_BUDGET_BRANCH_QUERY_V1_SCHEMA,ROSTER_BUDGET_BRANCH_QUERY_VERSION,
+  normalizeRosterBudgetBranchBoundsV1,rosterBudgetBranchSearchScopeV1} from './roster-budget-branch-query-v1.mjs';
 const clone=v=>structuredClone(v);
 const sourceOf=(args,sourceHash)=>!args.base||args.base.kind==='source'
   ? sourceHash:args.base.kind==='branch'?args.base.branchStateHash:null;
@@ -81,12 +94,15 @@ export async function findCompletedRosterNativeSpatialActionV1({store,descriptor
 // reconfirmed the exact same complete inspection. Inspect still runs once to
 // discover any changed live interface; equal old/current transport is required.
 // A reused prerequisite beside a genuinely different operation is not a loop.
-export async function projectRepeatedInspectionOnlyBatchV1({state,workId,store}){
+async function repeatedInspectionOnlyBatch({state,workId,store}){
   const summary=state.work.find(w=>w.id===workId);
   if(summary?.role!=='roster_workflow_fact_summary'||!summary.experimentOwnerId)return null;
   const members=state.work.filter(w=>w.role==='roster_workflow_tool'
-    &&w.experimentOwnerId===summary.experimentOwnerId&&!w.resolvedByWorkId
+    &&w.experimentOwnerId===summary.experimentOwnerId
     &&w.status!=='superseded');
+  // A resolved operation remains a member of its original logical batch.
+  // Its chooser/repair owns execution, not a deletion from the parent's work.
+  // Otherwise inspect + repaired action is incorrectly reduced to inspect.
   if(members.length!==1)return null;
   const work=members[0];
   if(work.status!=='evidence_ready'||!work.resultRef
@@ -110,6 +126,93 @@ export async function projectRepeatedInspectionOnlyBatchV1({state,workId,store})
     instruction:'Stop before another paid summary or fact-method turn. This entire method only reconfirmed an already available identical inspection. Preserve the exact result and necessary question; repair the method/decision handoff before continuation. Repeating a read is not evidence of arrival, scoring or a global capability limit.'};
 }
 
+// Re-reading a menu is not a new measurement. It can nevertheless unblock an
+// existing, never-issued action choice when that exact menu was not delivered
+// to its repair owner. This is not a general retry exemption: a consumed menu,
+// already-issued chooser, changed parent or absent continuation still stops.
+async function unconsumedNativeMenuPrerequisite({state,workId,store},repeated){
+  if(!repeated)return null;
+  const summary=state.work.find(w=>w.id===workId),owner=state.work.find(w=>w.id===summary.experimentOwnerId);
+  const contract=owner&&rosterWorkflowChoiceContractV1({state,workId:owner.id});
+  const pending=state.work.find(w=>w.id===contract?.targetWorkId);
+  if(contract?.operation!=='native_action'||pending?.status!=='needs_model_choice'
+    ||pending.operationState?.pending||!rosterWorkflowBindingsMatchV1(pending.bindings,state.scope))return null;
+  const choice=state.work.find(w=>w.role==='roster_workflow_experiment_planner'
+    &&['waiting_dependency','ready'].includes(w.status)&&!w.operationState?.pending
+    &&!w.operationState?.calls?.length&&!w.resultRef
+    &&w.inputs?.newFacts?.source==='work'&&w.inputs.newFacts.id===summary.id
+    &&(w.repairOf??w.choiceOf)===pending.id&&rosterWorkflowBindingsMatchV1(w.bindings,state.scope));
+  if(!choice)return null;
+  const source=await findRosterNativeParentInspectionV1({state,pending,readArtifact:store.get});
+  if(!source)return null;
+  const result=await store.get(repeated.repeatedResultRef);
+  if(!isDeepStrictEqual(source.value.receipt,result?.value?.receipt))return null;
+  const ids=new Set([source.work.id,repeated.originalWorkId,repeated.repeatedWorkId]
+    .flatMap(id=>[`tool:${id}`,`tool-view:${id}`]));
+  if((state.reads??[]).some(read=>read.consumer===owner.id&&ids.has(read.evidenceId)
+    &&(read.pointer===''||read.pointer.startsWith('/receipt/actionSpace')
+      ||read.pointer.startsWith('/receipt/actionParameterContracts')||read.pointer==='/actionMenuDirectory')))return null;
+  for(const call of owner.operationState?.calls??[]){
+    if(!call.requestRef)continue;
+    const request=await store.get(call.requestRef);
+    const inputs=request?.promptNodes?.find(node=>node.kind==='workflow_role_assignment')?.inputs;
+    const delivered=inputs?.nativeChoiceSources?.value?.entries??[];
+    if(delivered.some(entry=>entry.bodyDelivered&&isDeepStrictEqual(entry.stateRef,source.stateRef)))return null;
+  }
+  return {version:1,workId,reason:'unconsumed_native_menu_prerequisite',ownerWorkId:owner.id,
+    choiceWorkId:choice.id,pendingWorkId:pending.id,originalWorkId:repeated.originalWorkId,
+    originalResultRef:repeated.originalResultRef,sourceStateRef:clone(source.stateRef),
+    newObservation:false,providerReplayed:false,nativeReplayed:false,historyReset:false,acceptanceGranted:false};
+}
+export async function projectRepeatedInspectionOnlyBatchV1(args){
+  const repeated=await repeatedInspectionOnlyBatch(args);
+  return repeated&&!await unconsumedNativeMenuPrerequisite(args,repeated)?repeated:null;
+}
+
+// Reconcile only the concrete pre-provider false stop above. A successful
+// resolved child must be proven through every persisted resolution edge; no
+// model failure, pending call, unknown result or genuine read loop is retried.
+export async function projectResolvedBatchProgressRecoveryV1({state,workId,store}){
+  const work=state.work.find(w=>w.id===workId),op=work?.operationState,stop=op?.noProgressStop;
+  if(work?.role!=='roster_workflow_fact_summary'||work.status!=='needs_repair'
+    ||work.failure?.code!=='ROSTER_WORKFLOW_ROLE_NO_PROGRESS'
+    ||work.failure.dispatchOutcome!=='completed_no_progress'
+    ||stop?.reason!=='repeated_inspection_only_batch'||stop.ownerWorkId!==work.experimentOwnerId
+    ||op.pending||op.turn!==0||op.calls?.length||op.correction
+    ||!rosterWorkflowBindingsMatchV1(work.bindings,state.scope)
+    ||await projectRepeatedInspectionOnlyBatchV1({state,workId,store}))return null;
+  const prerequisite=await unconsumedNativeMenuPrerequisite({state,workId,store},
+    await repeatedInspectionOnlyBatch({state,workId,store}));
+  if(prerequisite)return prerequisite;
+  const byId=new Map(state.work.map(w=>[w.id,w]));
+  for(const logical of state.work.filter(w=>w.role==='roster_workflow_tool'
+    &&w.experimentOwnerId===work.experimentOwnerId&&w.resolvedByWorkId
+    &&w.inputs?.request?.value?.operation!=='inspect')){
+    if(!Object.values(work.inputs??{}).some(input=>input.source==='evidence'
+      &&[`tool:${logical.id}`,`tool-view:${logical.id}`].includes(input.id)))continue;
+    const seen=new Set();let actual=logical,result,valid=true;
+    while(actual){
+      if(seen.has(actual.id)||actual.role!=='roster_workflow_tool'||actual.status!=='evidence_ready'
+        ||actual.operationState?.pending||!actual.resultRef
+        ||!rosterWorkflowBindingsMatchV1(actual.bindings,state.scope)){valid=false;break;}
+      seen.add(actual.id);result=await store.get(actual.resultRef);
+      if(result?.kind!=='tool_receipt'||result.continuation===true||result.value?.status!=='completed'){
+        valid=false;break;
+      }
+      if(!actual.resolvedByWorkId)break;
+      const next=byId.get(actual.resolvedByWorkId),link=result.resolution;
+      if(!next||link?.originalWorkId!==actual.id||link.replacementWorkId!==next.id
+        ||link.replacementResultRef!==next.resultRef){valid=false;break;}
+      actual=next;
+    }
+    if(!valid||!actual||result.value.operation==='inspect'||result.value.receipt?.resultStatus!=='ok')continue;
+    return {version:1,workId,reason:'resolved_operation_omitted_from_logical_batch',
+      logicalWorkId:logical.id,actualWorkId:actual.id,actualResultRef:actual.resultRef,
+      providerReplayed:false,nativeReplayed:false,historyReset:false,acceptanceGranted:false};
+  }
+  return null;
+}
+
 // queryId labels an observation, not its mathematical inputs. Parse the Native
 // JSON envelope losslessly; filters, parent, seat and all actual fields remain.
 function spatialObservationInput(args){
@@ -119,19 +222,141 @@ function spatialObservationInput(args){
   }
   return input;
 }
+const queryOperations={has:isRosterReadOnlyObservationV1};
+// Plan prose does not change the measured frozen scene. All other declared
+// dependencies stay in force; the exact source/parent/arguments below also bind
+// the physical army, terrain, phase, resources and query-specific choices.
+const factualBindings=bindings=>Object.fromEntries(Object.entries(bindings??{}).filter(([key])=>key!=='plan'));
+function budgetBranchInput(args){
+  if(!args?.candidateInput||Object.keys(args).some(key=>!['candidateInput','maximumEvaluations',
+    'startOffset','maximumMutationDepth','generationPolicy','expectedSourceCandidateHash','expectedMenuReceiptHash'].includes(key)))return null;
+  try{return {candidateInput:args.candidateInput,...normalizeRosterBudgetBranchBoundsV1(args)};}catch{return null;}
+}
+async function completedBudgetBranchMatches({args,value,receipt,descriptor,state,store,scope}){
+  const current=budgetBranchInput(args),previous=budgetBranchInput(value.request);
+  if(!current||!previous||!isDeepStrictEqual(current,previous)
+    ||receipt?.schema!==ROSTER_BUDGET_BRANCH_QUERY_V1_SCHEMA
+    ||(descriptor.budgetBranchQueryVersion??ROSTER_BUDGET_BRANCH_QUERY_VERSION)!==ROSTER_BUDGET_BRANCH_QUERY_VERSION
+    ||receipt.sourceCandidateHash!==hash(current.candidateInput)
+    ||receipt.generationPolicy!==current.generationPolicy
+    ||!isDeepStrictEqual(receipt.searchScope,rosterBudgetBranchSearchScopeV1(current))
+    ||!Array.isArray(receipt.branches)||!Array.isArray(receipt.rejectedBranches)
+    ||args.expectedSourceCandidateHash!==undefined&&args.expectedSourceCandidateHash!==receipt.sourceCandidateHash
+    ||args.expectedMenuReceiptHash!==undefined&&args.expectedMenuReceiptHash!==receipt.menuReceiptHash)return false;
+  if(receipt.queryImplementationVersion!==undefined)return receipt.queryImplementationVersion===ROSTER_BUDGET_BRANCH_QUERY_VERSION
+    &&receipt.portVersion===ARMY_BUILDER_QUERY_PORT_VERSION&&receipt.builderBundleHash===descriptor.builderBundleHash;
+  // The pre-versioned bounded-mutation-page contract is compatible with 1.0.0
+  // only. Its unchanged original must have the matching Native baseline audit
+  // under the current frozen Builder. No version is invented in that receipt.
+  if(ROSTER_BUDGET_BRANCH_QUERY_VERSION!=='1.0.0')return false;
+  for(const evidence of [...state.evidence].reverse()){
+    if(evidence.availability!=='available'||evidence.kind!=='tool_receipt'
+      ||!(/:builder$/u.test(evidence.id)||evidence.id.startsWith('tool:'))
+      ||!rosterWorkflowBindingsMatchV1(factualBindings(evidence.bindings),scope))continue;
+    const original=await store.get(evidence.artifactRef),audit=original?.value?.receipt??original;
+    if(audit?.schema==='starcraft_tmg_army_builder_roster_verdict_v1'
+      &&audit.candidateHash===receipt.sourceCandidateHash&&audit.auditResultHash===receipt.sourceRulesAuditResultHash
+      &&audit.portVersion===ARMY_BUILDER_QUERY_PORT_VERSION
+      &&audit.unitCompositionUpgradeDataBundleHash===descriptor.builderBundleHash)return true;
+  }
+  return false;
+}
+// An explicit candidate audit is deterministic under the frozen Builder. An
+// omitted candidate means the current draft: do not cache that mutable default.
+// Renaming an order or changing its rationale is not a changed candidate.
+export async function findCompletedRosterBuilderObservationV1({operation,store,descriptor,args,contextRef,scope,excludeWorkId}){
+  if(!descriptor?.builderBundleHash||!args)return null;
+  if(operation==='builder_audit'){
+    if(!args.candidateInput||Object.keys(args).some(key=>key!=='candidateInput'))return null;
+  }else if(operation==='builder_choices'){
+    // Explicit selectors only. Missing fields may use mutable current-draft
+    // defaults at the adapter; never infer those from an old catalogue.
+    if(typeof args.scaleId!=='string'||!args.scaleId||typeof args.factionRecordKey!=='string'
+      ||!args.factionRecordKey||!Number.isInteger(args.mineralBudget)||args.mineralBudget<0
+      ||Object.keys(args).some(key=>!['scaleId','factionRecordKey','mineralBudget','maximumCandidatesPerFamily'].includes(key)))return null;
+  }else if(operation==='builder_branches'){
+    if(!budgetBranchInput(args))return null;
+  }else return null;
+  const state=await store.load();
+  for(const work of [...(state?.work??[])].reverse()){
+    if(work.id===excludeWorkId||work.role!=='roster_workflow_tool'
+      ||!['evidence_ready','superseded'].includes(work.status)||!work.resultRef
+      ||work.operationState?.pending||!rosterWorkflowBindingsMatchV1(factualBindings(work.bindings),scope)
+      ||work.inputs?.request?.value?.operation!==operation)continue;
+    const value=(await store.get(work.resultRef))?.value,receipt=value?.receipt;
+    if(value?.operation!==operation||value.status!=='completed'
+      ||(value.contextRef??null)!==(contextRef??null))continue;
+    if(operation==='builder_branches'){
+      if(!await completedBudgetBranchMatches({args,value,receipt,descriptor,state,store,scope}))continue;
+    }else{
+      const complete=operation==='builder_audit'
+        ?receipt?.schema==='starcraft_tmg_army_builder_roster_verdict_v1'&&['legal','illegal'].includes(receipt.status)
+        :receipt?.schema==='starcraft_tmg_army_builder_choice_enumeration_receipt_v1'&&receipt.readOnly===true;
+      if(!complete||receipt.portVersion!==ARMY_BUILDER_QUERY_PORT_VERSION
+        ||receipt.unitCompositionUpgradeDataBundleHash!==descriptor.builderBundleHash
+        ||!isDeepStrictEqual(value.request,args))continue;
+    }
+    const originalWorkId=value.queryReuse?.originalWorkId??work.id;
+    const evidence=state.evidence.find(e=>e.id===`tool-view:${originalWorkId}`&&e.availability==='available'
+      &&rosterWorkflowBindingsMatchV1(factualBindings(e.bindings),scope))
+      ??state.evidence.find(e=>e.id===`tool:${originalWorkId}`&&e.availability==='available'
+        &&rosterWorkflowBindingsMatchV1(factualBindings(e.bindings),scope));
+    if(!evidence)continue;
+    return {receipt:clone(receipt),originalWorkId,
+      originalResultRef:value.queryReuse?.originalResultRef??work.resultRef,
+      sourceEvidenceNumber:state.evidence.indexOf(evidence)+1};
+  }
+  return null;
+}
+export async function findCompletedRosterBuilderAuditV1(input){
+  return findCompletedRosterBuilderObservationV1({...input,operation:'builder_audit'});
+}
+function queryObservationIdentity({operation,descriptor,args,contextRef}){
+  if(!queryOperations.has(operation)||!descriptor?.version
+    ||!descriptor.sourceStateHash||!descriptor.rulesRuntimeHash||!descriptor.builderBundleHash)return null;
+  const input=spatialObservationInput(args);if(!input)return null;
+  return {operation,sourceStateHash:descriptor.sourceStateHash,rulesRuntimeHash:descriptor.rulesRuntimeHash,
+    builderBundleHash:descriptor.builderBundleHash,laboratoryVersion:descriptor.version,
+    queryImplementationVersion:operation==='bounded_arrival_control'?PREGAME_BOUNDED_ARRIVAL_CONTROL_VERSION
+      :operation==='bounded_unit_temporal'?SINGLE_UNIT_TEMPORAL_VERSION
+      :operation==='bounded_joint_temporal'?JOINT_TEMPORAL_VERSION
+      :['probability','threat_exchange'].includes(operation)?PREGAME_COMBAT_QUERY_IMPLEMENTATION_VERSION:null,
+    args:input,contextRef:contextRef??null};
+}
+export function isReusableRosterQueryReceiptV1(operation,receipt){
+  if(!queryOperations.has(operation))return false;
+  if(['probability','threat_exchange'].includes(operation)
+    &&receipt?.queryImplementationVersion!==PREGAME_COMBAT_QUERY_IMPLEMENTATION_VERSION)return false;
+  if(operation==='bounded_joint_temporal'){
+    if(receipt?.schema!=='pregame_joint_temporal_receipt_v1'||receipt.version!==JOINT_TEMPORAL_VERSION)return false;
+    return receipt.outcome==='witness_found'&&receipt.resultStatus==='ok'&&!receipt.failures?.length||isCompletedPregameTemporalObservationV1(receipt);
+  }
+  if(operation==='bounded_unit_temporal'){
+    if(receipt?.schema!=='pregame_single_unit_temporal_receipt_v1'||receipt.version!==SINGLE_UNIT_TEMPORAL_VERSION)return false;
+    return receipt.outcome==='witness_found'&&receipt.resultStatus==='ok'
+      ||isCompletedPregameTemporalObservationV1(receipt);
+  }
+  if(operation!=='bounded_arrival_control')return receipt?.resultStatus==='ok';
+  if(receipt?.schema!=='pregame_bounded_arrival_control_v1'
+    ||receipt.queryImplementationVersion!==PREGAME_BOUNDED_ARRIVAL_CONTROL_VERSION)return false;
+  // A completed bounded search can answer "no witness in these candidates"
+  // without answering the original reachability question. Reuse that exact
+  // observation, NOT a transient/incomplete Native failure, and keep unknown.
+  return receipt.outcome==='witness_found'&&receipt.resultStatus==='ok'
+    ||receipt.outcome==='search_incomplete'&&receipt.resultStatus==='unknown'
+      &&receipt.allReturnedCandidatesEvaluated===true;
+}
 // Single-flight is executor-local, not another persistent cache or scheduler.
 // It covers the gap before a completed observation becomes visible to the
 // existing store lookup. Only exact immutable read inputs may share an owner.
-// A failed/unknown owner releases no reusable answer; restart still relies on
-// the original durable operation checkpoints, never this transient registry.
+// A failed/incomplete owner releases no reusable answer. A completed bounded
+// search may share its exact no-witness observation without answering the
+// reachability question. Restart relies on durable checkpoints/store lookup.
 export function createRosterQueryObservationFlightsV1(){
   const active=[];
   return {join({operation,descriptor,args,contextRef,scope}){
-    if(!['spatial','probability','threat_exchange'].includes(operation)
-      ||operation!=='spatial'&&!descriptor.version)return null;
-    const input=spatialObservationInput(args);
-    if(!input||!descriptor.sourceStateHash||!descriptor.rulesRuntimeHash||!descriptor.builderBundleHash)return null;
-    const identity=clone({operation,descriptor,args:input,contextRef:contextRef??null,scope});
+    const query=queryObservationIdentity({operation,descriptor,args,contextRef});if(!query)return null;
+    const identity=clone({query,scope:factualBindings(scope)});
     const existing=active.find(row=>isDeepStrictEqual(row.identity,identity));
     if(existing)return {owner:false,wait:existing.wait,complete:()=>{}};
     let resolve;
@@ -144,43 +369,81 @@ export function createRosterQueryObservationFlightsV1(){
   }};
 }
 export async function findCompletedRosterSpatialObservationV1({store,descriptor,args,contextRef,scope,excludeWorkId}){
-  const input=spatialObservationInput(args);if(!input||!descriptor.version)return null;
-  const state=await store.load();
-  for(const work of [...(state?.work??[])].reverse()){
-    if(work.id===excludeWorkId||work.role!=='roster_workflow_tool'||work.status!=='evidence_ready'
-      ||!work.resultRef||!rosterWorkflowBindingsMatchV1(work.bindings,scope))continue;
-    const value=(await store.get(work.resultRef))?.value;
-    if(value?.operation!=='spatial'||value.status!=='completed'||value.receipt?.resultStatus!=='ok'
-      ||value.receipt.laboratoryVersion!==descriptor.version
-      ||(value.contextRef??null)!==(contextRef??null)||!sameScope(value.receipt,descriptor)
-      ||!isDeepStrictEqual(spatialObservationInput(value.request),input))continue;
-    return {receipt:clone(value.receipt),originalWorkId:work.id,originalResultRef:work.resultRef};
-  }
-  return null;
+  return findCompletedRosterQueryObservationV1({operation:'spatial',store,descriptor,args,contextRef,scope,excludeWorkId});
 }
 
 // These Native estimates are deterministic for the same state, arguments and
 // implementation version. queryId is only a receipt label. Do not extend this
-// list to actions, mutable Builder defaults, menu discovery or unknown results.
+// list to actions, mutable Builder defaults, menu discovery or transient errors.
+// The one explicit no-witness exception is classified by the shared predicate.
 // A cached observation is evidence reuse, never a new test or a model verdict.
 export async function findCompletedRosterQueryObservationV1(input){
   const {operation,store,descriptor,args,contextRef,scope,excludeWorkId}=input;
-  if(operation==='spatial')return findCompletedRosterSpatialObservationV1(input);
-  if(!['probability','threat_exchange'].includes(operation)||!descriptor.version)return null;
-  const actualInput=spatialObservationInput(args);if(!actualInput)return null;
+  const identity=queryObservationIdentity(input);if(!identity)return null;
   const state=await store.load();
   for(const work of [...(state?.work??[])].reverse()){
-    if(work.id===excludeWorkId||work.role!=='roster_workflow_tool'||work.status!=='evidence_ready'
-      ||!work.resultRef||!rosterWorkflowBindingsMatchV1(work.bindings,scope)
+    if(work.id===excludeWorkId||work.role!=='roster_workflow_tool'
+      // A Plan revision can retire the work while leaving its exact physical
+      // measurement intact. This only reads the original receipt; it does not
+      // reactivate retired work, approve the old Plan or ignore changed facts.
+      ||!['evidence_ready','needs_model_choice','superseded'].includes(work.status)
+      ||!work.resultRef||!rosterWorkflowBindingsMatchV1(factualBindings(work.bindings),scope)
       ||work.inputs?.request?.value?.operation!==operation)continue;
     const value=(await store.get(work.resultRef))?.value;
-    if(value?.operation!==operation||value.status!=='completed'||value.receipt?.resultStatus!=='ok'
+    if(value?.operation!==operation
+      ||!['completed','returned_to_model'].includes(value.status)
+      ||!isReusableRosterQueryReceiptV1(operation,value.receipt)
       ||value.receipt.laboratoryVersion!==descriptor.version
-      ||(value.contextRef??null)!==(contextRef??null)||!sameScope(value.receipt,descriptor)
-      ||!isDeepStrictEqual(spatialObservationInput(value.request),actualInput))continue;
+      ||!sameScope(value.receipt,descriptor)
+      ||!isDeepStrictEqual(queryObservationIdentity({operation,descriptor,args:value.request,contextRef:value.contextRef}),identity))continue;
     return {receipt:clone(value.receipt),
       originalWorkId:value.queryReuse?.originalWorkId??work.id,
       originalResultRef:value.queryReuse?.originalResultRef??work.resultRef};
+  }
+  return null;
+}
+
+// A completed search with missing chance premises is NOT cached as success.
+// Detect only a bound-only expansion after no bound was hit and no frontier
+// remains. New conditions, states, participants, horizon or runtime are fresh.
+export async function findRepeatedTemporalMissingPremiseV1({operation,store,descriptor,args,contextRef,scope,excludeWorkId}){
+  if(operation!=='bounded_unit_temporal')return null;
+  const semantic=input=>{const {queryId,maximumStates,maximumActionsPerPath,maximumUnitActionsPerPath,...rest}=input;return rest;};
+  const state=await store.load();
+  for(const work of [...(state.work??[])].reverse()){
+    if(work.id===excludeWorkId||work.role!=='roster_workflow_tool'||!work.resultRef||work.operationState?.pending
+      ||!['evidence_ready','needs_model_choice','returned_to_owner','superseded'].includes(work.status)
+      ||!rosterWorkflowBindingsMatchV1(factualBindings(work.bindings),scope)
+      ||work.inputs?.request?.value?.operation!==operation)continue;
+    const value=(await store.get(work.resultRef))?.value,receipt=value?.receipt;
+    if(value?.operation!==operation||receipt?.version!==SINGLE_UNIT_TEMPORAL_VERSION
+      ||receipt.laboratoryVersion!==descriptor.version||!sameScope(receipt,descriptor)
+      ||(value.contextRef??null)!==(contextRef??null)||receipt.resultStatus!=='unknown'
+      ||!value.request)continue;
+    // A user/job pause is independent of a finite search budget. Raising only
+    // untouched bounds cannot resume its saved frontier (this API starts from
+    // base). Return this specific cause before spending Native time again;
+    // an explicit same-budget restart or changed method remains available.
+    const pathBound=value.request.maximumUnitActionsPerPath===undefined?'maximumActionsPerPath':'maximumUnitActionsPerPath';
+    const boundFlags=['roundBoundReached','pathBoundReached','unitActionBoundReached','transitionBoundReached'];
+    const growsUnspentBounds=Number.isSafeInteger(args.maximumStates)&&Number.isSafeInteger(args[pathBound])
+      &&args.maximumStates>=value.request.maximumStates&&args[pathBound]>=value.request[pathBound]
+      &&(args.maximumStates>value.request.maximumStates||args[pathBound]>value.request[pathBound]);
+    if(receipt.outcome==='search_interrupted'&&receipt.termination?.kind==='cooperative_pause'
+      &&receipt.search?.remainingFrontier>0&&receipt.search.exploredStates<value.request.maximumStates
+      &&receipt.search.actionAttempts<value.request.maximumStates
+      &&boundFlags.every(key=>receipt.search[key]===false)&&growsUnspentBounds
+      &&isDeepStrictEqual(semantic(value.request),semantic(args)))return {
+        originalWorkId:work.id,originalResultRef:work.resultRef,receipt:clone(receipt),
+        originalRequest:clone(value.request),reason:'paused_search_unused_budget_expansion',newObservation:false};
+    if(receipt.search?.remainingFrontier!==0)continue;
+    const diagnosis=projectPregameTemporalOutcomeV1(receipt);
+    if(!diagnosis?.missingChoices.length||diagnosis.otherFailureCount||diagnosis.reachedBounds.length
+      ||!isDeepStrictEqual(semantic(value.request),semantic(args)))continue;
+    if(!Number.isSafeInteger(args.maximumStates)||args.maximumStates<value.request.maximumStates
+      ||!Number.isSafeInteger(args[pathBound])||args[pathBound]<value.request[pathBound])continue;
+    return {originalWorkId:work.id,originalResultRef:work.resultRef,receipt:clone(receipt),
+      originalRequest:clone(value.request),reason:'unchanged_missing_conditional_input',newObservation:false};
   }
   return null;
 }

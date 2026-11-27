@@ -11,6 +11,7 @@ import {
   type LayoutChangeEvent,
 } from "react-native";
 import { Image as ExpoImage } from "expo-image";
+import { battlefieldSoundtrack } from "../../../../packages/client-domain/battlefield-soundtrack-v1.mjs";
 import { setAudioModeAsync, useAudioPlayer } from "expo-audio";
 import * as DocumentPicker from "expo-document-picker";
 import Svg, {
@@ -20,7 +21,9 @@ import Svg, {
   Ellipse,
   G,
   Line,
+  Polygon,
   Polyline,
+  Path,
   Rect,
   Image as SvgImage,
   Text as SvgText,
@@ -29,9 +32,12 @@ import Svg, {
 import { useI18n } from "@/lib/i18n";
 import { useLevel3ClientDomain } from "@/lib/level3/client-domain-provider";
 import {
+  projectModelBaseOutlineV1,
   projectStarcraftTmgBattlefieldPresentationV1,
   projectStarcraftTmgBattlefieldViewportV1,
+  usesBattlefieldBaseOutlineV1,
   type BattlefieldAreaV1,
+  type BattlefieldEntrySegmentV1,
   type BattlefieldModelV1,
   type BattlefieldParameterDomainV1,
   type BattlefieldPlacementV1,
@@ -39,6 +45,7 @@ import {
 } from "@/lib/level3/battlefield-presentation-v1";
 import {
   STARCRAFT_TMG_BATTLEFIELD_MAP_SOURCE,
+  mediaUri,
   randomStarcraftTmgPresentationMediaEntryV1,
   starcraftTmgBattlefieldMapOverlaySourceV1,
   starcraftTmgBattlefieldMapSourceV2,
@@ -53,18 +60,53 @@ import {
   ThreatOverlayLegend,
   threatOverlayModeLabel,
 } from "./threat-overlay-v1";
+import { NativeActionForm } from './native-action-form';
+
+function previewRejectionText(result: any, zh: boolean, tableEdgeDeployment = false) {
+  const code = result.rejection?.details?.rulesReason || result.rejection?.code || 'PREVIEW_REJECTED';
+  const displacement: Record<string, [string, string]> = {
+    PSIONIC_DISPLACEMENT_PLACEMENTS_REQUIRED: [
+      "领队在终点压住了标记。请为每个重叠的标记指定落点，再次预览。",
+      "The leader ends on a token. Choose a destination for each overlapping token and preview again.",
+    ],
+    PSIONIC_DISPLACEMENT_UNEXPECTED_TOKEN_CHOICE: [
+      "领队终点没有需要移位的标记。请撤销标记落点，再次预览。",
+      "The leader ends clear of tokens that require displacement. Undo the token destinations and preview again.",
+    ],
+    PSIONIC_DISPLACEMENT_COORDINATE_NOT_RULE_LEGAL: [
+      "这个落点不符合位移规则。请选择能贴住领队底盘的位置；无法贴住时选最近的合法位置。",
+      "Choose a legal position in base contact with the leader, or the closest legal position if contact is impossible.",
+    ],
+    PSIONIC_DISPLACEMENT_NEAREST_PROOF_INCOMPLETE: [
+      "规则器尚未证实该落点是最近的合法位置。可以另选能贴住领队底盘的落点，再次预览。",
+      "The rules have not established this is the closest legal position. Try a position in base contact with the leader and preview again.",
+    ],
+  };
+  if (Object.hasOwn(displacement, code)) return displacement[code][zh ? 0 : 1];
+  if (code === "SELECTED_SPATIAL_PATH_EXCEEDS_SPEED" && tableEdgeDeployment) {
+    return zh ? "桌边进场的移动从领队底盘在桌外贴边时开始计算。请缩短路径，或调整沿桌边的进入位置。"
+      : "Entry movement starts with the leader’s base outside and touching the table edge. Shorten the path or change the entry point along the edge.";
+  }
+  const messages: Record<string, [string, string]> = {
+    SELECTED_SPATIAL_PATH_EXCEEDS_SPEED: ["路径超过本次行动的移动距离。请缩短路径。", "This path exceeds the movement allowance. Shorten the path."],
+    SELECTED_SPATIAL_ENTRY_POINT_INVALID: ["进场位置必须让整个底盘宽度落在允许的边段内。", "Choose an entry point where the full width of the base fits along the allowed edge."],
+    SELECTED_SPATIAL_DEPLOY_PATH_NOT_INWARD: ["进场路径必须从所选边缘进入战场。", "Start the entry path at the selected edge and move onto the battlefield."],
+  };
+  return Object.hasOwn(messages, code) ? messages[code][zh ? 0 : 1] : code;
+}
 
 type PendingOperation = "legal" | "preview" | "apply" | "replay" | null;
-type DraftMode = "path" | "placements";
+type DraftMode = "path" | "placements" | { tokenId: string };
 type WorkspaceDetailPanel = "unit" | "actions" | "threat" | "status" | "markers" | "referee";
 
 interface StandardMoveDraft {
   domainId: string;
   leadingModelId: string | null;
   entrySegmentId: string | null;
-  entryAlongEdgeMilliInches: number | null;
+  entryOffsetInches: string;
   path: BattlefieldPointV1[];
   placements: Array<BattlefieldPointV1 & { modelId: string }>;
+  tokenDisplacements: Array<{ tokenId: string; coordinate: BattlefieldPointV1 }>;
   mode: DraftMode;
 }
 
@@ -93,6 +135,42 @@ function actionText(value: unknown) {
 
 function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value));
+}
+
+function formatBoardPoint(point: BattlefieldPointV1) {
+  return `(${point.xMilliInches / 1000}, ${point.yMilliInches / 1000})`;
+}
+
+function boardTokenLabel(token: BattlefieldAreaV1, zh: boolean) {
+  const name = zh && token.label === "creep_tumor" ? "菌毯瘤" : token.label;
+  return `${name} ${formatBoardPoint(token)}`;
+}
+
+function defaultEntryOffset(segment?: BattlefieldEntrySegmentV1) {
+  if (!segment) return "";
+  if (segment.kind === "unit_base_perimeter") return "0";
+  return String(Math.round((segment.startInches + segment.endInches) * 500) / 1000);
+}
+
+function entrySegmentLabel(segment: BattlefieldEntrySegmentV1, names: Record<string, string>, zh: boolean) {
+  if (segment.kind === "unit_base_perimeter") {
+    const name = names[segment.sourcePieceId] || segment.sourcePieceId;
+    const { xMilliInches, yMilliInches } = segment.center;
+    return zh
+      ? `${name} · 底盘周界（${xMilliInches / 1000}, ${yMilliInches / 1000}）`
+      : `${name} · base perimeter (${xMilliInches / 1000}, ${yMilliInches / 1000})`;
+  }
+  const sides = { top: "上边", bottom: "下边", left: "左边", right: "右边" };
+  return `${zh ? sides[segment.side] : segment.side} · ${segment.startInches}–${segment.endInches} in`;
+}
+
+function entryOffsetMilliInches(value: string, segment?: BattlefieldEntrySegmentV1) {
+  const input = value.trim();
+  if (!segment || !/^(?:\d+(?:\.\d*)?|\.\d+)$/.test(input)) return null;
+  const offset = Math.round(Number(input) * 1000);
+  if (!Number.isSafeInteger(offset)) return null;
+  if (segment.kind === "unit_base_perimeter") return offset <= segment.maximumAlongEdgeMilliInches ? offset : null;
+  return offset >= Math.round(segment.startInches * 1000) && offset <= Math.round(segment.endInches * 1000) ? offset : null;
 }
 
 function sceneViewBox(
@@ -154,6 +232,24 @@ function areaGlyph(area: BattlefieldAreaV1, denseTerrain = false) {
   const terrainLabel = area.kind === "terrain" && !denseTerrain
     ? `${area.label} · S${area.terrainSize ?? "?"}${area.elevationSurface ? " · HIGH" : ""}`
     : null;
+  if (area.footprintCells?.length) {
+    // Cells are already expressed in board coordinates. A shared edge inside
+    // the union has no rules effect, so only fill the occupied surface.
+    const path = area.footprintCells.map(cell =>
+      `M ${cell.minXMilliInches} ${cell.minYMilliInches} H ${cell.maxXMilliInches} V ${cell.maxYMilliInches} H ${cell.minXMilliInches} Z`).join(" ");
+    return (
+      <G key={`${area.kind}:${area.id}`}>
+        <Path id={`battlefield-${area.kind}-${area.id}`} d={path} {...common} stroke="none" />
+        {terrainLabel && (
+          <G transform={`translate(${area.xMilliInches} ${area.yMilliInches}) scale(1 -1)`}>
+            <SvgText id={`battlefield-terrain-label-${area.id}`} x={0} y={90} textAnchor="middle" fill="#ffffff" stroke="#020617" strokeWidth={35} fontSize={420} fontWeight="700">
+              {terrainLabel}
+            </SvgText>
+          </G>
+        )}
+      </G>
+    );
+  }
   if (area.shape === "rectangle") {
     return (
       <G key={`${area.kind}:${area.id}`}>
@@ -198,6 +294,10 @@ function areaGlyph(area: BattlefieldAreaV1, denseTerrain = false) {
   );
 }
 
+function basePolygonPoints(base: BattlefieldModelV1 | BattlefieldPlacementV1) {
+  return projectModelBaseOutlineV1(base)?.map(point => point.xMilliInches + "," + point.yMilliInches).join(" ");
+}
+
 function modelGlyph(
   model: BattlefieldModelV1,
   zoom: number,
@@ -205,8 +305,10 @@ function modelGlyph(
   onSelect?: (model: BattlefieldModelV1) => void,
 ) {
   const color = sideColor(model.sideKey);
+  const polygon = basePolygonPoints(model);
   if (!model.geometryRenderable || !model.baseShape
-    || !model.baseWidthMilliInches || !model.baseDepthMilliInches) {
+    || !model.baseWidthMilliInches || !model.baseDepthMilliInches
+    || (usesBattlefieldBaseOutlineV1(model.baseShape) && !polygon)) {
     return (
       <G
         key={model.id}
@@ -220,58 +322,22 @@ function modelGlyph(
       </G>
     );
   }
-  const outlineWidth = model.selected ? 240 : 180;
   const fill = model.destroyed ? "#450a0a" : `${color}77`;
-  const outline = model.selected ? "#ffffff" : color;
-  const media = starcraftTmgBattlefieldUnitMediaAssetsV1(model.unitId);
+  const media = starcraftTmgBattlefieldUnitMediaAssetsV1(model.officialUnitRecordKey ?? model.unitId);
   const portraitWidth = model.baseWidthMilliInches * 0.84;
   const portraitDepth = model.baseDepthMilliInches * 0.84;
   const portraitClipId = `battlefield-portrait-clip-${model.id.replace(/[^a-zA-Z0-9_-]/g, "-")}`;
-  const shape = model.baseShape === "rectangle" ? (
-    <>
-      <Rect
-        x={model.xMilliInches - (model.baseWidthMilliInches / 2)}
-        y={model.yMilliInches - (model.baseDepthMilliInches / 2)}
-        width={model.baseWidthMilliInches}
-        height={model.baseDepthMilliInches}
-        transform={`rotate(${model.baseRotationDegrees} ${model.xMilliInches} ${model.yMilliInches})`}
-        fill={fill}
-        stroke="none"
-      />
-      <Rect
-        x={model.xMilliInches - (model.baseWidthMilliInches / 2) + (outlineWidth / 2)}
-        y={model.yMilliInches - (model.baseDepthMilliInches / 2) + (outlineWidth / 2)}
-        width={Math.max(0, model.baseWidthMilliInches - outlineWidth)}
-        height={Math.max(0, model.baseDepthMilliInches - outlineWidth)}
-        transform={`rotate(${model.baseRotationDegrees} ${model.xMilliInches} ${model.yMilliInches})`}
-        fill="none"
-        stroke={outline}
-        strokeWidth={outlineWidth}
-      />
-    </>
-  ) : (
-    <>
-      <Ellipse
-        cx={model.xMilliInches}
-        cy={model.yMilliInches}
-        rx={model.baseWidthMilliInches / 2}
-        ry={model.baseDepthMilliInches / 2}
-        transform={`rotate(${model.baseRotationDegrees} ${model.xMilliInches} ${model.yMilliInches})`}
-        fill={fill}
-        stroke="none"
-      />
-      <Ellipse
-        cx={model.xMilliInches}
-        cy={model.yMilliInches}
-        rx={Math.max(0, (model.baseWidthMilliInches - outlineWidth) / 2)}
-        ry={Math.max(0, (model.baseDepthMilliInches - outlineWidth) / 2)}
-        transform={`rotate(${model.baseRotationDegrees} ${model.xMilliInches} ${model.yMilliInches})`}
-        fill="none"
-        stroke={outline}
-        strokeWidth={outlineWidth}
-      />
-    </>
-  );
+  const cx = model.xMilliInches, cy = model.yMilliInches;
+  const width = model.baseWidthMilliInches, depth = model.baseDepthMilliInches;
+  const rotation = `rotate(${model.baseRotationDegrees} ${cx} ${cy})`;
+  const contour = (fillColor: string, strokeColor: string, lineWidth: number) => {
+    const paint = {fill: fillColor, stroke: strokeColor, strokeWidth: lineWidth,
+      vectorEffect: "non-scaling-stroke" as const};
+    if (polygon) return <Polygon points={polygon} {...paint} />;
+    if (model.baseShape === "rectangle") return <Rect x={cx - width / 2} y={cy - depth / 2}
+      width={width} height={depth} rx={Math.min(width, depth) * 0.08} transform={rotation} {...paint} />;
+    return <Ellipse cx={cx} cy={cy} rx={width / 2} ry={depth / 2} transform={rotation} {...paint} />;
+  };
   const showOverviewLabel = zoom <= 1.5 && /-model-1$/u.test(model.id);
   const overviewLabelOffset = model.yMilliInches > boardHeightMilliInches / 2
     ? (model.baseDepthMilliInches / 2) + 760
@@ -285,12 +351,16 @@ function modelGlyph(
         onSelect(model);
       } : undefined}
     >
-      {shape}
+      {contour(fill, color, 1.25)}
+      {model.selected && <G id={`battlefield-selection-${model.id}`} pointerEvents="none"
+        transform={`translate(${cx} ${cy}) scale(1.08) translate(${-cx} ${-cy})`}>
+        {contour("none", "#55ed63", 1.75)}
+      </G>}
       {media && (
         <>
           <Defs>
             <ClipPath id={portraitClipId}>
-              {model.baseShape === "rectangle" ? (
+              {polygon ? <Polygon points={polygon} /> : model.baseShape === "rectangle" ? (
                 <Rect
                   x={model.xMilliInches - (portraitWidth / 2)}
                   y={model.yMilliInches - (portraitDepth / 2)}
@@ -312,7 +382,8 @@ function modelGlyph(
           </Defs>
           <SvgImage
             id={`battlefield-model-portrait-${model.id}`}
-            href={model.selected ? media.activePortrait : media.neutralPortrait}
+            href={media.sharedCommunication && media.identityPortrait
+              ? media.identityPortrait : model.selected ? media.activePortrait : media.neutralPortrait}
             x={model.xMilliInches - (portraitWidth / 2)}
             y={model.yMilliInches - (portraitDepth / 2)}
             width={portraitWidth}
@@ -322,6 +393,15 @@ function modelGlyph(
             transform={`translate(0 ${2 * model.yMilliInches}) scale(1 -1)`}
             clipPath={`url(#${portraitClipId})`}
           />
+          {media.sharedCommunication && (
+            <SvgImage href={media.activePortrait}
+              x={model.xMilliInches - portraitWidth * 0.04}
+              y={model.yMilliInches - portraitDepth * 0.33}
+              width={portraitWidth * 0.40} height={portraitDepth * 0.40}
+              preserveAspectRatio="xMidYMid slice"
+              transform={`translate(0 ${2 * model.yMilliInches}) scale(1 -1)`}
+              clipPath={`url(#${portraitClipId})`} />
+          )}
         </>
       )}
       <Circle cx={model.xMilliInches} cy={model.yMilliInches} r={90} fill={color} />
@@ -367,8 +447,10 @@ function placementGlyph(
   kind: "draft" | "sealed",
 ) {
   const color = kind === "sealed" ? "#22d3ee" : "#fbbf24";
+  const polygon = basePolygonPoints(placement);
   if (!placement.geometryRenderable || !placement.baseShape
-    || !placement.baseWidthMilliInches || !placement.baseDepthMilliInches) {
+    || !placement.baseWidthMilliInches || !placement.baseDepthMilliInches
+    || (usesBattlefieldBaseOutlineV1(placement.baseShape) && !polygon)) {
     return (
       <G key={`${kind}:${placement.modelId}`}>
         <Line x1={placement.xMilliInches - 300} y1={placement.yMilliInches - 300} x2={placement.xMilliInches + 300} y2={placement.yMilliInches + 300} stroke={color} strokeWidth={100} />
@@ -379,7 +461,9 @@ function placementGlyph(
   const outlineWidth = kind === "sealed" ? 170 : 120;
   const fill = kind === "sealed" ? "#22d3ee33" : "#fbbf2433";
   const dash = kind === "sealed" ? undefined : "240 140";
-  const shape = placement.baseShape === "rectangle" ? (
+  const shape = polygon ? (
+    <Polygon points={polygon} fill={fill} stroke={color} strokeWidth={outlineWidth} strokeDasharray={dash} />
+  ) : placement.baseShape === "rectangle" ? (
     <>
       <Rect
         x={placement.xMilliInches - (placement.baseWidthMilliInches / 2)}
@@ -470,6 +554,8 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
   const { view, connection, dispatch } = useLevel3ClientDomain();
   const [selectedModelId, setSelectedModelId] = useState<string | null>(null);
   const [selectedDomainId, setSelectedDomainId] = useState<string | null>(null);
+  const [nativeDomainId, setNativeDomainId] = useState<string | null>(null);
+  const nativePointPicker = useRef<((point: BattlefieldPointV1) => void) | null>(null);
   const [draft, setDraft] = useState<StandardMoveDraft | null>(null);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
@@ -484,6 +570,10 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
   const [showThreatReference, setShowThreatReference] = useState(false);
   const [voicesEnabled, setVoicesEnabled] = useState(false);
   const [bgmLoaded, setBgmLoaded] = useState(false);
+  const [bgmTitle, setBgmTitle] = useState("");
+  const [bgmLoops, setBgmLoops] = useState(true);
+  const [soundtrackChoices, setSoundtrackChoices] = useState(false);
+  const [installedTracks, setInstalledTracks] = useState<string[]>([]);
   const [bgmPlaying, setBgmPlaying] = useState(false);
   const [mediaVolume, setMediaVolume] = useState(0.45);
   const [showBattlefieldBackground, setShowBattlefieldBackground] = useState(true);
@@ -495,6 +585,12 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
   const requestedWorkbenchKey = useRef<string | null>(null);
   const voicePlayer = useAudioPlayer(null, { updateInterval: 1000 });
   const bgmPlayer = useAudioPlayer(null, { updateInterval: 1000 });
+  useEffect(() => {
+    const listener = bgmPlayer.addListener("playbackStatusUpdate", status => {
+      if (status.didJustFinish && !bgmPlayer.loop) setBgmPlaying(false);
+    });
+    return () => listener.remove();
+  }, [bgmPlayer]);
 
   const scene = useMemo(() => projectStarcraftTmgBattlefieldPresentationV1({
     roomProjection: view.roomProjection,
@@ -512,6 +608,9 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
   const productState = projection.state || {};
   const armyBudgets = productState.armyResourceBudgetsBySide || {};
   const roomPieces = Array.isArray(productState.pieces) ? productState.pieces : [];
+  const unitNames: Record<string, string> = Object.fromEntries(roomPieces.map((piece: any) => [piece.id, piece.name || piece.unitName || piece.id]));
+  const actionLabel = (label: string, pieceId?: string | null) => pieceId && unitNames[pieceId]
+    ? label.replace(pieceId, unitNames[pieceId]) : label;
   const reserveCount = roomPieces.filter((piece: any) => (
     piece?.isInReserves === true || piece?.deploymentStatus === "reserve"
   )).length;
@@ -553,6 +652,7 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
   const visiblePreview = scene.previewId && scene.previewId !== dismissedPreviewId
     ? view.pendingPreview
     : null;
+  const assaultRestriction = scene.preview?.disengageAssaultRestriction;
   const viewBox = sceneViewBox(
     scene.widthMilliInches,
     scene.heightMilliInches,
@@ -571,6 +671,8 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
     [scene.models],
   );
   const selectedModel = selectedModelId ? modelsById.get(selectedModelId) || null : null;
+  const selectedMedia = selectedModel
+    ? starcraftTmgBattlefieldUnitMediaAssetsV1(selectedModel.officialUnitRecordKey ?? selectedModel.unitId) : null;
   const selectedPieceId = selectedModel?.pieceId || selectedModelId;
   const selectedUnitThreat = view.battleWorkbench?.threat?.perUnit?.find((entry: any) => (
     entry.unitId === selectedPieceId
@@ -641,10 +743,10 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
     view.roomProjection?.room?.stateRevision]);
 
   useEffect(() => {
-    bgmPlayer.loop = true;
+    bgmPlayer.loop = bgmLoops;
     bgmPlayer.volume = mediaVolume;
     voicePlayer.volume = Math.min(1, mediaVolume + 0.25);
-  }, [bgmPlayer, mediaVolume, voicePlayer]);
+  }, [bgmPlayer, bgmLoops, mediaVolume, voicePlayer]);
 
   const playUnitVoice = async (
     model: BattlefieldModelV1 | null | undefined,
@@ -652,7 +754,7 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
     allowWhileEnabling = false,
   ) => {
     if ((!voicesEnabled && !allowWhileEnabling) || !model) return;
-    const media = starcraftTmgBattlefieldUnitMediaAssetsV1(model.unitId);
+    const media = starcraftTmgBattlefieldUnitMediaAssetsV1(model.officialUnitRecordKey ?? model.unitId);
     const sources = media?.voice?.[intent] || [];
     if (!sources.length) return;
     const source = randomStarcraftTmgPresentationMediaEntryV1(sources);
@@ -663,7 +765,7 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
     voicePlayer.play();
   };
 
-  const selectModel = (model: BattlefieldModelV1) => {
+  const selectModel = (model: BattlefieldModelV1, panel: WorkspaceDetailPanel = "unit") => {
     setSelectedModelId(model.id);
     setZoom((value) => Math.max(value, 3));
     setPan({
@@ -671,9 +773,20 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
       y: model.yMilliInches - (scene.heightMilliInches / 2),
     });
     setSelectedThreatWeaponId(null);
-    setDetailPanel("unit");
+    setDetailPanel(panel);
     void playUnitVoice(model, "selected");
   };
+
+  const roomIdentity = view.roomProjection?.room?.roomId ?? null;
+  const rememberedPieces = useRef<{ roomId: string | null; models: Map<string, BattlefieldModelV1> }>({
+    roomId: null, models: new Map(),
+  });
+  useEffect(() => {
+    if (rememberedPieces.current.roomId !== roomIdentity) {
+      rememberedPieces.current = {roomId: roomIdentity, models: new Map()};
+    }
+    for (const model of scene.models) rememberedPieces.current.models.set(model.pieceId, model);
+  }, [roomIdentity, scene.models]);
 
   const cueBatch = view.lastReceipt?.presentationCueBatch;
   useEffect(() => {
@@ -691,7 +804,7 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
     const pieceId = cue.voiceIntent === "confirm"
       ? cue.actorPieceId
       : cue.targetPieceId;
-    const model = scene.models.find((entry) => entry.pieceId === pieceId);
+    const model = rememberedPieces.current.models.get(pieceId);
     void playUnitVoice(model, cue.voiceIntent);
   }, [cueBatch, scene.models, voicesEnabled]);
 
@@ -710,6 +823,29 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
     if (next) void playUnitVoice(selectedModel, "selected", true);
   };
 
+  const showSoundtracks = async () => {
+    setSoundtrackChoices(!soundtrackChoices);
+    if (soundtrackChoices) return;
+    const url = mediaUri("/assets/soundtrack/catalog.json");
+    if (!url) return;
+    try {
+      const response = await fetch(url);
+      if (!response.ok) return;
+      const { tracks } = await response.json();
+      setInstalledTracks(tracks.filter((t: { installed: boolean }) => t.installed)
+        .map((t: { id: string }) => t.id));
+    } catch { setInstalledTracks([]); }
+  };
+  const loadBgm = (uri: string, title: string, loop: boolean) => {
+    bgmPlayer.pause();
+    bgmPlayer.replace(uri);
+    bgmPlayer.loop = loop;
+    bgmPlayer.volume = mediaVolume;
+    setBgmLoops(loop);
+    setBgmTitle(title);
+    setBgmLoaded(true);
+    setBgmPlaying(false);
+  };
   const chooseBgm = async () => {
     const picked = await DocumentPicker.getDocumentAsync({
       type: "audio/*",
@@ -719,12 +855,8 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
     });
     const asset = picked.canceled ? null : picked.assets[0];
     if (!asset) return;
-    bgmPlayer.pause();
-    bgmPlayer.replace(asset.uri);
-    bgmPlayer.loop = true;
-    bgmPlayer.volume = mediaVolume;
-    setBgmLoaded(true);
-    setBgmPlaying(false);
+    loadBgm(asset.uri, asset.name, true);
+    setSoundtrackChoices(false);
   };
 
   const toggleBgm = async () => {
@@ -752,6 +884,9 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
         ?? profile?.baseWidthMilliInches ?? null,
       baseDepthMilliInches: model?.baseDepthMilliInches
         ?? profile?.baseDepthMilliInches ?? null,
+      horizontalArmDepthMilliInches: model?.horizontalArmDepthMilliInches ?? profile?.horizontalArmDepthMilliInches,
+      verticalArmWidthMilliInches: model?.verticalArmWidthMilliInches ?? profile?.verticalArmWidthMilliInches,
+      localVerticesMilliInches: model?.localVerticesMilliInches ?? profile?.localVerticesMilliInches,
       baseRotationDegrees: model?.baseRotationDegrees
         ?? profile?.baseRotationDegrees ?? 0,
       geometryRenderable: model?.geometryRenderable === true
@@ -765,7 +900,7 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
     setDraft(null);
     setDismissedPreviewId(null);
     setCoordinateInput({ xInches: "", yInches: "" });
-  }, [scene.stateRevision]);
+  }, [scene.roomId, scene.stateRevision]);
 
   useEffect(() => {
     if (scene.previewId) setDismissedPreviewId(null);
@@ -802,7 +937,7 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
     setNotice(null);
     try {
       const result = await dispatch({ type: "preview_finite", actionKey });
-      if (!result.ok) setErrorCode(result.rejection?.code || "PREVIEW_REJECTED");
+      if (!result.ok) setErrorCode(previewRejectionText(result, zh));
       else setNotice(zh ? "权威 Preview 已生成，尚未改变房间状态。" : "Authoritative Preview ready; room state is unchanged.");
     } finally {
       setPending(null);
@@ -810,7 +945,7 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
   };
 
   const chooseDomain = (domain: BattlefieldParameterDomainV1) => {
-    const entrySegment = domain.entrySegments[0] || null;
+    const entrySegment = domain.entrySegments[0];
     setSelectedDomainId(domain.domainId);
     setSelectedModelId(null);
     setErrorCode(null);
@@ -818,11 +953,10 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
       domainId: domain.domainId,
       leadingModelId: null,
       entrySegmentId: entrySegment?.segmentId || null,
-      entryAlongEdgeMilliInches: entrySegment
-        ? Math.round(((entrySegment.startInches + entrySegment.endInches) / 2) * 1000)
-        : null,
+      entryOffsetInches: defaultEntryOffset(entrySegment),
       path: [],
       placements: [],
+      tokenDisplacements: [],
       mode: "path",
     });
     setCoordinateInput({ xInches: "", yInches: "" });
@@ -832,15 +966,16 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
     if (!selectedDomain || !["official_standard_move", "official_standard_deploy"]
       .includes(selectedDomain.support)) return;
     const model = modelsById.get(modelId);
-    if (model) selectModel(model);
+    if (model) selectModel(model, "actions");
     else setSelectedModelId(modelId);
     setDraft({
       domainId: selectedDomain.domainId,
       leadingModelId: modelId,
       entrySegmentId: draft?.entrySegmentId || null,
-      entryAlongEdgeMilliInches: draft?.entryAlongEdgeMilliInches ?? null,
+      entryOffsetInches: draft?.entryOffsetInches ?? "",
       path: [],
       placements: [],
+      tokenDisplacements: [],
       mode: "path",
     });
     setCoordinateInput({ xInches: "", yInches: "" });
@@ -897,6 +1032,12 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
   };
 
   const appendDraftPoint = (point: BattlefieldPointV1) => {
+    if (nativePointPicker.current) {
+      nativePointPicker.current(point);
+      nativePointPicker.current = null;
+      setNotice(zh ? '已填入所选位置；请继续预览。' : 'Position selected; preview to validate.');
+      return;
+    }
     if (!selectedDomain || !draft) {
       selectNearestModel(point);
       return;
@@ -907,9 +1048,21 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
       setErrorCode("LEADING_MODEL_SELECTION_REQUIRED");
       return;
     }
+    if (typeof draft.mode === "object") {
+      const { tokenId } = draft.mode;
+      if (!selectedDomain.supportsTokenDisplacements
+        || !scene.tokens.some(token => token.sourceTokenId === tokenId)) return;
+      const replacement = { tokenId, coordinate: point };
+      const choices = draft.tokenDisplacements.some(choice => choice.tokenId === tokenId)
+        ? draft.tokenDisplacements.map(choice => choice.tokenId === tokenId ? replacement : choice)
+        : [...draft.tokenDisplacements, replacement];
+      setDraft({ ...draft, tokenDisplacements: choices, mode: "path" });
+      return;
+    }
     if (draft.mode === "path") {
-      if (selectedDomain.support === "official_standard_deploy") {
-        setDraft({ ...draft, path: [point] });
+      if (selectedDomain.support === "official_standard_deploy"
+        && selectedDomain.parameterKind !== "official_selected_roster_spatial_path_v1") {
+        setDraft({ ...draft, path: [point], placements: [], tokenDisplacements: [] });
         return;
       }
       if (selectedDomain.maxPathPoints !== null
@@ -917,7 +1070,7 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
         setErrorCode("PATH_POINT_LIMIT_REACHED");
         return;
       }
-      setDraft({ ...draft, path: [...draft.path, point] });
+      setDraft({ ...draft, path: [...draft.path, point], placements: [], tokenDisplacements: [] });
       return;
     }
     if (["official_standard_move", "official_standard_deploy"]
@@ -925,6 +1078,7 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
       setDraft({
         ...draft,
         placements: [...draft.placements, { modelId: nextPlacementModelId, ...point }],
+        tokenDisplacements: [],
       });
     }
   };
@@ -956,6 +1110,8 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
     setCoordinateInput({ xInches: "", yInches: "" });
   };
 
+  const selectedEntry = selectedDomain?.entrySegments.find(segment => segment.segmentId === draft?.entrySegmentId);
+  const along = entryOffsetMilliInches(draft?.entryOffsetInches ?? "", selectedEntry);
   const parameterDraftReady = Boolean(selectedDomain && draft
     && draft.domainId === selectedDomain.domainId
     && draft.path.length > 0
@@ -965,11 +1121,11 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
         && draft.placements.length === activeRemainingModelIds.length)
       || (selectedDomain.support === "official_standard_deploy"
         && draft.leadingModelId && draft.entrySegmentId
-        && Number.isSafeInteger(draft.entryAlongEdgeMilliInches)
+        && along !== null
         && draft.placements.length === activeRemainingModelIds.length)));
 
   const previewParameterized = async () => {
-    if (!canPreview || !selectedDomain || !draft || !parameterDraftReady) return;
+    if (!canPreview || !selectedDomain || !draft || !parameterDraftReady || typeof draft.mode === "object") return;
     const selectedRosterSpatial = selectedDomain.parameterKind
       === "official_selected_roster_spatial_path_v1";
     const parameters = selectedDomain.support === "legacy_path_only"
@@ -978,7 +1134,7 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
         ? {
           leadingModelId: draft.leadingModelId,
           entrySegmentId: draft.entrySegmentId,
-          entryAlongEdgeMilliInches: draft.entryAlongEdgeMilliInches,
+          entryAlongEdgeMilliInches: along,
           ...(selectedRosterSpatial
             ? { path: draft.path }
             : { endpoint: draft.path.at(-1) }),
@@ -995,9 +1151,11 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
       const result = await dispatch({
         type: "preview_parameterized",
         domainId: selectedDomain.domainId,
-        parameters,
+        parameters: selectedDomain.supportsTokenDisplacements && draft.tokenDisplacements.length > 0
+          ? { ...parameters, tokenDisplacements: draft.tokenDisplacements } : parameters,
       });
-      if (!result.ok) setErrorCode(result.rejection?.code || "PREVIEW_REJECTED");
+      if (!result.ok) setErrorCode(previewRejectionText(result, zh,
+        selectedDomain.support === "official_standard_deploy" && selectedEntry !== undefined && selectedEntry.kind !== "unit_base_perimeter"));
       else setNotice(zh ? "服务器已校验参数并密封 Preview。" : "The server validated the parameters and sealed the Preview.");
     } finally {
       setPending(null);
@@ -1015,11 +1173,21 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
         domainId,
         parameters: {},
       });
-      if (!result.ok) setErrorCode(result.rejection?.code || "PREVIEW_REJECTED");
+      if (!result.ok) setErrorCode(previewRejectionText(result, zh));
       else setNotice(zh ? "权威 Preview 已生成，尚未改变房间状态。" : "Authoritative Preview ready; room state is unchanged.");
     } finally {
       setPending(null);
     }
+  };
+
+  const previewNativeForm = async (domainId: string, parameters: Record<string, unknown>) => {
+    if (!canPreview) return;
+    setPending('preview'); setErrorCode(null); setNotice(null);
+    try {
+      const result = await dispatch({ type: 'preview_parameterized', domainId, parameters });
+      if (!result.ok) setErrorCode(previewRejectionText(result, zh));
+      else setNotice(zh ? '服务器已校验行动，等待确认。' : 'Action validated; ready to confirm.');
+    } finally { setPending(null); }
   };
 
   const confirmAndApply = async () => {
@@ -1165,9 +1333,9 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
   const boardExtras = (
     <>
       <View style={styles.mediaCard}>
-        {selectedModel && starcraftTmgBattlefieldUnitMediaAssetsV1(selectedModel.unitId) && (
+        {selectedModel && selectedMedia && (
           <ExpoImage
-            source={starcraftTmgBattlefieldUnitMediaAssetsV1(selectedModel.unitId)?.activePortrait}
+            source={selectedMedia.activePortrait}
             contentFit="cover"
             contentPosition="center"
             style={styles.commPortrait}
@@ -1176,6 +1344,9 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
         )}
         <View style={styles.mediaCopy}>
           <Text style={styles.panelTitle}>{selectedModel?.label || (zh ? "未选择单位" : "No unit selected")}</Text>
+          {selectedMedia?.sharedCommunication && (
+            <Text style={styles.metaText}>{zh ? "共用通讯形象" : "Shared comms"} · {selectedMedia.communicationChannel?.replace(/_/g, " ")}</Text>
+          )}
           <Text style={styles.metaText}>
             {zh
               ? `${voicesEnabled ? "语音开启" : "语音静音"} · ${bgmLoaded ? (bgmPlaying ? "BGM 播放中" : "BGM 已暂停") : "BGM 未载入"}`
@@ -1187,6 +1358,16 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
         </View>
         <View style={styles.mediaControls}>
           <Button compact label={voicesEnabled ? (zh ? "关闭语音" : "Mute voice") : (zh ? "开启语音" : "Enable voice")} onPress={toggleVoices} />
+          <Button compact label={zh ? "游戏原声" : "Game soundtrack"} onPress={showSoundtracks} />
+          {soundtrackChoices && battlefieldSoundtrack.map(track => {
+            const installed = installedTracks.includes(track.id);
+            const label = installed ? track.name : track.name + (zh ? " · 试听" : " · preview");
+            return <Button compact key={track.id} label={label} onPress={() => {
+              loadBgm(installed ? mediaUri(track.localPath)! : track.previewUrl, label, installed);
+              setSoundtrackChoices(false);
+            }} />;
+          })}
+          {bgmTitle && <Text style={styles.metaText}>{bgmTitle}</Text>}
           <Button compact label={zh ? "选择 BGM" : "Choose BGM"} onPress={chooseBgm} />
           <Button compact label={bgmPlaying ? (zh ? "暂停 BGM" : "Pause BGM") : (zh ? "播放 BGM" : "Play BGM")} disabled={!bgmLoaded} onPress={toggleBgm} />
           <Button compact label="Vol −" disabled={mediaVolume <= 0} onPress={() => setMediaVolume((value) => Math.max(0, value - 0.1))} />
@@ -1513,7 +1694,7 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
           >
             {scene.finiteActions.map((action) => (
               <View key={action.actionKey} style={styles.actionCard}>
-                <Text style={styles.actionTitle}>{action.label}</Text>
+                <Text style={styles.actionTitle}>{actionLabel(action.label, action.pieceId)}</Text>
                 <Text style={styles.metaText}>{action.confirmationClass || "confirmation policy: authority"}</Text>
                 <Button
                   label={zh ? "生成 Preview" : "Preview"}
@@ -1525,14 +1706,26 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
 
             {scene.parameterDomains.map((domain) => (
               <View key={domain.domainId} style={styles.actionCard}>
-                <Text style={styles.actionTitle}>{domain.label}</Text>
+                <Text style={styles.actionTitle}>{actionLabel(domain.label, domain.pieceId)}</Text>
                 <Text style={styles.metaText}>{domain.parameterKind || "legacy_path_only"}</Text>
                 {domain.support === "unsupported" ? (
-                  <View accessibilityRole="alert" style={styles.unsupportedBox}>
-                    <Text style={styles.unsupportedText}>
-                      {zh ? "当前参数 registry 不支持；禁止提交。" : "Unsupported by this parameter registry; submission is disabled."}
-                    </Text>
-                  </View>
+                  <>
+                    <Button label={zh ? '设置行动' : 'Configure action'}
+                      disabled={!canPreview || Boolean(visiblePreview)}
+                      onPress={() => { setNativeDomainId(domain.domainId); setSelectedDomainId(null); setDraft(null); }} />
+                    {nativeDomainId === domain.domainId && <NativeActionForm key={domain.domainId}
+                      domain={domain.raw}
+                      modelIds={scene.models.filter(model => model.pieceId === domain.pieceId && model.kind === "model").map(model => model.id)}
+                      tokenIds={scene.tokens.flatMap(token => token.sourceTokenId ? [token.sourceTokenId] : [])}
+                      names={Object.fromEntries([...scene.models.flatMap(model =>
+                        [[model.id, model.label || model.id], [model.pieceId, model.pieceId]]),
+                        ...scene.tokens.flatMap(token => token.sourceTokenId
+                          ? [[token.sourceTokenId, token.label + " (" + token.xMilliInches / 1000 + ", " + token.yMilliInches / 1000 + ")"]] : [])])}
+                      disabled={!canPreview || Boolean(visiblePreview)}
+                      onPickPoint={callback => { nativePointPicker.current = callback;
+                        setNotice(zh ? '请在战桌上点选位置。' : 'Choose a position on the table.'); }}
+                      onPreview={parameters => void previewNativeForm(domain.domainId, parameters)} />}
+                  </>
                 ) : domain.support === "parameterless" ? (
                   <Button
                     label={zh ? "生成 Preview" : "Preview"}
@@ -1578,60 +1771,43 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
               )}
               {selectedDomain.support === "official_standard_deploy" && (
                 <>
-                  <Text style={styles.editorLabel}>
-                    {zh ? "2. 选择己方 Entry Edge 段" : "2. Select your Entry Edge segment"}
-                  </Text>
+                  <Text style={styles.editorLabel}>{zh ? "2. 选择进场入口" : "2. Select an entry source"}</Text>
                   <View style={styles.wrapRow}>
                     {selectedDomain.entrySegments.map((segment) => (
-                      <Button
-                        key={segment.segmentId}
-                        compact
+                      <Button key={segment.segmentId} compact
                         active={draft.entrySegmentId === segment.segmentId}
-                        label={`${segment.side} · ${segment.startInches}–${segment.endInches} in`}
-                        onPress={() => setDraft({
-                          ...draft,
-                          entrySegmentId: segment.segmentId,
-                          entryAlongEdgeMilliInches: Math.round(
-                            ((segment.startInches + segment.endInches) / 2) * 1000,
-                          ),
-                          path: [],
-                          placements: [],
-                          mode: "path",
-                        })}
+                        label={entrySegmentLabel(segment, unitNames, zh)}
+                        onPress={() => setDraft({ ...draft, entrySegmentId: segment.segmentId,
+                          entryOffsetInches: defaultEntryOffset(segment), path: [], placements: [], tokenDisplacements: [], mode: "path" })}
                       />
                     ))}
                   </View>
-                  <Text style={styles.metaText}>
-                    {zh ? "默认从所选边段中点进入" : "Entry point defaults to the selected segment midpoint"}
-                    {": "}{draft.entryAlongEdgeMilliInches === null
-                      ? "—" : `${draft.entryAlongEdgeMilliInches / 1000} in`}
-                  </Text>
+                  {selectedDomain.deploymentSupply && (
+                    <Text style={styles.metaText}>{[
+                      zh ? `单位人口 ${selectedDomain.deploymentSupply.requested}` : `Unit supply ${selectedDomain.deploymentSupply.requested}`,
+                      selectedDomain.deploymentSupply.mode === "unlimited" ? (zh ? "全军人口不限" : "Army supply unlimited")
+                        : selectedDomain.deploymentSupply.available !== null
+                          ? (zh ? `全军可用 ${selectedDomain.deploymentSupply.available}` : `Army available ${selectedDomain.deploymentSupply.available}`)
+                          : null,
+                      selectedEntry?.kind === "unit_base_perimeter" && selectedEntry.remainingSupply !== null
+                        && selectedEntry.supplyLimit !== null
+                        ? (zh ? `本回合该入口剩余 ${selectedEntry.remainingSupply}/${selectedEntry.supplyLimit}` : `Entry supply left this round ${selectedEntry.remainingSupply}/${selectedEntry.supplyLimit}`)
+                        : null,
+                    ].filter(Boolean).join(" · ")}</Text>
+                  )}
                   <View style={styles.coordinateField}>
                     <Text style={styles.coordinateLabel}>
-                      {zh ? "沿边进入坐标（英寸）" : "Along-edge entry coordinate (inches)"}
+                      {selectedEntry?.kind === "unit_base_perimeter"
+                        ? (zh ? `从底盘右端沿周界量取（0–${selectedEntry.maximumAlongEdgeMilliInches / 1000} 英寸）`
+                          : `Distance around the base from its right edge (0–${selectedEntry.maximumAlongEdgeMilliInches / 1000} in)`)
+                        : (zh ? "沿桌边进入坐标（英寸）" : "Along-edge entry coordinate (inches)")}
                     </Text>
-                    <TextInput
-                      accessibilityLabel={zh
-                        ? "沿边进入坐标，英寸"
-                        : "Along-edge entry coordinate in inches"}
-                      editable={operational}
-                      keyboardType="decimal-pad"
-                      onChangeText={(value) => {
-                        const parsed = Number(value);
-                        setDraft({
-                          ...draft,
-                          entryAlongEdgeMilliInches: Number.isFinite(parsed)
-                            ? Math.round(parsed * 1000) : null,
-                          path: [],
-                          placements: [],
-                          mode: "path",
-                        });
-                      }}
-                      placeholder="0"
-                      placeholderTextColor="#64748b"
-                      style={styles.coordinateInput}
-                      value={draft.entryAlongEdgeMilliInches === null
-                        ? "" : String(draft.entryAlongEdgeMilliInches / 1000)}
+                    <TextInput accessibilityLabel={zh ? "进场位置，英寸" : "Entry position in inches"}
+                      editable={operational} keyboardType="decimal-pad"
+                      onChangeText={(value) => setDraft({ ...draft, entryOffsetInches: value,
+                        path: [], placements: [], tokenDisplacements: [], mode: "path" })}
+                      placeholder="0" placeholderTextColor="#64748b"
+                      style={styles.coordinateInput} value={draft.entryOffsetInches}
                     />
                   </View>
                 </>
@@ -1650,20 +1826,45 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
               )}
               <Text style={styles.editorLabel}>
                 {selectedDomain.support === "official_standard_deploy"
-                  ? (zh ? "3. 在战场选择 Leading Model 终点" : "3. Choose the leading model endpoint")
+                  ? (selectedDomain.parameterKind === "official_selected_roster_spatial_path_v1"
+                    ? (zh ? "3. 依次选择领队模型的进场路径点" : "3. Add the leading model’s entry waypoints")
+                    : (zh ? "3. 选择领队模型的终点" : "3. Choose the leading model endpoint"))
                   : selectedDomain.support === "official_standard_move"
                   ? (zh ? "2. 点战场逐个添加路径 waypoint" : "2. Tap the battlefield to append path waypoints")
                   : (zh ? "点战场逐个添加路径 waypoint" : "Tap the battlefield to append path waypoints")}
               </Text>
               <View style={styles.wrapRow}>
                 <Button compact active={draft.mode === "path"} label={zh ? "路径模式" : "Path mode"} onPress={() => setDraft({ ...draft, mode: "path" })} />
-                <Button compact label={zh ? "撤销路径点" : "Undo waypoint"} disabled={draft.path.length === 0} onPress={() => setDraft({ ...draft, path: draft.path.slice(0, -1) })} />
+                <Button compact label={zh ? "撤销路径点" : "Undo waypoint"} disabled={draft.path.length === 0} onPress={() => setDraft({ ...draft, path: draft.path.slice(0, -1), placements: [], tokenDisplacements: [], mode: "path" })} />
               </View>
               <Text style={styles.metaText}>waypoints: {draft.path.length}{selectedDomain.maxPathPoints ? ` / ${selectedDomain.maxPathPoints}` : ""}</Text>
 
+              {selectedDomain.supportsTokenDisplacements && parameterDraftReady && scene.tokens.some(token => token.sourceTokenId) && (
+                <View style={styles.coordinateEditor}>
+                  <Text style={styles.editorLabel}>{zh ? "领队终点重叠的标记" : "Tokens overlapped at the leader’s destination"}</Text>
+                  <Text style={styles.metaText}>{zh ? "选择标记，点棋盘或输入新坐标，使它贴住领队底盘。无法贴住时，选最近的合法位置。" : "Select a token, then tap the board or enter coordinates to place it in base contact with the leader. If contact is impossible, choose the closest legal position."}</Text>
+                  <View style={styles.wrapRow}>
+                    {scene.tokens.map(token => {
+                      const tokenId = token.sourceTokenId;
+                      if (!tokenId) return null;
+                      const chosen = draft.tokenDisplacements.find(choice => choice.tokenId === tokenId);
+                      const label = boardTokenLabel(token, zh);
+                      return <Button key={tokenId} compact
+                        active={typeof draft.mode === "object" && draft.mode.tokenId === tokenId}
+                        label={chosen ? `${label} → ${formatBoardPoint(chosen.coordinate)}` : label}
+                        onPress={() => {
+                          setDraft({ ...draft, mode: { tokenId } });
+                          setCoordinateInput({ xInches: "", yInches: "" });
+                        }} />;
+                    })}
+                    {draft.tokenDisplacements.length > 0 && <Button compact label={zh ? "撤销最后一个标记落点" : "Undo last token destination"}
+                      onPress={() => setDraft({ ...draft, tokenDisplacements: draft.tokenDisplacements.slice(0, -1), mode: "path" })} />}
+                  </View>
+                </View>
+              )}
               <View style={styles.coordinateEditor}>
                 <Text style={styles.editorLabel}>
-                  {zh ? "非手势坐标输入（英寸）" : "Non-gesture coordinate input (inches)"}
+                  {zh ? "坐标输入（英寸，左下角为原点，Y 向上）" : "Non-gesture coordinate input (inches)"}
                 </Text>
                 <View style={styles.coordinateRow}>
                   <View style={styles.coordinateField}>
@@ -1694,7 +1895,8 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
                   </View>
                   <Button
                     compact
-                    label={draft.mode === "placements"
+                    label={typeof draft.mode === "object" ? (zh ? "设置标记落点" : "Set token destination")
+                      : draft.mode === "placements"
                       ? (zh ? "放置下一模型" : "Place next model")
                       : (zh ? "添加路径点" : "Add waypoint")}
                     disabled={!operational
@@ -1724,7 +1926,7 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
                       compact
                       label={zh ? "撤销放置" : "Undo placement"}
                       disabled={draft.placements.length === 0}
-                      onPress={() => setDraft({ ...draft, placements: draft.placements.slice(0, -1) })}
+                      onPress={() => setDraft({ ...draft, placements: draft.placements.slice(0, -1), tokenDisplacements: [], mode: "placements" })}
                     />
                   </View>
                   <Text style={styles.metaText}>
@@ -1736,7 +1938,7 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
               )}
               <Button
                 label={pending === "preview" ? (zh ? "校验中…" : "Previewing…") : (zh ? "提交权威 Preview" : "Request authoritative Preview")}
-                disabled={!canPreview || !parameterDraftReady || Boolean(visiblePreview)}
+                disabled={!canPreview || !parameterDraftReady || typeof draft.mode === "object" || Boolean(visiblePreview)}
                 onPress={previewParameterized}
               />
               <Text style={styles.boundaryText}>
@@ -1753,6 +1955,46 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
               <Text style={styles.metaText}>previewId: {actionText(scene.previewId)}</Text>
               <Text style={styles.metaText}>action: {actionText(view.pendingPreview?.core?.action?.actionType)}</Text>
               <Text style={styles.metaText}>events: {Array.isArray(view.pendingPreview?.core?.result?.events) ? view.pendingPreview.core.result.events.length : 0}</Text>
+              {assaultRestriction && (
+                <Text style={styles.metaText}>
+                  {zh
+                    ? `第 ${assaultRestriction.round} 回合突击阶段 · 脱离时人口 ${assaultRestriction.ownSupply} 对 ${assaultRestriction.opposingSupply}。`
+                    : `Round ${assaultRestriction.round} Assault · Supply at disengagement: ${assaultRestriction.ownSupply} vs ${assaultRestriction.opposingSupply}. `}
+                  {assaultRestriction.rangedAttackProhibited
+                    ? (zh ? "脱离后不能射击。" : "Disengagement prevents shooting. ")
+                    : (zh ? "脱离本身不限制射击。" : "Disengagement imposes no shooting restriction. ")}
+                  {assaultRestriction.chargeProhibited
+                    ? (zh ? "不能冲锋。" : "Charging is prohibited.")
+                    : (zh ? "脱离本身不限制冲锋。" : "Disengagement imposes no charge restriction.")}
+                </Text>
+              )}
+              {Array.isArray(visiblePreview.core?.result?.events) && visiblePreview.core.result.events.map((
+                event: { type?: string; tokenId?: string; coordinate?: BattlefieldPointV1; chargeRoll?: number; effectKind?: string; abilityName?: string }, index: number,
+              ) => {
+                if (event?.type === "charge_succeeded" || event?.type === "charge_failed") {
+                  const success = event.type === "charge_succeeded";
+                  const result = success ? (zh ? "冲锋成功" : "Charge succeeded") : (zh ? "冲锋失败" : "Charge failed");
+                  return <Text key={index} style={styles.metaText}>
+                    {result}{Number.isSafeInteger(event.chargeRoll) ? (zh ? " · 骰值 " : " · Roll ") + event.chargeRoll : ""}
+                  </Text>;
+                }
+                if (event?.type === "close_ranks_movement_committed") {
+                  return <Text key={index} style={styles.metaText}>{zh ? "收拢队形，原近战攻击待结算。" : "Close ranks. The original melee attack is pending."}</Text>;
+                }
+                if (event?.type === "relocation_ability_resolved" && event.effectKind === "direct_place" && event.abilityName) {
+                  return <Text key={index} style={styles.metaText}>{event.abilityName} · {zh ? "直接放置" : "Place"}</Text>;
+                }
+                if (event?.type !== "battlefield_token_displaced" && event?.type !== "creep_tumor_removed") return null;
+                const token = scene.tokens.find(item => item.sourceTokenId === event.tokenId);
+                const label = token ? boardTokenLabel(token, zh) : event.tokenId;
+                if (!label) return null;
+                if (event.type === "creep_tumor_removed") {
+                  return <Text key={index} style={styles.metaText}>{label} · {zh ? "移除" : "removed"}</Text>;
+                }
+                const end = event.coordinate;
+                if (!end || !Number.isSafeInteger(end.xMilliInches) || !Number.isSafeInteger(end.yMilliInches)) return null;
+                return <Text key={index} style={styles.metaText}>{label} · {zh ? "移至" : "moved to"} {formatBoardPoint(end)}</Text>;
+              })}
               <Text style={styles.metaText}>chance pending: {view.pendingPreview?.core?.result?.chancePending === true ? "true" : "false"}</Text>
               <View style={styles.wrapRow}>
                 <Button

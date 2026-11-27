@@ -1,3 +1,4 @@
+import {createPostgameVersionSelectionV1} from './postgame-version-selection-v1.mjs';
 import {
   clone,
   fail,
@@ -500,6 +501,37 @@ export function createStarcraftTmgOnlineStrategySkillRegistryV1(input = {}) {
     });
   }
 
+  // Research selections are whole durable bundles. They do not mutate the
+  // live four-Skill accepted map or imply whole-game qualification.
+  async function registerLearningSelection({selectionId,scope}) {
+    if(!input.learningStore)fail('STRATEGY_LEARNING_STORE_REQUIRED');
+    const selected=await createPostgameVersionSelectionV1({store:input.learningStore}).read({id:selectionId,scope});
+    for(const entry of selected.bundle.entries||[]){
+      verifySeal(entry.skill);
+      if(hash(entry.skill.sourceBinding)!==hash(sourceBinding))fail('STRATEGY_LEARNING_SOURCE_MISMATCH');
+    }
+    const reviewId='strategy-learning-publication:'+hash({selectionId,scope});
+    const body={schemaVersion:'strategy_learning_publication_v1',scope:clone(scope),
+      selectionId,selectionContentHash:selected.contentHash,bundle:clone(selected.bundle),
+      purpose:'isolated_next_match',automaticPromotion:false,acceptedForLiveStrategy:false};
+    const old=await input.learningStore.load(reviewId);
+    if(old){if(old.contentHash!==hash(body))fail('STRATEGY_LEARNING_PUBLICATION_CONFLICT');return freeze(clone(old));}
+    const record={...body,reviewId,revision:0,contentHash:hash(body),updatedAt:now()};
+    const result=await input.learningStore.commit(reviewId,null,record);
+    if(!result.ok){const concurrent=await input.learningStore.load(reviewId);
+      if(!concurrent)fail(result.reason||'STRATEGY_LEARNING_PUBLICATION_WRITE_FAILED');
+      if(concurrent.contentHash!==record.contentHash)fail('STRATEGY_LEARNING_PUBLICATION_CONFLICT');return freeze(clone(concurrent));}
+    return freeze(record);
+  }
+  async function readLearningBundle({publicationId,scope,purpose}) {
+    if(purpose!=='isolated_next_match')fail('STRATEGY_LEARNING_LIVE_PROMOTION_NOT_QUALIFIED');
+    const record=await input.learningStore?.load(publicationId);
+    if(record?.schemaVersion!=='strategy_learning_publication_v1'||hash(record.scope)!==hash(scope))fail('STRATEGY_LEARNING_PUBLICATION_SCOPE');
+    const selected=await createPostgameVersionSelectionV1({store:input.learningStore}).read({id:record.selectionId,scope});
+    if(record.selectionContentHash!==selected.contentHash||hash(record.bundle)!==hash(selected.bundle))fail('STRATEGY_LEARNING_PUBLICATION_CHANGED');
+    return freeze(clone(record.bundle));
+  }
+
   function state() {
     return seal({
       schema: `${STARCRAFT_TMG_ONLINE_STRATEGY_SKILL_REGISTRY_VERSION}.state`,
@@ -521,6 +553,8 @@ export function createStarcraftTmgOnlineStrategySkillRegistryV1(input = {}) {
 
   return freeze({
     registerCandidates,
+    registerLearningSelection,
+    readLearningBundle,
     readEvaluationRoute,
     readAcceptedRoute,
     acceptSet,

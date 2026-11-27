@@ -34,6 +34,7 @@ export function createRosterPlanningWorkspaceHttpAdapterV1(input = {}) {
   const decisionJourney = input.decisionJourney || null;
   const launchRoom = input.launchRoom || null;
   const launchPresetRoom = input.launchPresetRoom || null;
+  const launchDecisionWorkflowRoom = input.launchDecisionWorkflowRoom || null;
   if (typeof service?.descriptor !== "function"
     || typeof service?.startPlanning !== "function") {
     throw Object.assign(new Error("ROSTER_WORKSPACE_HTTP_SERVICE_INVALID"),
@@ -82,6 +83,10 @@ export function createRosterPlanningWorkspaceHttpAdapterV1(input = {}) {
           decisionJourney: decisionJourney?.descriptor() || null,
           roomLaunchAvailable: typeof launchRoom === "function" } });
       }
+      if(segments.length===1&&segments[0]==='conditional-experiences'&&method==='GET'){
+        if(!decisionJourney)return rejected(503,'ROSTER_DECISION_JOURNEY_UNAVAILABLE');
+        return ok({experiences:await decisionJourney.searchConditionalExperiences(query.q??'')});
+      }
       if(segments[0]==='workflows'){
         if(!decisionJourney)return rejected(503,'ROSTER_DECISION_JOURNEY_UNAVAILABLE');
         if(segments.length===1){
@@ -91,14 +96,21 @@ export function createRosterPlanningWorkspaceHttpAdapterV1(input = {}) {
         const id=segments[1];
         if(segments.length===2&&method==='GET')return ok({workflow:await decisionJourney.read(id)});
         if(segments.length===3){
+          if(method==='POST'&&segments[2]==='launch-room'){
+            if(typeof launchDecisionWorkflowRoom!=='function')return rejected(503,'ROSTER_WORKSPACE_ROOM_LAUNCH_UNAVAILABLE');
+            return ok({match:await launchDecisionWorkflowRoom(id,body)},201);
+          }
           if(method==='POST'&&segments[2]==='accept')return ok(await decisionJourney.accept(id,body));
           if(method==='POST'&&segments[2]==='run')return ok({workflow:await decisionJourney.start(id)},202);
+          if(method==='POST'&&segments[2]==='reprepare-incomplete-output')return ok(await decisionJourney.reprepareIncompleteOutput(id,body),202);
           if(method==='POST'&&segments[2]==='recover-provider')return ok(await decisionJourney.recoverProvider(id,body),202);
           if(method==='POST'&&segments[2]==='recover-comparison')return ok(await decisionJourney.recoverComparison(id,body),202);
           if(method==='POST'&&segments[2]==='reconsider-capabilities')return ok(await decisionJourney.reconsiderCapabilities(id,body),202);
           if(method==='POST'&&segments[2]==='handoff-no-progress')return ok(await decisionJourney.handoffNoProgress(id,body),202);
           if(method==='POST'&&segments[2]==='pause')return ok({workflow:await decisionJourney.pause(id)});
           if(method==='GET'&&segments[2]==='trace')return ok({trace:await decisionJourney.trace(id)});
+          if(method==='POST'&&segments[2]==='conditional-experiences')
+            return ok({imported:await decisionJourney.importConditionalExperience(id,body)});
           if(method==='GET'&&segments[2]==='conditional-experiences')
             return ok({experiences:await decisionJourney.conditionalExperiences(id,query.q??'')});
         }
@@ -135,7 +147,7 @@ export function createRosterPlanningWorkspaceHttpAdapterV1(input = {}) {
             if (typeof launchRoom !== "function") {
               return rejected(503, "ROSTER_WORKSPACE_ROOM_LAUNCH_UNAVAILABLE");
             }
-            return ok({ match: await launchRoom(segments[2]) }, 201);
+            return ok({ match: await launchRoom(segments[2], body) }, 201);
           }
           if (segments[3] === "run") {
             return ok({ journey: await iterativeJourney.run(segments[2], body) },
@@ -193,7 +205,7 @@ export function createRosterPlanningWorkspaceHttpAdapterV1(input = {}) {
         if (method !== "POST") return rejected(405, "METHOD_NOT_ALLOWED");
         if (operation === 'launch-room') {
           if (typeof launchPresetRoom !== 'function') return rejected(503, 'ROSTER_WORKSPACE_ROOM_LAUNCH_UNAVAILABLE');
-          return ok({ match: await launchPresetRoom(sessionMatch) }, 201);
+          return ok({ match: await launchPresetRoom(sessionMatch, body) }, 201);
         }
         if (operation === 'run') {
           return ok({ session: await service.runPresetJourney(sessionMatch, body) }, 202);

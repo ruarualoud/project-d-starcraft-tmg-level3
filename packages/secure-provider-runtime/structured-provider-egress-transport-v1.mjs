@@ -1,3 +1,4 @@
+import {createProviderTransportDiagnosticsV1} from './provider-transport-diagnostics-v1.mjs';
 import { createHash } from "node:crypto";
 import { lookup as dnsLookup } from "node:dns/promises";
 import https from "node:https";
@@ -258,8 +259,7 @@ export function createStarcraftTmgStructuredProviderEgressTransportV1(
     const elapsedMs = () => Math.max(0, Math.floor(performance.now() - transportStartedAt));
     const milestonesMs = { dnsResolved: elapsedMs(), tcpConnected: null, tlsConnected: null,
       requestWritten: null, responseHeaders: null, responseCompleted: null };
-    const responseBody = { receivedBytes: 0, nonWhitespaceBytes: 0, chunkCount: 0,
-      firstByteMs: null, lastByteMs: null, lastNonWhitespaceByteMs: null };
+    const diagnostics = createProviderTransportDiagnosticsV1({elapsedMs, timeoutMs: binding.timeoutMs});
     let timeoutCause;
     const mark = field => { milestonesMs[field] = elapsedMs(); };
     // Same phase contract as ordinary egress. No key, request/response body,
@@ -270,7 +270,7 @@ export function createStarcraftTmgStructuredProviderEgressTransportV1(
           : milestonesMs.tlsConnected !== null ? "writing_request"
             : milestonesMs.tcpConnected !== null ? "tls_handshake" : "tcp_connect",
       elapsedMs: elapsedMs(), milestonesMs: { ...milestonesMs },
-      responseBody: { ...responseBody }, ...(timeoutCause ? { timeoutCause } : {}),
+      ...diagnostics.snapshot(), ...(timeoutCause ? { timeoutCause } : {}),
     });
     let physicalAttempts = 0;
     return await new Promise((resolve, reject) => {
@@ -292,6 +292,7 @@ export function createStarcraftTmgStructuredProviderEgressTransportV1(
           ...details,
         }));
       const abort = () => {
+        diagnostics.note("caller_abort");
         fail("PROVIDER_ABORTED", {
           requestDefinitelyNotSent: physicalAttempts === 0,
           requestMayHaveBeenSent: physicalAttempts === 1,
@@ -299,7 +300,7 @@ export function createStarcraftTmgStructuredProviderEgressTransportV1(
         outbound?.destroy?.();
       };
       const timer = setTimeout(() => {
-        timeoutCause = "total_deadline";
+        timeoutCause = "total_deadline"; diagnostics.note("total_deadline");
         fail("PROVIDER_TRANSPORT_TIMEOUT", {
           requestMayHaveBeenSent: physicalAttempts === 1,
         });
@@ -333,6 +334,7 @@ export function createStarcraftTmgStructuredProviderEgressTransportV1(
             "content-length": String(Buffer.byteLength(body, "utf8")),
           },
         }, (response) => {
+          diagnostics.response(response);
           const status = Number(response?.statusCode || 0);
           observedStatus = Number.isInteger(status) ? status : null;
           mark("responseHeaders");
@@ -358,21 +360,7 @@ export function createStarcraftTmgStructuredProviderEgressTransportV1(
           response.on("data", (chunk) => {
             if (settled) return;
             const buffer = Buffer.from(chunk);
-            if (buffer.length > 0) {
-              const at = elapsedMs();
-              responseBody.receivedBytes += buffer.length;
-              responseBody.chunkCount += 1;
-              responseBody.firstByteMs ??= at;
-              responseBody.lastByteMs = at;
-              // Count JSON whitespace only. This is a byte observation, not
-              // a claim that the remaining data is a valid model answer.
-              let contentBytes = 0;
-              for (const byte of buffer) {
-                if (byte !== 0x20 && byte !== 0x09 && byte !== 0x0a && byte !== 0x0d) contentBytes++;
-              }
-              responseBody.nonWhitespaceBytes += contentBytes;
-              if (contentBytes > 0) responseBody.lastNonWhitespaceByteMs = at;
-            }
+            diagnostics.data(buffer);
             bytes += buffer.length;
             if (bytes > maxResponseBytes) {
               response.destroy?.(); outbound.destroy?.();
@@ -383,10 +371,16 @@ export function createStarcraftTmgStructuredProviderEgressTransportV1(
             }
             chunks.push(buffer);
           });
-          response.on("error", error => fail("PROVIDER_RESPONSE_STREAM_FAILED", {
-            status, requestMayHaveBeenSent: true,
-            networkErrorCode: error?.code,
-          }));
+          response.on("aborted", () => { if (!settled) diagnostics.note("response_aborted"); });
+          response.on("close", () => {
+            if (settled || response.complete || milestonesMs.responseCompleted !== null) return;
+            diagnostics.note("response_close_before_end");
+            fail("PROVIDER_RESPONSE_STREAM_FAILED", {status, requestMayHaveBeenSent:true});
+          });
+          response.on("error", error => {
+            if (settled) return; diagnostics.note("response_error", error);
+            fail("PROVIDER_RESPONSE_STREAM_FAILED", {status, requestMayHaveBeenSent:true, networkErrorCode:error?.code});
+          });
           response.on("end", () => {
             if (settled) return;
             mark("responseCompleted");
@@ -448,6 +442,7 @@ export function createStarcraftTmgStructuredProviderEgressTransportV1(
           });
         });
       } catch (error) {
+        diagnostics.note("request_create_error", error);
         fail("PROVIDER_TRANSPORT_FAILED", {
           networkErrorCode: error?.code,
           requestMayHaveBeenSent: physicalAttempts === 1,
@@ -456,6 +451,7 @@ export function createStarcraftTmgStructuredProviderEgressTransportV1(
         return;
       }
       outbound.once?.("socket", (socket) => {
+        diagnostics.socket(socket);
         keepProviderSocketAliveV1(socket);
         socket.once?.("connect", () => mark("tcpConnected"));
         socket.once?.("secureConnect", () => {
@@ -469,18 +465,20 @@ export function createStarcraftTmgStructuredProviderEgressTransportV1(
           }
         });
       });
-      outbound.once?.("error", error => fail("PROVIDER_TRANSPORT_FAILED", {
-        requestMayHaveBeenSent: physicalAttempts === 1,
-        networkErrorCode: error?.code,
-      }));
+      outbound.once?.("error", error => {
+        if (settled) return; diagnostics.note("request_error", error);
+        fail("PROVIDER_TRANSPORT_FAILED", {requestMayHaveBeenSent: physicalAttempts === 1, networkErrorCode:error?.code});
+      });
       outbound.once?.("finish", () => mark("requestWritten"));
       outbound.setTimeout?.(binding.timeoutMs, () => {
-        timeoutCause = "socket_inactivity";
+        if (settled) return;
+        timeoutCause = "socket_inactivity"; diagnostics.note("socket_inactivity");
         fail("PROVIDER_TRANSPORT_TIMEOUT", { requestMayHaveBeenSent: true });
         outbound.destroy?.();
       });
       try { outbound.end(body); }
       catch (error) {
+        diagnostics.note("request_write_error", error);
         fail("PROVIDER_TRANSPORT_FAILED", {
           requestMayHaveBeenSent: physicalAttempts === 1,
           networkErrorCode: error?.code,

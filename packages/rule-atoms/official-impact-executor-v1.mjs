@@ -1,4 +1,5 @@
 import { isDeepStrictEqual } from "node:util";
+import { projectOfficialUnitRestrictionsV1 } from './official-unit-restrictions-v1.mjs';
 
 import { hashStarcraftTmgContract } from
   "../authoritative-engine/referee-crypto-v1.mjs";
@@ -158,6 +159,7 @@ export function openOfficialImpactPendingV1(stateInput, input = {}) {
   }
   for (const unitId of targetUnitIds) {
     const target = state.pieces.find((piece) => piece.id === unitId);
+    if (target && projectOfficialUnitRestrictionsV1(state, target.id).impactImmune) fail('IMPACT_TARGET_IMMUNE', unitId);
     verifyPiece(target, profile, { target: true });
     if (target.sideKey === input.sideKey) fail("IMPACT_TARGET_INVALID", unitId);
   }

@@ -1,5 +1,7 @@
 import { hashStarcraftTmgContract as hash } from '../authoritative-engine/referee-crypto-v1.mjs';
 
+export const ROSTER_FIRST_AUTHOR_INPUT_ENCODING_V1 = 'same_request_evidence_v2';
+
 const providerSource=request=>({promptPack:request.promptPack,promptNodes:request.promptNodes,
   userMessage:request.userMessage,responseContract:request.responseContract});
 
@@ -10,7 +12,9 @@ export function internRosterTeachPromptEvidenceV1(projected, options = {}) {
   const pointerKey = key => String(key).replaceAll('~', '~0').replaceAll('/', '~1');
   function intern(value, pointer) {
     if (!value || typeof value !== 'object') return value;
-    if (JSON.stringify(value).length > 2048) {
+    const serialized = JSON.stringify(value);
+    const compactToolProof = options.compactToolProofScopes && pointer.endsWith('/proofScope');
+    if (serialized.length > 2048 || compactToolProof && serialized.length > 512) {
       const contentHash = hash(value);
       if (locations.has(contentHash)) return {
         kind: options.referenceKind || 'same_prompt_evidence_reference_v1',
@@ -30,9 +34,11 @@ export function encodeRosterProviderInputV1(request, version = request.providerI
   const original = JSON.stringify(source);
   if (version === 'verbatim_v1') return { input: original, version,
     beforeCharacters: original.length, afterCharacters: original.length };
-  if (version !== 'same_request_evidence_v1') throw Object.assign(Error('ROSTER_REQUEST_ENCODING_UNKNOWN'),
+  if (version !== 'same_request_evidence_v1' && version !== ROSTER_FIRST_AUTHOR_INPUT_ENCODING_V1)
+    throw Object.assign(Error('ROSTER_REQUEST_ENCODING_UNKNOWN'),
     { code: 'ROSTER_REQUEST_ENCODING_UNKNOWN' });
   const encoded = internRosterTeachPromptEvidenceV1(source, {
+    compactToolProofScopes: version === ROSTER_FIRST_AUTHOR_INPUT_ENCODING_V1,
     referenceKind: 'same_request_evidence_reference_v1',
     meaning: 'Exactly the same full value at targetJsonPointer relative to the ROOT of this request input JSON. Resolve it in this input, not in a nested content node or an external archive. All unique values are preserved.',
   });

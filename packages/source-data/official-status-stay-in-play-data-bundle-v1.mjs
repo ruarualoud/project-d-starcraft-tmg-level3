@@ -7,6 +7,7 @@ import {
 } from "./official-development-tranche-source-lock-v1.mjs";
 import { getOfficialCurrentProductRecord } from
   "./official-command-center-adapter-v1.mjs";
+import { assertOfficialReleaseSourceV2 } from "./official-release-context-v2.mjs";
 import {
   createOfficialModelBaseGeometryDataBundleV1,
   verifyOfficialModelBaseGeometryDataBundleV1,
@@ -140,6 +141,44 @@ function compileOnCreepDependencies(dataset) {
   ));
 }
 
+export function createOfficialSiegeModeDataBundleV2({ context } = {}) {
+  const manifest = assertOfficialReleaseSourceV2(context, context || {});
+  const dataset = context.dataset;
+  const core = dataset.recordsByKey[RULE_SECTION.recordKey];
+  if (core?.payloadHash !== RULE_SECTION.payloadHash || core.sourceRecordHash !== RULE_SECTION.sourceRecordHash) {
+    fail("STATUS_STAY_IN_PLAY_RULE_SOURCE_DRIFT");
+  }
+  const record = getOfficialCurrentProductRecord(dataset, "army_units:siege_tank");
+  const feature = record.payload.upgrades.find(row => row.name === "Mode Transformation");
+  if (!feature || !/gains or loses the SIEGE MODE Status\./u.test(feature.description)
+    || !/Size characteristic is treated as if it was 3\./u.test(feature.description)) {
+    fail("SIEGE_MODE_CARRIER_SOURCE_UNSUPPORTED");
+  }
+  const profiles = record.payload.upgrades.flatMap((row, index) => /^RANGE:/u.test(row.description)
+    ? [{ profileId: `${record.recordKey}:weapon:${index}`, profileName: row.name,
+      sourceDefinitionHash: hashStarcraftTmgContract(row),
+      requiresSiegeMode: /SIEGE MODE/u.test(row.description) }] : []);
+  if (!profiles.length || !profiles.some(row => row.requiresSiegeMode)
+    || !profiles.some(row => !row.requiresSiegeMode)) fail("SIEGE_MODE_PROFILE_SOURCE_INCOMPLETE");
+  const entry = { ...sourceRecord(dataset, record.recordKey),
+    printedSize: Number(record.payload.stats.size), modeSize: 3,
+    sourceDefinitionHash: hashStarcraftTmgContract(feature), profiles };
+  const clauses = RULE_CLAUSES.filter(row => row.clauseIds.some(id => id.includes("siege-mode")));
+  const body = {
+    schema: "starcraft_tmg_official_siege_mode_data_bundle_v2", version: "2.0.0",
+    sourceBinding: { releaseId: manifest.releaseId, sourceSnapshotHash: dataset.sourceSnapshotHash,
+      normalizedDatasetHash: dataset.datasetHash },
+    sourceSnapshotHash: dataset.sourceSnapshotHash, normalizedDatasetHash: dataset.datasetHash,
+    ruleSectionRecord: RULE_SECTION, ruleClauses: clauses, ruleClauseIndexHash: hashStarcraftTmgContract(clauses),
+    siegeModeCarrierRegistry: { entries: [entry], entryIndexHash: hashStarcraftTmgContract([entry]) },
+    supportedProcedures: ["evaluate_siege_mode_rules", "remove_siege_mode_on_reserve"],
+    productionRoomEligible: false, sourceRefreshPerformed: false, trainingTruth: false,
+  };
+  const bundle = freezeDeep({ ...body, bundleHash: hashStarcraftTmgContract(body) });
+  verifyOfficialStatusStayInPlayDataBundleV1(bundle);
+  return bundle;
+}
+
 export function createOfficialStatusStayInPlayDataBundleV1(input = {}) {
   const dataset = input.dataset;
   if (!object(dataset)
@@ -225,6 +264,25 @@ export function createOfficialStatusStayInPlayDataBundleV1(input = {}) {
 }
 
 export function verifyOfficialStatusStayInPlayDataBundleV1(bundle) {
+  if (bundle?.schema === "starcraft_tmg_official_siege_mode_data_bundle_v2") {
+    const entries = bundle.siegeModeCarrierRegistry?.entries;
+    if (bundle.version !== "2.0.0" || !bundle.sourceBinding?.releaseId
+      || bundle.sourceBinding.sourceSnapshotHash !== bundle.sourceSnapshotHash
+      || bundle.sourceBinding.normalizedDatasetHash !== bundle.normalizedDatasetHash
+      || bundle.ruleSectionRecord?.payloadHash !== RULE_SECTION.payloadHash
+      || !Array.isArray(entries) || entries.length !== 1
+      || entries[0].recordKey !== "army_units:siege_tank"
+      || !Array.isArray(entries[0].profiles) || !entries[0].profiles.length
+      || entries[0].profiles.some(row => typeof row.requiresSiegeMode !== "boolean")
+      || bundle.siegeModeCarrierRegistry.entryIndexHash !== hashStarcraftTmgContract(entries)
+      || bundle.ruleClauseIndexHash !== hashStarcraftTmgContract(bundle.ruleClauses)
+      || bundle.productionRoomEligible !== false || bundle.sourceRefreshPerformed !== false
+      || bundle.trainingTruth !== false
+      || bundle.bundleHash !== hashStarcraftTmgContract(without(bundle, ["bundleHash"]))) {
+      fail("SIEGE_MODE_DATA_BUNDLE_V2_INVALID");
+    }
+    return true;
+  }
   if (!object(bundle)
     || bundle.schema !== OFFICIAL_STATUS_STAY_IN_PLAY_DATA_BUNDLE_SCHEMA
     || bundle.sourceLockHash !== OFFICIAL_DEVELOPMENT_TRANCHE_SOURCE_LOCK_HASH

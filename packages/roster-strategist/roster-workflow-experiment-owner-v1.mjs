@@ -1,9 +1,11 @@
+import {isRosterBoundedObservationReturnV1} from './roster-workflow-order-failure-v1.mjs';
 // A completed query batch is not a completed question. One owner receives the
 // fan-in of its batch, then chooses another experiment or an explicit answer.
 // This is normal progress, not a reset of any input/transport correction lane.
 import {projectRosterExperimentSourceFactsV1,ROSTER_SOURCE_FACTS_PROJECTION_VERSION_V1 as sourceFactsVersion} from './roster-experiment-source-facts-v1.mjs';
 import {rosterSourceReviewRepairStageV1,ROSTER_SOURCE_REPAIR_ROUTING_CHANGE_V1} from './roster-experiment-source-repair-v1.mjs';
 import {rosterWorkflowBindingsMatchV1} from './roster-decision-workflow-v1.mjs';
+import {projectRosterWorkflowAuthorDraftInputV1} from './roster-workflow-draft-v1.mjs';
 import {createRosterSourceClaimReviewV1,assessRosterSourceClaimReviewV1,ROSTER_MATERIAL_SOURCE_CLAIM_CONTRACT_VERSION_V1 as materialClaimVersion} from './roster-workflow-source-claims-v1.mjs';
 import {assessRosterCoverageClarificationV1,rosterReviewCheckPassedV1,rosterPendingQuestionWorkV1} from './roster-review-data-questions-v1.mjs';
 import {createRosterWorkflowOwnershipIndexV1} from './roster-workflow-ownership-v1.mjs';
@@ -16,6 +18,9 @@ import {ROSTER_REVIEW_OBLIGATION_DELIVERY_VERSION_V1 as obligationDeliveryVersio
 import {ROSTER_REVIEW_PROOF_CITATION_VERSION_V1 as proofCitationVersion} from './roster-review-proof-context-v1.mjs';
 import {ROSTER_INQUIRY_REVIEW_STAGE_VERSION_V1 as inquiryStageVersion} from './roster-inquiry-review-stage-v1.mjs';
 import {ROSTER_MEASUREMENT_SCENE_DELIVERY_VERSION_V1 as sceneDeliveryVersion} from './roster-measurement-scenes-v1.mjs';
+import {isRosterBuilderAuthorFailureReturnV1} from './roster-builder-inquiry-v1.mjs';
+import {projectRosterWorkflowQuestionRouteV1} from './roster-workflow-question-routing-v1.mjs';
+import {rosterSourceScopeExtensionV1} from './roster-source-scope-extension-v1.mjs';
 const clone=value=>structuredClone(value);
 const sourceReviewId=owner=>`${owner.id}:source-review:v2`;
 // A question survives several batches. Keep an exact, goal-scoped source index
@@ -77,7 +82,7 @@ export function projectRosterExperimentQuestionEvidenceV1({state,owner}){
 const DEFAULT_INVESTIGATION_DECISION_WINDOW=3;
 export function rosterExperimentLifecycleV1(goalId,completedBatches=0,maximumCompletedBatches=DEFAULT_INVESTIGATION_DECISION_WINDOW){
   return {version:2,goalId,completedBatches,maximumCompletedBatchesBeforeDecision:maximumCompletedBatches,
-    instruction:'You own this experiment QUESTION, not only its latest tool batch. A completionStepId completes that batch, NOT the original question. Consume actual returned facts and continue necessary Native/query choices without restarting saved setup. A finite completed-batch window returns to the JOINT strategic owner for a decision checkpoint; it is not a total query/quality limit, an error, or fact approval. That owner may authorize another evidence window with a specific remaining predicate and decision relevance, or revise/retain the whole draft. Do not edit a Plan merely to log mechanical progress. finish submits executable workOrders; conclude answered requires no unresolved necessary fact and independent source review. conclude blocked preserves a concrete missing capability/data; strategy_required returns an unresolved strategic choice to the joint owner instead of pretending a factual answer. Neither control return approves facts or a Plan. Do not expand the original question or ask for global optimality; return control if an extra investigation needs a different strategic objective. Facts, proposed experiments and final strategy decisions are separate roles.'};
+    instruction:'You own the currently authorized local QUESTION, not the parent strategy obligation or only the latest tool batch. A completionStepId proves batch completion, not whether its observations answer the question. First consume the saved facts: if the local observation and stopWhen are satisfied, conclude and submit to independent source review. Continue Native/query choices only for a genuinely missing part of THIS observation, without restarting saved setup or expanding to the parent goal. A finite completed-batch window returns to the JOINT strategic owner for a decision checkpoint; it is not a total query/quality limit, an error, or fact approval. That owner may authorize another evidence window with a specific remaining predicate and decision relevance, or revise/retain the whole draft. Do not edit a Plan merely to log mechanical progress. finish submits executable workOrders; conclude answered requires no unresolved local necessary fact and independent source review. conclude blocked preserves a concrete missing capability/data; strategy_required returns an unresolved strategic choice to the joint owner instead of pretending a factual answer. Neither control return approves facts or a Plan. Parent obligations survive a local answer. Do not expand the original question or ask for global optimality. Facts, proposed experiments and final strategy decisions are separate roles.'};
 }
 // Exact reuse markers already come from the shared laboratory. Do not invent
 // a similarity score, interpret a missing result as zero, or call a real Native
@@ -115,6 +120,95 @@ export function pageRosterQuestionEvidenceDirectoryV1(directory){
   return {schema:'roster_question_evidence_pages_v1',goalId:directory.goalId,totalBatches:directory.batches.length,pages,
     directoryIsNotARead:true,acceptanceGranted:false};
 }
+// Child compiler/tool controls must survive batch fan-in. They are explicit
+// source-owned routing signals, not a new fact or a reason to buy another method.
+export async function projectRosterExperimentControlReturnsV1({state,summaryIds,readArtifact}){
+  const unavailableCapabilities=[],delegationBoundaryRequests=[],sourceInterpretationChallenges=[],comparisonDesignRequests=[],scopeRevisionRequests=[],authorCandidateRequests=[],boundedObservations=[];
+  for(const id of summaryIds??[]){
+    const summary=state.work.find(work=>work.id===id);
+    if(!summary?.resultRef)continue;
+    let returned=(await readArtifact(summary.resultRef)).value?.coordination;
+    // A returned method is summarized for prose, but routing belongs to the
+    // original compiler control, not to that model summary. Follow only the
+    // recorded report -> original work/result link; never infer it from text.
+    if(!returned&&summary.inputs?.branchReturn?.source==='evidence'){
+      const entry=state.evidence.find(e=>e.id===summary.inputs.branchReturn.id);
+      const report=entry?await readArtifact(entry.artifactRef):null;
+      const original=state.work.find(w=>w.id===report?.originalModelWorkId);
+      if(report?.control?.summaryId===summary.id&&original?.resultRef
+        &&original.resultRef===report.originalModelResultRef
+        &&rosterWorkflowBindingsMatchV1(original.bindings,state.scope))
+        returned=(await readArtifact(original.resultRef)).value?.coordination;
+    }
+    const row=returned?{workId:id,resultRef:summary.resultRef,...clone(returned)}:null;
+    if(returned?.kind==='bounded_observation_return'&&returned.origin==='deterministic_tool_result_router'
+      &&isRosterBoundedObservationReturnV1(returned.failure))boundedObservations.push(row);
+    if(returned?.kind==='work_order_capability_return')unavailableCapabilities.push(row);
+    if(returned?.kind==='work_order_delegation_return')delegationBoundaryRequests.push(row);
+    if(returned?.kind==='source_interpretation_challenge')sourceInterpretationChallenges.push(row);
+    if(returned?.kind==='work_order_scope_return'&&returned.version===1
+      &&returned.origin==='deterministic_compiler_router'&&returned.nativeRetryAuthorized===false
+      &&returned.failure?.error?.dispatchOutcome==='not_dispatched')scopeRevisionRequests.push(row);
+    if(returned?.kind==='work_order_design_return'&&returned.version===1
+      &&returned.origin==='deterministic_compiler_router'&&returned.nativeRetryAuthorized===false
+      &&returned.failure?.error?.queryRepair?.failureClass==='comparison_design_required')comparisonDesignRequests.push(row);
+    if(returned?.kind==='author_candidate_input_return'&&returned.version===1
+      &&returned.origin==='deterministic_compiler_router'&&returned.nativeRetryAuthorized===false
+      &&isRosterBuilderAuthorFailureReturnV1(returned.failure))authorCandidateRequests.push(row);
+  }
+  return {unavailableCapabilities,delegationBoundaryRequests,sourceInterpretationChallenges,comparisonDesignRequests,scopeRevisionRequests,authorCandidateRequests,boundedObservations,
+    returnReason:authorCandidateRequests.length?'author_candidate_requires_revision'
+      :scopeRevisionRequests.length?'experimental_scope_requires_revision'
+      :comparisonDesignRequests.length?'comparison_design_required'
+      :unavailableCapabilities.length?'experimental_capability_unavailable'
+      :delegationBoundaryRequests.length?'experimental_method_requires_authorization'
+      :sourceInterpretationChallenges.length?'source_interpretation_dispute'
+      :boundedObservations.length?'bounded_observation_requires_owner_decision':undefined};
+}
+// All author entry points (single-owner and grouped review joins) consume the
+// same assigned, already-read source controls. A fact summary is not required
+// to repeat Host routing fields. Do not search unrelated history or infer a
+// control instruction from prose; retain the original compiler/report binding.
+export async function projectRosterAssignedAuthorControlsV1({assignment,state,readArtifact}){
+  if(assignment.role!=='roster_workflow_strategy_decision')return {};
+  const ids=new Set();
+  for(const input of Object.values(assignment.inputs??{})){
+    if(input.source!=='evidence'||input.status!=='read'||input.validity!=='current'
+      ||input.scopeUsage==='historical_reference')continue;
+    const entry=state.evidence.find(e=>e.id===input.evidenceId);
+    // validity belongs to the core's resolved input, not the persisted index.
+    if(!entry?.id.startsWith('role:')||!rosterWorkflowBindingsMatchV1(entry.bindings,state.scope))continue;
+    const work=state.work.find(w=>`role:${w.id}`===entry.id);
+    if(work?.status!=='evidence_ready'||!work.resultRef
+      ||!rosterWorkflowBindingsMatchV1(work.bindings,state.scope))continue;
+    ids.add(work.id);
+  }
+  if(!ids.size)return {};
+  const controls=await projectRosterExperimentControlReturnsV1({state,summaryIds:[...ids],readArtifact});
+  const projected=Object.fromEntries(Object.entries(controls).filter(([,value])=>Array.isArray(value)&&value.length)
+    .map(([key,value])=>[key,{source:'literal',value}]));
+  // A mixed review first delegates its factual predicate. That delegation's
+  // result/summary need not repeat the author's outstanding choice or rationale.
+  // Recover ONLY roots of the actual current, delivered inputs above; neither
+  // prose nor a scan of historical reviews may create or close an obligation.
+  const ownership=createRosterWorkflowOwnershipIndexV1(state),groups=new Map();
+  for(const id of ids){
+    const goalId=ownership(id)?.goalId;
+    const goal=state.work.find(work=>work.id===goalId);
+    if(!goal||groups.has(goalId)||!rosterWorkflowBindingsMatchV1(goal.bindings,state.scope)
+      ||goal.draftRevision!==undefined&&goal.draftRevision!==state.draftRevision
+      ||!Array.isArray(goal.inputs?.reviewIssues?.value))continue;
+    const route=projectRosterWorkflowQuestionRouteV1(goal.inputs);
+    if(!route?.authorDecisions.length)continue;
+    groups.set(goalId,{goalId,reviewDomain:goal.reviewDomain??null,
+      reviewIssues:clone(goal.inputs.reviewIssues.value),
+      necessaryFacts:clone(route.facts),authorDecisions:clone(route.authorDecisions)});
+  }
+  if(groups.size)projected.reviewResolutionObligations={source:'literal',value:{version:1,groups:[...groups.values()],
+    factsApprovedByProjection:false,authorObligationsResolved:false,
+    instruction:'These are the original current review obligations, preserved by Host ownership links, not a new review or accepted fact. Returned observations may answer the necessary factual predicates; only YOU can make or justify the author choices. Preserve each original classification/reviewer reason, decide with the returned sources, and submit the choice/rationale for independent recheck. A fact-summary completion does not close the author obligations. Reviewers remain fallible; an evidence-backed retain or rebuttal is allowed.'}};
+  return projected;
+}
 export function projectRosterOriginalInvestigationInputsV1({state,goalId}){
   const root=state.work.find(w=>w.id===goalId);if(!root)return {};
   const inputs={originalInvestigationScope:{source:'literal',value:{rootWorkId:root.id,
@@ -122,19 +216,21 @@ export function projectRosterOriginalInvestigationInputsV1({state,goalId}){
     reviewIsFallibleProposal:true,
     instruction:'These are the original assigned question/obligations, not a new Rules authority or a list of accepted facts. Compare later follow-ups with the actual adopted Plan and this original scope; preserve reasons when a follow-up is optional, future, contradicted or still necessary. Do not silently delete necessary unknowns or expand the original obligation.'}}};
   for(const [key,target]of [['question','originalQuestion'],['task','originalTask'],['comparisonPurpose','comparisonPurpose'],
+    ['comparisonDecisionContract','comparisonDecisionContract'],
     ['reviewIssues','originalReviewIssues'],['decision','originalStrategicDecision']])
     if(root.inputs[key])inputs[target]=clone(root.inputs[key]);
   return inputs;
 }
-export function createRosterExperimentOwnerContinuationV1({state,owner,result,summaryIds,draft,requirements,returnReason,sourceControlDispute}){
+export function createRosterExperimentOwnerContinuationV1({state,owner,result,summaryIds,draft,requirements,returnReason,sourceControlDispute,unexecutedMethodReturn}){
   const conclusion=result.value.experimentConclusion;
-  if(!owner.experimentGoalId||conclusion?.status==='answered'||summaryIds===null)return null;
+  const goalId=createRosterWorkflowOwnershipIndexV1(state)(owner.id)?.goalId;
+  if(!goalId||conclusion?.status==='answered'||summaryIds===null)return null;
   const controlReturn=['blocked','strategy_required'].includes(conclusion?.status);
   const maximumCompletedBatches=owner.inputs.investigationDecisionWindow?.value?.maximumCompletedBatches
     ??DEFAULT_INVESTIGATION_DECISION_WINDOW;
   if(!Number.isSafeInteger(maximumCompletedBatches)||maximumCompletedBatches<1)
     throw Error('ROSTER_INVESTIGATION_DECISION_WINDOW_INVALID');
-  const completedBatches=(owner.experimentBatchIndex??0)+(result.value.workOrders?.length?1:0);
+  const completedBatches=(owner.experimentBatchIndex??0)+(!unexecutedMethodReturn&&result.value.workOrders?.length?1:0);
   const decisionWindow={version:1,maximumCompletedBatches,completedBatches,
     investigationMayContinueAfterDecision:true,factsApprovedByWindow:false};
   if(!returnReason&&!controlReturn&&completedBatches>=maximumCompletedBatches)
@@ -145,15 +241,16 @@ export function createRosterExperimentOwnerContinuationV1({state,owner,result,su
   if(!returnReason&&!controlReturn){
     const inputs={...clone(owner.inputs),
       previousMethod:{source:'evidence',id:`role:${owner.id}`,pointer:''},
-      originalNecessaryQuestions:{source:'literal',value:clone(result.value.unresolvedQuestions??[])},
+      originalNecessaryQuestions:clone(owner.inputs.originalNecessaryQuestions
+        ??{source:'literal',value:owner.inputs.question?.value?.necessaryQuestions??result.value.unresolvedQuestions??[]}),
       investigationDecisionWindow:{source:'literal',value:decisionWindow},
-      experimentLifecycle:{source:'literal',value:rosterExperimentLifecycleV1(owner.experimentGoalId,completedBatches,maximumCompletedBatches)},
+      experimentLifecycle:{source:'literal',value:rosterExperimentLifecycleV1(goalId,completedBatches,maximumCompletedBatches)},
       questionEvidenceDirectory:{source:'literal',value:projectRosterExperimentQuestionEvidenceV1({state,owner})},
-      methodContinuationContract:{source:'literal',value:'This tool BATCH returned, but its completionStepId does not answer the original factual QUESTION. Read the actual observations, then choose the next necessary Native/query operation on the saved successor/menu. Preserve the original scope and necessary unknowns; do not restart setup to reload a result or write mechanical logs into a strategic Plan. conclude answered only when the question is actually answered; blocked for a concrete unavailable fact/capability; strategy_required when a strategic choice/new objective is needed or further querying has no information value. A changed query must explain the remaining predicate and why it can measure it. This role cannot edit army/Plan, assert future actions happened or approve release.'}};
+      methodContinuationContract:{source:'literal',value:'This tool BATCH returned. Read the actual observations and decide whether they answer the CURRENT authorized question and satisfy stopWhen BEFORE choosing any further operation. A completed batch may answer it; completion alone is not evidence of an answer. If answered, conclude for independent source review. Only a still-missing part of this local observation permits another necessary Native/query operation on the saved successor/menu. Your prior unresolvedQuestions are proposals, not authority to replace the original assigned question. Preserve parent obligations for their strategic owner; do not extend deployment, units, markers or rounds to satisfy them here. Do not restart setup to reload a result or write mechanical logs into a strategic Plan. blocked is for a concrete unavailable fact/capability; strategy_required is for a strategic choice/new objective or querying without information value. A changed query must explain the remaining authorized predicate and why it can measure it. This role cannot edit army/Plan, assert future actions happened or approve release.'}};
     summaryIds.forEach((summary,index)=>{inputs[`batchFacts${index}`]={source:'evidence',id:`role:${summary}`,pointer:''};});
-    return {id:`${owner.experimentGoalId}:method:${hash(owner.id).slice(0,16)}`,
+    return {id:`${goalId}:method:${hash(owner.id).slice(0,16)}`,
       role:'roster_workflow_experiment_planner',bindings:owner.bindings,draftRevision:state.draftRevision,
-      experimentGoalId:owner.experimentGoalId,experimentBatchIndex:(owner.experimentBatchIndex??0)+1,
+      experimentGoalId:goalId,experimentBatchIndex:(owner.experimentBatchIndex??0)+1,
       methodContinuationOf:owner.id,inputs};
   }
   const id=`${owner.id}:strategy-frontier`;
@@ -162,19 +259,22 @@ export function createRosterExperimentOwnerContinuationV1({state,owner,result,su
   // not recursively enlarge its own question through :owner continuations.
   const inputs={draft:{source:'evidence',id:`draft:r${state.draftRevision}:summary`,pointer:''},
     question:{source:'literal',value:{
-      goal:'本批事实已返回，现由总体策略负责人决定下一步；不是事实域已经全部通过。',
+      goal:unexecutedMethodReturn?'旧修复指令强迫保留原操作；该方法尚未执行。请总体作者根据原问题和实际工具能力重新决定方法，未产生任何新事实。':'本批事实已返回，现由总体策略负责人决定下一步；不是事实域已经全部通过。',
       instruction:'读取实际证据与当前完整军表/Plan，修订两者、据证保留，或指出下一项明确必要调查。先复用已完成原件，说明新调查能回答哪个仍未证的计划主张、现有证据为何不足；不得仅复述刚被回答或反驳的方法。有限窗口结束只是本次决策检查点，不是整个调查的次数上限，也不要求为了收口而改表或删未知。不要仅为记录机械进展而修订Plan；修订须指出改变的战略主张和依据。若需要继续调查，说明剩余谓词、现有证据缺口、工具需求以及结果如何影响取舍。批内阴性结论不是全局无解，假设静态摆放不是合法到达。保留必要未知及来源范围，不清空问题凑通过，不要求全局最优或证明未来对手行为。草案可以改正不成立的主张，但最终发布仍须独立审核。'},},
-    investigationFrontier:{source:'literal',value:{version:1,goalId:owner.experimentGoalId,
+    investigationFrontier:{source:'literal',value:{version:1,goalId,
       ownerWorkId:owner.id,completedBatches,decisionWindow,
       originalQuestion:owner.inputs.question?.value??owner.inputs.task?.value??null,
       unresolvedQuestions:clone(result.value.unresolvedQuestions??[]),
       returnReason:returnReason??`fact_owner_${conclusion.status}`,
       scope:'Unreviewed actual sources and model interpretations for a draft decision; not accepted facts or final release',
-      acceptanceGranted:false,nativeActionSucceededByHandoff:false}}};
-  Object.assign(inputs,projectRosterOriginalInvestigationInputsV1({state,goalId:owner.experimentGoalId}));
-  if(draft)inputs.wholeDraft={source:'literal',value:{revision:draft.revision,mode:draft.mode,
-    rosterEditAuthority:draft.mode==='fixed'?'preset_immutable':'agent_may_reselect_after_evidence',
-    candidateInput:clone(draft.candidateInput),plan:clone(draft.plan)}};
+       ...(unexecutedMethodReturn?{methodExecuted:false,noBatchCompletedByThisReturn:true}:{}),
+       acceptanceGranted:false,nativeActionSucceededByHandoff:false}}};
+  if(unexecutedMethodReturn){
+    inputs.repairContractReconsideration={source:'literal',value:clone(unexecutedMethodReturn)};
+    inputs.question.value.instruction+=' 本次交接只修指令冲突，并未证明旧方法必错或任何策略更优。先说明要比较的具体选择、缺少的条件、所选工具真正能观测的量及结果如何影响选择；不能只为让原操作合法而再造同类基线。若现有主张只是作者预算/意图，不得冒充已发生或预测伤亡；若需条件实验，明确条件且沿现有工具执行。保留必要事实未知，不能由工程替你决定或删去。';
+  }
+  Object.assign(inputs,projectRosterOriginalInvestigationInputsV1({state,goalId}));
+  if(draft)inputs.wholeDraft=projectRosterWorkflowAuthorDraftInputV1(draft);
   if(requirements)inputs.requirements={source:'literal',value:requirements};
   inputs.questionEvidenceDirectory={source:'literal',value:projectRosterExperimentQuestionEvidenceV1({state,owner})};
   inputs.previousBatch={source:'literal',value:{ownerWorkId:owner.id,sourceEvidenceId:`role:${owner.id}`,
@@ -198,8 +298,11 @@ export function createRosterExperimentOwnerContinuationV1({state,owner,result,su
     }
   }
   [...sources].forEach((source,index)=>{inputs[`batchToolSource${index}`]={source:'evidence',id:source,pointer:''};});
-  return {id,role:'roster_workflow_strategy_decision',bindings:owner.bindings,
-    investigationFrontierOf:owner.experimentGoalId,investigationOwnerId:owner.id,
+  // Facts may outlive Plan prose; the strategic writer may not. It receives
+  // the CURRENT whole draft above, so bind the same current scope here rather
+  // than inheriting the investigator's deliberately Plan-independent scope.
+  return {id,role:'roster_workflow_strategy_decision',bindings:clone(state.scope),
+    investigationFrontierOf:goalId,investigationOwnerId:owner.id,
     draftRevision:state.draftRevision,inputs};
 }
 
@@ -294,7 +397,7 @@ export async function createRosterExperimentSourceReviewV1({state,owner,result,s
   const comparisonContract=rosterComparisonValidityContractV1(owner);
   const comparisonRecheckId=`${owner.id}:source-recheck:comparison-validity-v${comparisonContract?.version}`;
   const latestReview=!reviewId&&state.work.findLast(w=>w.experimentSourceReviewOf===owner.id&&w.status!=='superseded');
-  let id=reviewId??latestReview?.id??sourceReviewId(owner),recheckOf=null,sourceReviewRepairHandoff=null;
+  let id=reviewId??latestReview?.id??sourceReviewId(owner),recheckOf=null,sourceReviewRepairHandoff=null,sourceCacheUpgrade=false,scopeDependencyUpgrade=false;
   const previous=state.work.find(w=>w.id===id);
   if(previous){
     if(blocked)return null; // Existing review/revision owns this exact attempt.
@@ -327,7 +430,7 @@ export async function createRosterExperimentSourceReviewV1({state,owner,result,s
         &&rosterWorkflowBindingsMatchV1(w.bindings,state.scope)
         &&Object.values(w.inputs).some(input=>input.source==='evidence'&&state.evidence.some(e=>e.id===input.id
           &&!rosterWorkflowBindingsMatchV1(e.bindings,state.scope))));
-    if(!reviewId&&['ready','needs_model_choice','evidence_ready'].includes(previous.status)&&rosterWorkflowBindingsMatchV1(owner.bindings,state.scope)){
+    if(!reviewId&&['ready','waiting_dependency','needs_model_choice','evidence_ready'].includes(previous.status)&&rosterWorkflowBindingsMatchV1(owner.bindings,state.scope)){
       const assessment=await assessRosterSourceClaimReviewV1({state,review:previous,store});
       // A positive coverage verdict can also have used a proven wrong input
       // contract. The handoff itself checks the actual request and preserves
@@ -335,8 +438,21 @@ export async function createRosterExperimentSourceReviewV1({state,owner,result,s
       sourceReviewRepairHandoff=await projectRosterSourceReviewRepairHandoffV1({
         state,owner,review:previous,failedClaimReviewIds:assessment.failedClaimReviewIds,readArtifact:store.get});
     }
-    if((!staleCurrentClaim&&!missingSourceStage&&!sourceReviewRepairHandoff)||previous.operationState?.pending)return null;
-    recheckOf=previous.id;id=sourceReviewRepairHandoff
+    // Refresh only a completely unissued transport, and only if rebuilding
+    // below discovers an actual newly reusable pass. Never reset a paid audit.
+    scopeDependencyUpgrade=!reviewId&&!previous.sourceScopeExtension
+      &&!!await rosterSourceScopeExtensionV1({state,owner,root:previous,conclusion,readArtifact:store.get});
+    sourceCacheUpgrade=!reviewId&&previous.sourceFidelityMode==='atomic_claims_v1'
+      &&(previous.materialClaimContractVersion<materialClaimVersion||scopeDependencyUpgrade)
+      &&['ready','waiting_dependency'].includes(previous.status)&&!previous.resultRef
+      &&!previous.operationState?.pending&&!previous.operationState?.calls?.length
+      &&rosterWorkflowBindingsMatchV1(owner.bindings,state.scope)
+      &&[...new Set([...(previous.materialClaimReviewIds??[]),...(previous.materialRuleFields??[]).map(c=>c.reviewId)])]
+        .every(id=>{const w=state.work.find(w=>w.id===id);return w&&(
+          w.status==='evidence_ready'||(['ready','waiting_dependency'].includes(w.status)
+          &&!w.resultRef&&!w.operationState?.pending&&!w.operationState?.calls?.length));});
+    if((!staleCurrentClaim&&!missingSourceStage&&!sourceReviewRepairHandoff&&!sourceCacheUpgrade)||previous.operationState?.pending)return null;
+    recheckOf=previous.id;id=sourceCacheUpgrade?(scopeDependencyUpgrade?owner.id+':source-recheck:scope-dependencies-v1':`${owner.id}:source-recheck:source-cache-v${materialClaimVersion}`):sourceReviewRepairHandoff
       ?sourceReviewRepairHandoff.staleRequests.some(r=>r.missingMeasurementSceneDelivery||r.missingNativeConditionDelivery||r.ambiguousMeasurementScope)
         ?`${owner.id}:source-recheck:measurement-scenes-v${sceneDeliveryVersion}`
         :sourceReviewRepairHandoff.staleRequests.some(r=>r.missingInquiryStage)
@@ -353,6 +469,7 @@ export async function createRosterExperimentSourceReviewV1({state,owner,result,s
   const inquiry=await projectRosterWorkflowFactInquiryV1({work:owner,state,readArtifact:store.get});
   const inputs={question:inquiry?.question??owner.inputs.question??owner.inputs.task,
     ...(owner.inputs.comparisonPurpose?{comparisonPurpose:clone(owner.inputs.comparisonPurpose)}:{}),
+    ...(owner.inputs.comparisonDecisionContract?{comparisonDecisionContract:clone(owner.inputs.comparisonDecisionContract)}:{}),
     proposedConclusion:{source:'evidence',id:`role:${owner.id}`,pointer:''},
     review:{source:'literal',value:{experimentalSourceReviewVersion:3,purpose:'Independent source check of one experimental answer; not global Plan review or a strategy preference. Read the exact source fact indexes FIRST, then check the proposed answer. Counted empty arrays cannot support positive measurements from a different source. Original detail is available on demand, not injected as a whole-history transcript.',
       obligations:[{checkId:'source_fidelity',criterion:'Check every material source, context, state, measured value AND causal interpretation against its actual cited Native receipt. A sampled numerical difference is not automatically a component contribution: require the relevant mechanism, controlled inputs and stated uncertainty. Optional reaction effects explicitly excluded by a baseline distribution have not been measured; do not attribute its difference to that reaction. Per-attacker estimates are not a combined volley or sequential-kill result. Official ability phase, trigger, target eligibility and payment must match the cited source, not a paraphrase. Different candidate contexts/states are not interchangeable. Empty/null/unavailable results are not positive measurements or zeros. A model summary is not its cited source. Conflicts require revision, not conditional acceptance.'},
@@ -414,14 +531,24 @@ export async function createRosterExperimentSourceReviewV1({state,owner,result,s
         controlledRecovery:{engineeringChangeId:sourceReviewRepairHandoff?.staleRequests.some(r=>r.ambiguousMeasurementScope)
            ?'measurement-assessment-scope-v853':sourceReviewRepairHandoff?.staleRequests.some(r=>r.missingNativeConditionDelivery)
            ?'measurement-condition-delivery-v852':sourceReviewRepairHandoff?.staleRequests.some(r=>r.missingMeasurementSceneDelivery)
-          ?'measurement-scene-delivery-v844':sourceReviewRepairHandoff?.staleRequests.some(r=>r.missingIndependentCoverage)
+          ?'measurement-scene-delivery-v844':sourceReviewRepairHandoff?.staleRequests.some(r=>r.unassignedPredicateErrors?.length)
+          ?'authorized-inquiry-predicate-owner-c12':sourceReviewRepairHandoff?.staleRequests.some(r=>r.missingIndependentCoverage)
           ?'independent-inquiry-coverage-v837':sourceReviewRepairHandoff?.staleRequests.some(r=>r.missingInquiryStage)
           ?'authorized-inquiry-stage-v833':sourceReviewRepairHandoff?.staleRequests.some(r=>r.invalidProofCitations)
           ?'review-proof-citations-v831':sourceReviewRepairHandoff?.staleRequests.some(r=>r.missingObligationDelivery)
           ?'review-obligation-delivery-v827':sourceReviewRepairHandoff?.staleRequests.some(r=>r.missingSourcePresentation)
-           ?'source-review-presentation-v824':sourceReviewRepairHandoff?'source-review-repair-handoff-v821':'source-stage-ownership-v695',historyReset:false,
+           ?sourceReviewRepairHandoff.staleRequests.some(r=>r.linkedExecutionRoleContextGap)?'linked-execution-role-context-e123':'source-review-presentation-v824':sourceReviewRepairHandoff?'source-review-repair-handoff-v821':'source-stage-ownership-v695',historyReset:false,
         sourceRevisionAllowance:{ownerWorkId:owner.id,priorRound:owner.experimentReviewRound??0,additionalRevisions:1}}}:{})};
-  return {...(blocked?root:await createRosterSourceClaimReviewV1({state,owner,conclusion,sources,root,store})),sourceProjections};
+  const compiled=blocked?root:await createRosterSourceClaimReviewV1({state,owner,conclusion,sources,root,store});
+  if(sourceCacheUpgrade){
+    const gained=compiled.materialClaims.filter(c=>c.reusedResultRef&&!previous.materialClaims.some(p=>
+      p.text===c.text&&p.reusedResultRef===c.reusedResultRef&&p.reviewId===c.reviewId));
+    if(!gained.length||scopeDependencyUpgrade&&!compiled.sourceScopeExtension)return null;
+    delete compiled.controlledRecovery;
+    compiled.sourceClaimReuseRefresh={version:1,previousReviewId:previous.id,ownerResultRef:owner.resultRef,
+      reusedClaimCount:gained.length,historyReset:false,providerReplayed:false,planApproved:false};
+  }
+  return {...compiled,sourceProjections};
 }
 
 export async function createRosterExperimentReviewRevisionV1({state,owner,store}){

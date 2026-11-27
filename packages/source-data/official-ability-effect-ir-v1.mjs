@@ -1,5 +1,6 @@
 import { hashStarcraftTmgContract } from
   "../authoritative-engine/referee-crypto-v1.mjs";
+import { isDeepStrictEqual } from 'node:util';
 
 export const OFFICIAL_ABILITY_EFFECT_IR_SCHEMA =
   "starcraft_tmg_official_ability_effect_ir_catalogue_v1";
@@ -27,6 +28,40 @@ const ACTIVATION_KINDS = new Set(OFFICIAL_ABILITY_ACTIVATION_KINDS);
 const RUNTIME_ROLES = new Set(OFFICIAL_ABILITY_RUNTIME_ROLES);
 const EFFECT_FAMILIES = new Set(OFFICIAL_ABILITY_EFFECT_FAMILIES);
 const SYSTEM_TRIGGER = /\b(?:at the (?:start|end)|during (?:army building|deployment|setup)|when (?:this|a|an|the) (?:unit|model|round|phase|card)|after (?:this|a|an|the)|before (?:this|a|an|the)|once per (?:round|game))\b/iu;
+const EXPLICIT_PHASES = Object.freeze({ 'any phase': 'any', 'movement phase': 'movement',
+  'assault phase': 'assault', 'combat phase': 'combat' });
+const PHASE_POLICY = Object.freeze({ schema: 'starcraft_tmg_ability_source_phase_policy_v1', version: '1.0.0',
+  precedence: 'explicit_source_phase_then_description', explicitPhases: EXPLICIT_PHASES, trainingTruth: false });
+const CARD_PHASE_POLICY = Object.freeze({ ...PHASE_POLICY, version: '1.1.0',
+  precedence: 'explicit_source_phase_then_card_phase_tag_then_description' });
+
+export function createOfficialAbilitySourcePhasePolicyV1({ dataset, includeInlineCardPhases = false } = {}) {
+  if (![dataset?.datasetHash, dataset?.sourceSnapshotHash].every(value => /^[a-f0-9]{64}$/u.test(value))) {
+    throw Error('ABILITY_SOURCE_PHASE_DATASET_REQUIRED');
+  }
+  const body = { ...(includeInlineCardPhases ? CARD_PHASE_POLICY : PHASE_POLICY),
+    normalizedDatasetHash: dataset.datasetHash, sourceSnapshotHash: dataset.sourceSnapshotHash };
+  return freezeDeep({ ...body, policyHash: hashStarcraftTmgContract(body) });
+}
+
+function verifySourcePhasePolicy(policy, expected) {
+  const fixed = Object.fromEntries(Object.keys(PHASE_POLICY).map(key => [key, policy?.[key]]));
+  const version = policy?.version === CARD_PHASE_POLICY.version ? CARD_PHASE_POLICY : PHASE_POLICY;
+  if (!isDeepStrictEqual(fixed, version)
+    || ![policy?.normalizedDatasetHash, policy?.sourceSnapshotHash].every(value => /^[a-f0-9]{64}$/u.test(value))
+    || policy.policyHash !== hashStarcraftTmgContract(without(policy, ['policyHash']))
+    || expected && !isDeepStrictEqual(policy, expected)) fail('ABILITY_SOURCE_PHASE_POLICY_INVALID');
+}
+
+function inlineCardPhase(value) {
+  return /^.*?<\s*(?:Active|Passive|Reaction)\s*>\s*<\s*((?:Any|Movement|Assault|Combat) Phase)\s*>/iu
+    .exec(value || '')?.[1];
+}
+
+function catalogueVersion(sourcePhasePolicy) {
+  if (!sourcePhasePolicy) return OFFICIAL_ABILITY_EFFECT_IR_VERSION;
+  return sourcePhasePolicy.version === CARD_PHASE_POLICY.version ? '1.4.0' : '1.3.0';
+}
 
 function fail(code, detail = "") {
   throw new Error(detail ? `${code}:${detail}` : code);
@@ -45,7 +80,12 @@ function without(value, keys) {
 function seal(body, field) {
   return freezeDeep({ ...body, [field]: hashStarcraftTmgContract(body) });
 }
-function phaseKind(value, description = "") {
+function phaseKind(value, description = "", sourcePolicy = null) {
+  if (sourcePolicy && String(value || '').trim()) {
+    const explicit = EXPLICIT_PHASES[String(value).trim().toLowerCase()];
+    if (!explicit) fail('ABILITY_SOURCE_PHASE_VALUE_UNSUPPORTED', String(value));
+    return explicit;
+  }
   const source = `${value || ""} ${description || ""}`.toLowerCase();
   if (source.includes("movement")) return "movement";
   if (source.includes("assault")) return "assault";
@@ -53,7 +93,11 @@ function phaseKind(value, description = "") {
   if (source.includes("cleanup")) return "cleanup";
   return "any";
 }
-function activationKind(feature) {
+function activationKind(feature, reviewedKind) {
+  if (reviewedKind !== undefined) {
+    if (!ACTIVATION_KINDS.has(reviewedKind)) fail("ABILITY_EFFECT_IR_REVIEWED_KIND_INVALID");
+    return reviewedKind;
+  }
   const description = String(feature?.description || "").trim();
   const source = `${feature?.activation || ""} ${description}`;
   if (/^range\s*:/iu.test(description)) return "weapon";
@@ -176,13 +220,55 @@ function countBy(rows, key) {
     left.localeCompare(right))));
 }
 
+export function officialAbilitySourceFeatureHashV1(record, sourceIndex, feature) {
+  return hashStarcraftTmgContract({
+    recordKey: record.recordKey,
+    sourceRecordHash: record.sourceRecordHash,
+    payloadHash: record.payloadHash,
+    index: sourceIndex,
+    feature,
+  });
+}
+
+function identityMaps(catalogue, dataset) {
+  if (!catalogue) return null;
+  if (catalogue.schema !== "starcraft_tmg_ability_identity_catalogue_v2"
+    || catalogue.normalizedDatasetHash !== dataset.datasetHash
+    || catalogue.sourceSnapshotHash !== dataset.sourceSnapshotHash
+    || catalogue.identityCatalogueHash !== hashStarcraftTmgContract(without(catalogue,
+      ["identityCatalogueHash"]))) fail("ABILITY_EFFECT_IR_IDENTITY_SOURCE_MISMATCH");
+  const byHash = new Map(), byId = new Map();
+  for (const entry of catalogue.definitions) {
+    if (!entry.definitionId || byHash.has(entry.sourceFeatureHash) || byId.has(entry.definitionId)) {
+      fail("ABILITY_EFFECT_IR_IDENTITY_DUPLICATE");
+    }
+    byHash.set(entry.sourceFeatureHash, entry);
+    byId.set(entry.definitionId, entry);
+  }
+  return { byHash, byId };
+}
+
 export function createOfficialAbilityEffectIrCatalogueV1(input = {}) {
   const { dataset } = input;
   if (!object(dataset) || !Array.isArray(dataset.recordIndex)
     || !object(dataset.recordsByKey)) {
     fail("ABILITY_EFFECT_IR_DATASET_REQUIRED");
   }
-  const executions = bindingMap(input.executionBindings);
+  const sourcePhasePolicy = input.sourcePhasePolicy;
+  const includeInlineCardPhases = sourcePhasePolicy?.version === CARD_PHASE_POLICY.version;
+  if (sourcePhasePolicy !== undefined) verifySourcePhasePolicy(sourcePhasePolicy,
+    createOfficialAbilitySourcePhasePolicyV1({ dataset, includeInlineCardPhases }));
+  const semanticVersion = catalogueVersion(sourcePhasePolicy);
+  const identities = identityMaps(input.identityCatalogue, dataset);
+  const executions = bindingMap((input.executionBindings || []).map(binding => {
+    if (!binding.definitionId) return binding;
+    const identity = identities?.byId.get(binding.definitionId);
+    if (!identity || (binding.sourceFeatureHash
+      && binding.sourceFeatureHash !== identity.sourceFeatureHash)) {
+      fail("ABILITY_EFFECT_IR_EXECUTION_IDENTITY_MISMATCH");
+    }
+    return { ...binding, sourceFeatureHash: identity.sourceFeatureHash };
+  }));
   const definitions = [];
   const sourceRecordCounts = {};
   for (const collectionId of COLLECTIONS) {
@@ -195,15 +281,14 @@ export function createOfficialAbilityEffectIrCatalogueV1(input = {}) {
         fail("ABILITY_EFFECT_IR_SOURCE_RECORD_MISSING", indexEntry.recordKey);
       }
       for (const [sourceIndex, feature] of sourceDefinitions(record).entries()) {
-        const sourceFeatureHash = hashStarcraftTmgContract({
-          recordKey: record.recordKey,
-          sourceRecordHash: record.sourceRecordHash,
-          payloadHash: record.payloadHash,
-          index: sourceIndex,
-          feature,
-        });
-        const kind = activationKind(feature);
-        const phase = phaseKind(feature.phase, feature.description);
+        const sourceFeatureHash = officialAbilitySourceFeatureHashV1(record, sourceIndex, feature);
+        const identity = identities?.byHash.get(sourceFeatureHash);
+        if (identities && !identity) fail("ABILITY_EFFECT_IR_IDENTITY_MISSING", record.recordKey);
+        const kind = activationKind(feature, identity?.activationKind);
+        const inlinePhase = includeInlineCardPhases && collectionId === 'tactical_cards'
+          ? inlineCardPhase(feature.description) : undefined;
+        const explicitPhase = String(feature.phase || '').trim();
+        const phase = phaseKind(explicitPhase || inlinePhase, feature.description, sourcePhasePolicy);
         const hooks = timingHooks(feature, kind);
         const role = runtimeRole(feature, kind, hooks);
         const families = effectFamilies(feature, kind, phase);
@@ -215,8 +300,9 @@ export function createOfficialAbilityEffectIrCatalogueV1(input = {}) {
         });
         const body = {
           schema: "starcraft_tmg_official_ability_effect_definition_ir_v1",
-          semanticVersion: OFFICIAL_ABILITY_EFFECT_IR_VERSION,
-          definitionId: `ability:${sourceFeatureHash.slice(0, 24)}`,
+          semanticVersion,
+          definitionId: identity?.definitionId || `ability:${sourceFeatureHash.slice(0, 24)}`,
+          ...(identity ? { semanticIdentity: { id: identity.semanticId, version: identity.semanticVersion } } : {}),
           sourceKind: collectionId === "army_units" ? "unit_feature" : "card_feature",
           sourceProductKind: collectionId === "army_units" ? "unit"
             : record.payload?.isFactionCard === true ? "faction_card" : "tactical_card",
@@ -229,6 +315,8 @@ export function createOfficialAbilityEffectIrCatalogueV1(input = {}) {
           activationKind: kind,
           runtimeRole: role,
           phase,
+          ...(sourcePhasePolicy ? { phaseOrigin: explicitPhase
+            ? 'explicit_source_field' : inlinePhase ? 'explicit_card_phase_tag' : 'description_inference' } : {}),
           timingHooks: hooks,
           effectFamilies: families,
           operationRequirements: operationRequirements(
@@ -248,6 +336,9 @@ export function createOfficialAbilityEffectIrCatalogueV1(input = {}) {
         definitions.push(seal(body, "definitionHash"));
       }
     }
+  }
+  if (identities && identities.byHash.size !== definitions.length) {
+    fail("ABILITY_EFFECT_IR_IDENTITY_DENOMINATOR_MISMATCH");
   }
   definitions.sort((left, right) => left.definitionId.localeCompare(right.definitionId));
   const exact = definitions.filter((entry) => (
@@ -292,7 +383,9 @@ export function createOfficialAbilityEffectIrCatalogueV1(input = {}) {
   });
   const body = {
     schema: OFFICIAL_ABILITY_EFFECT_IR_SCHEMA,
-    semanticVersion: OFFICIAL_ABILITY_EFFECT_IR_VERSION,
+    semanticVersion,
+    ...(sourcePhasePolicy ? { sourcePhasePolicy } : {}),
+    ...(identities ? { identityCatalogueHash: input.identityCatalogue.identityCatalogueHash } : {}),
     sourceSnapshotHash: dataset.sourceSnapshotHash,
     normalizedDatasetHash: dataset.datasetHash,
     dataVersions: { ...dataset.dataVersions },
@@ -312,11 +405,18 @@ export function createOfficialAbilityEffectIrCatalogueV1(input = {}) {
 }
 
 export function verifyOfficialAbilityEffectIrCatalogueV1(catalogue) {
+  if (catalogue?.sourcePhasePolicy !== undefined) {
+    verifySourcePhasePolicy(catalogue.sourcePhasePolicy);
+    if (catalogue.sourcePhasePolicy.normalizedDatasetHash !== catalogue.normalizedDatasetHash
+      || catalogue.sourcePhasePolicy.sourceSnapshotHash !== catalogue.sourceSnapshotHash) {
+      fail('ABILITY_SOURCE_PHASE_POLICY_INVALID');
+    }
+  }
   const definitions = catalogue?.definitions;
   const denominator = catalogue?.denominator;
   const graph = catalogue?.relationshipGraph;
   if (!object(catalogue) || catalogue.schema !== OFFICIAL_ABILITY_EFFECT_IR_SCHEMA
-    || catalogue.semanticVersion !== OFFICIAL_ABILITY_EFFECT_IR_VERSION
+    || catalogue.semanticVersion !== catalogueVersion(catalogue.sourcePhasePolicy)
     || !Array.isArray(definitions) || definitions.length === 0
     || !object(denominator) || denominator.totalDefinitions !== definitions.length
     || denominator.executableExact + denominator.pendingFamilyAdapter
@@ -330,6 +430,9 @@ export function verifyOfficialAbilityEffectIrCatalogueV1(catalogue) {
       definition.definitionId === edge.from)))
     || definitions.some((entry) => entry.schema
       !== "starcraft_tmg_official_ability_effect_definition_ir_v1"
+      || catalogue.sourcePhasePolicy && (entry.semanticVersion !== catalogue.semanticVersion
+        || !['explicit_source_field', 'description_inference',
+          ...(catalogue.semanticVersion === '1.4.0' ? ['explicit_card_phase_tag'] : [])].includes(entry.phaseOrigin))
       || !["unit", "faction_card", "tactical_card"].includes(
         entry.sourceProductKind)
       || !ACTIVATION_KINDS.has(entry.activationKind)

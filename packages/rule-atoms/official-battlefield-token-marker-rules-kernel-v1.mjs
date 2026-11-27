@@ -1,5 +1,8 @@
+import { isDeepStrictEqual } from 'node:util';
 import { hashStarcraftTmgContract } from
   "../authoritative-engine/referee-crypto-v1.mjs";
+import { OFFICIAL_BATTLEFIELD_TOKEN_SCHEMA } from '../client-domain/battlefield-token-public-contract-v1.mjs';
+export { OFFICIAL_BATTLEFIELD_TOKEN_SCHEMA } from '../client-domain/battlefield-token-public-contract-v1.mjs';
 import { verifyOfficialBattlefieldTokenMarkerRulesDataBundleV1 } from
   "../source-data/official-battlefield-token-marker-rules-data-bundle-v1.mjs";
 import {
@@ -7,11 +10,13 @@ import {
   verifyOfficialBattlefieldViewportProjectionV1,
   verifyOfficialDeploymentGeometryBindingV1,
 } from "./official-deployment-geometry-rules-kernel-v1.mjs";
+import {
+  createOfficialBattlefieldTokenPhysicalFootprintV1, createOfficialPhysicalFootprintV1,
+  evaluateOfficialPhysicalFootprintRelationV1, isOfficialPhysicalFootprintInsideBoardV1,
+} from "./official-model-base-geometry-rules-kernel-v1.mjs";
 
 export const OFFICIAL_BATTLEFIELD_TOKEN_MARKER_REGISTRY_SCHEMA =
   "starcraft_tmg_official_battlefield_token_marker_registry_v1";
-export const OFFICIAL_BATTLEFIELD_TOKEN_SCHEMA =
-  "starcraft_tmg_official_battlefield_token_v1";
 export const OFFICIAL_BATTLEFIELD_MARKER_SCHEMA =
   "starcraft_tmg_official_battlefield_marker_v1";
 
@@ -116,7 +121,7 @@ export function verifyOfficialBattlefieldTokenMarkerRegistryV1(registry,
     || registry.schema !== OFFICIAL_BATTLEFIELD_TOKEN_MARKER_REGISTRY_SCHEMA
     || registry.registryHash !== hashStarcraftTmgContract(without(registry,
       ["registryHash"]))
-    || JSON.stringify(registry) !== JSON.stringify(rebuilt)) {
+    || !isDeepStrictEqual(registry, rebuilt)) {
     fail("BATTLEFIELD_TOKEN_MARKER_REGISTRY_INVALID");
   }
   return true;
@@ -129,7 +134,7 @@ export function createOfficialBattlefieldTokenV1(input = {}) {
     fail("BATTLEFIELD_TOKEN_REGISTRY_REQUIRED");
   }
   const baseShape = String(input.baseShape || "round").toLowerCase();
-  if (!["round", "square"].includes(baseShape)) {
+  if (!["round", "square", "oval"].includes(baseShape)) {
     fail("BATTLEFIELD_TOKEN_BASE_SHAPE_INVALID", baseShape);
   }
   const baseWidthMm = baseShape === "round"
@@ -142,20 +147,29 @@ export function createOfficialBattlefieldTokenV1(input = {}) {
   }
   const baseWidthInches = baseWidthMm / registry.worldGeometry.millimetresPerInch;
   const baseDepthInches = baseDepthMm / registry.worldGeometry.millimetresPerInch;
+  const oval = baseShape === "oval";
+  const baseRotationDegrees = oval ? ((finite(input.baseRotationDegrees ?? 0,
+    "BATTLEFIELD_TOKEN_ROTATION_INVALID") % 360) + 360) % 360 : 0;
   const centre = coordinate(input.coordinate, registry.battlefield,
     "BATTLEFIELD_TOKEN_COORDINATE_INVALID",
-    Math.max(baseWidthInches, baseDepthInches) / 2);
+    oval ? 0 : Math.max(baseWidthInches, baseDepthInches) / 2);
   const tokenId = nonEmpty(input.tokenId, "BATTLEFIELD_TOKEN_ID_REQUIRED");
   const tokenKind = nonEmpty(input.tokenKind, "BATTLEFIELD_TOKEN_KIND_REQUIRED");
+  if (oval && !isOfficialPhysicalFootprintInsideBoardV1({
+    footprint: createOfficialBattlefieldTokenPhysicalFootprintV1({ tokenId, baseShape,
+      coordinate: centre, baseWidthInches, baseDepthInches, baseRotationDegrees }),
+    widthMilliInches: Math.round(registry.battlefield.widthInches * 1000),
+    heightMilliInches: Math.round(registry.battlefield.heightInches * 1000),
+  })) fail("BATTLEFIELD_TOKEN_COORDINATE_INVALID", `${centre.x}:${centre.y}`);
   const stayInPlay = input.stayInPlay === true;
   const baseGeometry = baseShape === "round"
     ? { ...(input.baseShape ? { baseShape: "round" } : {}),
       baseDiameterMm: baseWidthMm, baseDiameterInches: baseWidthInches,
       rulesFootprint: { shape: "circle", centre, diameterInches: baseWidthInches } }
-    : { baseShape: "square", baseWidthMm, baseDepthMm,
-      baseWidthInches, baseDepthInches, baseRotationDegrees: 0,
-      rulesFootprint: { shape: "axis_aligned_square", centre,
-        widthInches: baseWidthInches, depthInches: baseDepthInches } };
+    : { baseShape, baseWidthMm, baseDepthMm, baseWidthInches, baseDepthInches, baseRotationDegrees,
+      rulesFootprint: { shape: oval ? "rotated_oval" : "axis_aligned_square", centre,
+        widthInches: baseWidthInches, depthInches: baseDepthInches,
+        ...(oval ? { rotationDegrees: baseRotationDegrees } : {}) } };
   const body = { schema: OFFICIAL_BATTLEFIELD_TOKEN_SCHEMA,
     tokenId, tokenKind, coordinate: centre, ...baseGeometry,
     terrainSize: 0, tangibleBattlefieldAsset: true, ownBase: true,
@@ -178,13 +192,24 @@ export function verifyOfficialBattlefieldTokenV1(token, registry) {
     coordinate: token?.coordinate, baseShape: token?.baseShape,
     baseDiameterMm: token?.baseDiameterMm,
     baseWidthMm: token?.baseWidthMm, baseDepthMm: token?.baseDepthMm,
+    baseRotationDegrees: token?.baseRotationDegrees,
     stayInPlay: token?.stayInPlay, createdByPieceId: token?.createdByPieceId,
     createdRound: token?.createdRound });
   if (!object(token) || token.tokenHash !== hashStarcraftTmgContract(without(token,
-    ["tokenHash"])) || JSON.stringify(token) !== JSON.stringify(rebuilt)) {
+    ["tokenHash"])) || !isDeepStrictEqual(token, rebuilt)) {
     fail("BATTLEFIELD_TOKEN_INVALID", String(token?.tokenId || ""));
   }
   return true;
+}
+
+function relateOvalTokenToRoundBase(token, position, radiusInches) {
+  const diameter = Math.round(radiusInches * 2000);
+  return evaluateOfficialPhysicalFootprintRelationV1({
+    left: createOfficialBattlefieldTokenPhysicalFootprintV1(token),
+    right: createOfficialPhysicalFootprintV1({ objectId: "measurement_base", shape: "round",
+      center: { xMilliInches: Math.round(position.x * 1000), yMilliInches: Math.round(position.y * 1000) },
+      widthMilliInches: diameter, depthMilliInches: diameter }),
+  });
 }
 
 export function resolveOfficialTokenMovementOverlapV1(input = {}) {
@@ -196,14 +221,15 @@ export function resolveOfficialTokenMovementOverlapV1(input = {}) {
   const destination = coordinate(input.destination, registry.battlefield,
     "BATTLEFIELD_TOKEN_MODEL_DESTINATION_INVALID", modelRadius);
   const square = token.baseShape === "square";
-  const tokenRadius = square ? null : token.baseDiameterInches / 2;
+  const oval = token.baseShape === "oval";
+  const tokenRadius = square || oval ? null : token.baseDiameterInches / 2;
   const centreDistance = Math.hypot(destination.x - token.coordinate.x,
     destination.y - token.coordinate.y);
   const closestX = square ? Math.max(token.coordinate.x - token.baseWidthInches / 2,
     Math.min(destination.x, token.coordinate.x + token.baseWidthInches / 2)) : null;
   const closestY = square ? Math.max(token.coordinate.y - token.baseDepthInches / 2,
     Math.min(destination.y, token.coordinate.y + token.baseDepthInches / 2)) : null;
-  const overlaps = square
+  const overlaps = oval ? relateOvalTokenToRoundBase(token, destination, modelRadius).overlappingInteriors : square
     ? Math.hypot(destination.x - closestX, destination.y - closestY) < modelRadius
     : centreDistance < modelRadius + tokenRadius;
   const explicitEndOverlapPermission = input.explicitEndOverlapPermission === true;
@@ -213,12 +239,12 @@ export function resolveOfficialTokenMovementOverlapV1(input = {}) {
     explicitEndOverlapPermission,
     mayEndAtDestination: !overlaps || explicitEndOverlapPermission,
     modelBaseDiameterMm: modelDiameterMm,
-    tokenBaseShape: square ? "square" : "round",
+    tokenBaseShape: token.baseShape || "round",
     tokenBaseDiameterMm: token.baseDiameterMm ?? null,
     tokenBaseWidthMm: token.baseWidthMm ?? token.baseDiameterMm,
     tokenBaseDepthMm: token.baseDepthMm ?? token.baseDiameterMm,
     centreDistanceInches: centreDistance,
-    requiredNonOverlapDistanceInches: square ? null : modelRadius + tokenRadius,
+    requiredNonOverlapDistanceInches: square || oval ? null : modelRadius + tokenRadius,
     rulesGeometryUnit: "inch", clientCollisionAccepted: false,
     trainingTruth: false };
 }
@@ -235,6 +261,7 @@ export function measureOfficialClosestTokenBaseEdgeV1(input = {}) {
   const centreDistance = Math.hypot(origin.x - token.coordinate.x,
     origin.y - token.coordinate.y);
   const square = token.baseShape === "square";
+  const oval = token.baseShape === "oval";
   const closestX = square ? Math.max(token.coordinate.x - token.baseWidthInches / 2,
     Math.min(origin.x, token.coordinate.x + token.baseWidthInches / 2)) : null;
   const closestY = square ? Math.max(token.coordinate.y - token.baseDepthInches / 2,
@@ -244,9 +271,10 @@ export function measureOfficialClosestTokenBaseEdgeV1(input = {}) {
     : centreDistance - token.baseDiameterInches / 2;
   return { schema: "starcraft_tmg_official_token_edge_measurement_v1",
     tokenId: token.tokenId, measurement: "closest_base_edge",
-    distanceInches: Math.max(0, edgeDistance - originRadius),
+    distanceInches: oval ? relateOvalTokenToRoundBase(token, origin, originRadius).minimumSeparationMilliInches / 1000
+      : Math.max(0, edgeDistance - originRadius),
     centreDistanceInches: centreDistance,
-    originBaseDiameterMm, tokenBaseShape: square ? "square" : "round",
+    originBaseDiameterMm, tokenBaseShape: token.baseShape || "round",
     tokenBaseDiameterMm: token.baseDiameterMm ?? null,
     tokenBaseWidthMm: token.baseWidthMm ?? token.baseDiameterMm,
     tokenBaseDepthMm: token.baseDepthMm ?? token.baseDiameterMm,
@@ -289,7 +317,7 @@ export function verifyOfficialBattlefieldMarkerV1(marker, registry) {
     anchorId: marker?.anchorId, face: marker?.face, sideKey: marker?.sideKey,
     stayInPlay: marker?.stayInPlay });
   if (!object(marker) || marker.markerHash !== hashStarcraftTmgContract(without(marker,
-    ["markerHash"])) || JSON.stringify(marker) !== JSON.stringify(rebuilt)) {
+    ["markerHash"])) || !isDeepStrictEqual(marker, rebuilt)) {
     fail("BATTLEFIELD_MARKER_INVALID", String(marker?.markerId || ""));
   }
   return true;
@@ -371,7 +399,7 @@ export function resolveOfficialTokenMarkerCleanupV1(input = {}) {
 
 export function projectOfficialBattlefieldTokenV1(input = {}) {
   verifyOfficialBattlefieldTokenV1(input.token, input.registry);
-  if (input.token.baseShape === "square") {
+  if (input.token.baseShape === "square" || input.token.baseShape === "oval") {
     verifyOfficialBattlefieldViewportProjectionV1(input.viewportProjection,
       input.deploymentGeometryBinding);
     const p = input.viewportProjection; const b = input.deploymentGeometryBinding;
@@ -382,7 +410,8 @@ export function projectOfficialBattlefieldTokenV1(input = {}) {
       xCss: p.offsetCssX + input.token.coordinate.x * p.cssPixelsPerInch,
       yCss: p.offsetCssY + (b.battlefield.heightInches - input.token.coordinate.y)
         * p.cssPixelsPerInch,
-      widthCss, heightCss, baseShape: "square",
+      widthCss, heightCss, baseShape: input.token.baseShape,
+      ...(input.token.baseShape === "oval" ? { rotationDegrees: -input.token.baseRotationDegrees } : {}),
       touchTargetWidthCss: Math.max(widthCss, Number(input.minimumTouchTargetCss ?? 0)),
       touchTargetHeightCss: Math.max(heightCss, Number(input.minimumTouchTargetCss ?? 0)),
       worldGeometryHash: input.token.tokenHash,

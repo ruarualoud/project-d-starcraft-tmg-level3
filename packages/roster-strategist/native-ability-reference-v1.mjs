@@ -2,7 +2,7 @@
 // cannot tell a planner which other phase or trigger a selected card needs.
 // Project the same frozen compiled definitions used by Native, without deriving
 // costs, eligibility, strategy or a different source snapshot.
-export function projectNativeAbilityReferenceV1(state) {
+export function projectNativeAbilityReferenceV1(state, queryAbilityTiming) {
   const records = new Map();
   const record = key => {
     if (!records.has(key)) records.set(key, {recordKey:key, unitIds:[], cardInstanceIds:[],
@@ -28,7 +28,10 @@ export function projectNativeAbilityReferenceV1(state) {
       row.definitions.push({...structuredClone(definition), sourceBundle:bundleName, sourceText});
     }
   }
-  for (const row of records.values()) row.selectedUpgradeNames = [...new Set(row.selectedUpgradeNames)];
+  for (const row of records.values()) {
+    row.selectedUpgradeNames = [...new Set(row.selectedUpgradeNames)];
+    if (queryAbilityTiming) row.abilityTimingQuery = {queryKind:'ability.timing',arguments:{recordKey:row.recordKey}};
+  }
   return {schema:'starcraft_tmg_native_ability_reference_v1',
     scope:'frozen_selected_records_compiled_ability_definitions',
     executionEligibilityProven:false,

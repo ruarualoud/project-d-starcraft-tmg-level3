@@ -200,6 +200,40 @@ export function verifyOfficialCardBuildPaymentPlanCertificateV1(input = {}) {
   return true;
 }
 
+// Host entry points accept actual card instances and derive their source-bound
+// payment facts. Callers supply a resource choice, never profile hashes.
+export function resolveOfficialAbilityResourcePaymentFromCardsV1(input = {}) {
+  if (!Array.isArray(input.cardInstances)) fail('ABILITY_RESOURCE_CARD_INSTANCES_REQUIRED');
+  return resolveOfficialAbilityResourcePaymentV1({ cardDataBundle: input.cardDataBundle,
+    resourceType: input.resourceType, resourceCost: input.resourceCost,
+    selectedCardInstanceSetComplete: true,
+    selectedCardInstances: input.cardInstances.map(card => {
+      if (!object(card)) fail('ABILITY_RESOURCE_CARD_INSTANCE_INVALID');
+      const profile = getOfficialCardBuildPaymentProfileV1(input.cardDataBundle, card.officialCardRecordKey);
+      return { cardInstanceId: card.cardInstanceId, recordKey: card.officialCardRecordKey,
+        sourceRecordHash: card.sourceRecordHash, payloadHash: card.officialPayloadHash,
+        profileHash: profile.profileHash, isReady: card.readiness === 'ready' };
+    }) });
+}
+
+export function enumerateOfficialAbilityResourcePaymentsV1(input = {}) {
+  if (!Array.isArray(input.cardInstances) || input.cardInstances.some(card => !object(card))) {
+    fail('ABILITY_RESOURCE_CARD_INSTANCES_REQUIRED');
+  }
+  const ready = input.cardInstances.filter(card => card.readiness === 'ready');
+  const subsets = ready.reduce((rows, card) => [...rows, ...rows.map(row => [...row, card])], [[]]);
+  const payments = [];
+  for (const cards of subsets) {
+    try {
+      resolveOfficialAbilityResourcePaymentFromCardsV1({ ...input, cardInstances: cards });
+      payments.push(cards.map(card => card.cardInstanceId).sort());
+    } catch (error) {
+      if (!/^(ABILITY_RESOURCE_TYPE_MISMATCH|ABILITY_RESOURCE_FULL_COST_REQUIRED|ABILITY_RESOURCE_ZERO_COST_SELECTION_FORBIDDEN)(:|$)/u.test(error.message)) throw error;
+    }
+  }
+  return payments.sort((left, right) => left.join('|').localeCompare(right.join('|')));
+}
+
 export function officialCardBuildPaymentProcedureKindsV1() {
   return [...PROCEDURE_KINDS].sort();
 }

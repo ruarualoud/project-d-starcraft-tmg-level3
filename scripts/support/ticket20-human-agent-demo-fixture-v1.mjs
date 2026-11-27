@@ -78,7 +78,7 @@ function ensure(condition, code, details = {}) {
   if (!condition) throw Object.assign(new Error(code), { code, ...details });
 }
 
-function registerResumedMatchDependencies(authorityEngine, binding,
+export function registerResumedMatchDependencies(authorityEngine, binding,
   initialStateAuthority, rulesRuntime) {
   const supplied = initialStateAuthority.dependencies || {};
   for (const kind of ["sourceSnapshot", "dataSnapshot", "geometryArtifact"]) {
@@ -570,7 +570,7 @@ export async function createTicket20HumanAgentDemoFixtureV1(options = {}) {
   const serverSeatPlan = [{
     label: "human",
     seatKey: "player1",
-    roleMode: "supervisor",
+    roleMode: options.humanRoleMode || "supervisor",
     principalType: "human",
   }, {
     label: "bot",
@@ -581,10 +581,12 @@ export async function createTicket20HumanAgentDemoFixtureV1(options = {}) {
     // the bot seat through the ordinary authoritative lifecycle.
     roleMode: "supervisor",
     principalType: "human",
-  }];
+  }].filter(entry => !(options.opponentHumanJoin === true && entry.label === "bot"));
   let rulesRuntime;
   let state;
   let initialStateAuthority;
+  let savedAggregate;
+  let replayArchivedRoom = false;
   let coverage;
   if (standard2000) {
     const standardAuthority = createOfficialStandardRoomInitialStateAuthorityV1({
@@ -633,6 +635,28 @@ export async function createTicket20HumanAgentDemoFixtureV1(options = {}) {
             ? createOfficialCurrentProductMatchRuntimeV6({
               legacyRuntime: originalRuntime,
             }) : accessRuntime || endpointRuntime || originalRuntime;
+      if (options.resumeRoom && options.currentProductRuntimeVariant === "singleton_identity_v6") {
+        savedAggregate = await options.roomStore?.loadRoom(roomId);
+        const binding = savedAggregate?.envelope?.matchBinding;
+        if (binding && !binding.releaseBinding &&
+            binding.rulesRuntimeBinding.runtimeHash !== rulesRuntime.descriptor.runtimeHash) {
+          const initial = options.roomStore.loadInitialEnvelope
+            ? await options.roomStore.loadInitialEnvelope(roomId)
+            : (await options.roomStore.loadReplayBundle(roomId)).initialEnvelope;
+          ensure(initial?.matchBinding?.bindingHash === binding.bindingHash,
+            "PRODUCT_HISTORICAL_ROOM_BINDING_MISMATCH");
+          const archived = await import("../../packages/product-composition/archived/standard-room-aa4e3ac.mjs");
+          const restored = archived.createSingleton({legacyRuntime: archived.createBase({
+            dataset: source.dataset, state: initial.state,
+          })});
+          ensure(restored.descriptor.runtimeHash === binding.rulesRuntimeBinding.runtimeHash,
+            "PRODUCT_HISTORICAL_RULES_RUNTIME_UNAVAILABLE", {
+              expected: binding.rulesRuntimeBinding.runtimeHash, observed: restored.descriptor.runtimeHash,
+            });
+          rulesRuntime = restored;
+          replayArchivedRoom = true;
+        }
+      }
       state = prepareOfficialCurrentProductFirstRoundV1(state);
     } else {
       const baseRuntime = createOfficialExecutableRuleRuntimeV1({
@@ -807,14 +831,20 @@ export async function createTicket20HumanAgentDemoFixtureV1(options = {}) {
   });
   let createdRoom;
   if (options.resumeRoom === true) {
-    const aggregate = await roomRuntime.roomStore.loadRoom(roomId);
+    const aggregate = savedAggregate ?? await roomRuntime.roomStore.loadRoom(roomId);
     const resumeCredentials = options.resumeCredentials;
     ensure(aggregate?.envelope?.matchBinding?.bindingHash
       && resumeCredentials?.human?.seatToken
-      && resumeCredentials?.bot?.seatToken,
+      && (options.opponentHumanJoin === true || resumeCredentials?.bot?.seatToken),
     "TICKET20_DEMO_RESUME_AUTHORITY_MISSING");
     registerResumedMatchDependencies(authorityEngine,
       aggregate.envelope.matchBinding, initialStateAuthority, rulesRuntime);
+    if (replayArchivedRoom) {
+      const replay = await roomRuntime.replayRoom({roomId});
+      ensure(replay.ok && replay.matchesCurrent, "PRODUCT_HISTORICAL_REPLAY_UNAVAILABLE", {
+        reason: replay.reason, replayDetails: replay.details,
+      });
+    }
     createdRoom = Object.freeze({
       ok: true,
       resumed: true,
@@ -949,6 +979,7 @@ export async function createTicket20HumanAgentDemoFixtureV1(options = {}) {
     observeStage: options.observeBotStage,
     autoDriveIntervalMs: options.autoDriveIntervalMs || 500,
     deferForPreexecution: options.enableSpatialPreexecution === true,
+    physicalCustodyBySide: options.physicalCustodyBySide,
     ...(options.physicalAgentPort ? {
       physicalAgentPort: options.physicalAgentPort,
     } : {}),
@@ -1059,8 +1090,12 @@ export async function createTicket20AgentAgentDemoFixtureV1(options = {}) {
     routeOfficialCurrentProductStrategySkillsV1({
       state: aggregate.envelope.state,
       seatKey,
-      manifest: STARCRAFT_TMG_TICKET_18_PORTABLE_STRATEGY_PACK_V2,
-      loadedEntries: strategySkillEntries,
+      manifest: options.strategySkillEntriesBySeat?.[seatKey] ? {
+        entries: options.strategySkillEntriesBySeat[seatKey].map(entry => ({
+          ...entry, skillId: entry.skill.skillId, skillHash: entry.skill.hash,
+        })),
+      } : STARCRAFT_TMG_TICKET_18_PORTABLE_STRATEGY_PACK_V2,
+      loadedEntries: options.strategySkillEntriesBySeat?.[seatKey] || strategySkillEntries,
     }),
   ]));
   const player1Refs = routesBySeat.player1.skillRefs;
@@ -1171,6 +1206,7 @@ export async function createTicket20AgentAgentDemoFixtureV1(options = {}) {
     observeStage: options.observeBotStage,
     autoDriveIntervalMs: options.autoDriveIntervalMs || 500,
     deferForPreexecution: options.enableSpatialPreexecution === true,
+    physicalCustodyBySide: options.physicalCustodyBySide,
     ...(options.player1PhysicalAgentPort ? {
       physicalAgentPort: options.player1PhysicalAgentPort,
     } : {}),
@@ -1239,7 +1275,8 @@ export async function createTicket20AgentAgentDemoFixtureV1(options = {}) {
       versions: {
         source: `official-current:${base.sourceBinding.dataset}`,
         rules: `ticket11:${base.sourceBinding.rules}`,
-        strategy: `ticket18-portable-v2:${hash(manifestRefs)}`,
+        strategy: `ticket18-portable-v2:${hash(options.strategySkillEntriesBySeat
+          ? {player1: player1Refs, player2: player2Refs} : manifestRefs)}`,
       },
       scenario: {
         mapId: String(requestedExperiment.mapId

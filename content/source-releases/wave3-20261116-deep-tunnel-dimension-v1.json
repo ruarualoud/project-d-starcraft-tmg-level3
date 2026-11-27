@@ -1,0 +1,17 @@
+{
+  "schema": "starcraft_tmg_user_confirmed_component_dimension_v1",
+  "version": "1.0.0",
+  "sourceDatasetHash": "718057e86ac4f93a72c06b8e4d8f4d851ba33ee04c9dddea33e966eda9fe6685",
+  "componentKind": "ravager_burrow",
+  "recordKey": "army_units:ravager",
+  "abilityName": "Deep Tunnel",
+  "dimensionMm": 32,
+  "authority": "user_confirmation",
+  "sourceDate": "2026-11-16",
+  "sourceText": "deep tunnel 32mm",
+  "shapeAsserted": false,
+  "referenceRole": "dimension_provenance",
+  "runtimeBindingReady": false,
+  "trainingTruth": false,
+  "confirmationHash": "53009583ef641af333b2e856abb5edc7d0606ccdd61152570a501ceda846c62e"
+}

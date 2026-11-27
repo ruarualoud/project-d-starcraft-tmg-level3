@@ -9,11 +9,13 @@ function clone(value) {
 
 export function createSqliteStarcraftTmgPostgameReviewStoreV2(options = {}) {
   const filename = String(options.filename || ":memory:");
-  const database = options.database || new DatabaseSync(filename);
+  const readOnly = options.readOnly === true;
+  const database = options.database || new DatabaseSync(filename, { readOnly });
   const ownsDatabase = !options.database;
-  database.exec("PRAGMA journal_mode = WAL");
-  database.exec("PRAGMA synchronous = FULL");
-  database.exec(`
+  if (!readOnly) {
+    database.exec("PRAGMA journal_mode = WAL");
+    database.exec("PRAGMA synchronous = FULL");
+    database.exec(`
     CREATE TABLE IF NOT EXISTS sc_postgame_review_v2 (
       review_id TEXT PRIMARY KEY,
       revision INTEGER NOT NULL CHECK (revision >= 0),
@@ -21,6 +23,7 @@ export function createSqliteStarcraftTmgPostgameReviewStoreV2(options = {}) {
       updated_at TEXT NOT NULL
     ) STRICT;
   `);
+  }
   const select = database.prepare(`
     SELECT revision, record_json FROM sc_postgame_review_v2 WHERE review_id = ?
   `);
@@ -36,6 +39,7 @@ export function createSqliteStarcraftTmgPostgameReviewStoreV2(options = {}) {
   }
 
   async function commit(reviewIdInput, expectedRevision, next) {
+    if (readOnly) return { ok: false, reason: "POSTGAME_REVIEW_STORE_READ_ONLY" };
     const reviewId = String(reviewIdInput || "");
     const expected = expectedRevision === null ? null : Number(expectedRevision);
     if (!reviewId || next?.reviewId !== reviewId

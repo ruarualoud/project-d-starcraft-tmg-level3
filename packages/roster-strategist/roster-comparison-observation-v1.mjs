@@ -2,8 +2,12 @@
 // The model selects arm/stage/measurements; Host binds exact saved purpose and
 // existing tool proof contracts. No text matching or historical relabelling.
 import {isDeepStrictEqual} from 'node:util';
+import {rosterComparisonSceneRequirementsV1} from './roster-comparison-scene-contract-v1.mjs';
 import {rosterToolProofScopeV1} from './roster-tool-proof-scope-v1.mjs';
-import {resolveRosterParticipantConfigurationsV1} from './roster-participant-configuration-v1.mjs';
+import {rosterComparisonResultPartitionV2} from './roster-comparison-decision-test-v1.mjs';
+import {ROSTER_MISSION_SCORE_METRIC_V1} from './roster-mission-score-measurement-v1.mjs';
+import {resolveRosterParticipantConfigurationsV1,validateRosterParticipantConfigurationsV1,
+  rosterParticipantSelectionsEqualV1} from './roster-participant-configuration-v1.mjs';
 const integer={type:'integer',minimum:1,maximum:1000000};
 export const ROSTER_COMPARISON_BINDING_SCHEMA_V1={
   type:'object',properties:{
@@ -20,8 +24,26 @@ export const ROSTER_COMPARISON_BINDING_SCHEMA_V1={
 };
 const reject=detail=>{throw Object.assign(Error('ROSTER_COMPARISON_BINDING_INVALID'),{
   code:'ROSTER_COMPARISON_BINDING_INVALID',dispatchOutcome:'not_dispatched',
+  ...(detail.reason==='purpose_participants_required'?{queryRepair:{correctable:false,controlReturn:true,
+    sourceContract:'roster_comparison_participants_v2',failureClass:'comparison_design_required',
+    resolutionRequired:'comparison_design_decision',nativeExecuted:false,originalQueryNotAnswered:true,
+    instruction:detail.instruction}}:{}),
   detail:{...detail,expectedSchema:ROSTER_COMPARISON_BINDING_SCHEMA_V1,
-    instruction:'Correct only this declared comparison reference using the delivered purpose and this order’s steps. Baseline/setup is not a post-mechanism endpoint. Do not invent a purpose, change its metrics, or relabel an old observation as already approved.'}});};
+    instruction:detail.instruction??'Correct only this declared comparison reference using the delivered purpose and this order’s steps. Baseline/setup is not a post-mechanism endpoint. Do not invent a purpose, change its metrics, or relabel an old observation as already approved.'}});};
+// Host-generated one-action templates have local step IDs. Only a verbatim
+// copy of the parent binding may defer to the saved-parent resolver; independent
+// arm/metric/stage changes remain explicit and subject to normal rejection.
+export function projectRosterDelegatedNativeChoiceScopeV1(experimentScope,delegatedComparison){
+  const scope=structuredClone(experimentScope),parent=delegatedComparison?.binding;
+  if(!scope?.comparisonBinding||delegatedComparison?.operation!=='native_action'
+    ||!delegatedComparison.targetWorkId||parent?.schema!=='roster_comparison_observation_binding_v1'
+    ||!Array.isArray(parent.measurements)||!Array.isArray(parent.observationStepIds))return scope;
+  const copiedParent={purposeEvidenceNumber:parent.purposeSource?.evidenceNumber,arm:parent.arm,
+    stage:parent.stage,measurementNumbers:parent.measurements.map(m=>m.number),
+    observationStepIds:parent.observationStepIds};
+  if(isDeepStrictEqual(scope.comparisonBinding,copiedParent))scope.comparisonBinding=null;
+  return scope;
+}
 export function assertRosterComparisonBindingShapeV1(binding){
   if(binding==null)return;
   const uniqueArray=(value,valid)=>Array.isArray(value)&&value.every(valid)&&new Set(value).size===value.length;
@@ -33,6 +55,85 @@ export function assertRosterComparisonBindingShapeV1(binding){
     ||!uniqueArray(binding.measurementNumbers,value=>Number.isSafeInteger(value)&&value>0)||!binding.measurementNumbers.length
     ||!uniqueArray(binding.observationStepIds,value=>typeof value==='string'&&Boolean(value.trim())))
     reject({reason:'invalid_binding_shape'});
+}
+function participantDifferences(scope,declared,controlled){
+  const expected=new Map(controlled.map(unit=>[unit.unitInstanceId,unit])),actual=new Map(declared.map(unit=>[unit.unitInstanceId,unit]));
+  const differences=[];
+  for(const unit of declared){
+    const prior=expected.get(unit.unitInstanceId);
+    if(!prior||!rosterParticipantSelectionsEqualV1(unit,prior))differences.push({unitInstanceId:unit.unitInstanceId,
+      reason:prior?'selection_differs_from_design':'unit_not_declared_in_design',expected:prior??null,actual:unit});
+  }
+  for(const id of scope?.participantUnitIds??[])if(expected.has(id)&&!actual.has(id))
+    differences.push({unitInstanceId:id,reason:'design_participant_configuration_omitted',expected:expected.get(id)});
+  return differences;
+}
+function controlledParticipants(purpose,arm){
+  const arms=purpose?.participantConfigurationsByArm;
+  if(!arms||!Array.isArray(arms.current)||!Array.isArray(arms.alternative))
+    reject({reason:'purpose_participants_required',instruction:'The original purpose has no typed two-arm participant contract. Return to the comparison DESIGN author for an explicit revised purpose, preserving the old question/results. A method cannot turn its actual enemy into the original intended enemy or fill the purpose on behalf of its author. No new measurement is authorized by this error.'});
+  validateRosterParticipantConfigurationsV1(arms.current);validateRosterParticipantConfigurationsV1(arms.alternative);
+  // A shared prerequisite can carry only selections actually common to both.
+  return structuredClone(arm==='shared'?arms.current.filter(unit=>arms.alternative.some(other=>
+    other.unitInstanceId===unit.unitInstanceId&&rosterParticipantSelectionsEqualV1(unit,other))):arms[arm]);
+}
+export {controlledParticipants as rosterControlledComparisonParticipantsV1};
+// A pair of saved observations has two independently selected armies. It is
+// not one physical scene containing only the intersection of those armies.
+// Keep arm identity (including the same unit ID with different upgrades) intact.
+function savedPairParticipantDifferences(scope,declared,arms){
+  const allowed=[...arms.current,...arms.alternative],differences=[];
+  for(const unit of declared)if(!allowed.some(expected=>expected.unitInstanceId===unit.unitInstanceId
+    &&rosterParticipantSelectionsEqualV1(unit,expected)))
+    differences.push({unitInstanceId:unit.unitInstanceId,reason:'selection_not_in_either_declared_arm'});
+  for(const id of scope?.participantUnitIds??[])if(!allowed.some(unit=>unit.unitInstanceId===id)
+    ||!declared.some(unit=>unit.unitInstanceId===id))
+    differences.push({unitInstanceId:id,reason:'comparison_participant_not_declared'});
+  return differences;
+}
+export function assertRosterSavedObservationPairV1({binding,sources,spec}){
+  if(binding?.participantBindingMode!=='saved_observation_pair_v1')return null;
+  const proof={version:1,status:'matched',mode:'saved_observation_pair_v1',arms:{},strategyApproved:false};
+  for(const [side,arm]of [['left','current'],['right','alternative']]){
+    const source=sources[side],value=source?.value,origin=value?.experimentOrigin?.comparisonBinding;
+    const expected=binding.controlledParticipantConfigurationsByArm?.[arm],check=value?.participantConfigurationCheck;
+    const selector=spec?.[side];
+    if(!Array.isArray(expected)||!selector||value?.status!=='completed'
+      ||origin?.arm!==arm||origin?.purposeSource?.artifactRef!==binding.purposeSource?.artifactRef
+      ||origin?.participantContractVersion!==2||check?.status!=='matched'
+      ||!Array.isArray(check.expectedConfigurations)
+      ||!Array.isArray(origin.controlledParticipantConfigurations)
+      ||participantDifferences({participantUnitIds:expected.map(u=>u.unitInstanceId)},check.expectedConfigurations,expected).length
+      ||participantDifferences({participantUnitIds:expected.map(u=>u.unitInstanceId)},origin.controlledParticipantConfigurations,expected).length
+      // A mission award measures the seat rather than a weapon pair. Its
+      // round and Native source are checked by the mission-score comparator.
+      ||(spec.metric===ROSTER_MISSION_SCORE_METRIC_V1
+        ?!['player1','player2'].includes(selector.seatKey)||!Number.isSafeInteger(selector.awardNumber)||selector.awardNumber<1
+        :[selector.attackerUnitId,selector.targetUnitId].some(id=>!expected.some(u=>u.unitInstanceId===id))))
+      reject({reason:'saved_observation_arm_or_configuration_mismatch',side,arm,
+        instruction:'Select the completed immutable observation of this declared arm, with its original matched participant check. Cross-arm arithmetic does not create a shared army or authorize a different source.'});
+    proof.arms[arm]={sourceResultRef:source.artifactRef??source.resultRef??null,
+      contextRef:value.contextRef??null,purposeSource:structuredClone(origin.purposeSource),
+      participantConfigurations:structuredClone(check.expectedConfigurations)};
+  }
+  return proof;
+}
+// Existing compiled work must cross the same boundary before cache reuse or
+// Native execution. Keep old results as evidence, never silently rebind them.
+export function assertRosterBoundParticipantPurposeV2({scope,binding,participantSource=null}){
+  if(!binding)return;
+  const missing=binding.participantContractVersion!==2||!Array.isArray(binding.controlledParticipantConfigurations);
+  const declared=resolveRosterParticipantConfigurationsV1(scope,binding);
+  const differences=missing?[]:participantDifferences(scope,declared,binding.controlledParticipantConfigurations);
+  if(!missing&&!differences.length)return;
+  const code=missing?'ROSTER_EXPERIMENT_PURPOSE_PARTICIPANTS_REQUIRED':'ROSTER_EXPERIMENT_PURPOSE_PARTICIPANTS_MISMATCH';
+  const detail={purposeSource:binding.purposeSource,arm:binding.arm,differences,
+    originalParticipantConfigurations:declared,participantSource:structuredClone(participantSource)};
+  throw Object.assign(Error(code),{code,detail,dispatchOutcome:'not_dispatched',queryRepair:{
+    correctable:!missing,controlReturn:true,sourceContract:'roster_comparison_participants_v2',repairContractVersion:2,
+    ...(missing?{failureClass:'comparison_design_required',resolutionRequired:'comparison_design_decision'}:{}),
+    originalQueryNotAnswered:true,nativeExecuted:false,...detail,
+    instruction:'Return this experiment-method limitation to the comparison DESIGN/strategic owner. Its immutable original purpose must explicitly declare participating own/enemy selections in participantConfigurationsByArm.current/alternative. Read the actual frozen participantSource and explain any changed enemy/composition/conditions as a NEW design, retaining old results only in their original scope. A method or input repair cannot rewrite that purpose, select an enemy to make a check pass, or relabel old measurements. Use the existing strategy_required/blocked branch return and explicit comparisonDesignRequest flow; no whole-match simulation or roster/Plan approval.'}});
 }
 export function resolveRosterComparisonBindingV1({order,scope,evidenceDirectory,comparisonPurpose,delegatedComparison=null}){
   const declared=order.experimentScope?.comparisonBinding,parent=delegatedComparison?.binding;
@@ -100,8 +201,23 @@ export function resolveRosterComparisonBindingV1({order,scope,evidenceDirectory,
   const steps=new Set(order.steps.map(step=>step.stepId));
   if(binding.observationStepIds.some(id=>!steps.has(id)))
     reject({reason:'observation_not_a_step_in_this_order',availableStepIds:[...steps]});
+  const participantConfigurations=resolveRosterParticipantConfigurationsV1(order.experimentScope,parent);
+  const controlledParticipantConfigurations=controlledParticipants(purpose,binding.arm);
+  const savedPair=order.steps.length>0&&order.steps.every(step=>step.operation==='compare_observations');
+  const controlledParticipantConfigurationsByArm=savedPair?{
+    current:controlledParticipants(purpose,'current'),alternative:controlledParticipants(purpose,'alternative')}:null;
+  const differences=savedPair?savedPairParticipantDifferences(order.experimentScope,participantConfigurations,controlledParticipantConfigurationsByArm)
+    :participantDifferences(order.experimentScope,participantConfigurations,controlledParticipantConfigurations);
+  if(differences.length)reject({reason:'purpose_participant_configuration_mismatch',differences,
+    instruction:'This method changed or omitted a participant selected by the DESIGN author. Correct only the method if it misstates that design; otherwise return for explicit redesign. Do not alter expected to actual or attach a different enemy scene to the old purpose.'});
   return {schema:'roster_comparison_observation_binding_v1',comparisonId:source.id,
-    participantConfigurations:resolveRosterParticipantConfigurationsV1(order.experimentScope,parent),
+    ...(purpose.sceneRequirementsByArm?{sceneRequirementsContractVersion:1,
+      sceneRequirementsByArm:structuredClone(purpose.sceneRequirementsByArm),
+      sceneRequirements:rosterComparisonSceneRequirementsV1(purpose,binding.arm)}:{}),
+    ...([2,3,4,5,6].includes(purpose.decisionTest?.version)?{decisionTest:structuredClone(purpose.decisionTest),
+      resultPartition:rosterComparisonResultPartitionV2(purpose.decisionTest)}:{}),
+    participantConfigurations,participantContractVersion:2,controlledParticipantConfigurations,
+    ...(savedPair?{participantBindingMode:'saved_observation_pair_v1',controlledParticipantConfigurationsByArm}:{}),
     purposeSource:{evidenceNumber:binding.purposeEvidenceNumber,artifactRef:source.artifactRef},
     arm:binding.arm,armDescription:binding.arm==='current'?purpose.currentChoice
       :binding.arm==='alternative'?purpose.alternative:'Shared declared prerequisite; not either arm’s result',

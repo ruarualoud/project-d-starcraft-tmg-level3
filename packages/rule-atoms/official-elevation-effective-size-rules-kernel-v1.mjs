@@ -1,3 +1,4 @@
+import { normalizeOfficialElevationV1 } from "./official-elevation-contract-v1.mjs";
 import { hashStarcraftTmgContract, canonicalStarcraftTmgJson,
   STARCRAFT_TMG_HASH_ALGORITHM } from
   "../authoritative-engine/referee-crypto-v1.mjs";
@@ -11,15 +12,24 @@ import { evaluateOfficialFlyingCoverV1 } from
   "./official-flying-rules-kernel-v1.mjs";
 import {
   createOfficialPhysicalFootprintV1,
+  createOfficialModelBaseFootprintV1,
+  readOfficialCrossArmDimensionsV1,
+  isOfficialProfileBoundOutlineV1,
   evaluateOfficialPhysicalFootprintRelationV1,
 } from "./official-model-base-geometry-rules-kernel-v1.mjs";
 import {
   evaluateOfficialTerrainLineOfSightV1,
+  readOfficialCompoundRampSightV1,
   evaluateOfficialTerrainLineOfSightBatchV1,
   verifyOfficialTerrainLineOfSightBatchInputsV1,
   createOfficialTerrainLineOfSightBatchV1,
+  evaluateOfficialTerrainLineOfSightToTokenV1,
+  evaluateOfficialTerrainLineOfSightToTargetPointV1,
 } from
   "./official-terrain-los-rules-kernel-v1.mjs";
+import { deriveOfficialTokenSurfacePlacementV2, deriveOfficialTargetPointSurfacePlacementV2,
+  deriveOfficialModelSurfacePlacementV2 } from './official-engagement-graph-v2.mjs';
+import { createOfficialDisplacementTokenFootprintV1 } from './official-token-displacement-geometry-v1.mjs';
 
 export const OFFICIAL_ELEVATION_EFFECTIVE_SIZE_RULES_KERNEL_SCHEMA =
   "starcraft_tmg_official_elevation_effective_size_rules_kernel_v1";
@@ -165,6 +175,8 @@ function rectangle(value, code, detail) {
     maxXMilliInches: maxX, minYMilliInches: minY, maxYMilliInches: maxY };
 }
 function verifyTerrain(raw) {
+  const ramp = readOfficialCompoundRampSightV1(raw);
+  if (ramp) return ramp;
   const terrainId = String(raw?.id || "").trim();
   const size = Number(raw?.size);
   const footprint = rectangle(raw?.footprint,
@@ -216,6 +228,8 @@ function terrainPhysicalFootprint(terrain) {
   });
 }
 function modelEdgeToTerrain(model, terrain) {
+  if (terrain.footprintCells) return Math.min(...terrain.footprintCells.map(footprint =>
+    modelEdgeToTerrain(model, { terrainId: terrain.terrainId, footprint })));
   return evaluateOfficialPhysicalFootprintRelationV1({
     left: model.footprint,
     right: terrainPhysicalFootprint(terrain),
@@ -270,7 +284,8 @@ function verifyElevationContext(state, dataBundle) {
     const support = terrainById.get(supportTerrainId);
     if (!subject || !support || subject === support || directSupport.has(terrainId)
       || support.standableHorizontalSurface !== true
-      || !rectanglesOverlap(subject.footprint, support.footprint)) {
+      || !(subject.footprintCells ?? [subject.footprint]).some(a =>
+        (support.footprintCells ?? [support.footprint]).some(b => rectanglesOverlap(a, b)))) {
       fail("ELEVATION_SUPPORT_RELATION_INVALID", `${terrainId}/${supportTerrainId}`);
     }
     directSupport.set(terrainId, supportTerrainId);
@@ -301,7 +316,8 @@ function verifyElevationContext(state, dataBundle) {
   }
   for (const terrainId of terrainById.keys()) resolve(terrainId);
   return { terrain, terrainById, directSupport,
-    effectiveSizeByTerrainId, supportChainByTerrainId, agreement };
+    effectiveSizeByTerrainId, supportChainByTerrainId, agreement,
+    modelBaseGeometryDataBundle: state?.officialModelBaseGeometryDataBundle };
 }
 
 function officialProfile(piece, dataBundle) {
@@ -316,9 +332,7 @@ function officialProfile(piece, dataBundle) {
   return profile;
 }
 function normalizedElevation(value) {
-  const elevation = String(value || "ground").toLowerCase();
-  if (elevation === "middle") return "mid";
-  return elevation;
+  return normalizeOfficialElevationV1(value || "ground");
 }
 function elevationBandForSize(size) {
   return size >= 3 ? "high" : size >= 1 ? "mid" : "ground";
@@ -337,7 +351,7 @@ function canonicalModel(piece, modelId, dataBundle, context) {
   const depth = milli(model?.baseDepthInches ?? model?.baseWidthInches,
     "ELEVATION_MODEL_BASE_INVALID", modelId);
   const shape = String(model?.baseShape || "round").toLowerCase();
-  if (!model || !["round", "rectangle"].includes(shape)
+  if (!model || !(["round", "rectangle"].includes(shape) || isOfficialProfileBoundOutlineV1(shape))
     || width <= 0 || depth <= 0 || (shape === "round" && Math.abs(width - depth) > TOLERANCE)
     || !Array.isArray(model.supportTerrainIds)) {
     fail("ELEVATION_MODEL_BASE_INVALID", modelId);
@@ -351,22 +365,22 @@ function canonicalModel(piece, modelId, dataBundle, context) {
   const center = { xMilliInches: milli(model.xInches,
     "ELEVATION_MODEL_POSITION_INVALID", modelId),
   yMilliInches: milli(model.yInches, "ELEVATION_MODEL_POSITION_INVALID", modelId) };
-  const footprint = createOfficialPhysicalFootprintV1({
+  const footprint = shape === "measured_contour" ? createOfficialModelBaseFootprintV1({
+    piece, model, dataBundle: context.modelBaseGeometryDataBundle, position: center,
+  }) : createOfficialPhysicalFootprintV1({
     objectId: modelId,
     kind: "model_base",
     shape,
     center,
     widthMilliInches: width,
     depthMilliInches: depth,
+    ...(shape === "orthogonal_cross" ? readOfficialCrossArmDimensionsV1(model) : {}),
     rotationDegrees: model.baseRotationDegrees || 0,
   });
   const supportTerrainId = supportTerrainIds[0] || null;
   const support = supportTerrainId ? context.terrainById.get(supportTerrainId) : null;
   if (supportTerrainId && (!support || support.standableHorizontalSurface !== true
-    || evaluateOfficialPhysicalFootprintRelationV1({
-      left: footprint,
-      right: terrainPhysicalFootprint(support),
-    }).minimumSeparationMilliInches > TOLERANCE)) {
+    || modelEdgeToTerrain({ footprint }, support) > TOLERANCE)) {
     fail("ELEVATION_MODEL_SUPPORT_INVALID", `${modelId}/${supportTerrainId}`);
   }
   const supportingTerrainEffectiveSize = supportTerrainId
@@ -454,6 +468,7 @@ export function evaluateOfficialEffectiveSizeSubjectsBatchV1(input = {}) {
         terrainElevationAgreement: input.state?.board?.terrainElevationAgreement,
       },
       pieces: input.state?.pieces,
+      officialModelBaseGeometryDataBundle: input.state?.officialModelBaseGeometryDataBundle,
     },
     dataBundle: input.dataBundle,
     subjects: input.subjects,
@@ -475,6 +490,7 @@ export function createOfficialEffectiveSizeSubjectsUnitBatchV1(input = {}) {
         terrain: input.state?.board?.terrain,
         terrainElevationAgreement: input.state?.board?.terrainElevationAgreement,
       },
+      officialModelBaseGeometryDataBundle: input.state?.officialModelBaseGeometryDataBundle,
     },
     dataBundle: input.dataBundle,
   }));
@@ -528,6 +544,8 @@ function geometryProjection(state, supportIds, dataBundle, participantIds,
   const substitutions = [];
   const geometryProfile = dataBundle.profiles.find((entry) => entry.printedSize !== null);
   for (const piece of projected.pieces || []) {
+    const hasMeasuredContour = piece.models?.some(model => model.baseShape === "measured_contour");
+    if (hasMeasuredContour) projected.officialModelBaseGeometryDataBundle = state.officialModelBaseGeometryDataBundle;
     for (const model of piece.models || []) {
       model.supportTerrainIds = [];
       model.elevation = "ground";
@@ -535,7 +553,7 @@ function geometryProjection(state, supportIds, dataBundle, participantIds,
     const profile = dataBundle.profiles.find((entry) => (
       entry.recordKey === piece.officialUnitRecordKey
     ));
-    if (participantIds.has(piece.id) && profile?.printedSize === null) {
+    if (!hasMeasuredContour && profile?.printedSize === null) {
       if (!geometryProfile) fail("ELEVATION_GEOMETRY_PROFILE_UNAVAILABLE");
       substitutions.push({ unitId: piece.id, actualRecordKey: profile.recordKey,
         geometryOnlyRecordKey: geometryProfile.recordKey,
@@ -652,6 +670,36 @@ function prepareElevatedLineOfSight(input, context) {
     flyingOverlappedTerrainIds };
 }
 
+export function evaluateOfficialElevatedTargetPointLineOfSightV1(input = {}) {
+  const state = input.state, context = verifyElevationContext(state, input.dataBundle);
+  let attacker = canonicalModel(input.attacker, input.attackerModelId, input.dataBundle, context);
+  if (input.physicalBaseElevation === true) {
+    const surface = deriveOfficialModelSurfacePlacementV2(state,
+      { pieceId: input.attacker.id, modelId: input.attackerModelId });
+    const size = Math.max(0, ...surface.supportTerrainIds.map(id => context.effectiveSizeByTerrainId.get(id)));
+    attacker = { ...attacker, flying: false, elevationBand: elevationBandForSize(size),
+      supportTerrainIds: [...surface.supportTerrainIds], supportingTerrainEffectiveSize: size,
+      supportTerrainChain: [...new Set(surface.supportTerrainIds.flatMap(id => [id, ...(context.supportChainByTerrainId.get(id) || [])]))],
+      effectiveSize: (attacker.printedSize ?? 0) + size };
+  }
+  const footprint = input.targetPointFootprint;
+  const surface = deriveOfficialTargetPointSurfacePlacementV2(state, footprint);
+  const size = Math.max(0, ...surface.supportTerrainIds.map(id => context.effectiveSizeByTerrainId.get(id)));
+  const target = { unitId: footprint.objectId, modelId: footprint.objectId, sideKey: null,
+    footprint, printedSize: 0, flying: false, supportTerrainIds: [...surface.supportTerrainIds],
+    supportingTerrainEffectiveSize: size,
+    supportTerrainChain: [...new Set(surface.supportTerrainIds.flatMap(id => [id, ...(context.supportChainByTerrainId.get(id) || [])]))],
+    elevationBand: elevationBandForSize(size), effectiveSize: size };
+  const supportIds = new Set([...attacker.supportTerrainChain, ...target.supportTerrainChain]);
+  const geometry = geometryProjection(state, supportIds, input.dataBundle, new Set([input.attacker.id]));
+  const base = evaluateOfficialTerrainLineOfSightToTargetPointV1({ state: geometry.projected,
+    attacker: geometry.projected.pieces.find(row => row.id === input.attacker.id),
+    attackerModelId: input.attackerModelId, targetPointFootprint: footprint, dataBundle: input.dataBundle });
+  const result = finishElevatedLineOfSight(input, context, { attackerPiece: input.attacker, attacker,
+    target, targetPoint: footprint, supportIds, flyingOverlappedTerrainIds: [] }, geometry, base);
+  return result;
+}
+
 export function evaluateOfficialElevatedLineOfSightV1(input = {}) {
   const state = input.state;
   const context = verifyElevationContext(state, input.dataBundle);
@@ -667,6 +715,35 @@ export function evaluateOfficialElevatedLineOfSightV1(input = {}) {
     target: projectedTarget, targetModelId: input.targetModelId,
     dataBundle: input.dataBundle });
   return finishElevatedLineOfSight(input, context, prepared, geometry, base);
+}
+
+export function evaluateOfficialElevatedTokenLineOfSightV1(input = {}) {
+  const state = input.state;
+  const context = verifyElevationContext(state, input.dataBundle);
+  const attacker = canonicalModel(input.attacker, input.attackerModelId, input.dataBundle, context);
+  if (attacker.flying) fail('ELEVATION_TOKEN_LOS_GROUND_SOURCE_REQUIRED');
+  const token = input.token;
+  const surface = deriveOfficialTokenSurfacePlacementV2(state, token);
+  const supportTerrainIds = [...surface.supportTerrainIds];
+  const supportSize = Math.max(0, ...supportTerrainIds.map(id => {
+    const size = context.effectiveSizeByTerrainId.get(id);
+    if (!Number.isSafeInteger(size)) fail('ELEVATION_TOKEN_SUPPORT_INVALID', id);
+    return size;
+  }));
+  const target = { unitId: token.tokenId, modelId: token.tokenId, sideKey: null,
+    footprint: createOfficialDisplacementTokenFootprintV1(token), printedSize: token.terrainSize,
+    flying: false, supportTerrainIds, supportingTerrainEffectiveSize: supportSize,
+    supportTerrainChain: [...new Set(supportTerrainIds.flatMap(id => [id,
+      ...(context.supportChainByTerrainId.get(id) || [])]))],
+    elevationBand: elevationBandForSize(supportSize), effectiveSize: token.terrainSize + supportSize };
+  const supportIds = new Set([...attacker.supportTerrainIds, ...supportTerrainIds]);
+  const geometry = geometryProjection(state, supportIds, input.dataBundle, new Set([input.attacker.id]));
+  const projectedAttacker = geometry.projected.pieces.find(piece => piece.id === input.attacker.id);
+  const base = evaluateOfficialTerrainLineOfSightToTokenV1({ state: geometry.projected,
+    attacker: projectedAttacker, attackerModelId: input.attackerModelId, dataBundle: input.dataBundle,
+    token, registry: state.officialBattlefieldTokenMarkerRegistry });
+  return finishElevatedLineOfSight(input, context, { attackerPiece: input.attacker, attacker, target,
+    targetToken: token, flyingOverlappedTerrainIds: [], supportIds }, geometry, base);
 }
 
 // Private snapshot and grouping live only for this synchronous invocation.
@@ -734,8 +811,11 @@ function ownedOrdinaryLineOfSightBatch(owned, geometry, dataBundle) {
   const terrain = geometry.projected.board.terrain;
   let batch = owned.ordinaryByTerrain.get(terrain);
   if (!batch) {
-    batch = createOfficialTerrainLineOfSightBatchV1({ state: geometry.projected,
-      dataBundle });
+    const geometryBundle = owned.context.modelBaseGeometryDataBundle;
+    const state = geometryBundle?.version === "2.2.0"
+      ? { ...geometry.projected, officialModelBaseGeometryDataBundle: geometryBundle }
+      : geometry.projected;
+    batch = createOfficialTerrainLineOfSightBatchV1({ state, dataBundle });
     owned.ordinaryByTerrain.set(terrain, batch);
   }
   return batch;
@@ -912,12 +992,12 @@ function finishElevatedLineOfSight(input, context, prepared, geometry, base) {
     return assessment;
   });
   const attackerModels = activeCanonicalModels(attackerPiece, input.dataBundle, context);
-  const targetModels = activeCanonicalModels(targetPiece, input.dataBundle, context);
+  const targetModels = prepared.targetToken || prepared.targetPoint ? [target] : activeCanonicalModels(targetPiece, input.dataBundle, context);
   const targetAllHighGround = targetModels.length > 0
     && targetModels.every((entry) => entry.elevationBand === "high");
   const attackOriginatesFromLowerElevation = !attacker.flying
     && attackerModels.some((entry) => entry.elevationBand !== "high");
-  const highGroundEvadeEligible = !target.flying && targetAllHighGround
+  const highGroundEvadeEligible = !prepared.targetToken && !prepared.targetPoint && !target.flying && targetAllHighGround
     && attackOriginatesFromLowerElevation;
   const flyingCoverIntegration = attacker.flying || target.flying
     ? evaluateOfficialFlyingCoverV1({ attacker: attackerPiece, target: targetPiece,
@@ -939,11 +1019,15 @@ function finishElevatedLineOfSight(input, context, prepared, geometry, base) {
   }
   const blockingTerrainIds = assessments.filter((entry) => entry.blocksLineOfSight)
     .map((entry) => entry.terrainId);
-  const body = { schema: "starcraft_tmg_official_elevated_line_of_sight_result_v1",
+  const body = { schema: prepared.targetPoint ? 'starcraft_tmg_official_elevated_target_point_line_of_sight_result_v1'
+    : prepared.targetToken ? 'starcraft_tmg_official_elevated_token_line_of_sight_result_v1'
+    : "starcraft_tmg_official_elevated_line_of_sight_result_v1",
     attacker: { unitId: attacker.unitId, modelId: attacker.modelId,
       elevationBand: attacker.elevationBand, effectiveSize: attacker.effectiveSize,
       flying: attacker.flying },
-    target: { unitId: target.unitId, modelId: target.modelId,
+    target: { ...(prepared.targetPoint ? { targetPointId: prepared.targetPoint.objectId,
+      footprintHash: prepared.targetPoint.footprintHash } : prepared.targetToken ? { tokenId: prepared.targetToken.tokenId,
+      tokenHash: prepared.targetToken.tokenHash } : { unitId: target.unitId, modelId: target.modelId }),
       elevationBand: target.elevationBand, effectiveSize: target.effectiveSize,
       flying: target.flying },
     assessments, terrainPiecesAssessedIndependently: true,

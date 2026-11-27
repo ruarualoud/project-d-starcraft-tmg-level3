@@ -1,5 +1,24 @@
+import {JOINT_TEMPORAL_INPUT} from './pregame-joint-temporal-v1.mjs';
 // Source failure semantics and local repair permission must agree. This is a
 // pure contract, not another scheduler or permission inferred from model prose.
+import {SINGLE_UNIT_TEMPORAL_INPUT} from './pregame-single-unit-temporal-v1.mjs';
+import {projectPregameTemporalRepairInputsV1} from './pregame-temporal-outcome-v1.mjs';
+
+// Saved failures retain their exact query and reason. Only the source-owned
+// explanation is refreshed for a NEW repair request; no paid request is changed.
+export function projectPregameQueryRepairInputsV1(inputs){
+  inputs=projectPregameTemporalRepairInputsV1(inputs);
+  const task=inputs?.task?.value,failure=task?.failure;
+  if(failure?.operation==='bounded_joint_temporal'&&failure.code==='PREGAME_JOINT_TEMPORAL_INPUT_INVALID')return {...inputs,task:{...inputs.task,value:{...task,failure:{...failure,queryRepair:{...failure.queryRepair,inputContract:structuredClone(JOINT_TEMPORAL_INPUT),originalQueryNotAnswered:true}}}}};
+  if(failure?.operation!=='bounded_unit_temporal'
+    ||failure.code!=='PREGAME_TEMPORAL_INPUT_INVALID'
+    ||failure.queryRepair?.sourceContract!=='pregame_single_unit_temporal_v1')
+    return projectPregameProbabilityRepairInputsV1(inputs);
+  return {...inputs,task:{...inputs.task,value:{...task,failure:{...failure,
+    queryRepair:{...failure.queryRepair,inputContract:structuredClone(SINGLE_UNIT_TEMPORAL_INPUT),
+      navigationVersion:1,originalQueryNotAnswered:true}}}}};
+}
+
 export function projectPregameProbabilityRepairContractV1(value){
   const receipt=value?.receipt,request=value?.request;
   if(value?.operation!=='probability'||receipt?.resultStatus!=='unknown'

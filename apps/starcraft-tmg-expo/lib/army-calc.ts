@@ -92,6 +92,36 @@ export function createEmptyArmy(faction: Faction, name: string): ArmyList {
   };
 }
 
+/** Explicitly copy a saved draft to a selected release. Upgrade indices are local to a card revision. */
+export function repriceArmyCopy(army: ArmyList, units: UnitCard[], cards: TacticalCard[], target: {
+  datasetHash:string; minerals:number; missionId:string; deploymentId:string;
+}): ArmyList {
+  if (army.mineralsLimit !== target.minerals) throw Error('ROSTER_SCALE_MISMATCH');
+  if (army.factionCardId && !cards.some(card => card.id === army.factionCardId && card.isFactionCard)) {
+    throw Error('ROSTER_FACTION_CARD_UNAVAILABLE: ' + army.factionCardId);
+  }
+  for (const id of army.tacticalCardIds) {
+    if (!cards.some(card => card.id === id && !card.isFactionCard)) throw Error('ROSTER_CARD_UNAVAILABLE: ' + id);
+  }
+  const roster = army.roster.map(old => {
+    const unit = units.find(card => card.id === old.unitId);
+    const profile = old.size === 'small' ? unit?.smallProfile : unit?.largeProfile;
+    if (!unit || !profile?.models) throw Error('ROSTER_PROFILE_UNAVAILABLE: ' + old.unitId);
+    const updated = createRosterUnit(unit,old.size);
+    updated.activeUpgrades = old.activeUpgrades.map(index => {
+      const name = old.availableUpgrades[index]?.name;
+      const matches = unit.upgrades.map((upgrade,i) => upgrade.name === name ? i : -1).filter(i => i >= 0);
+      if (matches.length !== 1) throw Error('ROSTER_UPGRADE_CHANGED: ' + old.unitId + ' / ' + (name ?? index));
+      return matches[0];
+    });
+    return updated;
+  });
+  return {...army,...createEmptyArmy(army.faction,army.name + ' · W3'),roster,
+    factionCardId:army.factionCardId,tacticalCardIds:[...army.tacticalCardIds],officialDatasetHash:target.datasetHash,
+    mineralsLimit:target.minerals,gasLimit:Math.floor(target.minerals / 10),
+    missionId:target.missionId,deploymentId:target.deploymentId};
+}
+
 // --- Damage Calculation ---
 export interface CombatResult {
   expectedHits: number;
@@ -246,7 +276,7 @@ export function textToArmy(text: string, cards: TacticalCard[], units: UnitCard[
           const ru = createRosterUnit(unit, size as 'small' | 'large');
 
           // Parse upgrades
-          const upgMatch = line.match(/\+升级:\s*(.+)$/);
+          const upgMatch = line.match(/\+(?:upg|升级):\s*(.+)$/);
           if (upgMatch) {
             const upgNames = upgMatch[1].split(',').map(s => s.trim());
             upgNames.forEach(un => {

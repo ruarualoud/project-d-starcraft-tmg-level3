@@ -1,5 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import { LearningProductPanel } from './learning-product-panel';
+
+// The old synthetic Ticket20 console remains an explicit developer export.
+// Product pages use only the authenticated persistent learning service.
+export function LearningConsolePanel({roomId,zh}:{roomId:string|null;zh:boolean}) {
+  return <LearningProductPanel roomId={roomId} zh={zh} />;
+}
 
 type ConsoleProjection = {
   learning?: {
@@ -39,7 +46,7 @@ function value(input: unknown) {
   return String(input);
 }
 
-export function LearningConsolePanel({ roomId, zh }: {
+export function LegacyLearningConsolePanel({ roomId, zh }: {
   roomId: string | null;
   zh: boolean;
 }) {

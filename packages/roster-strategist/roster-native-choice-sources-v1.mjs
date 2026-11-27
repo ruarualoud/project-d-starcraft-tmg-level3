@@ -2,6 +2,43 @@
 // correction jobs. Never find a menu by title, model prose, or newest timestamp.
 import {isDeepStrictEqual} from 'node:util';
 import {createRosterWorkflowGraphV1} from './roster-workflow-graph-v1.mjs';
+import {projectRosterDelegatedNativeChoiceScopeV1} from './roster-comparison-observation-v1.mjs';
+import {projectRosterWorkflowStateReferenceV1} from './roster-workflow-state-reference-v1.mjs';
+
+// Parameter repairs often have no sourceReadContract: the original request
+// already named its parent, but authored an invalid action. Resolve that exact
+// state/seat against completed inspect receipts, not a similarly titled menu.
+export async function findRosterNativeParentInspectionV1({state,pending,readArtifact}){
+  const request=pending?.inputs?.request?.value;
+  if(request?.operation!=='native_action')return null;
+  const args=request.args??{},reference=args.stateRef,base=args.base;
+  const parent=reference?.stateHash??(base?.kind==='branch'?base.branchStateHash
+    :base?.kind==='source'?state.scope.source:null);
+  if(!parent)return null;
+  const contextRef=args.contextRef??reference?.contextRef??null;
+  const fresh=row=>row&&Object.entries(row.bindings??{}).every(([k,v])=>state.scope[k]===v);
+  let found=null;
+  for(const work of state.work){
+    if(work.role!=='roster_workflow_tool'||work.status!=='evidence_ready'||work.operationState?.pending
+      ||!fresh(work)||!work.resultRef||work.inputs?.request?.value?.operation!=='inspect')continue;
+    const entry=state.evidence.find(e=>e.id===`tool:${work.id}`&&e.availability==='available'&&fresh(e));
+    if(!entry)continue;
+    const body=await readArtifact(work.resultRef),value=body?.value,receipt=value?.receipt;
+    if(body?.kind!=='tool_receipt'||value?.status!=='completed'||value.operation!=='inspect'
+      ||receipt?.baseStateHash!==parent||(value.contextRef??null)!==contextRef
+      ||receipt.actionSpace?.authority?.stateHash!==parent
+      ||receipt.sourceStateHash!==(reference?.sourceStateHash??state.scope.source)
+      ||args.seatKey&&receipt.actionSpace.authority.seatKey!==args.seatKey)continue;
+    const registered=await readArtifact(entry.artifactRef);
+    if(!isDeepStrictEqual(registered,value))continue;
+    const stateRef=projectRosterWorkflowStateReferenceV1(value);if(!stateRef)continue;
+    // Conflicting interfaces on one frozen parent require diagnosis, not a
+    // timestamp preference. Identical repeated inspections are one source.
+    if(found&&!isDeepStrictEqual(found.value.receipt.actionSpace,receipt.actionSpace))return null;
+    found??={work,entry,value,stateRef};
+  }
+  return found;
+}
 export async function projectRosterNativeChoiceSourcesV1({assignment,state,readArtifact}){
   if(assignment.role!=='roster_workflow_experiment_planner')return {};
   const jobs=new Map(state.work.map(w=>[w.id,w]));
@@ -11,7 +48,11 @@ export async function projectRosterNativeChoiceSourcesV1({assignment,state,readA
   }
   const pending=jobs.get(owner?.choiceOf??owner?.repairOf);
   if(!pending||pending.inputs?.request?.value?.operation!=='native_action')return {};
-  const sources=owner.inputs?.task?.value?.sourceReadContract??[];
+  const sources=[...(owner.inputs?.task?.value?.sourceReadContract??[])];
+  const current=await findRosterNativeParentInspectionV1({state,pending,readArtifact});
+  if(current&&!sources.some(source=>source.sourceWorkId===current.work.id))sources.push({
+    sourceWorkId:current.work.id,sourceResultRef:current.work.resultRef,
+    sourceOperation:'inspect',stateRef:current.stateRef,requiresInspect:false});
   const entries=[],inputs={};
   for(const source of sources){
     if(source.sourceOperation!=='inspect'||source.requiresInspect)continue;
@@ -84,7 +125,8 @@ export async function projectRosterNativeChoiceSourcesV1({assignment,state,readA
     if(entries.some(e=>e.kind==='formation'))inputs.nativeChoiceTemplate={source:'literal',value:{
       orderId:'pending-native-formation-choice',purpose:request.purpose,
       scenarioAssumptions:structuredClone(request.scenarioAssumptions??[]),
-      experimentScope:structuredClone(request.experimentScope),
+      experimentScope:projectRosterDelegatedNativeChoiceScopeV1(request.experimentScope,
+        {targetWorkId:pending.id,operation:request.operation,binding:request.comparisonBinding}),
       steps:[{stepId:'selected-native-action',operation:'native_action',
         argumentsJson:JSON.stringify({selection:{kind:'formation'}}),bindings:[],
         guards:structuredClone(request.resultGuards??[]),publicReason:request.publicReason??''}],

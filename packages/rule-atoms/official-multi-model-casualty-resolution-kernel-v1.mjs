@@ -211,30 +211,59 @@ function permutationCountUpperBound(candidateCount, casualtyCount) {
   return count;
 }
 
+// One prefix evaluator for model guidance, tool validation and final execution.
+// The caller supplies the current Rules-owned contract, never model-made edges.
+export function inspectOfficialMultiModelCasualtySelectionV1({
+  targetPieceId, selectionContract, casualtyModelIds = [], complete = true,
+}) {
+  const contract = selectionContract;
+  if (!object(contract) || !String(targetPieceId || '')
+    || !Array.isArray(contract.candidateModelIds)
+    || !Number.isSafeInteger(contract.casualtyCount)
+    || !Array.isArray(contract.relevantModelEdges)) {
+    fail('MULTI_MODEL_CASUALTY_SELECTION_CONTRACT_INVALID');
+  }
+  const graph = {modelEdges: contract.relevantModelEdges};
+  let remaining = [...contract.candidateModelIds];
+  const next = () => contract.orderedRemovalRequired
+    ? legalNextEngagedCasualties(graph, targetPieceId, remaining)
+    : [...remaining];
+  const reject = (code, index, allowedValues) => freezeDeep({
+    valid:false, code, invalidIndex:index, legalNextModelIds:allowedValues,
+    acceptedPrefix:Array.isArray(casualtyModelIds) ? casualtyModelIds.slice(0,index ?? 0) : [],
+    remainingChoices:remaining, casualtyCount:contract.casualtyCount,
+    trainingTruth:false,
+  });
+  if (!Array.isArray(casualtyModelIds)
+    || casualtyModelIds.length > contract.casualtyCount
+    || (complete && casualtyModelIds.length !== contract.casualtyCount)) {
+    return reject('casualty_count_invalid', null, next());
+  }
+  for (const [index, modelId] of casualtyModelIds.entries()) {
+    const allowed = next();
+    if (!remaining.includes(modelId)) return reject('casualty_model_not_remaining', index, allowed);
+    if (!allowed.includes(modelId)) return reject('casualty_removal_order_invalid', index, allowed);
+    remaining = remaining.filter(id => id !== modelId);
+  }
+  return freezeDeep({valid:true, acceptedPrefix:[...casualtyModelIds],
+    legalNextModelIds:casualtyModelIds.length < contract.casualtyCount ? next() : [],
+    remainingChoices:remaining, casualtyCount:contract.casualtyCount,
+    complete:casualtyModelIds.length === contract.casualtyCount, trainingTruth:false});
+}
+
 function selectionBody(domain, casualtyModelIdsInput) {
   const casualtyModelIds = (casualtyModelIdsInput || []).map(String);
-  if (casualtyModelIds.length !== domain.casualtyCount
-    || new Set(casualtyModelIds).size !== casualtyModelIds.length
-    || casualtyModelIds.some((modelId) => (
-      !domain.targetLedger.activeModelIds.includes(modelId)))) {
-    fail("MULTI_MODEL_CASUALTY_SELECTION_STALE");
+  const inspection = inspectOfficialMultiModelCasualtySelectionV1({
+    targetPieceId:domain.targetLedger.targetPieceId,
+    selectionContract:domain.selectionContract, casualtyModelIds,
+  });
+  if (!inspection.valid) {
+    const error = new Error('MULTI_MODEL_CASUALTY_PARAMETERS_INVALID:' + inspection.code);
+    error.detail = inspection;
+    throw error;
   }
-  const contract = domain.selectionContract;
-  const graph = { modelEdges: clone(contract?.relevantModelEdges || []) };
-  let remainingModelIds = [...domain.targetLedger.activeModelIds];
-  for (const modelId of casualtyModelIds) {
-    const candidates = domain.targetEngaged
-      ? legalNextEngagedCasualties(
-        graph,
-        domain.targetLedger.targetPieceId,
-        remainingModelIds,
-      )
-      : remainingModelIds.filter((id) => domain.visibleModelIds.includes(id));
-    if (!candidates.includes(modelId)) {
-      fail("MULTI_MODEL_CASUALTY_SELECTION_STALE");
-    }
-    remainingModelIds = remainingModelIds.filter((id) => id !== modelId);
-  }
+  const graph = {modelEdges: clone(domain.selectionContract.relevantModelEdges)};
+  const remainingModelIds = domain.targetLedger.activeModelIds.filter(id => !casualtyModelIds.includes(id));
   const body = {
     schema: "starcraft_tmg_official_multi_model_casualty_selection_v1",
     targetPieceId: domain.targetLedger.targetPieceId,
@@ -288,18 +317,24 @@ function createDomain(input = {}) {
   }
   const edges = targetEdges(graph, ledger.targetPieceId, ledger.activeModelIds);
   const targetEngaged = edges.length > 0;
-  const casualtyCap = targetEngaged
+  const targetCasualtyCap = targetEngaged
     ? ledger.currentModels
     : visibleModelIds.length;
+  const maximumCasualties = input.maximumCasualties;
+  if (maximumCasualties !== undefined && (!Number.isSafeInteger(maximumCasualties) || maximumCasualties < 0)) {
+    fail('MULTI_MODEL_CASUALTY_MAXIMUM_INVALID');
+  }
+  const casualtyCap = maximumCasualties === undefined ? targetCasualtyCap : Math.min(targetCasualtyCap, maximumCasualties);
   const totalDamage = priorDamageMarker + incomingDamage;
   const uncappedCasualtyCount = Math.floor(totalDamage / hitPoints);
   const casualtyCount = Math.min(uncappedCasualtyCount, casualtyCap);
   const damageAfterCasualties = totalDamage - (casualtyCount * hitPoints);
   const targetDestroyed = casualtyCount === ledger.currentModels;
   const visibilityCapExhausted = !targetEngaged
-    && casualtyCount === casualtyCap
-    && casualtyCap < ledger.currentModels;
-  const discardRemainder = targetDestroyed || visibilityCapExhausted;
+    && casualtyCount === targetCasualtyCap
+    && targetCasualtyCap < ledger.currentModels;
+  const maximumExhausted = maximumCasualties !== undefined && casualtyCount === maximumCasualties;
+  const discardRemainder = targetDestroyed || visibilityCapExhausted || maximumExhausted;
   const postDamageMarker = discardRemainder ? 0 : damageAfterCasualties;
   const discardedOverflowDamage = discardRemainder ? damageAfterCasualties : 0;
   const candidateCount = targetEngaged
@@ -371,6 +406,7 @@ function createDomain(input = {}) {
     visibilityIgnored: targetEngaged,
     visibleModelIds,
     casualtyCap,
+    ...(maximumCasualties !== undefined ? { maximumCasualties, maximumExhausted } : {}),
     uncappedCasualtyCount,
     casualtyCount,
     postDamageMarker,

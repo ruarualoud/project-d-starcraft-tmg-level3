@@ -1,0 +1,34 @@
+{
+  "revision": "official-20261124-storm-marker-v3",
+  "raven": {
+    "widthMm": 100,
+    "depthMm": 100,
+    "horizontalArmDepthMm": null,
+    "verticalArmWidthMm": null,
+    "sourceUrls": [
+      "https://firestore.googleapis.com/v1/projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/system_changelogs/uCBa37ipCfRcBLkdfyId",
+      "https://www.reddit.com/r/StarCraftTMG/comments/1x2btav/the_raven_stand_looks_unsafe/"
+    ]
+  },
+  "stormMarker": {
+    "diameterMm": 32,
+    "sourceUrls": [
+      "https://firestore.googleapis.com/v1/projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/system_changelogs/uCBa37ipCfRcBLkdfyId"
+    ],
+    "measurementKind": "official_published_dimension",
+    "evidenceRef": "build/ticket-28-terran-wave3-20261117-v1/raven-detection-railguns/official-geometry-lookup-20261117/wave3-bases-official-news.json",
+    "evidenceSha256": "c5fe1cf4b776d445a392c0a9b09f81c137f018913dcf87c9609f18741044a5cb"
+  },
+  "stormBlast": {
+    "selected": "community_5inch",
+    "diametersMm": {
+      "community_5inch": 127,
+      "community_120mm": 120
+    },
+    "sourceUrls": [
+      "https://firestore.googleapis.com/v1/projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/system_changelogs/uCBa37ipCfRcBLkdfyId",
+      "https://www.reddit.com/r/StarCraftTMG/comments/1y26o4g/psionic_storm_template_size/",
+      "https://www.reddit.com/r/StarCraftTMG/comments/1xzvcl1/template_sizes/"
+    ]
+  }
+}

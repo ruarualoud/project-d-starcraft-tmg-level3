@@ -4,13 +4,26 @@ import {hashStarcraftTmgContract as hash} from '../authoritative-engine/referee-
 import {rosterPendingQuestionWorkV1} from './roster-review-data-questions-v1.mjs';
 import {rosterSourceReviewRepairStageV1} from './roster-experiment-source-repair-v1.mjs';
 import {rosterWorkflowNoProgressReturnV1} from './roster-workflow-graph-v1.mjs';
+import {rosterComparisonClosureErrorsV1} from './roster-comparison-closure-v1.mjs';
 export async function resolveRosterWorkflowFrontierSettlementV1({state,frontier,response,outcome,result,readArtifact}){
   // This choice belongs to the existing design author/preflight, not a request
   // to reinterpret the unchanged old question as answered.
   if(result?.value?.comparisonDesignHandoff?.kind==='comparison_redesign_requested')return null;
+  // The independent closure reviewer owns this request. Returning the same
+  // missing measurements to the fact owner would restart the declined study.
+  if(result?.value?.comparisonClosureHandoff?.kind==='comparison_closure_requested')return null;
   const decision=result?.value?.decisions?.[0];
   if(outcome?.applied!==false||!['retain','retained'].includes(outcome.status)
     ||!['retain','record_facts'].includes(decision?.disposition))return null;
+  // Also protect cold queues made by the previous validator. Read only the
+  // original delivered contract; never infer approval, rewrite the paid reply,
+  // or impose a comparison on a decision that was not assigned one.
+  const call=response.operationState?.calls?.find(c=>c.replyRef===result.value.originalReplyRef);
+  if(call?.requestRef){
+    const request=await readArtifact(call.requestRef);
+    const contract=request.promptNodes?.find(n=>n.kind==='comparison_closure_contract');
+    if(rosterComparisonClosureErrorsV1({contract,decision}).some(e=>e.code==='comparison_retention_requires_resolution'))return null;
+  }
   const allSettled=decision.requiredData?.length===0&&!rosterPendingQuestionWorkV1(decision).authorDecisions.length;
   const owner=state.work.find(w=>w.id===frontier.investigationOwnerId);
   const ownerValue=owner?.resultRef?(await readArtifact(owner.resultRef)).value:null;
@@ -24,9 +37,14 @@ export async function resolveRosterWorkflowFrontierSettlementV1({state,frontier,
     // whether that choice answers its question. Never silently authorize a new
     // inquiry or use this path to bypass a source-interpretation progress fence.
     const questions=frontier.inputs.investigationFrontier?.value?.unresolvedQuestions;
+    const assignedAnswered=questions?.length&&questions.every(question=>{
+      const answers=(decision.dataQuestions??[]).filter(item=>item.question===question);
+      return answers.length===1&&answers[0].classification==='answered_fact'
+        &&answers[0].publicReason?.trim()&&answers[0].evidenceNumbers?.length;
+    });
     if(response.id!==frontier.id||decision.nextInvestigation!==null
-      ||ownerValue?.experimentConclusion?.status!=='strategy_required'&&!noProgressReturn
-      ||!questions?.length||!allSettled&&!decision.decidedHere?.length)return null;
+      ||ownerValue?.experimentConclusion?.status!=='strategy_required'&&!noProgressReturn&&!assignedAnswered
+      ||!questions?.length||!allSettled&&!decision.decidedHere?.length&&!assignedAnswered)return null;
     return {kind:'scoped_strategy_response',sameSourceReviewRequest:null,
       scopedStrategyReturn:{version:1,originalGoalId:frontier.investigationFrontierOf,
         originalOwnerId:owner.id,originalResultRef:owner.resultRef,
@@ -34,6 +52,7 @@ export async function resolveRosterWorkflowFrontierSettlementV1({state,frontier,
         ...(noProgressReturn?{closedNoProgressMethod:true,stoppedWorkId:noProgressReturn.stoppedWorkId,
           stopReportRef:noProgressReturn.reportRef,investigationReauthorized:false}:{}),
         originalQuestions:structuredClone(questions),factsApproved:false,
+        assignedQuestionsReportedAnswered:Boolean(assignedAnswered),globalQuestionsSettled:allSettled,
         questionResolutionGranted:false,parentReviewStillRequired:true,
         instruction:'The author has made an explicit local choice and requested no new investigation. This is a CONTROL RETURN, not approval of the choice or factual closure. Reconcile that choice with your original question and actual sources. A declined measurement is not a completed experiment; an asserted profile equivalence is not a Native proof. Preserve necessary unanswered predicates and the author\'s full pending ledger. If the choice cannot satisfy the original obligation, identify the remaining conflict rather than certifying it. Independent source/question-coverage review and final release remain mandatory; no successful tool is replayed and no review counter is reset.'}};
   }

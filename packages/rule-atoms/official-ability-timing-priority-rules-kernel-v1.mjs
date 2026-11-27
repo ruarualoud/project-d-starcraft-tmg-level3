@@ -244,6 +244,30 @@ export function resolveOfficialEndOfRoundEffectOrderV1(input = {}) {
   return freezeDeep({ ...body, resultHash: hashStarcraftTmgContract(body) });
 }
 
+// The owning runtime supplies the priority side fixed by its own rule.
+// Only unresolved, currently eligible effects enter this projection.
+export function resolveOfficialNextControllerEffectGroupV1(input = {}) {
+  const sides = exactTwoSides(input.playerSideKeys, "SERIAL_EFFECT_ORDER_TWO_PLAYERS_REQUIRED");
+  const priority = input.prioritySideKey;
+  if (!sides.includes(priority) || !Array.isArray(input.pendingEffects)) {
+    fail("SERIAL_EFFECT_ORDER_PRIORITY_AND_PENDING_REQUIRED");
+  }
+  const ids = new Set();
+  for (const effect of input.pendingEffects) {
+    const effectId = nonEmpty(effect?.effectId, "SERIAL_EFFECT_ORDER_EFFECT_INVALID");
+    if (ids.has(effectId) || !sides.includes(effect.controllerSideKey)) {
+      fail("SERIAL_EFFECT_ORDER_EFFECT_INVALID", effectId);
+    }
+    ids.add(effectId);
+  }
+  const nextSide = [priority, sides.find(side => side !== priority)].find(
+    side => input.pendingEffects.some(effect => effect.controllerSideKey === side),
+  );
+  return freezeDeep({ controllerSideKey: nextSide ?? null,
+    availableEffectIds: input.pendingEffects.filter(effect => effect.controllerSideKey === nextSide)
+      .map(effect => effect.effectId) });
+}
+
 export function certifyOfficialAbilityTimingPriorityPlanV1(input = {}) {
   const plan = input.plan; const procedureKind = String(input.procedureKind || "");
   const timingBundle = input.timingDataBundle; const abilityBundle = input.abilityDataBundle;

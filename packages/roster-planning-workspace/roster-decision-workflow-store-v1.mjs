@@ -1,5 +1,5 @@
-// One workspace Run owns this store. Small checkpoints reference immutable
-// payloads; neither polling nor each local role serialises the entire history.
+// One workspace Run owns this store. Immutable payloads use content addresses;
+// full workflow checkpoints capture bytes once before ordered atomic publication.
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import {createHash,randomUUID} from 'node:crypto';
@@ -21,16 +21,25 @@ async function publishTemporaryFile(temp,destination,bytes) {
 export function createRosterDecisionWorkflowStoreV1({directory}) {
   const root=path.resolve(directory),payloads=path.join(root,'artifacts');
   const stateFile=path.join(root,'workflow.json');
+  async function persistCheckpoint(bytes) {
+    await fs.mkdir(root,{recursive:true});
+    const temp=path.join(root,`checkpoint-${randomUUID()}.tmp`);
+    await publishTemporaryFile(temp,stateFile,bytes);
+  }
   return {
     async load() {
       try{return JSON.parse(await fs.readFile(stateFile,'utf8'));}
       catch(error){if(error.code==='ENOENT')return null;throw error;}
     },
-    async save(state) {
+    // Capture before entering the write queue. The immutable string owns the
+    // checkpoint; later state changes cannot alter it or retain a second tree.
+    prepareCheckpoint(state) {
       const bytes=JSON.stringify(state);
-      await fs.mkdir(root,{recursive:true});
-      const temp=path.join(root,`checkpoint-${randomUUID()}.tmp`);
-      await publishTemporaryFile(temp,stateFile,bytes);
+      if(bytes===undefined)throw Error('ROSTER_WORKFLOW_UNSERIALIZABLE_CHECKPOINT');
+      return ()=>persistCheckpoint(bytes);
+    },
+    async save(state) {
+      await persistCheckpoint(JSON.stringify(state));
     },
     async put(value) {
       const bytes=JSON.stringify(value);

@@ -13,6 +13,7 @@ import {
 import { AppState, Platform } from "react-native";
 import * as Linking from "expo-linking";
 import NetInfo from "@react-native-community/netinfo";
+import { createStarcraftTmgHostedPhysicalClientV1, createStarcraftTmgProductRoomKeyClientV1, createStarcraftTmgLearningProductClientV1 } from '../../../../packages/client-domain/client-domain-v1.mjs';
 
 import {
   createStarcraftTmgExpoClientRuntime,
@@ -206,6 +207,9 @@ interface Level3ClientDomainContextValue {
   initialRoomUrl: InitialRoomUrlView;
   secureProvider: StarcraftTmgSecureProviderView | null;
   companionProduct: StarcraftTmgCompanionProductClient;
+  hostedPhysical: { operate(taskId: string, operation: 'delegate' | 'complete' | 'dispute', reason?: string): Promise<any> };
+  learningProduct: { request(method: 'GET'|'POST', suffix?: string, body?: unknown): Promise<any> };
+  productRoomKey: { read(): Promise<any>; replace(key: string): Promise<any>; revoke(): Promise<any> };
   bindRoom(input: BindRoomInput): Promise<StarcraftTmgClientResult>;
   ingestRoomUrl(url: string): Promise<RoomAccessIngressResult>;
   dispatch(intent: StarcraftTmgClientIntent): Promise<StarcraftTmgClientResult>;
@@ -345,6 +349,15 @@ export function Level3ClientDomainProvider({ children }: PropsWithChildren) {
     });
   }
   const companionProduct = companionProductRef.current;
+  const hostedPhysical = useMemo(() => createStarcraftTmgHostedPhysicalClientV1({
+    clientDomain, baseUrl: process.env.EXPO_PUBLIC_STARCRAFT_TMG_API_ORIGIN || '',
+  }), [clientDomain]);
+  const learningProduct = useMemo(() => createStarcraftTmgLearningProductClientV1({
+    clientDomain, baseUrl: process.env.EXPO_PUBLIC_STARCRAFT_TMG_API_ORIGIN || '',
+  }), [clientDomain]);
+  const productRoomKey = useMemo(() => createStarcraftTmgProductRoomKeyClientV1({
+    clientDomain, baseUrl: process.env.EXPO_PUBLIC_STARCRAFT_TMG_API_ORIGIN || '',
+  }), [clientDomain]);
   const [roomAccess, setRoomAccess] =
     useState<RoomAccessIngressView>(INITIAL_ROOM_ACCESS);
   const [initialRoomUrl, setInitialRoomUrl] = useState<InitialRoomUrlView>({
@@ -387,6 +400,46 @@ export function Level3ClientDomainProvider({ children }: PropsWithChildren) {
     () => projectStarcraftTmgExpoConnection(view),
     [view],
   );
+
+  useEffect(() => {
+    const roomId = view.roomProjection?.room?.roomId;
+    if (!roomId?.startsWith('product-') || !connection.online || !connection.visible) return;
+    let stopped = false;
+    let timer: ReturnType<typeof setTimeout>;
+    let controller: AbortController | null = null;
+    const poll = async () => {
+      try {
+        const current = clientDomain.read();
+        if (current.phase !== 'ready' || current.pendingPreview
+          || current.roomProjection?.room?.roomId !== roomId) return;
+        controller = new AbortController();
+        const timeout = setTimeout(() => controller?.abort(), 15_000);
+        let version;
+        try {
+          const response = await fetch(`${process.env.EXPO_PUBLIC_STARCRAFT_TMG_API_ORIGIN || ''}/starcraft-tmg-level3/product/v1/rooms/${encodeURIComponent(roomId)}/revision`,
+            { signal: controller.signal, headers: { accept: 'application/json' } });
+          if (!response.ok) return;
+          version = await response.json();
+        } finally { clearTimeout(timeout); }
+        const latest = clientDomain.read();
+        if (!stopped && version.ok === true && version.roomId === roomId
+          && Number.isSafeInteger(version.stateRevision)
+          && latest.phase === 'ready' && !latest.pendingPreview
+          && latest.roomProjection?.room?.roomId === roomId
+          && version.stateRevision > latest.roomProjection.room.stateRevision) {
+          await clientDomain.dispatch({ type: 'refresh' });
+        }
+      } catch {
+        // A failed version probe does not replace the last verified board or
+        // submit/retry an action. The next foreground probe can recover it.
+      } finally {
+        controller = null;
+        if (!stopped) timer = setTimeout(() => void poll(), 5_000);
+      }
+    };
+    void poll();
+    return () => { stopped = true; clearTimeout(timer); controller?.abort(); };
+  }, [clientDomain, view.roomProjection?.room?.roomId, connection.online, connection.visible]);
 
   const bindRoom = useCallback(
     async ({ roomId, locale }: BindRoomInput) => {
@@ -648,6 +701,9 @@ export function Level3ClientDomainProvider({ children }: PropsWithChildren) {
       initialRoomUrl,
       secureProvider,
       companionProduct,
+      hostedPhysical,
+      productRoomKey,
+      learningProduct,
       bindRoom,
       ingestRoomUrl,
       dispatch,
@@ -661,6 +717,9 @@ export function Level3ClientDomainProvider({ children }: PropsWithChildren) {
       initialRoomUrl,
       secureProvider,
       companionProduct,
+      hostedPhysical,
+      productRoomKey,
+      learningProduct,
       bindRoom,
       ingestRoomUrl,
       dispatch,

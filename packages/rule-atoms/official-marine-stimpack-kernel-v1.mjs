@@ -1,3 +1,4 @@
+import { resolveOfficialNonLethalDamageV1 } from './official-non-lethal-damage-rules-kernel-v1.mjs';
 import { isDeepStrictEqual } from "node:util";
 
 import { hashStarcraftTmgContract } from
@@ -215,26 +216,8 @@ function resolveNonLethalDamage(input = {}) {
   if (amount !== STIMPACK_SOURCE.nonLethalDamage) {
     fail("STIMPACK_NON_LETHAL_SOURCE_VALUE_MISMATCH");
   }
-  const body = {
-    schema: "starcraft_tmg_official_non_lethal_damage_resolution_v1",
-    targetPieceId,
-    targetModelId,
-    abilityResolutionHash,
-    priorDamageMarker,
-    nonLethalDamage: amount,
-    postDamageMarker: priorDamageMarker + amount,
-    targetHitPoints,
-    totalDamageMayMeetOrExceedHitPoints: true,
-    casualtyRemovalDeferredUntilLaterStandardDamage: true,
-    targetDestroyed: false,
-    casualtyModelIds: [],
-    discardedOverflowDamage: 0,
-    trainingTruth: false,
-  };
-  return freezeDeep({
-    ...body,
-    nonLethalResolutionHash: hashStarcraftTmgContract(body),
-  });
+  return resolveOfficialNonLethalDamageV1({ targetPieceId, targetModelId, abilityResolutionHash,
+    priorDamageMarker, amount, targetHitPoints });
 }
 
 function createPrecisionGrant(input = {}) {

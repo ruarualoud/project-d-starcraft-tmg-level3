@@ -4,6 +4,7 @@ import { evaluateOfficialBaseMeasurementV1 } from
   "./official-model-base-geometry-rules-kernel-v1.mjs";
 import { resolveOfficialCurrentProductPieceCapabilityV1 } from
   "../product-composition/official-current-product-state-facts-v1.mjs";
+import { officialStructureDefinitionForPieceV1 } from './official-structure-rules-v1.mjs';
 
 export const OFFICIAL_CONTEXTUAL_SUPPLY_PROJECTION_VERSION = "1.1.0";
 
@@ -139,16 +140,21 @@ export function projectOfficialContextualSupplyValueV1(input = {}) {
   let modifier = 0;
   let replacement = null;
   let floor = 0;
+  const structure = officialStructureDefinitionForPieceV1(state, piece);
+  if (structure) {
+    replacement = 0;
+    applicableDefinitionIds.push(structure.definitionId);
+  }
   const sourceRoutes = routes.filter((route) => route.recordKey === piece.officialUnitRecordKey
     && fieldedFeature(piece, route));
-  if (context === "supply_pool_calculation") {
+  if (!structure && context === "supply_pool_calculation") {
     const zero = sourceRoutes.find((route) => route.effectKind === "supply_pool_zero");
     if (zero && livePiece(piece)) {
       replacement = 0;
       applicableDefinitionIds.push(zero.definitionId);
     }
   }
-  if (["mission_marker_control", "objective_completion", "disengage_check"].includes(context)) {
+  if (!structure && ["mission_marker_control", "objective_completion", "disengage_check"].includes(context)) {
     const commander = resolveOfficialCurrentProductPieceCapabilityV1(state, {
       pieceId: piece.id,
       capability: "commander_contextual_supply_bonus",
@@ -158,7 +164,7 @@ export function projectOfficialContextualSupplyValueV1(input = {}) {
       applicableDefinitionIds.push(...commander.sources.map((entry) => entry.definitionId));
     }
   }
-  if (["mission_marker_control", "objective_completion"].includes(context)) {
+  if (!structure && ["mission_marker_control", "objective_completion"].includes(context)) {
     const contextualEffects = (piece.officialAbilityEffects || []).filter((effect) => (
       effect.effectKind === "contextual_supply_bonus"));
     if (contextualEffects.some((effect) => !effectValid(effect, piece))) {

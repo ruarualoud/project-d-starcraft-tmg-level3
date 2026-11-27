@@ -1,0 +1,17 @@
+{
+  "schema": "starcraft_tmg_official_force_wall_assembly_reference_v1",
+  "normalizedDatasetHash": "718057e86ac4f93a72c06b8e4d8f4d851ba33ee04c9dddea33e966eda9fe6685",
+  "sourceSnapshotHash": "4412c17faaebaff04b117d1ddc666d1cdd939eca420a22f861c7c944f1179c8c",
+  "recordKey": "army_units:tassadar",
+  "abilityName": "Force Wall",
+  "sourceRef": "build/ticket-28-wave3-source-candidate-20261112-v1/raw/StarCraft-Protoss-Tassadar_EN.pdf",
+  "sourceUrl": "https://starcraft-tmg.com/files/downloads/StarCraft-Protoss-Tassadar_EN.pdf",
+  "sourceContentHash": "4fd38c341f5873c23b5ae0f35719f426d303442715146afa6d3b58c097ac0686",
+  "sourceByteLength": 8689882,
+  "dimensionPage": 3,
+  "assemblyPage": 10,
+  "baseShape": "oval",
+  "baseWidthMm": 100,
+  "baseDepthMm": 40,
+  "referenceHash": "a3cedfd80095f37ca10c9cfe344fe6d70a1cb964a9d0bb32e7e8f848abbf8942"
+}
