@@ -1,0 +1,283 @@
+{
+  "schema": "starcraft_tmg_wave4_ability_wiring_progress_v1",
+  "inventoryRef": "content/source-releases/wave4-20261127/abilities/ability-diff.json",
+  "inventoryHash": "c922fc85ecafdbe88597dae454b3263727f9732d12f639d297fbabdec87a7543",
+  "sourceReviewHash": "95d69e9f69a7b162c9b62525c2601b3567feddbbe60d161f5fbe55fff5802c1c",
+  "analysis": {
+    "mapped": 156,
+    "total": 156,
+    "records": 38,
+    "requiredNewAtoms": 18,
+    "withdrawnOnlyCandidateAtoms": 3,
+    "implementedNewGameAtoms": 0
+  },
+  "sourceCompilation": {
+    "exactReactionRevisions": 11,
+    "originalDefinitionCount": 556,
+    "scope": "explicit selection with full denominator retained",
+    "fullProductionAdmission": false
+  },
+  "componentGate": {
+    "passed": 7,
+    "sourceDefinitionIds": [
+      "card:armory/vehicle-plating-any@2",
+      "card:engineering_bay/infantry-armor-any@2",
+      "card:evolution_chamber/carapace-any@2",
+      "card:forge/ground-armor-any@2",
+      "card:power_field/guardian-shell-any@2",
+      "card:robotics_facility/plasma-shields-any@2",
+      "card:vanadium_plating/crystalline-alloy-any@2"
+    ],
+    "signedReceipts": 14,
+    "evidenceRef": "docs/development/wave4/evidence/armour-reaction-components.public.json",
+    "triggerScope": "declared armour roll, not native attack producer",
+    "fullAttackOwnerVerified": false
+  },
+  "formalMatchGate": {
+    "passedDefinitions": 0,
+    "webAcceptance": "not_run"
+  },
+  "sourceHeldDefinitions": [
+    {
+      "definitionId": "unit:alarak/bane-blades-cobmbat-phase@1",
+      "reasons": [
+        "EXPLICIT_SOURCE_PHASE_UNSUPPORTED"
+      ]
+    },
+    {
+      "definitionId": "unit:archon/stand-as-one-any-phase@1",
+      "reasons": [
+        "ARCHON_WITHDRAWN_FROM_LIVE_OFFICIAL_COLLECTION"
+      ]
+    },
+    {
+      "definitionId": "unit:archon/wip-any-phase@1",
+      "reasons": [
+        "ARCHON_WITHDRAWN_FROM_LIVE_OFFICIAL_COLLECTION"
+      ]
+    },
+    {
+      "definitionId": "unit:archon/psionic-entity-any-phase@1",
+      "reasons": [
+        "ARCHON_WITHDRAWN_FROM_LIVE_OFFICIAL_COLLECTION"
+      ]
+    },
+    {
+      "definitionId": "unit:archon/wip2-any-phase@1",
+      "reasons": [
+        "ARCHON_WITHDRAWN_FROM_LIVE_OFFICIAL_COLLECTION"
+      ]
+    },
+    {
+      "definitionId": "unit:archon/burning-radiance-any-phase@1",
+      "reasons": [
+        "ARCHON_WITHDRAWN_FROM_LIVE_OFFICIAL_COLLECTION"
+      ]
+    },
+    {
+      "definitionId": "unit:archon/wip3-any-phase@1",
+      "reasons": [
+        "ARCHON_WITHDRAWN_FROM_LIVE_OFFICIAL_COLLECTION"
+      ]
+    },
+    {
+      "definitionId": "unit:archon/khaydarin-amulet-any-phase@1",
+      "reasons": [
+        "ARCHON_WITHDRAWN_FROM_LIVE_OFFICIAL_COLLECTION"
+      ]
+    },
+    {
+      "definitionId": "unit:archon/feedback-movement-phase@1",
+      "reasons": [
+        "ARCHON_WITHDRAWN_FROM_LIVE_OFFICIAL_COLLECTION"
+      ]
+    },
+    {
+      "definitionId": "unit:archon/indomitable-assault-phase@1",
+      "reasons": [
+        "ARCHON_WITHDRAWN_FROM_LIVE_OFFICIAL_COLLECTION"
+      ]
+    },
+    {
+      "definitionId": "unit:archon/psionic-shockwave-assault-phase@1",
+      "reasons": [
+        "ARCHON_WITHDRAWN_FROM_LIVE_OFFICIAL_COLLECTION"
+      ]
+    },
+    {
+      "definitionId": "unit:archon/devastating-charge-assault-phase@1",
+      "reasons": [
+        "ARCHON_WITHDRAWN_FROM_LIVE_OFFICIAL_COLLECTION"
+      ]
+    },
+    {
+      "definitionId": "unit:archon/mak-thor-idan-assault-phase@1",
+      "reasons": [
+        "ARCHON_WITHDRAWN_FROM_LIVE_OFFICIAL_COLLECTION"
+      ]
+    },
+    {
+      "definitionId": "unit:archon/wip-4-assault-phase@1",
+      "reasons": [
+        "ARCHON_WITHDRAWN_FROM_LIVE_OFFICIAL_COLLECTION"
+      ]
+    },
+    {
+      "definitionId": "unit:archon/power-overwhelming-combat-phase@1",
+      "reasons": [
+        "ARCHON_WITHDRAWN_FROM_LIVE_OFFICIAL_COLLECTION"
+      ]
+    },
+    {
+      "definitionId": "unit:archon/psychic-ripple-combat-phase@1",
+      "reasons": [
+        "ARCHON_WITHDRAWN_FROM_LIVE_OFFICIAL_COLLECTION"
+      ]
+    },
+    {
+      "definitionId": "unit:infested_goliath/ares-class-targeting-system-any-phase@1",
+      "reasons": [
+        "NATIVE_ZERG_CP_RESOURCE_POLICY_UNRESOLVED"
+      ]
+    },
+    {
+      "definitionId": "unit:infested_goliath/target-lock-movement-phase@1",
+      "reasons": [
+        "NATIVE_ZERG_CP_RESOURCE_POLICY_UNRESOLVED"
+      ]
+    },
+    {
+      "definitionId": "unit:infested_goliath/indomitable-assault-phase@1",
+      "reasons": [
+        "NATIVE_ZERG_CP_RESOURCE_POLICY_UNRESOLVED"
+      ]
+    },
+    {
+      "definitionId": "unit:infested_goliath/autocannon-assault-phase@1",
+      "reasons": [
+        "NATIVE_ZERG_CP_RESOURCE_POLICY_UNRESOLVED"
+      ]
+    },
+    {
+      "definitionId": "unit:infested_goliath/underbelly-machine-gun-assault-phase@1",
+      "reasons": [
+        "NATIVE_ZERG_CP_RESOURCE_POLICY_UNRESOLVED"
+      ]
+    },
+    {
+      "definitionId": "unit:infested_goliath/hellfire-missiles-assault-phase@1",
+      "reasons": [
+        "NATIVE_ZERG_CP_RESOURCE_POLICY_UNRESOLVED"
+      ]
+    },
+    {
+      "definitionId": "unit:infested_goliath/scatter-missiles-assault-phase@1",
+      "reasons": [
+        "NATIVE_ZERG_CP_RESOURCE_POLICY_UNRESOLVED"
+      ]
+    },
+    {
+      "definitionId": "unit:infested_goliath/haywire-missiles-assault-phase@1",
+      "reasons": [
+        "NATIVE_ZERG_CP_RESOURCE_POLICY_UNRESOLVED"
+      ]
+    },
+    {
+      "definitionId": "unit:infested_goliath/devastating-charge-assault-phase@1",
+      "reasons": [
+        "NATIVE_ZERG_CP_RESOURCE_POLICY_UNRESOLVED"
+      ]
+    },
+    {
+      "definitionId": "unit:infested_goliath/stomp-combat-phase@1",
+      "reasons": [
+        "NATIVE_ZERG_CP_RESOURCE_POLICY_UNRESOLVED"
+      ]
+    },
+    {
+      "definitionId": "unit:infested_siege_tank/large-any-phase@1",
+      "reasons": [
+        "NATIVE_ZERG_CP_RESOURCE_POLICY_UNRESOLVED"
+      ]
+    },
+    {
+      "definitionId": "unit:infested_siege_tank/heavy-plating-any-phase@1",
+      "reasons": [
+        "NATIVE_ZERG_CP_RESOURCE_POLICY_UNRESOLVED"
+      ]
+    },
+    {
+      "definitionId": "unit:infested_siege_tank/mode-transformation-movement-phase@1",
+      "reasons": [
+        "NATIVE_ZERG_CP_RESOURCE_POLICY_UNRESOLVED"
+      ]
+    },
+    {
+      "definitionId": "unit:infested_siege_tank/coordinated-strike-movement-phase@1",
+      "reasons": [
+        "NATIVE_ZERG_CP_RESOURCE_POLICY_UNRESOLVED"
+      ]
+    },
+    {
+      "definitionId": "unit:infested_siege_tank/twin-cannon-assault-phase@1",
+      "reasons": [
+        "NATIVE_ZERG_CP_RESOURCE_POLICY_UNRESOLVED"
+      ]
+    },
+    {
+      "definitionId": "unit:infested_siege_tank/shock-cannon-assault-phase@1",
+      "reasons": [
+        "NATIVE_ZERG_CP_RESOURCE_POLICY_UNRESOLVED"
+      ]
+    },
+    {
+      "definitionId": "unit:infested_siege_tank/indomitable-assault-phase@1",
+      "reasons": [
+        "NATIVE_ZERG_CP_RESOURCE_POLICY_UNRESOLVED"
+      ]
+    },
+    {
+      "definitionId": "unit:infested_siege_tank/point-blank-assault-phase@1",
+      "reasons": [
+        "NATIVE_ZERG_CP_RESOURCE_POLICY_UNRESOLVED"
+      ]
+    },
+    {
+      "definitionId": "unit:infested_siege_tank/aftershock-rounds-assault-phase@1",
+      "reasons": [
+        "NATIVE_ZERG_CP_RESOURCE_POLICY_UNRESOLVED"
+      ]
+    },
+    {
+      "definitionId": "unit:infested_siege_tank/shaped-blast-assault-phase@1",
+      "reasons": [
+        "NATIVE_ZERG_CP_RESOURCE_POLICY_UNRESOLVED"
+      ]
+    },
+    {
+      "definitionId": "unit:infested_siege_tank/smart-shells-assault-phase@1",
+      "reasons": [
+        "NATIVE_ZERG_CP_RESOURCE_POLICY_UNRESOLVED"
+      ]
+    },
+    {
+      "definitionId": "unit:infested_siege_tank/devastating-charge-assault-phase@1",
+      "reasons": [
+        "NATIVE_ZERG_CP_RESOURCE_POLICY_UNRESOLVED"
+      ]
+    },
+    {
+      "definitionId": "unit:infested_siege_tank/rolling-over-combat-phase@1",
+      "reasons": [
+        "NATIVE_ZERG_CP_RESOURCE_POLICY_UNRESOLVED"
+      ]
+    }
+  ],
+  "next": [
+    "Integrate seven armour reactions with actual attack producers, armour roll and successor ownership",
+    "Verify Observer/Overseer charge, Veil of Shadows placement, Brood Instinct Evade and three Creep builder subjects",
+    "Implement the eighteen reviewed new contracts in dependency order; resolve source-held records before admission"
+  ],
+  "modelCalls": 0,
+  "trainingTruth": false
+}

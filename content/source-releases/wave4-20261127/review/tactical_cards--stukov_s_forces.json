@@ -1,0 +1,106 @@
+{
+  "name": "projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/tactical_cards/stukov_s_forces",
+  "fields": {
+    "slots": {
+      "mapValue": {
+        "fields": {
+          "Support": {
+            "integerValue": "0"
+          },
+          "Core": {
+            "integerValue": "4"
+          },
+          "Air": {
+            "integerValue": "0"
+          },
+          "Hero": {
+            "integerValue": "1"
+          },
+          "Elite": {
+            "integerValue": "2"
+          }
+        }
+      }
+    },
+    "isFactionCard": {
+      "booleanValue": true
+    },
+    "factionTags": {
+      "arrayValue": {
+        "values": [
+          {
+            "stringValue": "Stukov's Forces"
+          }
+        ]
+      }
+    },
+    "resource": {
+      "integerValue": "1"
+    },
+    "boosts": {
+      "arrayValue": {
+        "values": [
+          {
+            "mapValue": {
+              "fields": {
+                "name": {
+                  "stringValue": "Ashes of the UED"
+                },
+                "description": {
+                  "stringValue": "Ashes of the UED \u003cPassive\u003e \u003cAny Phase\u003e: During Army Building, you may include Units with the Terran Faction Tag and both Ground and Mechanical Combat Tags in your army. Those Units gain the Infested Combat Tag. Treat any CP cost for those Units' Special Abilities as BM. These Units cannot gain the BURROWED Status."
+                }
+              }
+            }
+          },
+          {
+            "mapValue": {
+              "fields": {
+                "name": {
+                  "stringValue": "Infestation"
+                },
+                "description": {
+                  "stringValue": "Infestation \u003cPassive\u003e \u003cAny Phase\u003e: During Army Building, select exactly one Virus Card and add it to your Army List, paying its listed cost (if any)."
+                }
+              }
+            }
+          },
+          {
+            "mapValue": {
+              "fields": {
+                "name": {
+                  "stringValue": "Hostile Incubation"
+                },
+                "description": {
+                  "stringValue": "Hostile Incubation \u003cActive\u003e \u003cMovement Phase\u003e: If there is no Friendly Infested Missile Turret on the battlefield, set a Friendly Infested Missile Turret Unit anywhere on the GROUND LEVEL of the battlefield more than 10\" away from any Enemy model. This Round, the Missile Turret is not eligible to use its Special Abilities (excluding Structure)."
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "faction": {
+      "stringValue": "Zerg"
+    },
+    "tags": {
+      "stringValue": "Stukov's Forces"
+    },
+    "timestamp": {
+      "timestampValue": "2026-11-24T10:29:15.222Z"
+    },
+    "cost": {
+      "integerValue": "0"
+    },
+    "isUnique": {
+      "booleanValue": true
+    },
+    "name": {
+      "stringValue": "Stukov's Forces"
+    },
+    "id": {
+      "stringValue": "stukov_s_forces"
+    }
+  },
+  "createTime": "2026-11-24T10:29:15.286757Z",
+  "updateTime": "2026-11-24T10:29:15.286757Z"
+}

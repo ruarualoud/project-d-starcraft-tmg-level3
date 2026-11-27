@@ -1,0 +1,137 @@
+{
+  "schema": "starcraft_tmg_wave4_source_review_v1",
+  "observedAt": "2026-11-27T11:13:58.857Z",
+  "frozenCandidateUnchanged": true,
+  "liveUnitCollection": {
+    "url": "https://firestore.googleapis.com/v1/projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/army_units?pageSize=1000",
+    "ref": "content/source-releases/wave4-20261127/review/army_units-current.json",
+    "sha256": "eec934f084eadf2589b5ca9c8b74677089a89ca129fb24572cd0868d6c84df0d",
+    "count": 59,
+    "nextPageToken": null,
+    "removed": [
+      "archon"
+    ],
+    "metadataStill": {
+      "unitsVersion": "98",
+      "cardsVersion": "88",
+      "rulesVersion": "50"
+    },
+    "otherFieldChanges": []
+  },
+  "directRecords": [
+    {
+      "id": "system_metadata/versions",
+      "url": "https://firestore.googleapis.com/v1/projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/system_metadata/versions",
+      "bytes": 384,
+      "sha256": "1376588acad85a4698e5887a685fff51fca93966b3f1a4355cc49c39f025974c",
+      "fieldsUnchanged": true
+    },
+    {
+      "id": "army_units/archon",
+      "url": "https://firestore.googleapis.com/v1/projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/army_units/archon",
+      "status": 404,
+      "bytes": 187,
+      "sha256": "ba7af6947cc900b272c791c82b9d59b25b7b76425cd748b84051f2352e19aedd",
+      "error": "Document \"projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/army_units/archon\" not found."
+    },
+    {
+      "id": "army_units/infested_goliath",
+      "url": "https://firestore.googleapis.com/v1/projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/army_units/infested_goliath",
+      "status": 200,
+      "bytes": 11383,
+      "sha256": "45e85e7c63c3ce72930f82ff882f1d621bcf64a8cded6c687ae7586fde9900f7",
+      "fieldsUnchanged": true
+    },
+    {
+      "id": "army_units/infested_siege_tank",
+      "url": "https://firestore.googleapis.com/v1/projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/army_units/infested_siege_tank",
+      "status": 200,
+      "bytes": 14697,
+      "sha256": "8c7deefaefb282c4c583e00ef377d45250f9eee61b8a19f4069a6293e1abff83",
+      "fieldsUnchanged": true
+    },
+    {
+      "id": "tactical_cards/stukov_s_forces",
+      "url": "https://firestore.googleapis.com/v1/projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/tactical_cards/stukov_s_forces",
+      "status": 200,
+      "bytes": 3122,
+      "sha256": "dc5d1a05f1ff11250979d416cbc2e3147161ca7c943421563ec92229bd907e36",
+      "fieldsUnchanged": true
+    }
+  ],
+  "officialPages": [
+    {
+      "url": "https://sc.starcraft-tmg.com",
+      "bytes": 19626,
+      "sha256": "648134ccbbe8f2630c9939c13c7a462b519a1fb7614c816f72d09b7a94aec5d5"
+    },
+    {
+      "url": "https://starcraft-tmg.com/downloads",
+      "bytes": 259655,
+      "sha256": "86fc303df00d0ac125870a1d54f01ffe08618c334f22f099b681237376bd91d7"
+    },
+    {
+      "url": "https://sc.starcraft-tmg.com/script.js",
+      "bytes": 20788,
+      "sha256": "5b35d5645991f9f2fd13a1d3a3a7668590129a98fc73f8efb95c994c70d8fbca"
+    },
+    {
+      "url": "https://sc.starcraft-tmg.com/modules/factions.js",
+      "bytes": 47461,
+      "sha256": "3b67bd5f04279ce77e0556a27be41340897156763ffd099a4c208cce9355946d"
+    },
+    {
+      "url": "https://sc.starcraft-tmg.com/modules/army_builder.js",
+      "bytes": 61745,
+      "sha256": "5c3514eaa8c7d07a93f69a80516facd65abbcc02259aafbcc62cb28457e0c00d"
+    }
+  ],
+  "clarifications": [
+    {
+      "id": "virus-card-group",
+      "status": "resolved",
+      "sourceUrl": "https://starcraft-tmg.com/news/rules/double-the-action-with-the-new-starcraft-tabletop-miniatures-game-2-player-starter-set",
+      "recordKeys": [
+        "tactical_cards:healing_pathogen",
+        "tactical_cards:weighted_pustule",
+        "tactical_cards:hungering_infestation"
+      ],
+      "decision": "These are the exactly-one Virus Card group; faction restriction and listed costs remain enforced."
+    },
+    {
+      "id": "archon-publication",
+      "status": "withdrawn_from_live_collection",
+      "recordKeys": [
+        "army_units:archon"
+      ],
+      "decision": "Retain all 15 frozen definitions for audit; admit none until a reviewed publication replaces the removed record."
+    },
+    {
+      "id": "native-infested-cp",
+      "status": "unresolved",
+      "recordKeys": [
+        "army_units:infested_goliath",
+        "army_units:infested_siege_tank"
+      ],
+      "decision": "Native Zerg variants still print CP. Ashes explicitly converts imported Terran units; do not invent a CP-to-BM override for these two native records."
+    },
+    {
+      "id": "alarak-phase-spelling",
+      "status": "unresolved",
+      "recordKeys": [
+        "army_units:alarak"
+      ],
+      "decision": "Bane Blades prints Cobmbat Phase. Keep raw source and block this definition from strict phase compilation pending explicit normalization or corrected source."
+    }
+  ],
+  "modelCalls": 0,
+  "officialVisualCheck": {
+    "url": "https://starcraft-tmg.com/files/scaled-thumbs/news/double-the-action-with-the-new-starcraft-tabletop-miniatures-game-2-player-starter-set/7%20w4%20-%20content%20-%2016x9.png.jpg/1920_1080.webp?ts=1795704275",
+    "sha256": "0fb32aba092c6df61d6324f104325cc0214e226c3d1f36e0b98a89a2c84c201a",
+    "byteLength": 204854,
+    "localRef": "build/wave4-web/source-review/alarak-official-card.webp",
+    "requestedCaption": "Alarak Hero Unit miniature and card",
+    "observedContent": "Two Slayer miniatures; no readable rule card",
+    "acceptedAsPhaseEvidence": false
+  }
+}

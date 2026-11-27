@@ -1,3 +1,4 @@
+import { WAVE4_REACTION_REVISIONS } from '../../content/source-releases/wave4-20261127/ability-review-v1.mjs';
 import { projectOfficialRangedFamilyModifiersV1 } from './official-ranged-family-projection-v1.mjs';
 import { OFFICIAL_OPTICAL_FLARE_DEFINITION_ID } from './official-targeted-active-ability-policy-v1.mjs';
 import { OFFICIAL_ANCESTRAL_WISDOM_DEFINITION_ID } from './official-ancestral-wisdom-payment-v1.mjs';
@@ -359,7 +360,7 @@ export const OFFICIAL_EVOLUTION_CARAPACE_ID = 'card:evolution_chamber/carapace-a
 
 export const ARTANIS_STAND_DEFINITION_ID = 'unit:artanis/hierarch-s-stand-assault-phase@1';
 export const ARTANIS_DASH_DEFINITION_ID = 'unit:artanis/lightning-dash-assault-phase@1';
-const REVIEWED_REACTION_COMPONENTS_V2 = Object.freeze({
+const LEGACY_REVIEWED_REACTION_COMPONENTS_V2 = Object.freeze({
   'card:overcharged_nexus/photon-overcharge-any@1': Object.freeze({
     recordKey:'tactical_cards:overcharged_nexus',sourceKind:'card_feature',resourceType:null,resourceCost:0,abilityName:'Photon Overcharge',
     sourceText:"Photon Overcharge <Reaction> <Any Phase>: Use when an Enemy Unit enters the battlefield from Reserves via a location other than its own Entry Edge. That Unit immediately suffers HITS 3 (1).",
@@ -644,6 +645,14 @@ const REVIEWED_REACTION_COMPONENTS_V2 = Object.freeze({
     sourceText: 'Veil of Shadows <Reaction> <Any Phase>: Use after a Friendly Unit resolves a PLACE effect. That Unit immediately resolves the HEAL (2) effect.',
     spec: Object.freeze({ effectKind: 'post_place_heal', triggerKind: 'after_place', heal: 2, effectDuration: 'immediate' }),
   }),
+});
+
+// New source revisions share the already-reviewed executable spec, while their
+// identity and exact source text remain independent from the frozen Wave3 rows.
+const REVIEWED_REACTION_COMPONENTS_V2 = Object.freeze({
+  ...LEGACY_REVIEWED_REACTION_COMPONENTS_V2,
+  ...Object.fromEntries(WAVE4_REACTION_REVISIONS.map(({ previousDefinitionId, definitionId, sourceText }) =>
+    [definitionId, Object.freeze({ ...LEGACY_REVIEWED_REACTION_COMPONENTS_V2[previousDefinitionId], sourceText })])),
 });
 
 function compileReviewedReactionRouteV2(definition) {

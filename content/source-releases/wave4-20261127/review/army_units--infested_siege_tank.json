@@ -1,0 +1,490 @@
+{
+  "name": "projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/army_units/infested_siege_tank",
+  "fields": {
+    "combatRange": {
+      "stringValue": "5"
+    },
+    "id": {
+      "stringValue": "infested_siege_tank"
+    },
+    "small": {
+      "mapValue": {
+        "fields": {
+          "models": {
+            "integerValue": "1"
+          },
+          "cost": {
+            "integerValue": "220"
+          },
+          "supply": {
+            "integerValue": "2"
+          }
+        }
+      }
+    },
+    "name": {
+      "stringValue": "Infested Siege Tank"
+    },
+    "unitType": {
+      "stringValue": "Elite"
+    },
+    "upgrades": {
+      "arrayValue": {
+        "values": [
+          {
+            "mapValue": {
+              "fields": {
+                "name": {
+                  "stringValue": "Large"
+                },
+                "linkedTo": {
+                  "stringValue": ""
+                },
+                "description": {
+                  "stringValue": "When this Unit's Leading Model moves, it cannot pass through physical gaps smaller than 3\" wide, regardless of its size. If the Leading Model's path of travel passes through, or any model in this Unit ends its movement on a Size 0 or Size 1 Impassible Terrain piece (excluding Tokens) during any movement action, that terrain piece is immediately removed from the game."
+                },
+                "activation": {
+                  "stringValue": "\u003cPassive\u003e"
+                },
+                "phase": {
+                  "stringValue": "Any Phase"
+                },
+                "costS": {
+                  "integerValue": "0"
+                },
+                "costL": {
+                  "integerValue": "0"
+                }
+              }
+            }
+          },
+          {
+            "mapValue": {
+              "fields": {
+                "name": {
+                  "stringValue": "Heavy Plating"
+                },
+                "linkedTo": {
+                  "stringValue": ""
+                },
+                "description": {
+                  "stringValue": "When this Unit resolves an Armour Roll, it gains TOUGH (1), provided it does not currently have the SIEGE MODE Status."
+                },
+                "activation": {
+                  "stringValue": "\u003cPassive\u003e"
+                },
+                "phase": {
+                  "stringValue": "Any Phase"
+                },
+                "costS": {
+                  "integerValue": "0"
+                },
+                "costL": {
+                  "integerValue": "0"
+                }
+              }
+            }
+          },
+          {
+            "mapValue": {
+              "fields": {
+                "name": {
+                  "stringValue": "Mode Transformation"
+                },
+                "linkedTo": {
+                  "stringValue": ""
+                },
+                "description": {
+                  "stringValue": "The active Unit gains or loses the SIEGE MODE Status.\nWhile this Unit has the SIEGE MODE Status, its Size characteristic is treated as if it was 3."
+                },
+                "activation": {
+                  "stringValue": "\u003cActive\u003e\n(1 Command Point)"
+                },
+                "phase": {
+                  "stringValue": "Movement Phase"
+                },
+                "costS": {
+                  "integerValue": "20"
+                },
+                "costL": {
+                  "integerValue": "20"
+                }
+              }
+            }
+          },
+          {
+            "mapValue": {
+              "fields": {
+                "name": {
+                  "stringValue": "Coordinated Strike"
+                },
+                "linkedTo": {
+                  "stringValue": ""
+                },
+                "description": {
+                  "stringValue": "Target a Friendly Non-Engaged Unit on the battlefield (Line of Sight is not required). When this Unit resolves a Ranged Attack using the Shock Cannon weapon profile this Round, it may choose to ignore the weapon's standard Range characteristic. If it does, it may target an Enemy Unit that is Within 8\" of, and Visible to, a model of the selected Friendly Unit, treating that model as the acting model."
+                },
+                "activation": {
+                  "stringValue": "\u003cActive\u003e\n(0 Command Point)"
+                },
+                "phase": {
+                  "stringValue": "Movement Phase"
+                },
+                "costS": {
+                  "integerValue": "20"
+                },
+                "costL": {
+                  "integerValue": "20"
+                }
+              }
+            }
+          },
+          {
+            "mapValue": {
+              "fields": {
+                "name": {
+                  "stringValue": "Twin Cannon"
+                },
+                "linkedTo": {
+                  "stringValue": "-"
+                },
+                "description": {
+                  "stringValue": "RANGE: 12 | TARGET: Ground | RoA: 8 | HIT: 3+ | DMG: 1\nSURGE: Armoured (D6)\n\nPIERCE Armoured (2)"
+                },
+                "activation": {
+                  "stringValue": ""
+                },
+                "phase": {
+                  "stringValue": "Assault Phase"
+                },
+                "costS": {
+                  "integerValue": "0"
+                },
+                "costL": {
+                  "integerValue": "0"
+                }
+              }
+            }
+          },
+          {
+            "mapValue": {
+              "fields": {
+                "name": {
+                  "stringValue": "Shock Cannon"
+                },
+                "linkedTo": {
+                  "stringValue": "-"
+                },
+                "description": {
+                  "stringValue": "RANGE: 18 | TARGET: Ground | RoA: BT+4 | HIT: 4+ | DMG: 1\nSURGE: Light, Armoured (BT)\n\nSIEGE MODE Status"
+                },
+                "activation": {
+                  "stringValue": ""
+                },
+                "phase": {
+                  "stringValue": "Assault Phase"
+                },
+                "costS": {
+                  "integerValue": "0"
+                },
+                "costL": {
+                  "integerValue": "0"
+                }
+              }
+            }
+          },
+          {
+            "mapValue": {
+              "fields": {
+                "name": {
+                  "stringValue": "Indomitable"
+                },
+                "linkedTo": {
+                  "stringValue": ""
+                },
+                "description": {
+                  "stringValue": "While Engaged, this Unit may target and be targeted by Unengaged Enemy Units. In both cases, the defending Unit gains an Evade Roll against those attacks."
+                },
+                "activation": {
+                  "stringValue": "\u003cPassive\u003e"
+                },
+                "phase": {
+                  "stringValue": "Assault Phase"
+                },
+                "costS": {
+                  "integerValue": "0"
+                },
+                "costL": {
+                  "integerValue": "0"
+                }
+              }
+            }
+          },
+          {
+            "mapValue": {
+              "fields": {
+                "name": {
+                  "stringValue": "Point Blank"
+                },
+                "linkedTo": {
+                  "stringValue": ""
+                },
+                "description": {
+                  "stringValue": "While this Unit has the SIEGE MODE Status, it cannot target Enemy Units it is Engaged with."
+                },
+                "activation": {
+                  "stringValue": "\u003cPassive\u003e"
+                },
+                "phase": {
+                  "stringValue": "Assault Phase"
+                },
+                "costS": {
+                  "integerValue": "0"
+                },
+                "costL": {
+                  "integerValue": "0"
+                }
+              }
+            }
+          },
+          {
+            "mapValue": {
+              "fields": {
+                "name": {
+                  "stringValue": "Aftershock Rounds"
+                },
+                "linkedTo": {
+                  "stringValue": ""
+                },
+                "description": {
+                  "stringValue": "When this Unit has the SIEGE MODE Status, its Damage characteristic is treated as equal to the Size characteristic of the current target Unit (to a minimum of 1)."
+                },
+                "activation": {
+                  "stringValue": "\u003cPassive\u003e"
+                },
+                "phase": {
+                  "stringValue": "Assault Phase"
+                },
+                "costS": {
+                  "integerValue": "0"
+                },
+                "costL": {
+                  "integerValue": "0"
+                }
+              }
+            }
+          },
+          {
+            "mapValue": {
+              "fields": {
+                "name": {
+                  "stringValue": "Shaped Blast"
+                },
+                "linkedTo": {
+                  "stringValue": ""
+                },
+                "description": {
+                  "stringValue": "Once per Game. When this Unit declares a Ranged Attack action. If this Unit has SIEGE MODE Status, its weapon gains PINPOINT and LOCKED IN (4)."
+                },
+                "activation": {
+                  "stringValue": "\u003cReaction\u003e\n(0 Command Point)"
+                },
+                "phase": {
+                  "stringValue": "Assault Phase"
+                },
+                "costS": {
+                  "integerValue": "10"
+                },
+                "costL": {
+                  "integerValue": "10"
+                }
+              }
+            }
+          },
+          {
+            "mapValue": {
+              "fields": {
+                "name": {
+                  "stringValue": "Smart Shells"
+                },
+                "linkedTo": {
+                  "stringValue": ""
+                },
+                "description": {
+                  "stringValue": "Once per Game. When this Unit declares a Ranged Attack action. If this Unit has SIEGE MODE Status, its weapon gains INDIRECT FIRE and LONG RANGE (24)."
+                },
+                "activation": {
+                  "stringValue": "\u003cReaction\u003e\n(0 Command Point)"
+                },
+                "phase": {
+                  "stringValue": "Assault Phase"
+                },
+                "costS": {
+                  "integerValue": "10"
+                },
+                "costL": {
+                  "integerValue": "10"
+                }
+              }
+            }
+          },
+          {
+            "mapValue": {
+              "fields": {
+                "name": {
+                  "stringValue": "Devastating Charge"
+                },
+                "linkedTo": {
+                  "stringValue": ""
+                },
+                "description": {
+                  "stringValue": "Immediately after this Unit completes a successful Charge, resolve the IMPACT (4) 3+ effect."
+                },
+                "activation": {
+                  "stringValue": "\u003cPassive\u003e"
+                },
+                "phase": {
+                  "stringValue": "Assault Phase"
+                },
+                "costS": {
+                  "integerValue": "0"
+                },
+                "costL": {
+                  "integerValue": "0"
+                }
+              }
+            }
+          },
+          {
+            "mapValue": {
+              "fields": {
+                "name": {
+                  "stringValue": "Rolling Over"
+                },
+                "linkedTo": {
+                  "stringValue": "-"
+                },
+                "description": {
+                  "stringValue": "RANGE: E | TARGET: Ground | RoA: 2 | HIT: 2+ | DMG: 1\nSURGE: -"
+                },
+                "activation": {
+                  "stringValue": ""
+                },
+                "phase": {
+                  "stringValue": "Combat Phase"
+                },
+                "costS": {
+                  "integerValue": "0"
+                },
+                "costL": {
+                  "integerValue": "0"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "squadProfile": {
+      "arrayValue": {
+        "values": [
+          {
+            "mapValue": {
+              "fields": {
+                "tier": {
+                  "integerValue": "1"
+                },
+                "modelCount": {
+                  "stringValue": "-"
+                },
+                "supply": {
+                  "integerValue": "0"
+                }
+              }
+            }
+          },
+          {
+            "mapValue": {
+              "fields": {
+                "tier": {
+                  "integerValue": "2"
+                },
+                "modelCount": {
+                  "stringValue": "1 - 1"
+                },
+                "supply": {
+                  "integerValue": "2"
+                }
+              }
+            }
+          },
+          {
+            "mapValue": {
+              "fields": {
+                "tier": {
+                  "integerValue": "3"
+                },
+                "modelCount": {
+                  "stringValue": "-"
+                },
+                "supply": {
+                  "integerValue": "0"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "keywords": {
+      "stringValue": ""
+    },
+    "large": {
+      "mapValue": {
+        "fields": {
+          "models": {
+            "integerValue": "0"
+          },
+          "supply": {
+            "integerValue": "0"
+          },
+          "cost": {
+            "integerValue": "0"
+          }
+        }
+      }
+    },
+    "faction": {
+      "stringValue": "Zerg"
+    },
+    "stats": {
+      "mapValue": {
+        "fields": {
+          "shield": {
+            "stringValue": "-"
+          },
+          "hp": {
+            "stringValue": "14"
+          },
+          "evade": {
+            "stringValue": "-"
+          },
+          "armor": {
+            "stringValue": "5+"
+          },
+          "speed": {
+            "stringValue": "7"
+          },
+          "size": {
+            "stringValue": "2"
+          }
+        }
+      }
+    },
+    "tags": {
+      "stringValue": "Armoured, Mechanical,Infested, Ground"
+    }
+  },
+  "createTime": "2026-11-24T10:46:56.182598Z",
+  "updateTime": "2026-11-24T10:46:56.182598Z"
+}

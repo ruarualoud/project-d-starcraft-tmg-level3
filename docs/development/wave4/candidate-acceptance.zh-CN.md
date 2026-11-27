@@ -2,11 +2,11 @@
 
 2026-11-27；分支 `codex/wave4-web-pvp`。当前范围仅为交接顺序第 1 项。
 
-五份官方 Firestore 原件保存在 [冻结输入](../../../../content/source-releases/wave4-20261127/source-index.json)，逐文件核对字节数和 SHA256。此次未重抓 Web shell、PDF 或 FAQ，数据快照显式记录 `firestore_data_only`，没有借用旧 shell 的版本或哈希。
+五份官方 Firestore 原件保存在 [冻结输入](../../../content/source-releases/wave4-20261127/source-index.json)，逐文件核对字节数和 SHA256。此次未重抓 Web shell、PDF 或 FAQ，数据快照显式记录 `firestore_data_only`，没有借用旧 shell 的版本或哈希。
 
-[候选 ReleaseManifest](../../../../content/source-releases/wave4-20261127/release-manifest.json) 为 `wave4-u98-c88-r50-catalogue-v1`，状态为 `candidate`，manifestHash 为 `63342e7ac823d0a234f00095b2c3491793e6c3860cfc85e16a8b2f480a346acf`。它尚未绑定 Wave4 战斗能力、媒体或正式房间工厂，不能用于正式对战。SourceRevision 已暂存，原导入指针没有提升。
+[候选 ReleaseManifest](../../../content/source-releases/wave4-20261127/release-manifest.json) 为 `wave4-u98-c88-r50-catalogue-v1`，状态为 `candidate`，manifestHash 为 `63342e7ac823d0a234f00095b2c3491793e6c3860cfc85e16a8b2f480a346acf`。它尚未绑定 Wave4 战斗能力、媒体或正式房间工厂，不能用于正式对战。SourceRevision 已暂存，原导入指针没有提升。
 
-[逐 ID 目录](../../../../content/source-releases/wave4-20261127/catalogue-scope.json) 和 [逐字段差分](../../../../content/source-releases/wave4-20261127/semantic-diff.json) 对账 15 个新单位、8 张新战术卡、2 张新势力卡与 13 张强化说明变更卡。45 个旧单位和 15 个规则章节字段一致；36 张旧卡仅 timestamp 变更。7 个新社区任务／部署与 12 项社区投票变化均留在 display-only 分区，官方产品读取器拒绝全部社区记录。
+[逐 ID 目录](../../../content/source-releases/wave4-20261127/catalogue-scope.json) 和 [逐字段差分](../../../content/source-releases/wave4-20261127/semantic-diff.json) 对账 15 个新单位、8 张新战术卡、2 张新势力卡与 13 张强化说明变更卡。45 个旧单位和 15 个规则章节字段一致；36 张旧卡仅 timestamp 变更。7 个新社区任务／部署与 12 项社区投票变化均留在 display-only 分区，官方产品读取器拒绝全部社区记录。
 
 ReleaseResolver 同时注册 Wave3 与 Wave4：切换默认候选后，原房来源绑定和旧哈希不变；SQLite 重新打开仍按原绑定读取，精确历史查询及回滚通过，查询缓存键分开。为离线复核而提交的 Wave3 三份来源原件与旧文件逐字节相同；别名仅供本验收加载，不修改旧清单。
 

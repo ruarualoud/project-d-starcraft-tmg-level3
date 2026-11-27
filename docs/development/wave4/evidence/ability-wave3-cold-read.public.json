@@ -1,0 +1,46 @@
+{
+  "status": "passed",
+  "scope": "existing isolated W4-01 compatibility rooms; Wave3 player service on 5483 untouched",
+  "proofs": [
+    {
+      "minerals": 500,
+      "roomId": "product-40e5bb6d-a9a7-4eb9-9e02-d3551043ebff",
+      "stateRevision": 1,
+      "stateHash": "0a41a778a7d2dd4b7574d121ca92884f75059d44e151173030935a3a865fef92",
+      "bindingHash": "f4b882c7438855a7b459b5b3d26611031cd90bf6f8fadd50be66794e3587fb68",
+      "replayHash": "0bfe3f72f77c4ecd9008346a4bfebf9d27001323355c8c690755456fd2229b16",
+      "metadataBytesUnchanged": true,
+      "nativeReplayMatches": true,
+      "committedNewActions": 0,
+      "releaseBinding": {
+        "schema": "starcraft_tmg_release_binding_v2",
+        "releaseId": "wave3-standard-tabletop-admission-inputs-v1",
+        "manifestHash": "82859419320f6d5f7c6117d3f0bb7b76a8a4ad935acd6629c86fe47325c5d689",
+        "sourceSnapshotHash": "4412c17faaebaff04b117d1ddc666d1cdd939eca420a22f861c7c944f1179c8c",
+        "normalizedDatasetHash": "718057e86ac4f93a72c06b8e4d8f4d851ba33ee04c9dddea33e966eda9fe6685",
+        "runtimeHash": "d7f73ed3a7c13c881194e2b4d59469578b064690465ad7affa57e51279c73144"
+      }
+    },
+    {
+      "minerals": 2000,
+      "roomId": "product-93601e98-ab30-499e-9a26-42dd8dfb89c3",
+      "stateRevision": 1,
+      "stateHash": "6d0c891ec1f87c1a8e8d7666da1407bdf99b0bcfd54cb1d0b7ec4115862aae43",
+      "bindingHash": "002ed2063bf30e648b4d15a6555dbb40b63b4c62510625a7b60e02ae9259851f",
+      "replayHash": "1710cb48b914c11040a6168c4622407a251f10beb05c6da9cb072aaf3610da5c",
+      "metadataBytesUnchanged": true,
+      "nativeReplayMatches": true,
+      "committedNewActions": 0,
+      "releaseBinding": {
+        "schema": "starcraft_tmg_release_binding_v2",
+        "releaseId": "wave3-standard-tabletop-admission-inputs-v1",
+        "manifestHash": "2af20b3ad1f81ba244ff576d2a295e551ca1af3386938b4e106bf1bb284b7256",
+        "sourceSnapshotHash": "4412c17faaebaff04b117d1ddc666d1cdd939eca420a22f861c7c944f1179c8c",
+        "normalizedDatasetHash": "718057e86ac4f93a72c06b8e4d8f4d851ba33ee04c9dddea33e966eda9fe6685",
+        "runtimeHash": "1f1bd3752a1e651a31ed34899e60cdec69517d7f1293b821fad48173b46c4911"
+      }
+    }
+  ],
+  "modelCalls": 0,
+  "trainingTruth": false
+}

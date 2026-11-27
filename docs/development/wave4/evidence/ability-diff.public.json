@@ -1,0 +1,49 @@
+{
+  "schema": "starcraft_tmg_wave4_ability_diff_verification_v1",
+  "status": "passed",
+  "inventoryHash": "c922fc85ecafdbe88597dae454b3263727f9732d12f639d297fbabdec87a7543",
+  "denominator": {
+    "records": 38,
+    "newDefinitions": 142,
+    "changedDefinitions": 14,
+    "totalDefinitions": 156,
+    "classifications": {
+      "data_change": 31,
+      "existing_atom": 50,
+      "existing_atoms_new_combination": 34,
+      "new_semantics": 41
+    },
+    "requiredNewAtomCount": 18,
+    "withdrawnOnlyNewAtomCount": 3,
+    "implementedNewAtomCount": 0,
+    "sourceHeldDefinitions": 39
+  },
+  "fullIdentityCount": 556,
+  "stableUnderSourceArrayReordering": true,
+  "allConsumerExportsExist": true,
+  "previousChangedIdentitiesNotAliased": true,
+  "sourceBlocks": {
+    "fullCompilation": "ABILITY_EFFECT_IR_ACTIVATION_UNCLASSIFIED:Wip",
+    "strictPhase": "ABILITY_SOURCE_PHASE_VALUE_UNSUPPORTED:Cobmbat Phase",
+    "heldDefinitions": 39
+  },
+  "reactionSourceBindings": {
+    "compiled": 11,
+    "reusedSpecsEqual": true,
+    "wrongRevisionTextRejected": true,
+    "selectedSourceCount": 11,
+    "originalSourceCount": 556,
+    "fullProductionAdmission": false,
+    "bundleHash": "acb9627f013e14d1632536aab3ca4c8f5ee8824a0984482bd178507df3f465ed",
+    "catalogueHash": "2c59402e7aaedf67042af81026c1ce1dd664530dc8f5bc8716e2d4395ee268d0"
+  },
+  "oldWave3": {
+    "definitionCount": 414,
+    "sourceSelectionUnchanged": true,
+    "oldReactionSpecsSupported": 11,
+    "cardBundleRecompiledExactly": true
+  },
+  "nativeReactionReceiptProof": "docs/development/wave4/evidence/armour-reaction-components.public.json",
+  "modelCalls": 0,
+  "trainingTruth": false
+}

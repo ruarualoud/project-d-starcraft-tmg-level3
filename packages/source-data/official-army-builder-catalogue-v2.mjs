@@ -1,7 +1,7 @@
 import { hashStarcraftTmgContract as hash } from '../authoritative-engine/referee-crypto-v1.mjs';
 import { assertOfficialReleaseSourceV2 } from './official-release-context-v2.mjs';
 import { getOfficialCurrentProductRecord } from './official-command-center-adapter-v1.mjs';
-import { compileOfficialCardBuildPaymentProfilesV2 } from './official-card-build-payment-data-bundle-v1.mjs';
+import { compileOfficialCardBuildPaymentProfilesV2, verifyOfficialCardBuildPaymentDataBundleV1 } from './official-card-build-payment-data-bundle-v1.mjs';
 import { parseOfficialUnitSupplyProfileV1, compileOfficialUnitCompositionV1 } from './official-unit-card-supply-data-bundle-v1.mjs';
 import { compileOfficialFactionArmyProfilesV2 } from './official-faction-army-eligibility-data-bundle-v1.mjs';
 import { compileOfficialArmyBudgetProfilesV2 } from './official-army-resource-budget-data-bundle-v1.mjs';
@@ -152,30 +152,46 @@ function compileCompositions(dataset, budget, legacy) {
       a.purchasableUpgradeProfileId.localeCompare(b.purchasableUpgradeProfileId)), referenceDiscrepancies };
 }
 
+function bindReleaseBundle({ dataset, releaseContext, kind, template, fields }) {
+  const sourceBinding = { releaseId: releaseContext.manifest.releaseId,
+    sourceSnapshotHash: dataset.sourceSnapshotHash, normalizedDatasetHash: dataset.datasetHash };
+  const ruleSectionRecords = template.ruleSectionRecords.map(old => {
+    const current = dataset.recordsByKey[old.recordKey];
+    requireValue(current?.payloadHash === old.payloadHash, `normative_rule_changed:${old.recordKey}`);
+    return { ...old, sourceRecordHash: current.sourceRecordHash, sourceVersion: dataset.dataVersions.rulesVersion };
+  });
+  const body = { schema: ARMY_BUILDER_RELEASE_SCHEMAS_V2[kind], sourceBinding,
+    sourceSnapshotHash: dataset.sourceSnapshotHash, normalizedDatasetHash: dataset.datasetHash,
+    sourceLockHash: null, coreRulebookHash: template.coreRulebookHash,
+    officialRulesVersion: dataset.dataVersions.rulesVersion,
+    officialUnitsVersion: dataset.dataVersions.unitsVersion, officialCardsVersion: dataset.dataVersions.cardsVersion,
+    ruleSectionRecords, ruleClauses: template.ruleClauses, ruleClauseIndexHash: template.ruleClauseIndexHash,
+    usageScope: 'army_building', productionRoomEligible: false, trainingTruth: false,
+    sourcePolicy: { commandCenterRole: 'primary_army_building_facts', pdfRole: 'reference_and_explicit_zero_cost_replacement',
+      repositoryFallbackAllowed: false, refreshDuringDevelopment: false }, ...fields };
+  return freeze({ ...body, bundleHash: hash(body) });
+}
+
+// Card payment/reaction components do not require unrelated unit-purchase rules
+// to compile. The complete army builder below consumes the same bundle binder.
+export function createOfficialReleaseCardCatalogueV2({ context, legacyCardDataBundle }) {
+  assertOfficialReleaseSourceV2(context, context);
+  verifyOfficialCardBuildPaymentDataBundleV1(legacyCardDataBundle);
+  const compiled = compileOfficialCardBuildPaymentProfilesV2(context.dataset, null);
+  const result = bindReleaseBundle({ dataset: context.dataset, releaseContext: context,
+    kind: 'cards', template: legacyCardDataBundle, fields: {
+      cardProfiles: compiled.profiles, cardProfileIndexHash: hash(compiled.profiles),
+      cardSourceIndex: compiled.sourceIndex, cardSourceIndexHash: hash(compiled.sourceIndex) } });
+  verifyOfficialCardBuildPaymentDataBundleV1(result);
+  return result;
+}
+
 export function createOfficialArmyBuilderCatalogueV2({ dataset, snapshot, releaseContext, legacyPolicyBundle }) {
   assertOfficialReleaseSourceV2(releaseContext, { dataset, snapshot });
   verifyOfficialUnitCompositionUpgradeDataBundleV1(legacyPolicyBundle);
   const legacyBudget = legacyPolicyBundle.armyResourceBudgetDataBundle;
   const legacyFactions = legacyBudget.factionArmyEligibilityDataBundle;
-  const sourceBinding = { releaseId: releaseContext.manifest.releaseId,
-    sourceSnapshotHash: dataset.sourceSnapshotHash, normalizedDatasetHash: dataset.datasetHash };
-  function bundle(kind, template, fields) {
-    const ruleSectionRecords = template.ruleSectionRecords.map(old => {
-      const current = dataset.recordsByKey[old.recordKey];
-      requireValue(current?.payloadHash === old.payloadHash, `normative_rule_changed:${old.recordKey}`);
-      return { ...old, sourceRecordHash: current.sourceRecordHash, sourceVersion: dataset.dataVersions.rulesVersion };
-    });
-    const body = { schema: ARMY_BUILDER_RELEASE_SCHEMAS_V2[kind], sourceBinding,
-      sourceSnapshotHash: dataset.sourceSnapshotHash, normalizedDatasetHash: dataset.datasetHash,
-      sourceLockHash: null, coreRulebookHash: template.coreRulebookHash,
-      officialRulesVersion: dataset.dataVersions.rulesVersion,
-      officialUnitsVersion: dataset.dataVersions.unitsVersion, officialCardsVersion: dataset.dataVersions.cardsVersion,
-      ruleSectionRecords, ruleClauses: template.ruleClauses, ruleClauseIndexHash: template.ruleClauseIndexHash,
-      usageScope: 'army_building', productionRoomEligible: false, trainingTruth: false,
-      sourcePolicy: { commandCenterRole: 'primary_army_building_facts', pdfRole: 'reference_and_explicit_zero_cost_replacement',
-        repositoryFallbackAllowed: false, refreshDuringDevelopment: false }, ...fields };
-    return freeze({ ...body, bundleHash: hash(body) });
-  }
+  const bundle = (kind, template, fields) => bindReleaseBundle({ dataset, releaseContext, kind, template, fields });
   const cards = compileOfficialCardBuildPaymentProfilesV2(dataset, null);
   const cardDataBundle = bundle('cards', legacyFactions.cardDataBundle, {
     cardProfiles: cards.profiles, cardProfileIndexHash: hash(cards.profiles),

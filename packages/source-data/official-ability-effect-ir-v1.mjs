@@ -260,6 +260,15 @@ export function createOfficialAbilityEffectIrCatalogueV1(input = {}) {
     createOfficialAbilitySourcePhasePolicyV1({ dataset, includeInlineCardPhases }));
   const semanticVersion = catalogueVersion(sourcePhasePolicy);
   const identities = identityMaps(input.identityCatalogue, dataset);
+  if (input.sourceDefinitionIds !== undefined && !Array.isArray(input.sourceDefinitionIds)) {
+    fail('ABILITY_EFFECT_IR_SOURCE_SELECTION_INVALID');
+  }
+  const selectedIds = input.sourceDefinitionIds === undefined ? null : new Set(input.sourceDefinitionIds);
+  if (selectedIds && (!identities || !selectedIds.size
+    || selectedIds.size !== input.sourceDefinitionIds.length
+    || [...selectedIds].some(id => !identities.byId.has(id)))) {
+    fail('ABILITY_EFFECT_IR_SOURCE_SELECTION_INVALID');
+  }
   const executions = bindingMap((input.executionBindings || []).map(binding => {
     if (!binding.definitionId) return binding;
     const identity = identities?.byId.get(binding.definitionId);
@@ -284,6 +293,7 @@ export function createOfficialAbilityEffectIrCatalogueV1(input = {}) {
         const sourceFeatureHash = officialAbilitySourceFeatureHashV1(record, sourceIndex, feature);
         const identity = identities?.byHash.get(sourceFeatureHash);
         if (identities && !identity) fail("ABILITY_EFFECT_IR_IDENTITY_MISSING", record.recordKey);
+        if (selectedIds && !selectedIds.has(identity.definitionId)) continue;
         const kind = activationKind(feature, identity?.activationKind);
         const inlinePhase = includeInlineCardPhases && collectionId === 'tactical_cards'
           ? inlineCardPhase(feature.description) : undefined;
@@ -337,8 +347,11 @@ export function createOfficialAbilityEffectIrCatalogueV1(input = {}) {
       }
     }
   }
-  if (identities && identities.byHash.size !== definitions.length) {
+  if (identities && (selectedIds?.size ?? identities.byHash.size) !== definitions.length) {
     fail("ABILITY_EFFECT_IR_IDENTITY_DENOMINATOR_MISMATCH");
+  }
+  if (selectedIds && [...executions.keys()].some(key => !definitions.some(row => row.sourceFeatureHash === key))) {
+    fail('ABILITY_EFFECT_IR_EXECUTION_OUTSIDE_SOURCE_SELECTION');
   }
   definitions.sort((left, right) => left.definitionId.localeCompare(right.definitionId));
   const exact = definitions.filter((entry) => (
@@ -386,6 +399,8 @@ export function createOfficialAbilityEffectIrCatalogueV1(input = {}) {
     semanticVersion,
     ...(sourcePhasePolicy ? { sourcePhasePolicy } : {}),
     ...(identities ? { identityCatalogueHash: input.identityCatalogue.identityCatalogueHash } : {}),
+    ...(selectedIds ? { definitionSelection: { scope: 'explicit_source_definition_set',
+      sourceDefinitionCount: identities.byHash.size, selectedDefinitionIds: [...selectedIds].sort() } } : {}),
     sourceSnapshotHash: dataset.sourceSnapshotHash,
     normalizedDatasetHash: dataset.datasetHash,
     dataVersions: { ...dataset.dataVersions },
@@ -415,6 +430,15 @@ export function verifyOfficialAbilityEffectIrCatalogueV1(catalogue) {
   const definitions = catalogue?.definitions;
   const denominator = catalogue?.denominator;
   const graph = catalogue?.relationshipGraph;
+  if (catalogue?.definitionSelection !== undefined) {
+    const selection = catalogue.definitionSelection;
+    if (!object(selection) || selection.scope !== 'explicit_source_definition_set'
+      || !Array.isArray(definitions)
+      || !Number.isSafeInteger(selection.sourceDefinitionCount)
+      || selection.sourceDefinitionCount < definitions?.length
+      || !isDeepStrictEqual(selection.selectedDefinitionIds, definitions.map(row => row.definitionId).sort())
+      || !catalogue.identityCatalogueHash) fail('ABILITY_EFFECT_IR_SOURCE_SELECTION_INVALID');
+  }
   if (!object(catalogue) || catalogue.schema !== OFFICIAL_ABILITY_EFFECT_IR_SCHEMA
     || catalogue.semanticVersion !== catalogueVersion(catalogue.sourcePhasePolicy)
     || !Array.isArray(definitions) || definitions.length === 0

@@ -1,0 +1,4457 @@
+{
+  "schema": "starcraft_tmg_ability_identity_registry_v2",
+  "behaviorHashScheme": "feature_fields_except_purchase_cost_and_label_v2",
+  "entries": [
+    {
+      "semanticId": "unit:adept/psionic-presence-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:adept",
+      "sourceName": "Psionic Presence",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "ea7457fb65be070bacb5a1f008db803bbbd3f8155fe7aef87d34b50a4bb28158"
+    },
+    {
+      "semanticId": "unit:adept/psionic-transfer-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:adept",
+      "sourceName": "Psionic Transfer",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "45c0364b8137b988584534ab78b8c4af6aeeb18b34d05bd65bbd0ecd3e442a61"
+    },
+    {
+      "semanticId": "unit:adept/glaive-cannon-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:adept",
+      "sourceName": "Glaive Cannon",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "45ebf806371abba0109644f1c5cfc11716ed27346bdfffbee7daceb0541c29f7"
+    },
+    {
+      "semanticId": "unit:adept/resonating-glaives-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:adept",
+      "sourceName": "Resonating Glaives",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "388820db939919e5dddb124df47d7cffe250ab243a1b1309dbd86e9648a1c76e"
+    },
+    {
+      "semanticId": "unit:adept/guidance-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:adept",
+      "sourceName": "Guidance",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "b9566ec312af4a6e1d0fc28bf93de1acbf4d5f77a2e245f531285d0e92f71424"
+    },
+    {
+      "semanticId": "unit:adept/glaive-strike-combat-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:adept",
+      "sourceName": "Glaive Strike",
+      "sourcePhase": "Combat Phase",
+      "behaviorHash": "a55efa07495bc36b9d4ab4d62baa85edc106c68bd55ee8f362ffbce9615bbb8e"
+    },
+    {
+      "semanticId": "unit:adept/strike-combat-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:adept",
+      "sourceName": "Strike",
+      "sourcePhase": "Combat Phase",
+      "behaviorHash": "2fc431b141eaa3eeec8864a7e1da7514c12a489a6f94337527c37d87931ab498"
+    },
+    {
+      "semanticId": "unit:alarak/commander-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:alarak",
+      "sourceName": "Commander",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "b9c2fd3d0ca6a0fee10759c236625cf061a9bfccbe9ab2927785d4344a61e85b"
+    },
+    {
+      "semanticId": "unit:alarak/highlord-of-the-tal-darim-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:alarak",
+      "sourceName": "Highlord of the Tal'darim",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "5f707fc643d9a3c67b2ac58e6ac039c274d94a337298c666d4434076cb7d22c7"
+    },
+    {
+      "semanticId": "unit:alarak/sacrifice-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:alarak",
+      "sourceName": "Sacrifice",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "0d32e46f54665e0b6fedcfba979471c52d38e71b5699a20e29dd84cdeff374a5"
+    },
+    {
+      "semanticId": "unit:alarak/wrath-of-the-highlord-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:alarak",
+      "sourceName": "Wrath of the Highlord",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "cc9e8ba367be75e573bd8141d91b8a22f87b86773b9594529074347315e374ea"
+    },
+    {
+      "semanticId": "unit:alarak/destruction-wave-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:alarak",
+      "sourceName": "Destruction Wave",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "461c8d0cb6b4a8924533b57a3949bd0cc7328fc3b4b1879983b5be9c54cb294e"
+    },
+    {
+      "semanticId": "unit:alarak/empower-me-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:alarak",
+      "sourceName": "Empower Me",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "1ee63bd07c10a5825d33146702889cedd60f3fde119c4a317ab9ee781bc56b25"
+    },
+    {
+      "semanticId": "unit:alarak/devastating-charge-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:alarak",
+      "sourceName": "Devastating Charge",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "a7b0f47d1405fff6bcc6f8a4cab7e889681ee65a0c9aa35e6b290486189c2d46"
+    },
+    {
+      "semanticId": "unit:alarak/bane-blades-cobmbat-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:alarak",
+      "sourceName": "Bane Blades",
+      "sourcePhase": "Cobmbat Phase",
+      "behaviorHash": "f323f0cf84f5e7b157a96b74c706e76182c096e678c3e4a509f3dc2da95fec6a"
+    },
+    {
+      "semanticId": "unit:archon/stand-as-one-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:archon",
+      "sourceName": "Stand as One!",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "9b8b5685858ab21cc973a15ec80076432c7e8bf24bc3095059f75bdf3ceac239"
+    },
+    {
+      "semanticId": "unit:archon/wip-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:archon",
+      "sourceName": "Wip",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "4959ea3384affeb3064f7e2dba173f3e3723a993a6b5c747a923285e6af83e4d"
+    },
+    {
+      "semanticId": "unit:archon/psionic-entity-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:archon",
+      "sourceName": "Psionic Entity",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "a29245f9f475e8235ce50a04800762feb5c8b70b5d13061cb9da063bf3cf6564"
+    },
+    {
+      "semanticId": "unit:archon/wip2-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:archon",
+      "sourceName": "Wip2",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "e21d5797f13df4d331afb8c863bcea34e13852c2ba271a9a6bf4182326e1b209"
+    },
+    {
+      "semanticId": "unit:archon/burning-radiance-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:archon",
+      "sourceName": "Burning Radiance",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "41017bbc23e7b08fffc3a1dfa1b581517545904cd0a7068e7001e9ad0890d54a"
+    },
+    {
+      "semanticId": "unit:archon/wip3-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:archon",
+      "sourceName": "Wip3",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "9b80c20e0b75bf547c4a82004c7da0f84d6ef999dd2f004d8ff34c0b9683a710"
+    },
+    {
+      "semanticId": "unit:archon/khaydarin-amulet-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:archon",
+      "sourceName": "Khaydarin Amulet",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "4d5978caffef55d3ebc5108bc3c402b1c6c7464d3db00c9a6a021b00cb8aa7f6"
+    },
+    {
+      "semanticId": "unit:archon/feedback-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:archon",
+      "sourceName": "Feedback",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "413eaa04d787b074c76e7751f192ae27a426150e9d8ddc0db12373fc0111bd5c"
+    },
+    {
+      "semanticId": "unit:archon/indomitable-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:archon",
+      "sourceName": "Indomitable",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "d56dc4bc43e1af494b023d523a0c7471ca61c363c95ae886e8350d1889733280"
+    },
+    {
+      "semanticId": "unit:archon/psionic-shockwave-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:archon",
+      "sourceName": "Psionic Shockwave",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "45101e997aebd7f76fbef17d177f46f694e8c61a40a2ceb5c71e45ba7fc8ec3d"
+    },
+    {
+      "semanticId": "unit:archon/devastating-charge-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:archon",
+      "sourceName": "Devastating Charge",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "0fc366ca8e68c95589dc29456cf393bbbc07e3ddea5b2979597e796917f2633f"
+    },
+    {
+      "semanticId": "unit:archon/mak-thor-idan-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:archon",
+      "sourceName": "Mak Thor'idan!",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "cf8e381a25cd92f2b4ca1a2903fe49ab781287552ff7b733180278291a24999d"
+    },
+    {
+      "semanticId": "unit:archon/wip-4-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:archon",
+      "sourceName": "Wip 4",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "77ee820f6996fbcc35c39511a25418f845d0399073a34f889039d6ecdf8fc05a"
+    },
+    {
+      "semanticId": "unit:archon/power-overwhelming-combat-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:archon",
+      "sourceName": "Power Overwhelming",
+      "sourcePhase": "Combat Phase",
+      "behaviorHash": "57e9c109d7979459465ecd85c7ef75863f8f183439d58663dfb5de554caff546"
+    },
+    {
+      "semanticId": "unit:archon/psychic-ripple-combat-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:archon",
+      "sourceName": "Psychic Ripple",
+      "sourcePhase": "Combat Phase",
+      "behaviorHash": "dd8e1df18a9dc2d814688847e4effe213e1ca0858077dcf099d3a98b7707b4e9"
+    },
+    {
+      "semanticId": "unit:artanis/commander-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:artanis",
+      "sourceName": "Commander",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "b9c2fd3d0ca6a0fee10759c236625cf061a9bfccbe9ab2927785d4344a61e85b"
+    },
+    {
+      "semanticId": "unit:artanis/phase-prism-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:artanis",
+      "sourceName": "Phase Prism",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "dc69ebf79c2d1dffcaec79448cccb0f25a8c5763010b3bc19462e44ca9a2a65a"
+    },
+    {
+      "semanticId": "unit:artanis/hierarch-s-stand-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:artanis",
+      "sourceName": "Hierarch’s Stand",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "88be8b4ffd2a3ce614ad29fb18a80f126bc5d26bca0d1a3e26bb63e7552dc318"
+    },
+    {
+      "semanticId": "unit:artanis/lightning-dash-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:artanis",
+      "sourceName": "Lightning Dash",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "e30b53705037d9e3d20746642ea113599d95b4173398228e4c4502998451fd65"
+    },
+    {
+      "semanticId": "unit:artanis/devastating-charge-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:artanis",
+      "sourceName": "Devastating Charge",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "a7b0f47d1405fff6bcc6f8a4cab7e889681ee65a0c9aa35e6b290486189c2d46"
+    },
+    {
+      "semanticId": "unit:artanis/twilight-blades-strike-combat-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:artanis",
+      "sourceName": "Twilight Blades Strike",
+      "sourcePhase": "Combat Phase",
+      "behaviorHash": "a363fe84f4cbc260b5b02b53e6cf3cbcf47b90999587de7d1782077c08a5d332"
+    },
+    {
+      "semanticId": "unit:artanis/twilight-blades-sweep-combat-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:artanis",
+      "sourceName": "Twilight Blades Sweep",
+      "sourcePhase": "Combat Phase",
+      "behaviorHash": "affaebbb10dc9d0cd54adfe6bf70f8eb685ff7ef2ab85cb7e854a3ee4174d9ee"
+    },
+    {
+      "semanticId": "unit:auto_turret/timed-life-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:auto_turret",
+      "sourceName": "Timed Life",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "79ff64d900cd210e792997f88443f91398fb283760e0c7d6fe1b20f20ba40dbd"
+    },
+    {
+      "semanticId": "unit:auto_turret/structure-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:auto_turret",
+      "sourceName": "Structure",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "d0a76fbc68afa466b7c2ad7dd655e829834c4c696dbfa30f84a05491c32a820e"
+    },
+    {
+      "semanticId": "unit:auto_turret/gauss-cannon-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:auto_turret",
+      "sourceName": "Gauss Cannon",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "fe749495eba2e19130a63a96204807eb251f0f4498cdbe5031c6cf67bfc950a4"
+    },
+    {
+      "semanticId": "unit:auto_turret/overwatch-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:auto_turret",
+      "sourceName": "Overwatch",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "bf9c340bc3e6bbb87558a5148be809185bbef7f99f38ce14cec78fc35d09eceb"
+    },
+    {
+      "semanticId": "unit:bile_launcher/biological-structure-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:bile_launcher",
+      "sourceName": "Biological Structure",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "cac502b46ab5ae65214987dcab7265269fdbfdec21abca15f91d83c87579f45a"
+    },
+    {
+      "semanticId": "unit:bile_launcher/source-of-creep-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:bile_launcher",
+      "sourceName": "Source of Creep",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "f959c1faa9544eff6453157773658e3224abb181cd7e45421b08f076d98050dd"
+    },
+    {
+      "semanticId": "unit:bile_launcher/detection-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:bile_launcher",
+      "sourceName": "Detection",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "487d42d446bdba53b99830e87f92ca2f650091489511db3059bdccab080948f4"
+    },
+    {
+      "semanticId": "unit:bile_launcher/burrow-ambush-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:bile_launcher",
+      "sourceName": "Burrow Ambush",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "651d68374b2771cbd8c1e0bc7eb87bbe08b25fe65808a5e8df1f72be2ac41299"
+    },
+    {
+      "semanticId": "unit:bile_launcher/bombard-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:bile_launcher",
+      "sourceName": "Bombard",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "43843b87ca400a0f1163932afe26c012b3c7aa3b6046efa4788bd84cbd72986a"
+    },
+    {
+      "semanticId": "unit:bile_launcher/indomitable-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:bile_launcher",
+      "sourceName": "Indomitable",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "74690d44364a8abec35ceaeb96b37ab0275d7c372debf1a138cceaf7d6a2dd63",
+      "activationKind": "passive",
+      "classificationReason": "Source text modifies targeting while Engaged and declares no action or payment."
+    },
+    {
+      "semanticId": "unit:bile_launcher/bile-bomb-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:bile_launcher",
+      "sourceName": "Bile Bomb",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "664f55a6407f8e789d439102e39877bb6dd878e2852ac58664f1fac16587b005"
+    },
+    {
+      "semanticId": "unit:corpser__roach_/burrow-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:corpser__roach_",
+      "sourceName": "Burrow",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "59f6eb88ac27c1c171e2c4297412339eb5e30b2f612078c2315d441b37f0ab93"
+    },
+    {
+      "semanticId": "unit:corpser__roach_/tunneling-claws-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:corpser__roach_",
+      "sourceName": "Tunneling Claws",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "4ccd20de44c6337c82cfaf7adc054963842bc617fdd217c10454d0377dfb7e6b"
+    },
+    {
+      "semanticId": "unit:corpser__roach_/roachling-infestation-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:corpser__roach_",
+      "sourceName": "Roachling Infestation",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "b1f50eee09df9b36d018577959650edcdc65a7ed55b2bac6822c7b6fb8e3fb19"
+    },
+    {
+      "semanticId": "unit:corpser__roach_/burrow-ambush-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:corpser__roach_",
+      "sourceName": "Burrow Ambush",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "651d68374b2771cbd8c1e0bc7eb87bbe08b25fe65808a5e8df1f72be2ac41299"
+    },
+    {
+      "semanticId": "unit:corpser__roach_/glial-reconstitution-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:corpser__roach_",
+      "sourceName": "Glial Reconstitution",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "7658d8e3203ca2c3c7c572dca5e4f4a19cfc927a7bcb57e860f5a21b54cb30be"
+    },
+    {
+      "semanticId": "unit:corpser__roach_/acid-saliva-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:corpser__roach_",
+      "sourceName": "Acid Saliva",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "88c7e35035b76ae08ce77c0878a1a47cdc59d8179eccc2251f2f3a6768d9b58d"
+    },
+    {
+      "semanticId": "unit:corpser__roach_/regeneration-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:corpser__roach_",
+      "sourceName": "Regeneration",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "84a573e76e8d71d7e5fa2c4fcdfbb9ee38f30aa62a6d7f39746262e72ee374c2"
+    },
+    {
+      "semanticId": "unit:corpser__roach_/hydriodic-bile-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:corpser__roach_",
+      "sourceName": "Hydriodic Bile",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "bb8725140a3815e411a8cc56608340d573506c05d89c5658ec1dea7bd1241d1c"
+    },
+    {
+      "semanticId": "unit:corpser__roach_/devastating-charge-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:corpser__roach_",
+      "sourceName": "Devastating Charge",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "5e78ad9e2f9df796f651896ea9006234565c354def48d537100038ee174532ba"
+    },
+    {
+      "semanticId": "unit:corpser__roach_/claws-combat-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:corpser__roach_",
+      "sourceName": "Claws",
+      "sourcePhase": "Combat Phase",
+      "behaviorHash": "711b63aeef9d8a2f4b87124ec4fb7ffd65bb23a7c48709203b02d6a8e462bfd1"
+    },
+    {
+      "semanticId": "unit:defiler/consume-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:defiler",
+      "sourceName": "Consume",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "69722cff370eb1cec648a95b42fdd7b88046ba9657373dcacce19c2f07473428"
+    },
+    {
+      "semanticId": "unit:defiler/gestate-dark-swarm-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:defiler",
+      "sourceName": "Gestate Dark Swarm",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "257c2607675e50ca20ebc95dd234952709cc8b2642c6268fbf0e5c7ff010b91d"
+    },
+    {
+      "semanticId": "unit:defiler/burrow-ambush-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:defiler",
+      "sourceName": "Burrow Ambush",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "5e3aa19c59786e91220dd8832af1a30c7d0071084eca5c54ba233d233e53b7c7"
+    },
+    {
+      "semanticId": "unit:defiler/dark-swarm-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:defiler",
+      "sourceName": "Dark Swarm",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "eb7ecaf91e75d585beb62356d8194d7acac87897809697f92520b914a032d8fa"
+    },
+    {
+      "semanticId": "unit:defiler/plague-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:defiler",
+      "sourceName": "Plague",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "6c6372695167642d1a02cf1ed7e3dd91732afafc31b97ee93472309af7b1fe6e"
+    },
+    {
+      "semanticId": "unit:defiler/devastating-charge-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:defiler",
+      "sourceName": "Devastating Charge",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "346fbed468becb4a1ca08aade1f2c20c0db70e849846bd4c5f4ce891ba088cea"
+    },
+    {
+      "semanticId": "unit:defiler/claws-combat-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:defiler",
+      "sourceName": "Claws",
+      "sourcePhase": "Combat Phase",
+      "behaviorHash": "de8b5da7e3e8d05c688e08e8ee9660c9a2924d5e99325cb07669c0e3a9e403d8"
+    },
+    {
+      "semanticId": "unit:defiler/cancerous-bite-combat-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:defiler",
+      "sourceName": "Cancerous Bite",
+      "sourcePhase": "Combat Phase",
+      "behaviorHash": "3aeada673b6a4f0e67c80496df8af3cfdb198dc1c78ed284ed9d1289ac1f9230"
+    },
+    {
+      "semanticId": "unit:firebat/stimpack-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:firebat",
+      "sourceName": "Stimpack",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "f81eb096d6c615f3bb860dcbb312db7b10266daca675a476a1c24caf5555a7f3"
+    },
+    {
+      "semanticId": "unit:firebat/incinerator-gauntlets-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:firebat",
+      "sourceName": "Incinerator Gauntlets",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "cf34c152219fd90ec697016a797706d6b497e3dd8ade249187cf3c890fa57424"
+    },
+    {
+      "semanticId": "unit:firebat/perdition-flamethrower-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:firebat",
+      "sourceName": "Perdition Flamethrower",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "86da3a82245c87668f79b0293527632f135d5b7961b3af81c44279ce28ac4f3e"
+    },
+    {
+      "semanticId": "unit:firebat/fire-it-up-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:firebat",
+      "sourceName": "Fire it Up",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "fe9fa78d889e21573c8ca8686ccd19e3bf845b6ac840b50966c7e5c7c8b3686b"
+    },
+    {
+      "semanticId": "unit:firebat/flame-strike-combat-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:firebat",
+      "sourceName": "Flame Strike",
+      "sourcePhase": "Combat Phase",
+      "behaviorHash": "6ba63222c4a87c31661d314a2ade8ed07160e8cbc8829cf4f2a096effbcd0fdd"
+    },
+    {
+      "semanticId": "unit:firebat/need-a-light-combat-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:firebat",
+      "sourceName": "Need A Light?",
+      "sourcePhase": "Combat Phase",
+      "behaviorHash": "86cfbd1950e4e2b2ab648adc9e3e91ef8f6a544c53248646c607d7d82fc35eea"
+    },
+    {
+      "semanticId": "unit:goliath/ares-class-targeting-system-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:goliath",
+      "sourceName": "Ares-Class Targeting System",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "d59bc5f36d9feea5144271eba43c12dfd804fb1182440ddbcefc1dff668114f0"
+    },
+    {
+      "semanticId": "unit:goliath/target-lock-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:goliath",
+      "sourceName": "Target Lock",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "b67e77bb1eec28f3cfcbb40e75304fb6218e9d0cd916eede798b6f91d3b7d6a3"
+    },
+    {
+      "semanticId": "unit:goliath/indomitable-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:goliath",
+      "sourceName": "Indomitable",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "d56dc4bc43e1af494b023d523a0c7471ca61c363c95ae886e8350d1889733280"
+    },
+    {
+      "semanticId": "unit:goliath/autocannon-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:goliath",
+      "sourceName": "Autocannon",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "716f4305ad655877def74fef7aab4a07b1fc462f644cdb93dd14169d0abf4760"
+    },
+    {
+      "semanticId": "unit:goliath/underbelly-machine-gun-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:goliath",
+      "sourceName": "Underbelly Machine Gun",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "dda176f3ce1a5cb1657f805810c0a7876d07b4023eeafffac05869ba2fcb7a26"
+    },
+    {
+      "semanticId": "unit:goliath/hellfire-missiles-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:goliath",
+      "sourceName": "Hellfire Missiles",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "0d96ae0a99f3fc403bdd06272f4e555684b33d734c7971736994ec1f89edb75c"
+    },
+    {
+      "semanticId": "unit:goliath/scatter-missiles-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:goliath",
+      "sourceName": "Scatter Missiles",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "115e9278a389e9c078c889a6afc1de5cd812ea3563eddd5c1e9c03ad21270101"
+    },
+    {
+      "semanticId": "unit:goliath/haywire-missiles-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:goliath",
+      "sourceName": "Haywire Missiles",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "d3e2c71d4ecaebec16ddecf9c370c42f263239ad0144fc2ee89a0cacfc56d38d"
+    },
+    {
+      "semanticId": "unit:goliath/devastating-charge-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:goliath",
+      "sourceName": "Devastating Charge",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "0fc366ca8e68c95589dc29456cf393bbbc07e3ddea5b2979597e796917f2633f"
+    },
+    {
+      "semanticId": "unit:goliath/stomp-combat-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:goliath",
+      "sourceName": "Stomp",
+      "sourcePhase": "Combat Phase",
+      "behaviorHash": "8b2328355c0fe909aad88977ec5b9dc1c909a075453f65f1d38ab7bd07bedc40"
+    },
+    {
+      "semanticId": "unit:high_templar/our-minds-as-one-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:high_templar",
+      "sourceName": "Our Minds as One",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "19a5fe690f4c98b5c02cb3378ffe85d1cf9389b4b71e7916ccfdc27532a00f24"
+    },
+    {
+      "semanticId": "unit:high_templar/psionic-storm-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:high_templar",
+      "sourceName": "Psionic Storm",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "bc68ee550af736e34af6f11cec5e6150a15339452d13d0eee7d43dd346fd9cf3"
+    },
+    {
+      "semanticId": "unit:high_templar/farsight-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:high_templar",
+      "sourceName": "Farsight",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "2693d62fe3ea292e8b505db63d0061448fcf8752408e9cbcd32e03caf5103433"
+    },
+    {
+      "semanticId": "unit:high_templar/feedback-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:high_templar",
+      "sourceName": "Feedback",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "99fd065f84402620452cc1a329d7a975aead730bc89e39820938298d28c18943"
+    },
+    {
+      "semanticId": "unit:high_templar/psi-blast-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:high_templar",
+      "sourceName": "Psi Blast",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "4bb3a4f0f3d8c414b67dc5bcc698ad966959d79c23fac5481fdc0f7b6c4b8353"
+    },
+    {
+      "semanticId": "unit:high_templar/strike-combat-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:high_templar",
+      "sourceName": "Strike",
+      "sourcePhase": "Combat Phase",
+      "behaviorHash": "2fc431b141eaa3eeec8864a7e1da7514c12a489a6f94337527c37d87931ab498"
+    },
+    {
+      "semanticId": "unit:holo_decoy/lethal-hologram-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:holo_decoy",
+      "sourceName": "Lethal Hologram",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "855a6fd7436c6b96f1302ea83b5532c5a6dafa2152ff7cda066cda9e551795e2"
+    },
+    {
+      "semanticId": "unit:holo_decoy/timed-life-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:holo_decoy",
+      "sourceName": "Timed Life",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "79ff64d900cd210e792997f88443f91398fb283760e0c7d6fe1b20f20ba40dbd"
+    },
+    {
+      "semanticId": "unit:holo_decoy/decoy-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:holo_decoy",
+      "sourceName": "Decoy",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "942b139aba432e645e40b053e047f83dc870f15e35117e135b1232652ee053f9"
+    },
+    {
+      "semanticId": "unit:holo_decoy/surprise-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:holo_decoy",
+      "sourceName": "Surprise!",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "9ced7f1f3c47dbe5e5fa928f052efa63acc5f1e07b6d14b79bc9dca4d8c401f3"
+    },
+    {
+      "semanticId": "unit:hydralisk/squadron-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:hydralisk",
+      "sourceName": "Squadron",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "8b78c1c56784d2e0ab4c95d4f9ba6e07447ac25163b5634f6a02f543ca2e735e"
+    },
+    {
+      "semanticId": "unit:hydralisk/ancillary-carapace-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:hydralisk",
+      "sourceName": "Ancillary Carapace",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "a3363e556ab70cb031dc69cb4f28a55ad3fc42844fb00327a430ac81e36ad131"
+    },
+    {
+      "semanticId": "unit:hydralisk/lurking-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:hydralisk",
+      "sourceName": "Lurking",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "3802a675abac0d8bfac6989415024ca2520659dc8858c98865548a36a25bd2dd"
+    },
+    {
+      "semanticId": "unit:hydralisk/burrow-ambush-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:hydralisk",
+      "sourceName": "Burrow Ambush",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "651d68374b2771cbd8c1e0bc7eb87bbe08b25fe65808a5e8df1f72be2ac41299"
+    },
+    {
+      "semanticId": "unit:hydralisk/needle-spines-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:hydralisk",
+      "sourceName": "Needle Spines",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "d687495d785333b50c0c900c0144962e7dbb9e8e5f7de7373c5c66f690af5b49"
+    },
+    {
+      "semanticId": "unit:hydralisk/lunge-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:hydralisk",
+      "sourceName": "Lunge",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "0983b657f0f93b3da7d6c9d839a2b4d6607b28209afa2b9ca9c6b0c636f0ff24"
+    },
+    {
+      "semanticId": "unit:hydralisk/grooved-spines-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:hydralisk",
+      "sourceName": "Grooved Spines",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "4c2fe13c66a8cb05e253006a85b703c08f059556705ec5750ad8a50ee30b7298"
+    },
+    {
+      "semanticId": "unit:hydralisk/scythe-combat-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:hydralisk",
+      "sourceName": "Scythe",
+      "sourcePhase": "Combat Phase",
+      "behaviorHash": "bc2d82aaebdf587f461ab49667748171bfaa76f9e36de3f7a1801f9d2dc68139"
+    },
+    {
+      "semanticId": "unit:immortal/shield-overcharge-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:immortal",
+      "sourceName": "Shield Overcharge",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "9277add818431ee2315a34bb88f0dafa0ea43f5f75626dc9c78690da81357f41"
+    },
+    {
+      "semanticId": "unit:immortal/improved-barrier-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:immortal",
+      "sourceName": "Improved Barrier",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "b4edc95de956f83f3e24e3d4d8476b99449a3fe0a99967e4990132d5d3361bac"
+    },
+    {
+      "semanticId": "unit:immortal/left-photon-disruptor-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:immortal",
+      "sourceName": "Left Photon Disruptor",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "5efe5381c189ecd9b17ec86b2b68c74d241f8f1da5e484fc5d2d20f3a094db32"
+    },
+    {
+      "semanticId": "unit:immortal/right-photon-disruptor-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:immortal",
+      "sourceName": "Right Photon Disruptor",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "b97eb0e8060698e46097a4726d6e63f102d726f06323a4b6e225a21a9176b4b6"
+    },
+    {
+      "semanticId": "unit:immortal/left-phase-disruptor-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:immortal",
+      "sourceName": "Left Phase Disruptor",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "eb8b4a612540c0aed14a8012bca972693d955b8a7f95674cc694b26fbc135dc8"
+    },
+    {
+      "semanticId": "unit:immortal/right-phase-disruptor-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:immortal",
+      "sourceName": "Right Phase Disruptor",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "53000b3151e03ea9436c04dffb0528003635da5b6934e0ab894fe82caa18dbfe"
+    },
+    {
+      "semanticId": "unit:immortal/fury-unyielding-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:immortal",
+      "sourceName": "Fury Unyielding",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "591a7a49b640db201604bbb589e6e5291dc2cf70b882ff3d0a67725f07738215"
+    },
+    {
+      "semanticId": "unit:immortal/for-the-ancients-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:immortal",
+      "sourceName": "For the Ancients",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "2dcbc1520c8e2e0fa93dc5e1553940394d73d3c6c1a65bf0eafafc76a2e4557a"
+    },
+    {
+      "semanticId": "unit:immortal/indomitable-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:immortal",
+      "sourceName": "Indomitable",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "d56dc4bc43e1af494b023d523a0c7471ca61c363c95ae886e8350d1889733280"
+    },
+    {
+      "semanticId": "unit:immortal/devastating-charge-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:immortal",
+      "sourceName": "Devastating Charge",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "0fc366ca8e68c95589dc29456cf393bbbc07e3ddea5b2979597e796917f2633f"
+    },
+    {
+      "semanticId": "unit:immortal/stomp-combat-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:immortal",
+      "sourceName": "Stomp",
+      "sourcePhase": "Combat Phase",
+      "behaviorHash": "6e711dd535c61db41331c4583bad5446e12fb5f7e70bc38b3fe1413b15223758"
+    },
+    {
+      "semanticId": "unit:infested_goliath/ares-class-targeting-system-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:infested_goliath",
+      "sourceName": "Ares-Class Targeting System",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "d59bc5f36d9feea5144271eba43c12dfd804fb1182440ddbcefc1dff668114f0"
+    },
+    {
+      "semanticId": "unit:infested_goliath/target-lock-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:infested_goliath",
+      "sourceName": "Target Lock",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "b67e77bb1eec28f3cfcbb40e75304fb6218e9d0cd916eede798b6f91d3b7d6a3"
+    },
+    {
+      "semanticId": "unit:infested_goliath/indomitable-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:infested_goliath",
+      "sourceName": "Indomitable",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "d56dc4bc43e1af494b023d523a0c7471ca61c363c95ae886e8350d1889733280"
+    },
+    {
+      "semanticId": "unit:infested_goliath/autocannon-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:infested_goliath",
+      "sourceName": "Autocannon",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "716f4305ad655877def74fef7aab4a07b1fc462f644cdb93dd14169d0abf4760"
+    },
+    {
+      "semanticId": "unit:infested_goliath/underbelly-machine-gun-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:infested_goliath",
+      "sourceName": "Underbelly Machine Gun",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "dda176f3ce1a5cb1657f805810c0a7876d07b4023eeafffac05869ba2fcb7a26"
+    },
+    {
+      "semanticId": "unit:infested_goliath/hellfire-missiles-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:infested_goliath",
+      "sourceName": "Hellfire Missiles",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "0d96ae0a99f3fc403bdd06272f4e555684b33d734c7971736994ec1f89edb75c"
+    },
+    {
+      "semanticId": "unit:infested_goliath/scatter-missiles-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:infested_goliath",
+      "sourceName": "Scatter Missiles",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "115e9278a389e9c078c889a6afc1de5cd812ea3563eddd5c1e9c03ad21270101"
+    },
+    {
+      "semanticId": "unit:infested_goliath/haywire-missiles-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:infested_goliath",
+      "sourceName": "Haywire Missiles",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "d3e2c71d4ecaebec16ddecf9c370c42f263239ad0144fc2ee89a0cacfc56d38d"
+    },
+    {
+      "semanticId": "unit:infested_goliath/devastating-charge-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:infested_goliath",
+      "sourceName": "Devastating Charge",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "0fc366ca8e68c95589dc29456cf393bbbc07e3ddea5b2979597e796917f2633f"
+    },
+    {
+      "semanticId": "unit:infested_goliath/stomp-combat-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:infested_goliath",
+      "sourceName": "Stomp",
+      "sourcePhase": "Combat Phase",
+      "behaviorHash": "8b2328355c0fe909aad88977ec5b9dc1c909a075453f65f1d38ab7bd07bedc40"
+    },
+    {
+      "semanticId": "unit:infested_marine/live-for-the-swarm-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:infested_marine",
+      "sourceName": "Live for the Swarm!",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "60ab66acedb1c10d0dd0282395098d08db1bf4aee63cac7769d7a1976ffa3225"
+    },
+    {
+      "semanticId": "unit:infested_marine/detonation-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:infested_marine",
+      "sourceName": "Detonation",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "5a35a9d9980d4279545792227a20cbe2c7aecb672b461f1de07f0dcc42b7bfbd"
+    },
+    {
+      "semanticId": "unit:infested_marine/burrow-ambush-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:infested_marine",
+      "sourceName": "Burrow Ambush",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "651d68374b2771cbd8c1e0bc7eb87bbe08b25fe65808a5e8df1f72be2ac41299"
+    },
+    {
+      "semanticId": "unit:infested_marine/plagued-munitions-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:infested_marine",
+      "sourceName": "Plagued Munitions",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "17058ded1acfe634fddfdc2f200a22f0c32ae069698c43f840e27bd17cd0a668"
+    },
+    {
+      "semanticId": "unit:infested_marine/infested-c-14-rifle-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:infested_marine",
+      "sourceName": "Infested C-14 Rifle",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "c282fd056778eed64a0c19dd3900b00dd86cf2d91d4af594dc8c6d6eda0d71af"
+    },
+    {
+      "semanticId": "unit:infested_marine/infested-missile-launcher-acid-blast-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:infested_marine",
+      "sourceName": "Infested Missile Launcher - Acid Blast",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "567495cbb1b20f438711bdeadb248d1681ae97458dff05d5ebf31ed58bf9856b"
+    },
+    {
+      "semanticId": "unit:infested_marine/infested-missile-launcher-scourgeshot-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:infested_marine",
+      "sourceName": "Infested Missile Launcher - Scourgeshot",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "2984f583b15114b6ec1a9ebe7bea2858b7f06dc950173fa4ed532d8bebb78cb1"
+    },
+    {
+      "semanticId": "unit:infested_marine/devastating-charge-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:infested_marine",
+      "sourceName": "Devastating Charge",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "e727032c23373211749eae306c4ec1982ed490f10df1ea9f2fa9005caec0d19c"
+    },
+    {
+      "semanticId": "unit:infested_marine/wild-mutation-combat-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:infested_marine",
+      "sourceName": "Wild Mutation",
+      "sourcePhase": "Combat Phase",
+      "behaviorHash": "80634809d346860a48e1b213b2198bb748d99b1c9a07e3f89c586f69f3f6f508"
+    },
+    {
+      "semanticId": "unit:infested_marine/strike-combat-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:infested_marine",
+      "sourceName": "Strike",
+      "sourcePhase": "Combat Phase",
+      "behaviorHash": "2fc431b141eaa3eeec8864a7e1da7514c12a489a6f94337527c37d87931ab498"
+    },
+    {
+      "semanticId": "unit:infested_missile_turret/detection-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:infested_missile_turret",
+      "sourceName": "Detection",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "4144c0d955c20e5893d4b4ed50d5fe293faed2d943d05865ef592308a2fdc1bb"
+    },
+    {
+      "semanticId": "unit:infested_missile_turret/source-of-creep-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:infested_missile_turret",
+      "sourceName": "Source of Creep",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "f959c1faa9544eff6453157773658e3224abb181cd7e45421b08f076d98050dd"
+    },
+    {
+      "semanticId": "unit:infested_missile_turret/infestation-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:infested_missile_turret",
+      "sourceName": "Infestation",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "866e5c115bdee8be2035e0e3f00efc3acaa74687d36493cc62b823be4edc15b4"
+    },
+    {
+      "semanticId": "unit:infested_missile_turret/structure-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:infested_missile_turret",
+      "sourceName": "Structure",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "d0a76fbc68afa466b7c2ad7dd655e829834c4c696dbfa30f84a05491c32a820e"
+    },
+    {
+      "semanticId": "unit:infested_missile_turret/firefly-missiles-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:infested_missile_turret",
+      "sourceName": "Firefly Missiles",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "8362903439e17949131ef67ca183a53c3e3bc4b795742dac54030afac2b74a8d"
+    },
+    {
+      "semanticId": "unit:infested_missile_turret/ocular-overwatch-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:infested_missile_turret",
+      "sourceName": "Ocular Overwatch",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "384db04a79b0143cb6289a576fa236e4f23d95f39f58ff1cf780aaa7dbb4a5b9"
+    },
+    {
+      "semanticId": "unit:infested_siege_tank/large-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:infested_siege_tank",
+      "sourceName": "Large",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "9106f2da3418b31db7f160cc7ed90b0fcc9d68daa3d0f42fcbb3335088c0b8a8"
+    },
+    {
+      "semanticId": "unit:infested_siege_tank/heavy-plating-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:infested_siege_tank",
+      "sourceName": "Heavy Plating",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "e18fd419a46576be06bc42e4238b68a271c1bb7c1090cdd7a3bc7a0448777385"
+    },
+    {
+      "semanticId": "unit:infested_siege_tank/mode-transformation-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:infested_siege_tank",
+      "sourceName": "Mode Transformation",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "02628519d795d78879e2681de399693c822afd01d08d27039cdffe55e6771ff0"
+    },
+    {
+      "semanticId": "unit:infested_siege_tank/coordinated-strike-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:infested_siege_tank",
+      "sourceName": "Coordinated Strike",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "cd476636e3468a4ea27ccbb6d120489e8a4109d22efebbe5ea44a29197bac76b"
+    },
+    {
+      "semanticId": "unit:infested_siege_tank/twin-cannon-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:infested_siege_tank",
+      "sourceName": "Twin Cannon",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "921e5328fc16735238a9226d01148b2e391aa7e1b1894e37c14328cebc0841d1"
+    },
+    {
+      "semanticId": "unit:infested_siege_tank/shock-cannon-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:infested_siege_tank",
+      "sourceName": "Shock Cannon",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "741007b479b49b963311a3717dfc8e297abd495ac29a74e9b4148a93a11d8eb7"
+    },
+    {
+      "semanticId": "unit:infested_siege_tank/indomitable-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:infested_siege_tank",
+      "sourceName": "Indomitable",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "d56dc4bc43e1af494b023d523a0c7471ca61c363c95ae886e8350d1889733280"
+    },
+    {
+      "semanticId": "unit:infested_siege_tank/point-blank-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:infested_siege_tank",
+      "sourceName": "Point Blank",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "fa40a3dff2214aeaf32f72ce82e57bf895fb52b0297698fe6ac75e18276b0b3b"
+    },
+    {
+      "semanticId": "unit:infested_siege_tank/aftershock-rounds-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:infested_siege_tank",
+      "sourceName": "Aftershock Rounds",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "e94a1d520708216140ad4cb38aebaabedeeeca9d178cf0b430dc58550c303c44"
+    },
+    {
+      "semanticId": "unit:infested_siege_tank/shaped-blast-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:infested_siege_tank",
+      "sourceName": "Shaped Blast",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "9f3ce7cb6c25c80776d2db2fd63d75d95a281c36940a1ed59f7ea1cba34d1a4b"
+    },
+    {
+      "semanticId": "unit:infested_siege_tank/smart-shells-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:infested_siege_tank",
+      "sourceName": "Smart Shells",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "85df454a89cb904e5aec72ec5c7683b53b8f8575629fd74df3147bbddfd017f5"
+    },
+    {
+      "semanticId": "unit:infested_siege_tank/devastating-charge-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:infested_siege_tank",
+      "sourceName": "Devastating Charge",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "0fc366ca8e68c95589dc29456cf393bbbc07e3ddea5b2979597e796917f2633f"
+    },
+    {
+      "semanticId": "unit:infested_siege_tank/rolling-over-combat-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:infested_siege_tank",
+      "sourceName": "Rolling Over",
+      "sourcePhase": "Combat Phase",
+      "behaviorHash": "9d24c61924cfd1196a6f82c1c30af5b944996414342240c1443bc6278766df46"
+    },
+    {
+      "semanticId": "unit:infested_trooper/live-for-the-swarm-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:infested_trooper",
+      "sourceName": "Live for the Swarm!",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "60ab66acedb1c10d0dd0282395098d08db1bf4aee63cac7769d7a1976ffa3225"
+    },
+    {
+      "semanticId": "unit:infested_trooper/detonation-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:infested_trooper",
+      "sourceName": "Detonation",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "12ff4a4a93693143ba4653145e929e06213d56a88bf1a41cd826220e41003cc9"
+    },
+    {
+      "semanticId": "unit:infested_trooper/spread-infestation-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:infested_trooper",
+      "sourceName": "Spread Infestation",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "7a270c61a7f61e87ebbb8001d273eec677b426c8ea4f5bdc63b65088fba2993b"
+    },
+    {
+      "semanticId": "unit:infested_trooper/burrow-ambush-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:infested_trooper",
+      "sourceName": "Burrow Ambush",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "651d68374b2771cbd8c1e0bc7eb87bbe08b25fe65808a5e8df1f72be2ac41299"
+    },
+    {
+      "semanticId": "unit:infested_trooper/plagued-munitions-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:infested_trooper",
+      "sourceName": "Plagued Munitions",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "17058ded1acfe634fddfdc2f200a22f0c32ae069698c43f840e27bd17cd0a668"
+    },
+    {
+      "semanticId": "unit:infested_trooper/infested-c-14-rifle-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:infested_trooper",
+      "sourceName": "Infested C-14 Rifle",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "b5a723e7bed05b9277297ed297459782375771014c918b222348c646f01ce991"
+    },
+    {
+      "semanticId": "unit:infested_trooper/devastating-charge-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:infested_trooper",
+      "sourceName": "Devastating Charge",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "e727032c23373211749eae306c4ec1982ed490f10df1ea9f2fa9005caec0d19c"
+    },
+    {
+      "semanticId": "unit:infested_trooper/bayonet-combat-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:infested_trooper",
+      "sourceName": "Bayonet",
+      "sourcePhase": "Combat Phase",
+      "behaviorHash": "31843866e1d08b14c2a990d5a5b0c41ef19072968ab48b6f0d1029ac965fcf31"
+    },
+    {
+      "semanticId": "unit:jim_raynor/commander-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:jim_raynor",
+      "sourceName": "Commander",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "b9c2fd3d0ca6a0fee10759c236625cf061a9bfccbe9ab2927785d4344a61e85b"
+    },
+    {
+      "semanticId": "unit:jim_raynor/freedom-fighters-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:jim_raynor",
+      "sourceName": "Freedom Fighters",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "cb020f5e7820797cae4a95c21b5692c3108f69151dc19896c1bce13874d15f3e"
+    },
+    {
+      "semanticId": "unit:jim_raynor/orders-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:jim_raynor",
+      "sourceName": "Orders",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "558c03889dfb58b282cd056971a1a95b4059c095a7df5a20e20172e94a403499"
+    },
+    {
+      "semanticId": "unit:jim_raynor/commando-rifle-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:jim_raynor",
+      "sourceName": "Commando Rifle",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "48b16d37950668346497807167603bbab0911f9591403314c86d27bcd1695f77"
+    },
+    {
+      "semanticId": "unit:jim_raynor/c-14-rifle-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:jim_raynor",
+      "sourceName": "C-14 Rifle",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "577ce9eea13cf99a74f16cd5d5884669de879ec070dc208b325ee35d7394bc34"
+    },
+    {
+      "semanticId": "unit:jim_raynor/justice-revolver-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:jim_raynor",
+      "sourceName": "“Justice” Revolver",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "2b4fbe7612c53388d58c3f4c9522f1783dfd4e260bcabba80f7c6ff086063e6a"
+    },
+    {
+      "semanticId": "unit:jim_raynor/bayonet-combat-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:jim_raynor",
+      "sourceName": "Bayonet",
+      "sourcePhase": "Combat Phase",
+      "behaviorHash": "574a1f907d574c256655c503e6d331f9154af9579ae6661a020c5995279400e7"
+    },
+    {
+      "semanticId": "unit:kerrigan/commander-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:kerrigan",
+      "sourceName": "Commander",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "b9c2fd3d0ca6a0fee10759c236625cf061a9bfccbe9ab2927785d4344a61e85b"
+    },
+    {
+      "semanticId": "unit:kerrigan/crushing-grip-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:kerrigan",
+      "sourceName": "Crushing Grip",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "beb6b4af68efff06f43e1a0e0a2702a836bdcfd725f9465acf9cf0aaafcd5b3f"
+    },
+    {
+      "semanticId": "unit:kerrigan/mutating-carapace-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:kerrigan",
+      "sourceName": "Mutating Carapace",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "41a558e8d28b27bc720189de834d8cc2b4f2802f21a0b40b027f1ce49bd704ef"
+    },
+    {
+      "semanticId": "unit:kerrigan/energy-blast-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:kerrigan",
+      "sourceName": "Energy Blast",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "8be39c071a03ce3bb058c27ed2ab4bf024783fa8633a09b750f5f1f760dc7da5"
+    },
+    {
+      "semanticId": "unit:kerrigan/leaping-strike-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:kerrigan",
+      "sourceName": "Leaping Strike",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "1ade2ae7bae99b824320a2e1a4c96bdda14bb26b35d1cb2ea75801531856830e"
+    },
+    {
+      "semanticId": "unit:kerrigan/devastating-charge-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:kerrigan",
+      "sourceName": "Devastating Charge",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "346fbed468becb4a1ca08aade1f2c20c0db70e849846bd4c5f4ce891ba088cea"
+    },
+    {
+      "semanticId": "unit:kerrigan/blades-combat-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:kerrigan",
+      "sourceName": "Blades",
+      "sourcePhase": "Combat Phase",
+      "behaviorHash": "fe5d604ac85b91fb3c600c18f1d53305016c6ae1495cb85647436141b8d6f84d"
+    },
+    {
+      "semanticId": "unit:kerrigan_swarm_raptor__zergling_/squadron-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:kerrigan_swarm_raptor__zergling_",
+      "sourceName": "Squadron",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "8b78c1c56784d2e0ab4c95d4f9ba6e07447ac25163b5634f6a02f543ca2e735e"
+    },
+    {
+      "semanticId": "unit:kerrigan_swarm_raptor__zergling_/raptor-strain-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:kerrigan_swarm_raptor__zergling_",
+      "sourceName": "Raptor Strain",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "08c0a5e2337bcbc8538c68346bdf13948f19375604a558dbad1cbe5c7f461178"
+    },
+    {
+      "semanticId": "unit:kerrigan_swarm_raptor__zergling_/leap-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:kerrigan_swarm_raptor__zergling_",
+      "sourceName": "Leap",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "32bf572b208c73317b1ff0c14c39fef50c01f60a29914accea853bae3af834b1"
+    },
+    {
+      "semanticId": "unit:kerrigan_swarm_raptor__zergling_/adrenal-overload-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:kerrigan_swarm_raptor__zergling_",
+      "sourceName": "Adrenal Overload",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "36addd5cbb728251972a29c6a7a7fe308f977d699da78d3f06ca486b7ce96e59"
+    },
+    {
+      "semanticId": "unit:kerrigan_swarm_raptor__zergling_/devastating-charge-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:kerrigan_swarm_raptor__zergling_",
+      "sourceName": "Devastating Charge",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "87a1f404ae5d4a794c016ed45dc1e28d0afe119cc38f393d84298eb2274192da"
+    },
+    {
+      "semanticId": "unit:kerrigan_swarm_raptor__zergling_/claws-combat-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:kerrigan_swarm_raptor__zergling_",
+      "sourceName": "Claws",
+      "sourcePhase": "Combat Phase",
+      "behaviorHash": "f0d42aef4fc4d34b8926d4b74bae35f52c334156a78538a71c28ff1e287bc715"
+    },
+    {
+      "semanticId": "unit:marauder/veteran-of-tarsonis-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:marauder",
+      "sourceName": "Veteran of Tarsonis",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "446ce3dd80ed0f023d51bb801b8147ad1043658b62a23cab44de25c6a7680ec4"
+    },
+    {
+      "semanticId": "unit:marauder/kinetic-foam-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:marauder",
+      "sourceName": "Kinetic Foam",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "dd8e3fc4e80d65a8572cc69de217a3e0d970f9224568150feccf66ab6821e0b7"
+    },
+    {
+      "semanticId": "unit:marauder/stimpack-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:marauder",
+      "sourceName": "Stimpack",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "0fa9f5aa4ed52355ff6b3bf3062beea710c9d214df5716edd53b1837f5c8d9fb"
+    },
+    {
+      "semanticId": "unit:marauder/quad-k12-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:marauder",
+      "sourceName": "Quad K12",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "3d578b71a68c2f7760e23ddefeca1d1eab096d6944172a9d7a7d982765a5dc33"
+    },
+    {
+      "semanticId": "unit:marauder/concussive-shells-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:marauder",
+      "sourceName": "Concussive Shells",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "9b0e654443879466639388c003bb4ee040f5f2c4ac04c00fc156c6791a1a68e0"
+    },
+    {
+      "semanticId": "unit:marauder/laser-targeting-systems-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:marauder",
+      "sourceName": "Laser Targeting Systems",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "1016cd870552d29ca90024d74fdb8756e3094dca4a48e3817d0709b162b8d832"
+    },
+    {
+      "semanticId": "unit:marauder/strike-combat-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:marauder",
+      "sourceName": "Strike",
+      "sourcePhase": "Combat Phase",
+      "behaviorHash": "bc2d82aaebdf587f461ab49667748171bfaa76f9e36de3f7a1801f9d2dc68139"
+    },
+    {
+      "semanticId": "unit:marine/stimpack-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:marine",
+      "sourceName": "Stimpack",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "179b3baea00c77742caf7fa002b65cd573cc35ae07cad7db1baa21fb8504348d"
+    },
+    {
+      "semanticId": "unit:marine/combat-shield-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:marine",
+      "sourceName": "Combat Shield",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "b2d6bf70141104df23024b11eefb9f2eb1d5dc3a05f287b42b6bf9e4c325e154"
+    },
+    {
+      "semanticId": "unit:marine/c-14-rifle-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:marine",
+      "sourceName": "C-14 rifle",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "66eaf7b8d1cbee7af2710c906e4d403a072061df72d8745c3a97defe2a58a3a5"
+    },
+    {
+      "semanticId": "unit:marine/agg-12-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:marine",
+      "sourceName": "AGG-12",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "2a59dc3cbd3ac2e33572ffbea56bfce8252eba214d814b59f9be109af4c1c18e"
+    },
+    {
+      "semanticId": "unit:marine/rocket-launcher-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:marine",
+      "sourceName": "Rocket Launcher",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "650ea7db948d22565798507954e4f6ff9c99295705ed5f4f54888c83ee007ac1"
+    },
+    {
+      "semanticId": "unit:marine/slugthrower-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:marine",
+      "sourceName": "Slugthrower",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "1216c069a3a2ef00f5cd12e0465b55d3344d34fa8eb09f4357a42626e29657a5"
+    },
+    {
+      "semanticId": "unit:marine/grenades-frag-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:marine",
+      "sourceName": "Grenades - Frag",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "eb48317d9db27975cde978feefa9bd9399d6c51cf43950292ce58e91dadfa3b6"
+    },
+    {
+      "semanticId": "unit:marine/strike-combat-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:marine",
+      "sourceName": "Strike",
+      "sourcePhase": "Combat Phase",
+      "behaviorHash": "fdb3e8178edd3ebeff5c3400abe31a38140e1c3f091c84f4f73e0f0652583a1c"
+    },
+    {
+      "semanticId": "unit:marine/bayonet-combat-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:marine",
+      "sourceName": "Bayonet",
+      "sourcePhase": "Combat Phase",
+      "behaviorHash": "1126bbd58a5399b17ad6c3b841cb2bce2da315ca766c76d7b4db686de79b7f8a"
+    },
+    {
+      "semanticId": "unit:medic/life-support-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:medic",
+      "sourceName": "Life Support",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "0b6a194e10d97be30941674479fd33444787d77888108b825694783e7a48f283"
+    },
+    {
+      "semanticId": "unit:medic/advanced-medic-facilities-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:medic",
+      "sourceName": "Advanced Medic Facilities",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "bef240dcd276bf42084e82743ff5c18517d3e73f681cf02399a022e178d2fa41"
+    },
+    {
+      "semanticId": "unit:medic/restoration-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:medic",
+      "sourceName": "Restoration",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "b360348aa44a1179a80c18cc1e226eda80e48554e8cde76b35184ec4bd1a5bed"
+    },
+    {
+      "semanticId": "unit:medic/a-13-flash-grenade-launcher-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:medic",
+      "sourceName": "A-13 Flash Grenade Launcher",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "1002cb02b8972b204b3fac394c534917ea85ed98d92b43156c196a2de034d71e"
+    },
+    {
+      "semanticId": "unit:medic/stabilizer-medpacks-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:medic",
+      "sourceName": "Stabilizer Medpacks",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "d79a9f40c7bb6e4938977c64c5cdf17180a6b86c87405c8f3d095f8ce16c9c3a"
+    },
+    {
+      "semanticId": "unit:medic/medpack-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:medic",
+      "sourceName": "Medpack",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "9e41341c39133cd29392eb4c51e1feb7ec163f7fd0b15de093900376d7a1d1e4"
+    },
+    {
+      "semanticId": "unit:medic/optical-flare-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:medic",
+      "sourceName": "Optical Flare",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "8af232fec44cc355ad4fab406d6c9c324dd186190d91d3da7eecc5097f0d34f5"
+    },
+    {
+      "semanticId": "unit:medic/strike-combat-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:medic",
+      "sourceName": "Strike",
+      "sourcePhase": "Combat Phase",
+      "behaviorHash": "fdb3e8178edd3ebeff5c3400abe31a38140e1c3f091c84f4f73e0f0652583a1c"
+    },
+    {
+      "semanticId": "unit:nerazim_watchers__adept_/path-of-shadows-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:nerazim_watchers__adept_",
+      "sourceName": "Path of Shadows",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "f8a6908a806cdd802f576a5624a7c85c10d4acc8a7ba058768ddd62d21be1ac4"
+    },
+    {
+      "semanticId": "unit:nerazim_watchers__adept_/nerazim-farsight-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:nerazim_watchers__adept_",
+      "sourceName": "Nerazim Farsight",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "f7188ea438f8fb3e597e79099baf09beeb852c5bd1b3c0edeb8b489068c7548c"
+    },
+    {
+      "semanticId": "unit:nerazim_watchers__adept_/psionic-transfer-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:nerazim_watchers__adept_",
+      "sourceName": "Psionic Transfer",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "45c0364b8137b988584534ab78b8c4af6aeeb18b34d05bd65bbd0ecd3e442a61"
+    },
+    {
+      "semanticId": "unit:nerazim_watchers__adept_/glaive-cannon-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:nerazim_watchers__adept_",
+      "sourceName": "Glaive Cannon",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "bfc25e4bbfb84cec5a1c53bcc3485b7a6030caec76963be070e7f7178ab2850e"
+    },
+    {
+      "semanticId": "unit:nerazim_watchers__adept_/strike-combat-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:nerazim_watchers__adept_",
+      "sourceName": "Strike",
+      "sourcePhase": "Combat Phase",
+      "behaviorHash": "fdb3e8178edd3ebeff5c3400abe31a38140e1c3f091c84f4f73e0f0652583a1c"
+    },
+    {
+      "semanticId": "unit:nova_assault_mode/battle-preparation-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:nova_assault_mode",
+      "sourceName": "Battle Preparation",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "7cb7b7aeeb0411ceb9873cb0c2a89e31f9d0e1bf25cecdcb5dc334b36698994b"
+    },
+    {
+      "semanticId": "unit:nova_assault_mode/ghost-visor-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:nova_assault_mode",
+      "sourceName": "Ghost Visor",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "487d42d446bdba53b99830e87f92ca2f650091489511db3059bdccab080948f4"
+    },
+    {
+      "semanticId": "unit:nova_assault_mode/holo-decoy-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:nova_assault_mode",
+      "sourceName": "Holo Decoy",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "c29d455fbdabcb901399803a41ca0f590f77ff614fcf5cc5dceb9bfcccfbde56"
+    },
+    {
+      "semanticId": "unit:nova_assault_mode/super-stimpack-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:nova_assault_mode",
+      "sourceName": "Super Stimpack",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "fe7ab9347a51b90069e469a31d8b912d05c7b8978ee986be66a21cd332f62a87"
+    },
+    {
+      "semanticId": "unit:nova_assault_mode/hellfire-shotgun-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:nova_assault_mode",
+      "sourceName": "Hellfire Shotgun",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "3f1c43e4fa5da9434b6f67123c860091b4b1d75475ea8c1d66288e894f7509c7"
+    },
+    {
+      "semanticId": "unit:nova_assault_mode/phase-reactor-suit-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:nova_assault_mode",
+      "sourceName": "Phase Reactor Suit",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "f72b4118816df52bdaad36280cab959225dbd732b88e5e9612138655ae631782"
+    },
+    {
+      "semanticId": "unit:nova_assault_mode/devastating-charge-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:nova_assault_mode",
+      "sourceName": "Devastating Charge",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "346fbed468becb4a1ca08aade1f2c20c0db70e849846bd4c5f4ce891ba088cea"
+    },
+    {
+      "semanticId": "unit:nova_assault_mode/monomolecular-blade-combat-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:nova_assault_mode",
+      "sourceName": "Monomolecular Blade",
+      "sourcePhase": "Combat Phase",
+      "behaviorHash": "a54cb949746739dbe6433bb4407dc8017be9da2b400fa2b214f0495f71017062"
+    },
+    {
+      "semanticId": "unit:nova_stealth_mode/battle-preparation-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:nova_stealth_mode",
+      "sourceName": "Battle Preparation",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "7cb7b7aeeb0411ceb9873cb0c2a89e31f9d0e1bf25cecdcb5dc334b36698994b"
+    },
+    {
+      "semanticId": "unit:nova_stealth_mode/tactical-stealth-suit-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:nova_stealth_mode",
+      "sourceName": "Tactical Stealth Suit",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "f19ffacf5d8709ba75c1d5f0f4ce266e94309eee5dac8e55658243862416b650"
+    },
+    {
+      "semanticId": "unit:nova_stealth_mode/ghost-visor-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:nova_stealth_mode",
+      "sourceName": "Ghost Visor",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "487d42d446bdba53b99830e87f92ca2f650091489511db3059bdccab080948f4"
+    },
+    {
+      "semanticId": "unit:nova_stealth_mode/super-stimpack-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:nova_stealth_mode",
+      "sourceName": "Super Stimpack",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "fe7ab9347a51b90069e469a31d8b912d05c7b8978ee986be66a21cd332f62a87"
+    },
+    {
+      "semanticId": "unit:nova_stealth_mode/holo-decoy-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:nova_stealth_mode",
+      "sourceName": "Holo Decoy",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "c29d455fbdabcb901399803a41ca0f590f77ff614fcf5cc5dceb9bfcccfbde56"
+    },
+    {
+      "semanticId": "unit:nova_stealth_mode/c-20a-canister-rifle-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:nova_stealth_mode",
+      "sourceName": "C-20A Canister Rifle",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "0cb262ba50ff009713dfe8f6c3e5f212dc8b5d643ffc67bfbd651735f52d98b9"
+    },
+    {
+      "semanticId": "unit:nova_stealth_mode/operational-efficiency-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:nova_stealth_mode",
+      "sourceName": "Operational Efficiency",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "6aff2229ed04ee0808cc8225e8c17fcb84dab77883d89106715a009d05b025b0"
+    },
+    {
+      "semanticId": "unit:nova_stealth_mode/head-shot-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:nova_stealth_mode",
+      "sourceName": "Head Shot",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "28116c4eca96fc9f19113dfe52f7234c9ceb3b5e92386055d6499d66de830372"
+    },
+    {
+      "semanticId": "unit:nova_stealth_mode/combat-knife-combat-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:nova_stealth_mode",
+      "sourceName": "Combat Knife",
+      "sourcePhase": "Combat Phase",
+      "behaviorHash": "7331f552b094f75f41e71170daef050d66e5a4c2512efed2807a18a5869d9d4c"
+    },
+    {
+      "semanticId": "unit:omega_worm/detection-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:omega_worm",
+      "sourceName": "Detection",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "329bcd1a620467a890b7dea5bee07fa8b5b21057d1cc1e7a601f0d9c0b67a109"
+    },
+    {
+      "semanticId": "unit:omega_worm/source-of-creep-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:omega_worm",
+      "sourceName": "Source of Creep",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "f959c1faa9544eff6453157773658e3224abb181cd7e45421b08f076d98050dd"
+    },
+    {
+      "semanticId": "unit:omega_worm/structure-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:omega_worm",
+      "sourceName": "Structure",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "d0a76fbc68afa466b7c2ad7dd655e829834c4c696dbfa30f84a05491c32a820e"
+    },
+    {
+      "semanticId": "unit:omega_worm/omega-network-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:omega_worm",
+      "sourceName": "Omega Network",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "62f47f04c456fc137e8680e84c3eda3e766c331b1ffd0d628c1afe4c273894ee"
+    },
+    {
+      "semanticId": "unit:phasing_scarab/timed-life-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:phasing_scarab",
+      "sourceName": "Timed Life",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "79ff64d900cd210e792997f88443f91398fb283760e0c7d6fe1b20f20ba40dbd"
+    },
+    {
+      "semanticId": "unit:phasing_scarab/nimble-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:phasing_scarab",
+      "sourceName": "Nimble",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "d3b0962078a61aa30a9a00260f710e25167111d7c8864d1f42ccc7b827e360b8"
+    },
+    {
+      "semanticId": "unit:phasing_scarab/proximity-detonation-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:phasing_scarab",
+      "sourceName": "Proximity Detonation",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "01240c69d6eec75989f5a85dce68468817900bc1f19e12241bc83bc2ca3499ea"
+    },
+    {
+      "semanticId": "unit:phasing_scarab/explosive-charge-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:phasing_scarab",
+      "sourceName": "Explosive Charge",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "0ed64cc708cac78c8ca059b2e6b8f42bf1d8af37a8cf44bc395b7b08493e86d4"
+    },
+    {
+      "semanticId": "unit:phasing_scarab/phase-blast-combat-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:phasing_scarab",
+      "sourceName": "Phase Blast",
+      "sourcePhase": "Combat Phase",
+      "behaviorHash": "890c330a5b31e7c9bf1b08417e400d8835e6dca25154f4aa3ea2ff2aa95695b7"
+    },
+    {
+      "semanticId": "unit:point_defense_drone/point-defense-laser-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:point_defense_drone",
+      "sourceName": "Point Defense Laser",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "8356f0c7728e003c026a0f9d0bd3ee8ccdc6079b5306bf0dddd6269f77d33bc4"
+    },
+    {
+      "semanticId": "unit:point_defense_drone/gliding-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:point_defense_drone",
+      "sourceName": "Gliding",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "d419138c35c9df5258704ccd19aa1326af4b8b12c12ee2a4769b91a8c51d44fc"
+    },
+    {
+      "semanticId": "unit:point_defense_drone/structure-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:point_defense_drone",
+      "sourceName": "Structure",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "d0a76fbc68afa466b7c2ad7dd655e829834c4c696dbfa30f84a05491c32a820e"
+    },
+    {
+      "semanticId": "unit:praetor_guard__zealot_/shield-overcharge-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:praetor_guard__zealot_",
+      "sourceName": "Shield Overcharge",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "17aa652a62334626f4848b7470f2a02a38c8c99710e9f87ec9f9fa6ab37ee2ac"
+    },
+    {
+      "semanticId": "unit:praetor_guard__zealot_/leg-enhancements-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:praetor_guard__zealot_",
+      "sourceName": "Leg Enhancements",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "4a0dccbd30aa87c148dd91552366bc2235d1787ca3047b365fc45f6a5a042f88"
+    },
+    {
+      "semanticId": "unit:praetor_guard__zealot_/charge-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:praetor_guard__zealot_",
+      "sourceName": "Charge",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "c5f2ce0dabce425da6b696007a83b2df0f1f1e54fac455c42b690775e08f0967"
+    },
+    {
+      "semanticId": "unit:praetor_guard__zealot_/devastating-charge-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:praetor_guard__zealot_",
+      "sourceName": "Devastating Charge",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "5e78ad9e2f9df796f651896ea9006234565c354def48d537100038ee174532ba"
+    },
+    {
+      "semanticId": "unit:praetor_guard__zealot_/psi-blades-combat-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:praetor_guard__zealot_",
+      "sourceName": "Psi Blades",
+      "sourcePhase": "Combat Phase",
+      "behaviorHash": "58a08a6f158cfc114a89def3e6fa75bdae5b585a8bf0951657dcdc6c65331766"
+    },
+    {
+      "semanticId": "unit:praetor_guard__zealot_/titan-killers-combat-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:praetor_guard__zealot_",
+      "sourceName": "Titan Killers",
+      "sourcePhase": "Combat Phase",
+      "behaviorHash": "ce6a1c0435c8f8dee093aa4930ac37934312c866291d4ce57a1f318b7104d021"
+    },
+    {
+      "semanticId": "unit:praetor_guard__zealot_/precognition-combat-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:praetor_guard__zealot_",
+      "sourceName": "Precognition",
+      "sourcePhase": "Combat Phase",
+      "behaviorHash": "5554b07cf9c1c5b2fd691852bb03254a32a82bd9b98ae317e783629a1dc978a4"
+    },
+    {
+      "semanticId": "unit:pylon/structure-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:pylon",
+      "sourceName": "Structure",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "d0a76fbc68afa466b7c2ad7dd655e829834c4c696dbfa30f84a05491c32a820e"
+    },
+    {
+      "semanticId": "unit:pylon/khalai-ingenuity-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:pylon",
+      "sourceName": "Khalai Ingenuity",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "b3566ad6f8be352cb7ff40c58bd83777bb0245827799efabe4041fb4b5223b7c"
+    },
+    {
+      "semanticId": "unit:pylon/warp-conduit-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:pylon",
+      "sourceName": "Warp Conduit",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "8b019044ab6db86d49f5e05317d0c3e9ccf013150158fda49294b548fb0a95c0"
+    },
+    {
+      "semanticId": "unit:queen/spawn-creep-tumor-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:queen",
+      "sourceName": "Spawn Creep Tumor",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "2de25304b4b2103c995d145c2550a6d743682665cf98ecf3f0c57b89279eec3c"
+    },
+    {
+      "semanticId": "unit:queen/transfusion-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:queen",
+      "sourceName": "Transfusion",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "8d6af7266aca760f276961f7084457311ad2eb8a56da04809e5368bf0e71652b"
+    },
+    {
+      "semanticId": "unit:queen/restoration-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:queen",
+      "sourceName": "Restoration",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "cdf4fc1f93bfe8af1fa1bb94659319db0fc73facdd61837f7673b70136934ccd"
+    },
+    {
+      "semanticId": "unit:queen/psionic-link-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:queen",
+      "sourceName": "Psionic Link",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "b52f3279709c8a8bf7a29b0ffe2e04aae0cd25e7d60fa890576007fcfde7e7c8"
+    },
+    {
+      "semanticId": "unit:queen/creep-speed-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:queen",
+      "sourceName": "Creep Speed",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "5435ea7d9b05c8b785850fff1b4fbdb69f9ef7ba16f03c15cc1183080511d272"
+    },
+    {
+      "semanticId": "unit:queen/domineering-presence-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:queen",
+      "sourceName": "Domineering Presence",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "f8c065f3bab6c88188f9f480c631df762e5fc2cc807bdddbb5befea0fb73b5ed"
+    },
+    {
+      "semanticId": "unit:queen/talons-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:queen",
+      "sourceName": "Talons",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "1766b9d8a20c0fdc9e3727197ef6edd11b56f1226a08a850471620d08a51c946"
+    },
+    {
+      "semanticId": "unit:queen/acid-spines-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:queen",
+      "sourceName": "Acid spines",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "fa37d4629dbfc494a2c3747ee76474c7d972618da4f2f4302e739b1069e81d75"
+    },
+    {
+      "semanticId": "unit:queen/devastating-charge-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:queen",
+      "sourceName": "Devastating Charge",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "0fc366ca8e68c95589dc29456cf393bbbc07e3ddea5b2979597e796917f2633f"
+    },
+    {
+      "semanticId": "unit:queen/talons-combat-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:queen",
+      "sourceName": "Talons",
+      "sourcePhase": "Combat Phase",
+      "behaviorHash": "25e6096b0fd0284f54ea5fde23ebbe8bfca57cce1d3e01cfbcfbd845430b5812"
+    },
+    {
+      "semanticId": "unit:raptor__zergling_/squadron-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:raptor__zergling_",
+      "sourceName": "Squadron",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "8b78c1c56784d2e0ab4c95d4f9ba6e07447ac25163b5634f6a02f543ca2e735e"
+    },
+    {
+      "semanticId": "unit:raptor__zergling_/raptor-strain-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:raptor__zergling_",
+      "sourceName": "Raptor Strain",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "08c0a5e2337bcbc8538c68346bdf13948f19375604a558dbad1cbe5c7f461178"
+    },
+    {
+      "semanticId": "unit:raptor__zergling_/burrow-ambush-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:raptor__zergling_",
+      "sourceName": "Burrow Ambush",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "651d68374b2771cbd8c1e0bc7eb87bbe08b25fe65808a5e8df1f72be2ac41299"
+    },
+    {
+      "semanticId": "unit:raptor__zergling_/adrenal-overload-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:raptor__zergling_",
+      "sourceName": "Adrenal Overload",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "36addd5cbb728251972a29c6a7a7fe308f977d699da78d3f06ca486b7ce96e59"
+    },
+    {
+      "semanticId": "unit:raptor__zergling_/metabolic-boost-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:raptor__zergling_",
+      "sourceName": "Metabolic Boost",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "da84e4838f2c170c82d4bef7aea73671cbb892ad11f6e438b09f4846e4e8aea4"
+    },
+    {
+      "semanticId": "unit:raptor__zergling_/devastating-charge-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:raptor__zergling_",
+      "sourceName": "Devastating Charge",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "bc8e50da04005c9a112aaf24c476cb557dfd72c1f8f794799142598462396d22"
+    },
+    {
+      "semanticId": "unit:raptor__zergling_/claws-combat-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:raptor__zergling_",
+      "sourceName": "Claws",
+      "sourcePhase": "Combat Phase",
+      "behaviorHash": "574a1f907d574c256655c503e6d331f9154af9579ae6661a020c5995279400e7"
+    },
+    {
+      "semanticId": "unit:raptor__zergling_/shredding-claws-combat-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:raptor__zergling_",
+      "sourceName": "Shredding Claws",
+      "sourcePhase": "Combat Phase",
+      "behaviorHash": "3f4c87d91f125e1b8cfff574da56a4a2fa65af27e75fb5f726b6aa7ef83b0541"
+    },
+    {
+      "semanticId": "unit:raptor__zergling_/adrenal-glands-combat-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:raptor__zergling_",
+      "sourceName": "Adrenal Glands",
+      "sourcePhase": "Combat Phase",
+      "behaviorHash": "d3c2177bae385ea0788d15151217d7ca951ef20444f7e82d6ef762cbe72668cb"
+    },
+    {
+      "semanticId": "unit:ravager/squadron-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:ravager",
+      "sourceName": "Squadron",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "8b78c1c56784d2e0ab4c95d4f9ba6e07447ac25163b5634f6a02f543ca2e735e"
+    },
+    {
+      "semanticId": "unit:ravager/bloated-bile-ducts-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:ravager",
+      "sourceName": "Bloated Bile Ducts",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "bfa83889278bc0aaa5abb285d00cef9db6294e3d99a04d2e7a45a99c8e81b48d"
+    },
+    {
+      "semanticId": "unit:ravager/corrosive-bile-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:ravager",
+      "sourceName": "Corrosive Bile",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "0b45bb8e0b147afea4d09216dce6d6e4c37f7a7b60a6d311838e7d82346a3cda"
+    },
+    {
+      "semanticId": "unit:ravager/deep-tunnel-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:ravager",
+      "sourceName": "Deep Tunnel",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "b93514a317c02d73ed07d2c4c167d81f9c1d04ac4d3dd57cb760937b0ab36729"
+    },
+    {
+      "semanticId": "unit:ravager/burrow-ambush-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:ravager",
+      "sourceName": "Burrow Ambush",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "651d68374b2771cbd8c1e0bc7eb87bbe08b25fe65808a5e8df1f72be2ac41299"
+    },
+    {
+      "semanticId": "unit:ravager/plasma-discharge-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:ravager",
+      "sourceName": "Plasma Discharge",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "757a262220040cab5709adc81f170f72cf1dd0f317f0816e19f2e23d66bace72"
+    },
+    {
+      "semanticId": "unit:ravager/potent-bile-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:ravager",
+      "sourceName": "Potent Bile",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "6940e323d945091ad3c842a021ad04ceb6fc53a73b6e442ccde7a918a36957b1"
+    },
+    {
+      "semanticId": "unit:ravager/devastating-charge-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:ravager",
+      "sourceName": "Devastating Charge",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "e727032c23373211749eae306c4ec1982ed490f10df1ea9f2fa9005caec0d19c"
+    },
+    {
+      "semanticId": "unit:ravager/claws-combat-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:ravager",
+      "sourceName": "Claws",
+      "sourcePhase": "Combat Phase",
+      "behaviorHash": "9986b3856c64a6571e969440b437d1d64f22682f7fb131818e9d2c452dc58424"
+    },
+    {
+      "semanticId": "unit:raven/detection-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:raven",
+      "sourceName": "Detection",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "487d42d446bdba53b99830e87f92ca2f650091489511db3059bdccab080948f4"
+    },
+    {
+      "semanticId": "unit:raven/corvid-reactor-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:raven",
+      "sourceName": "Corvid Reactor",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "af00145e5699721f0810acd9bb0f1b6e50b0f023c97a6ed7e162e4b8e9423d36"
+    },
+    {
+      "semanticId": "unit:raven/internal-tech-module-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:raven",
+      "sourceName": "Internal Tech Module",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "5981927496674ee131d0f47f150c4f0238d1a402c33f95beaed042d9d76e0018"
+    },
+    {
+      "semanticId": "unit:raven/deploy-auto-turret-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:raven",
+      "sourceName": "Deploy Auto-Turret",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "ae80497fbc43e9f8dd6075e60896b8de713739f3163bfd77c0dcc8f0b9694f3d"
+    },
+    {
+      "semanticId": "unit:raven/anti-armour-missile-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:raven",
+      "sourceName": "Anti-Armour Missile",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "dd44b9386396ec11f87aa1c62b5e51ac215ff2b7cb1e65890ccb4747d608614e"
+    },
+    {
+      "semanticId": "unit:raven/seeker-missile-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:raven",
+      "sourceName": "Seeker Missile",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "42938a378647de23228d74b67d9f6bf39025a8af9b8a53422505489905d44178"
+    },
+    {
+      "semanticId": "unit:raven/railguns-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:raven",
+      "sourceName": "Railguns",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "db6bc2f5ddd8da2675ccdc122ea94de7d1c69b5e7cbd8599977a458d261a0dc1"
+    },
+    {
+      "semanticId": "unit:raven/explosive-shrapnel-shells-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:raven",
+      "sourceName": "Explosive Shrapnel Shells",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "683398596e01f7ba2aa51bd7bab52834bc9126c794c75a87ce9bab73ba516198"
+    },
+    {
+      "semanticId": "unit:raynor_s_raider__marine_/stimpack-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:raynor_s_raider__marine_",
+      "sourceName": "Stimpack",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "179b3baea00c77742caf7fa002b65cd573cc35ae07cad7db1baa21fb8504348d"
+    },
+    {
+      "semanticId": "unit:raynor_s_raider__marine_/raiders-roll-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:raynor_s_raider__marine_",
+      "sourceName": "Raiders Roll!",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "dd281992445d07f66c91806b7c5c471ef50b7d37c634ae07225b1f7c2905e5d1"
+    },
+    {
+      "semanticId": "unit:raynor_s_raider__marine_/rapid-reinforcements-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:raynor_s_raider__marine_",
+      "sourceName": "Rapid Reinforcements",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "1ef0dc7e0e9966f13a1671217d5be4c71b7cc8b6d79ec4a35e237a7451c29cbf"
+    },
+    {
+      "semanticId": "unit:raynor_s_raider__marine_/c-14-rifle-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:raynor_s_raider__marine_",
+      "sourceName": "C-14 rifle",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "66eaf7b8d1cbee7af2710c906e4d403a072061df72d8745c3a97defe2a58a3a5"
+    },
+    {
+      "semanticId": "unit:raynor_s_raider__marine_/slugthrower-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:raynor_s_raider__marine_",
+      "sourceName": "Slugthrower",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "1216c069a3a2ef00f5cd12e0465b55d3344d34fa8eb09f4357a42626e29657a5"
+    },
+    {
+      "semanticId": "unit:raynor_s_raider__marine_/grenades-frag-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:raynor_s_raider__marine_",
+      "sourceName": "Grenades - Frag",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "eb48317d9db27975cde978feefa9bd9399d6c51cf43950292ce58e91dadfa3b6"
+    },
+    {
+      "semanticId": "unit:raynor_s_raider__marine_/bayonet-combat-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:raynor_s_raider__marine_",
+      "sourceName": "Bayonet",
+      "sourcePhase": "Combat Phase",
+      "behaviorHash": "31843866e1d08b14c2a990d5a5b0c41ef19072968ab48b6f0d1029ac965fcf31"
+    },
+    {
+      "semanticId": "unit:reaver/large-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:reaver",
+      "sourceName": "Large",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "9106f2da3418b31db7f160cc7ed90b0fcc9d68daa3d0f42fcbb3335088c0b8a8"
+    },
+    {
+      "semanticId": "unit:reaver/limited-artificial-intelligence-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:reaver",
+      "sourceName": "Limited Artificial Intelligence",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "7b36f6974bc1054a53ef74cbea57bb579e65e50c1f66e101eda5ccac096e9b08"
+    },
+    {
+      "semanticId": "unit:reaver/microfactory-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:reaver",
+      "sourceName": "Microfactory",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "970aa5ba6ef1d37da6adf7b81af6fb1fb53d56dc49192265d82b0d44b2675d07"
+    },
+    {
+      "semanticId": "unit:reaver/scarab-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:reaver",
+      "sourceName": "Scarab",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "784f4c18766434ce0e4e134623f2d86d3b0e65704eb07134294d8ce4c3e376fe"
+    },
+    {
+      "semanticId": "unit:reaver/solarite-scarab-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:reaver",
+      "sourceName": "Solarite Scarab",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "2990d4b068d3e3caf8caa5773a726467d5827445bbe5a710a5892b7b7d36be6b"
+    },
+    {
+      "semanticId": "unit:reaver/phasing-scarab-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:reaver",
+      "sourceName": "Phasing Scarab",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "d51ccb9b2d2c01ad8236dc6b89d8820bab46e3b9164b028403cf11153c56d0e2"
+    },
+    {
+      "semanticId": "unit:reaver/shuttle-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:reaver",
+      "sourceName": "Shuttle",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "9bc3d68ba694f2e4ba7e23b9134db0cc7b9f1a483fcf4e3cd39bc25e6294bef3"
+    },
+    {
+      "semanticId": "unit:reaver/siege-triangulation-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:reaver",
+      "sourceName": "Siege Triangulation",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "9e0f7d1cc75ccf49802cc44a6dd11cbbb9289de25a5c8c150a2f7011bf4be879"
+    },
+    {
+      "semanticId": "unit:reaver/indomitable-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:reaver",
+      "sourceName": "Indomitable",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "d56dc4bc43e1af494b023d523a0c7471ca61c363c95ae886e8350d1889733280"
+    },
+    {
+      "semanticId": "unit:reaver/crawl-over-combat-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:reaver",
+      "sourceName": "Crawl Over",
+      "sourcePhase": "Combat Phase",
+      "behaviorHash": "9d24c61924cfd1196a6f82c1c30af5b944996414342240c1443bc6278766df46"
+    },
+    {
+      "semanticId": "unit:roach/burrow-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:roach",
+      "sourceName": "Burrow",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "59f6eb88ac27c1c171e2c4297412339eb5e30b2f612078c2315d441b37f0ab93"
+    },
+    {
+      "semanticId": "unit:roach/tunneling-claws-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:roach",
+      "sourceName": "Tunneling Claws",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "4ccd20de44c6337c82cfaf7adc054963842bc617fdd217c10454d0377dfb7e6b"
+    },
+    {
+      "semanticId": "unit:roach/burrow-ambush-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:roach",
+      "sourceName": "Burrow Ambush",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "651d68374b2771cbd8c1e0bc7eb87bbe08b25fe65808a5e8df1f72be2ac41299"
+    },
+    {
+      "semanticId": "unit:roach/glial-reconstitution-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:roach",
+      "sourceName": "Glial Reconstitution",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "7658d8e3203ca2c3c7c572dca5e4f4a19cfc927a7bcb57e860f5a21b54cb30be"
+    },
+    {
+      "semanticId": "unit:roach/acid-saliva-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:roach",
+      "sourceName": "Acid Saliva",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "de555e551d5abf1e9a27dd14be98d270f3e662de4db3ad0a4bfa0faa7067243c"
+    },
+    {
+      "semanticId": "unit:roach/regeneration-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:roach",
+      "sourceName": "Regeneration",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "84a573e76e8d71d7e5fa2c4fcdfbb9ee38f30aa62a6d7f39746262e72ee374c2"
+    },
+    {
+      "semanticId": "unit:roach/hydriodic-bile-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:roach",
+      "sourceName": "Hydriodic Bile",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "bb8725140a3815e411a8cc56608340d573506c05d89c5658ec1dea7bd1241d1c"
+    },
+    {
+      "semanticId": "unit:roach/devastating-charge-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:roach",
+      "sourceName": "Devastating Charge",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "e727032c23373211749eae306c4ec1982ed490f10df1ea9f2fa9005caec0d19c"
+    },
+    {
+      "semanticId": "unit:roach/claws-combat-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:roach",
+      "sourceName": "Claws",
+      "sourcePhase": "Combat Phase",
+      "behaviorHash": "bc2d82aaebdf587f461ab49667748171bfaa76f9e36de3f7a1801f9d2dc68139"
+    },
+    {
+      "semanticId": "unit:roachling/underdeveloped-claws-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:roachling",
+      "sourceName": "Underdeveloped Claws",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "123610deec158fdc8f3af3f2fa629c16dffdaa30d90c37f79ba00729ff027686"
+    },
+    {
+      "semanticId": "unit:roachling/claws-combat-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:roachling",
+      "sourceName": "Claws",
+      "sourcePhase": "Combat Phase",
+      "behaviorHash": "bc2d82aaebdf587f461ab49667748171bfaa76f9e36de3f7a1801f9d2dc68139"
+    },
+    {
+      "semanticId": "unit:sabotage_drone/structure-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:sabotage_drone",
+      "sourceName": "Structure",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "d0a76fbc68afa466b7c2ad7dd655e829834c4c696dbfa30f84a05491c32a820e"
+    },
+    {
+      "semanticId": "unit:sabotage_drone/have-a-nice-day-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:sabotage_drone",
+      "sourceName": "Have a Nice Day",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "3215d536cc791fa7410a35c0a2742aafa8ee09c8e6dcfff4b090b5ee91b77d67"
+    },
+    {
+      "semanticId": "unit:scarab/timed-life-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:scarab",
+      "sourceName": "Timed Life",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "79ff64d900cd210e792997f88443f91398fb283760e0c7d6fe1b20f20ba40dbd"
+    },
+    {
+      "semanticId": "unit:scarab/nimble-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:scarab",
+      "sourceName": "Nimble",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "d3b0962078a61aa30a9a00260f710e25167111d7c8864d1f42ccc7b827e360b8"
+    },
+    {
+      "semanticId": "unit:scarab/proximity-detonation-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:scarab",
+      "sourceName": "Proximity Detonation",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "01240c69d6eec75989f5a85dce68468817900bc1f19e12241bc83bc2ca3499ea"
+    },
+    {
+      "semanticId": "unit:scarab/explosive-charge-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:scarab",
+      "sourceName": "Explosive Charge",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "0ed64cc708cac78c8ca059b2e6b8f42bf1d8af37a8cf44bc395b7b08493e86d4"
+    },
+    {
+      "semanticId": "unit:scarab/scarab-detonation-combat-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:scarab",
+      "sourceName": "Scarab Detonation",
+      "sourcePhase": "Combat Phase",
+      "behaviorHash": "57118a8e4af4637a1f57f90a2a4b9741088b6a602f4124b9581e16ea0ebf4461"
+    },
+    {
+      "semanticId": "unit:sentry/restoration-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:sentry",
+      "sourceName": "Restoration",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "e7b2372e9845c05a9b8a2a8493cbd06866436a6e1a190e97ea0637af3f69fc54"
+    },
+    {
+      "semanticId": "unit:sentry/force-field-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:sentry",
+      "sourceName": "Force Field",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "03238bea882ba2c1f9f19c5ca73d679d8cb479cb99df25b91e36cfff64b16faa"
+    },
+    {
+      "semanticId": "unit:sentry/guardian-shield-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:sentry",
+      "sourceName": "Guardian Shield",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "30e45c87ed00ef5515291ab1d1a386d224280cc17bc40a302b7bc118321d0fc8"
+    },
+    {
+      "semanticId": "unit:sentry/solid-field-projectors-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:sentry",
+      "sourceName": "Solid-Field Projectors",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "03238bea882ba2c1f9f19c5ca73d679d8cb479cb99df25b91e36cfff64b16faa"
+    },
+    {
+      "semanticId": "unit:sentry/disruption-beam-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:sentry",
+      "sourceName": "Disruption Beam",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "58cbdd2d9805ae5a16d5549583b9aea20c7a0eac5603da739a7508391f57e1d3"
+    },
+    {
+      "semanticId": "unit:sentry/hallucination-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:sentry",
+      "sourceName": "Hallucination",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "3abd5ec38fe3d7530615cadcb20cb7ddaa5313538d2ad1de596e73a4c8f38072"
+    },
+    {
+      "semanticId": "unit:sentry/beam-combat-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:sentry",
+      "sourceName": "Beam",
+      "sourcePhase": "Combat Phase",
+      "behaviorHash": "1a8c4d69f30b640cd4ab087247102a48071483876e1e398148910b4ce619a658"
+    },
+    {
+      "semanticId": "unit:siege_tank/large-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:siege_tank",
+      "sourceName": "Large",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "9106f2da3418b31db7f160cc7ed90b0fcc9d68daa3d0f42fcbb3335088c0b8a8"
+    },
+    {
+      "semanticId": "unit:siege_tank/heavy-plating-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:siege_tank",
+      "sourceName": "Heavy Plating",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "e18fd419a46576be06bc42e4238b68a271c1bb7c1090cdd7a3bc7a0448777385"
+    },
+    {
+      "semanticId": "unit:siege_tank/mode-transformation-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:siege_tank",
+      "sourceName": "Mode Transformation",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "02628519d795d78879e2681de399693c822afd01d08d27039cdffe55e6771ff0"
+    },
+    {
+      "semanticId": "unit:siege_tank/coordinated-strike-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:siege_tank",
+      "sourceName": "Coordinated Strike",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "cd476636e3468a4ea27ccbb6d120489e8a4109d22efebbe5ea44a29197bac76b"
+    },
+    {
+      "semanticId": "unit:siege_tank/twin-cannon-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:siege_tank",
+      "sourceName": "Twin Cannon",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "921e5328fc16735238a9226d01148b2e391aa7e1b1894e37c14328cebc0841d1"
+    },
+    {
+      "semanticId": "unit:siege_tank/shock-cannon-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:siege_tank",
+      "sourceName": "Shock Cannon",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "741007b479b49b963311a3717dfc8e297abd495ac29a74e9b4148a93a11d8eb7"
+    },
+    {
+      "semanticId": "unit:siege_tank/indomitable-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:siege_tank",
+      "sourceName": "Indomitable",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "d56dc4bc43e1af494b023d523a0c7471ca61c363c95ae886e8350d1889733280"
+    },
+    {
+      "semanticId": "unit:siege_tank/point-blank-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:siege_tank",
+      "sourceName": "Point Blank",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "fa40a3dff2214aeaf32f72ce82e57bf895fb52b0297698fe6ac75e18276b0b3b"
+    },
+    {
+      "semanticId": "unit:siege_tank/aftershock-rounds-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:siege_tank",
+      "sourceName": "Aftershock Rounds",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "e94a1d520708216140ad4cb38aebaabedeeeca9d178cf0b430dc58550c303c44"
+    },
+    {
+      "semanticId": "unit:siege_tank/shaped-blast-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:siege_tank",
+      "sourceName": "Shaped Blast",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "9f3ce7cb6c25c80776d2db2fd63d75d95a281c36940a1ed59f7ea1cba34d1a4b"
+    },
+    {
+      "semanticId": "unit:siege_tank/smart-shells-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:siege_tank",
+      "sourceName": "Smart Shells",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "85df454a89cb904e5aec72ec5c7683b53b8f8575629fd74df3147bbddfd017f5"
+    },
+    {
+      "semanticId": "unit:siege_tank/devastating-charge-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:siege_tank",
+      "sourceName": "Devastating Charge",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "0fc366ca8e68c95589dc29456cf393bbbc07e3ddea5b2979597e796917f2633f"
+    },
+    {
+      "semanticId": "unit:siege_tank/rolling-over-combat-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:siege_tank",
+      "sourceName": "Rolling Over",
+      "sourcePhase": "Combat Phase",
+      "behaviorHash": "9d24c61924cfd1196a6f82c1c30af5b944996414342240c1443bc6278766df46"
+    },
+    {
+      "semanticId": "unit:slayer__stalker_/squadron-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:slayer__stalker_",
+      "sourceName": "Squadron",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "8b78c1c56784d2e0ab4c95d4f9ba6e07447ac25163b5634f6a02f543ca2e735e"
+    },
+    {
+      "semanticId": "unit:slayer__stalker_/seek-bloodshed-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:slayer__stalker_",
+      "sourceName": "Seek Bloodshed",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "dd38b706378b5a5c429680e2b033665907eef407cdb69559f744c11e7fae7342"
+    },
+    {
+      "semanticId": "unit:slayer__stalker_/bloodshard-blink-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:slayer__stalker_",
+      "sourceName": "Bloodshard Blink",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "6143f2032b21e841dbc3e69cab90189e727c1497b6ebcb5232489a0cf379fe2e"
+    },
+    {
+      "semanticId": "unit:slayer__stalker_/blink-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:slayer__stalker_",
+      "sourceName": "Blink",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "72d69b9c340844fc1fa6534b66938bcab4116d2aa138fa6302181c441a8b9753"
+    },
+    {
+      "semanticId": "unit:slayer__stalker_/particle-disruptors-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:slayer__stalker_",
+      "sourceName": "Particle Disruptors",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "9352a21f471609d77fd4193d551e80cbd77802d68f34b7a6c42b13148d32dcb1"
+    },
+    {
+      "semanticId": "unit:slayer__stalker_/stomp-combat-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:slayer__stalker_",
+      "sourceName": "Stomp",
+      "sourcePhase": "Combat Phase",
+      "behaviorHash": "31843866e1d08b14c2a990d5a5b0c41ef19072968ab48b6f0d1029ac965fcf31"
+    },
+    {
+      "semanticId": "unit:solarite_scarab/timed-life-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:solarite_scarab",
+      "sourceName": "Timed Life",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "79ff64d900cd210e792997f88443f91398fb283760e0c7d6fe1b20f20ba40dbd"
+    },
+    {
+      "semanticId": "unit:solarite_scarab/nimble-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:solarite_scarab",
+      "sourceName": "Nimble",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "d3b0962078a61aa30a9a00260f710e25167111d7c8864d1f42ccc7b827e360b8"
+    },
+    {
+      "semanticId": "unit:solarite_scarab/proximity-detonation-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:solarite_scarab",
+      "sourceName": "Proximity Detonation",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "01240c69d6eec75989f5a85dce68468817900bc1f19e12241bc83bc2ca3499ea"
+    },
+    {
+      "semanticId": "unit:solarite_scarab/explosive-charge-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:solarite_scarab",
+      "sourceName": "Explosive Charge",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "0ed64cc708cac78c8ca059b2e6b8f42bf1d8af37a8cf44bc395b7b08493e86d4"
+    },
+    {
+      "semanticId": "unit:solarite_scarab/solarite-blast-combat-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:solarite_scarab",
+      "sourceName": "Solarite Blast",
+      "sourcePhase": "Combat Phase",
+      "behaviorHash": "efbaedf8d8acb6d15d4cfbdbeeb356f4e2e99b6acf1dc2f22321d1a03b0ca1de"
+    },
+    {
+      "semanticId": "unit:spec_ops_marauder__marauder_/spec-ops-armour-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:spec_ops_marauder__marauder_",
+      "sourceName": "Spec Ops Armour",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "356d6916af0d1a26078c808d9c3ccd2d44fab453fa043649f4e71066f65ddc26"
+    },
+    {
+      "semanticId": "unit:spec_ops_marauder__marauder_/commando-stimpack-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:spec_ops_marauder__marauder_",
+      "sourceName": "Commando Stimpack",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "b0035fb75415c547c1ef0aa923409ace8125d3a246fab868aa4ac0ee194d4a50"
+    },
+    {
+      "semanticId": "unit:spec_ops_marauder__marauder_/quad-k12-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:spec_ops_marauder__marauder_",
+      "sourceName": "Quad K12",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "0574cf28658b982d6509656d11f1569eb62984157c5fb5b822a38bdd74907da1"
+    },
+    {
+      "semanticId": "unit:spec_ops_marauder__marauder_/magrail-munitions-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:spec_ops_marauder__marauder_",
+      "sourceName": "Magrail Munitions",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "d2dd39bd858bf32b79961490e1463dcf9ff742d10eabb1a2f3265d76103708ac"
+    },
+    {
+      "semanticId": "unit:spec_ops_marauder__marauder_/suppression-shells-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:spec_ops_marauder__marauder_",
+      "sourceName": "Suppression Shells",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "107688d972a5caa0029b6944e1bb0d49ed62bfb1de026cddfef19e859dc2073e"
+    },
+    {
+      "semanticId": "unit:spec_ops_marauder__marauder_/strike-combat-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:spec_ops_marauder__marauder_",
+      "sourceName": "Strike",
+      "sourcePhase": "Combat Phase",
+      "behaviorHash": "25e6096b0fd0284f54ea5fde23ebbe8bfca57cce1d3e01cfbcfbd845430b5812"
+    },
+    {
+      "semanticId": "unit:stalker/squadron-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:stalker",
+      "sourceName": "Squadron",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "8b78c1c56784d2e0ab4c95d4f9ba6e07447ac25163b5634f6a02f543ca2e735e"
+    },
+    {
+      "semanticId": "unit:stalker/path-of-shadows-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:stalker",
+      "sourceName": "Path of Shadows",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "f8a6908a806cdd802f576a5624a7c85c10d4acc8a7ba058768ddd62d21be1ac4"
+    },
+    {
+      "semanticId": "unit:stalker/blink-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:stalker",
+      "sourceName": "Blink",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "72d69b9c340844fc1fa6534b66938bcab4116d2aa138fa6302181c441a8b9753"
+    },
+    {
+      "semanticId": "unit:stalker/fury-of-the-nerazim-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:stalker",
+      "sourceName": "Fury of the Nerazim",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "9a67081fc1a3e07cbba7fede32794dbcd867cb9640cc4f9093bdf990ef381ab3"
+    },
+    {
+      "semanticId": "unit:stalker/particle-disruptors-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:stalker",
+      "sourceName": "Particle Disruptors",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "9352a21f471609d77fd4193d551e80cbd77802d68f34b7a6c42b13148d32dcb1"
+    },
+    {
+      "semanticId": "unit:stalker/stomp-combat-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:stalker",
+      "sourceName": "Stomp",
+      "sourcePhase": "Combat Phase",
+      "behaviorHash": "31843866e1d08b14c2a990d5a5b0c41ef19072968ab48b6f0d1029ac965fcf31"
+    },
+    {
+      "semanticId": "unit:stukov/commander-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:stukov",
+      "sourceName": "Commander",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "b9c2fd3d0ca6a0fee10759c236625cf061a9bfccbe9ab2927785d4344a61e85b"
+    },
+    {
+      "semanticId": "unit:stukov/plague-warden-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:stukov",
+      "sourceName": "Plague Warden",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "b7285b84828fa300fd1c048e5c0b5e93ab207b26f8b425e42ae56bd9ae6e6835"
+    },
+    {
+      "semanticId": "unit:stukov/spread-infestation-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:stukov",
+      "sourceName": "Spread Infestation",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "bdb555989277154be232923d8b5c72421370e2354f57cb0994c65af86ece9316"
+    },
+    {
+      "semanticId": "unit:stukov/admiral-of-the-infested-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:stukov",
+      "sourceName": "Admiral of the Infested",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "66a4690ab46d44ee7459a74b3f14f574c44f92765638cc8fde0523127ce7d987"
+    },
+    {
+      "semanticId": "unit:stukov/bio-kill-switch-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:stukov",
+      "sourceName": "Bio-Kill Switch",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "89ef9bdffafb3fc15ff9268cd7e7ff74fab571a3936c068be41df63de3a45168"
+    },
+    {
+      "semanticId": "unit:stukov/corrosive-blast-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:stukov",
+      "sourceName": "Corrosive Blast",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "07dd3a75e01d0b33812ee57bf216c64b57227bfca9d966f887cbd66920176f79"
+    },
+    {
+      "semanticId": "unit:stukov/corrode-armor-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:stukov",
+      "sourceName": "Corrode Armor",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "30a9e84651899a5cf15c151df9c0d1de9ed11c57d2f1de3811d79e4c0da4e262"
+    },
+    {
+      "semanticId": "unit:stukov/devastating-charge-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:stukov",
+      "sourceName": "Devastating Charge",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "a7b0f47d1405fff6bcc6f8a4cab7e889681ee65a0c9aa35e6b290486189c2d46"
+    },
+    {
+      "semanticId": "unit:stukov/infested-arm-combat-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:stukov",
+      "sourceName": "Infested Arm",
+      "sourcePhase": "Combat Phase",
+      "behaviorHash": "1574d421336b9d28b299a90fefb7ec32b28b07d4e02c6e1f35cd4a8ec585aa65"
+    },
+    {
+      "semanticId": "unit:swarmling__zergling_/squadron-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:swarmling__zergling_",
+      "sourceName": "Squadron",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "8b78c1c56784d2e0ab4c95d4f9ba6e07447ac25163b5634f6a02f543ca2e735e"
+    },
+    {
+      "semanticId": "unit:swarmling__zergling_/burrow-ambush-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:swarmling__zergling_",
+      "sourceName": "Burrow Ambush",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "651d68374b2771cbd8c1e0bc7eb87bbe08b25fe65808a5e8df1f72be2ac41299"
+    },
+    {
+      "semanticId": "unit:swarmling__zergling_/zergling-reconstitution-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:swarmling__zergling_",
+      "sourceName": "Zergling Reconstitution",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "dd6773771fa5ac2a62980841cca216c3c02020e8bd7bb1d586ab3ea4cd48b8be"
+    },
+    {
+      "semanticId": "unit:swarmling__zergling_/metabolic-boost-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:swarmling__zergling_",
+      "sourceName": "Metabolic Boost",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "da84e4838f2c170c82d4bef7aea73671cbb892ad11f6e438b09f4846e4e8aea4"
+    },
+    {
+      "semanticId": "unit:swarmling__zergling_/devastating-charge-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:swarmling__zergling_",
+      "sourceName": "Devastating Charge",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "bc8e50da04005c9a112aaf24c476cb557dfd72c1f8f794799142598462396d22"
+    },
+    {
+      "semanticId": "unit:swarmling__zergling_/claws-combat-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:swarmling__zergling_",
+      "sourceName": "Claws",
+      "sourcePhase": "Combat Phase",
+      "behaviorHash": "31843866e1d08b14c2a990d5a5b0c41ef19072968ab48b6f0d1029ac965fcf31"
+    },
+    {
+      "semanticId": "unit:tal_darim_pylon/structure-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:tal_darim_pylon",
+      "sourceName": "Structure",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "d0a76fbc68afa466b7c2ad7dd655e829834c4c696dbfa30f84a05491c32a820e"
+    },
+    {
+      "semanticId": "unit:tal_darim_pylon/warp-conduit-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:tal_darim_pylon",
+      "sourceName": "Warp Conduit",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "0335b862c46e27158276725d6cb4495103ff36640a3b874fb663e014662cb40c"
+    },
+    {
+      "semanticId": "unit:tal_darim_pylon/bloodshard-monument-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:tal_darim_pylon",
+      "sourceName": "Bloodshard Monument",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "9007adeb4d87951ac9417ba62487a6c17ce6bae591bc27305603111ac22a5d60"
+    },
+    {
+      "semanticId": "unit:tal_darim_pylon/overwatch-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:tal_darim_pylon",
+      "sourceName": "Overwatch",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "ca69afb8f2b49259b6a48cbe008f777f9f0f930827d83a34e1660e78d1661688"
+    },
+    {
+      "semanticId": "unit:tal_darim_pylon/overcharged-pylon-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:tal_darim_pylon",
+      "sourceName": "Overcharged Pylon",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "a4e7cec86d0a7365a01e0c3361dd233d5a3dd1b760f91d2adfbbd205c1c33a68"
+    },
+    {
+      "semanticId": "unit:tassadar/commander-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:tassadar",
+      "sourceName": "Commander",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "b9c2fd3d0ca6a0fee10759c236625cf061a9bfccbe9ab2927785d4344a61e85b"
+    },
+    {
+      "semanticId": "unit:tassadar/force-wall-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:tassadar",
+      "sourceName": "Force Wall",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "29522c60f4b2a33e5c51059e5dab63c690b77ca3d3907f67945b7f598699326c"
+    },
+    {
+      "semanticId": "unit:tassadar/executor-s-will-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:tassadar",
+      "sourceName": "Executor's Will",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "df480f79615dbe6c0fc12d1d94fd8444ecb38a7ec4bf3dd95cb579708c3ff100"
+    },
+    {
+      "semanticId": "unit:tassadar/khala-s-gift-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:tassadar",
+      "sourceName": "Khala's Gift",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "0d834e5de368d32f04d69860d0c131a383749318e83002c86840e45faf7a73f1"
+    },
+    {
+      "semanticId": "unit:tassadar/telekinetic-push-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:tassadar",
+      "sourceName": "Telekinetic Push",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "52db59c5a5d919860a1e0d68af85db863532731af331f57a0c6ce0ac0dd87d4f"
+    },
+    {
+      "semanticId": "unit:tassadar/psi-lightning-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:tassadar",
+      "sourceName": "Psi Lightning",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "cfff5d267fdb5341b582c8dc0c4c2370eb66576e73f93ce2e742496b0157e88e"
+    },
+    {
+      "semanticId": "unit:tassadar/resonance-beam-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:tassadar",
+      "sourceName": "Resonance Beam",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "d44ddac012d696348097f7badbe5be80323c26f9963cf40d1fd53ead780435eb"
+    },
+    {
+      "semanticId": "unit:tassadar/strike-combat-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:tassadar",
+      "sourceName": "Strike",
+      "sourcePhase": "Combat Phase",
+      "behaviorHash": "8dc5cbbbb1df416335da31e352fb59ebbbb96c7fab3e8d5a6e08acf5c712ae39"
+    },
+    {
+      "semanticId": "unit:twilight_templar__high_templar_/bound-by-the-khala-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:twilight_templar__high_templar_",
+      "sourceName": "Bound by the Khala",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "165359c4655bcd5dd133953c78b90f812ed150ed99a58b46571f35f20a796df3"
+    },
+    {
+      "semanticId": "unit:twilight_templar__high_templar_/warp-in-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:twilight_templar__high_templar_",
+      "sourceName": "Warp-In",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "08b4b4cfc27417bafa9b1b4abb22384b1a7fd856665cc31973407fb1ce80af44"
+    },
+    {
+      "semanticId": "unit:twilight_templar__high_templar_/psionic-gale-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:twilight_templar__high_templar_",
+      "sourceName": "Psionic Gale",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "8a4bfd5c32f5c696d1a4fb48b29fdf0987a6634273d8eb91d5d2aa10e1885f0f"
+    },
+    {
+      "semanticId": "unit:twilight_templar__high_templar_/feedback-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:twilight_templar__high_templar_",
+      "sourceName": "Feedback",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "99fd065f84402620452cc1a329d7a975aead730bc89e39820938298d28c18943"
+    },
+    {
+      "semanticId": "unit:twilight_templar__high_templar_/psi-blast-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:twilight_templar__high_templar_",
+      "sourceName": "Psi Blast",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "3710a49d07746616ad9c8d9f685b43da2ea575f5b6ed244accb93b3ddb8b8c77"
+    },
+    {
+      "semanticId": "unit:twilight_templar__high_templar_/strike-combat-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:twilight_templar__high_templar_",
+      "sourceName": "Strike",
+      "sourcePhase": "Combat Phase",
+      "behaviorHash": "2fc431b141eaa3eeec8864a7e1da7514c12a489a6f94337527c37d87931ab498"
+    },
+    {
+      "semanticId": "unit:vile__roach_/debilitating-saliva-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:vile__roach_",
+      "sourceName": "Debilitating Saliva",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "b6279f6dda9eb668047269b2dc967cfd25e3bab59bf36f6f93293e5d99c15d63"
+    },
+    {
+      "semanticId": "unit:vile__roach_/burrow-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:vile__roach_",
+      "sourceName": "Burrow",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "59f6eb88ac27c1c171e2c4297412339eb5e30b2f612078c2315d441b37f0ab93"
+    },
+    {
+      "semanticId": "unit:vile__roach_/tunneling-claws-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:vile__roach_",
+      "sourceName": "Tunneling Claws",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "4ccd20de44c6337c82cfaf7adc054963842bc617fdd217c10454d0377dfb7e6b"
+    },
+    {
+      "semanticId": "unit:vile__roach_/burrow-ambush-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:vile__roach_",
+      "sourceName": "Burrow Ambush",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "651d68374b2771cbd8c1e0bc7eb87bbe08b25fe65808a5e8df1f72be2ac41299"
+    },
+    {
+      "semanticId": "unit:vile__roach_/glial-reconstitution-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:vile__roach_",
+      "sourceName": "Glial Reconstitution",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "7658d8e3203ca2c3c7c572dca5e4f4a19cfc927a7bcb57e860f5a21b54cb30be"
+    },
+    {
+      "semanticId": "unit:vile__roach_/acid-saliva-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:vile__roach_",
+      "sourceName": "Acid Saliva",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "f0ffe31ad5137ff3d21f428f580a91f3be570b584ef1ede7e56ec4086354911b"
+    },
+    {
+      "semanticId": "unit:vile__roach_/regeneration-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:vile__roach_",
+      "sourceName": "Regeneration",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "84a573e76e8d71d7e5fa2c4fcdfbb9ee38f30aa62a6d7f39746262e72ee374c2"
+    },
+    {
+      "semanticId": "unit:vile__roach_/hydriodic-bile-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:vile__roach_",
+      "sourceName": "Hydriodic Bile",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "bb8725140a3815e411a8cc56608340d573506c05d89c5658ec1dea7bd1241d1c"
+    },
+    {
+      "semanticId": "unit:vile__roach_/devastating-charge-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:vile__roach_",
+      "sourceName": "Devastating Charge",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "69eb2f56f2527e5cf1423f80b6847d04833b592af812eb1e3e40b88a0ae93cc6"
+    },
+    {
+      "semanticId": "unit:vile__roach_/vile-claws-combat-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:vile__roach_",
+      "sourceName": "Vile Claws",
+      "sourcePhase": "Combat Phase",
+      "behaviorHash": "bc2d82aaebdf587f461ab49667748171bfaa76f9e36de3f7a1801f9d2dc68139"
+    },
+    {
+      "semanticId": "unit:vileling__zergling_/squadron-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:vileling__zergling_",
+      "sourceName": "Squadron",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "8b78c1c56784d2e0ab4c95d4f9ba6e07447ac25163b5634f6a02f543ca2e735e"
+    },
+    {
+      "semanticId": "unit:vileling__zergling_/burrow-ambush-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:vileling__zergling_",
+      "sourceName": "Burrow Ambush",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "651d68374b2771cbd8c1e0bc7eb87bbe08b25fe65808a5e8df1f72be2ac41299"
+    },
+    {
+      "semanticId": "unit:vileling__zergling_/zergling-reconstitution-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:vileling__zergling_",
+      "sourceName": "Zergling Reconstitution",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "dd6773771fa5ac2a62980841cca216c3c02020e8bd7bb1d586ab3ea4cd48b8be"
+    },
+    {
+      "semanticId": "unit:vileling__zergling_/metabolic-boost-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:vileling__zergling_",
+      "sourceName": "Metabolic Boost",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "da84e4838f2c170c82d4bef7aea73671cbb892ad11f6e438b09f4846e4e8aea4"
+    },
+    {
+      "semanticId": "unit:vileling__zergling_/devastating-charge-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:vileling__zergling_",
+      "sourceName": "Devastating Charge",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "bc8e50da04005c9a112aaf24c476cb557dfd72c1f8f794799142598462396d22"
+    },
+    {
+      "semanticId": "unit:vileling__zergling_/debilitating-claws-combat-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:vileling__zergling_",
+      "sourceName": "Debilitating Claws",
+      "sourcePhase": "Combat Phase",
+      "behaviorHash": "888bd7769cbb6d24c3c1d3db1ecbb15daa2522340907a767756d46529703b33a"
+    },
+    {
+      "semanticId": "unit:vileling__zergling_/claws-combat-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:vileling__zergling_",
+      "sourceName": "Claws",
+      "sourcePhase": "Combat Phase",
+      "behaviorHash": "31843866e1d08b14c2a990d5a5b0c41ef19072968ab48b6f0d1029ac965fcf31"
+    },
+    {
+      "semanticId": "unit:zagara/commander-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:zagara",
+      "sourceName": "Commander",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "b9c2fd3d0ca6a0fee10759c236625cf061a9bfccbe9ab2927785d4344a61e85b"
+    },
+    {
+      "semanticId": "unit:zagara/transfusion-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:zagara",
+      "sourceName": "Transfusion",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "8d6af7266aca760f276961f7084457311ad2eb8a56da04809e5368bf0e71652b"
+    },
+    {
+      "semanticId": "unit:zagara/psionic-link-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:zagara",
+      "sourceName": "Psionic Link",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "b52f3279709c8a8bf7a29b0ffe2e04aae0cd25e7d60fa890576007fcfde7e7c8"
+    },
+    {
+      "semanticId": "unit:zagara/broodmother-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:zagara",
+      "sourceName": "Broodmother",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "63600eae098a0b892de2eabcd346aa394c07752fd230f2ff4701df8e213c2f05"
+    },
+    {
+      "semanticId": "unit:zagara/infested-drop-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:zagara",
+      "sourceName": "Infested Drop",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "95e992e0c1915ff65bad4f195d1a5078c638f7bbc1e9c636ed1aaa477cb69cd0"
+    },
+    {
+      "semanticId": "unit:zagara/indomitable-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:zagara",
+      "sourceName": "Indomitable",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "d56dc4bc43e1af494b023d523a0c7471ca61c363c95ae886e8350d1889733280"
+    },
+    {
+      "semanticId": "unit:zagara/zagara-s-talons-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:zagara",
+      "sourceName": "Zagara's Talons",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "824413987d838d2786986a640196d6373a8a478795572c6a1024098f913aecea"
+    },
+    {
+      "semanticId": "unit:zagara/zagara-s-acid-spines-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:zagara",
+      "sourceName": "Zagara's Acid Spines",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "81e0119e7854a2d20b2ae78d0d5d704734d6a76b64a545604d14edf78761b1ee"
+    },
+    {
+      "semanticId": "unit:zagara/devastating-charge-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:zagara",
+      "sourceName": "Devastating Charge",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "0af0025290add305bf85c0a6bb6e9555baef47a4faed11796ea1d4f92f624870"
+    },
+    {
+      "semanticId": "unit:zagara/talons-combat-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:zagara",
+      "sourceName": "Talons",
+      "sourcePhase": "Combat Phase",
+      "behaviorHash": "8cb83ba1464dbb2d9b414b1c8a2ae2afa27c0db782ba246e9c9dc7f8cdce1ccb"
+    },
+    {
+      "semanticId": "unit:zealot/my-life-for-aiur-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:zealot",
+      "sourceName": "My Life for Aiur",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "409579d1942598fa007ec135597557855c0c186fbbe60962c18a1dbfad8bd2b0"
+    },
+    {
+      "semanticId": "unit:zealot/leg-enhancements-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:zealot",
+      "sourceName": "Leg Enhancements",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "4a0dccbd30aa87c148dd91552366bc2235d1787ca3047b365fc45f6a5a042f88"
+    },
+    {
+      "semanticId": "unit:zealot/charge-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:zealot",
+      "sourceName": "Charge",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "c5f2ce0dabce425da6b696007a83b2df0f1f1e54fac455c42b690775e08f0967"
+    },
+    {
+      "semanticId": "unit:zealot/devastating-charge-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:zealot",
+      "sourceName": "Devastating Charge",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "5e78ad9e2f9df796f651896ea9006234565c354def48d537100038ee174532ba"
+    },
+    {
+      "semanticId": "unit:zealot/zealous-round-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:zealot",
+      "sourceName": "Zealous Round",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "02503cd45a71665c822d09fc5d896b535aa3cb63614ccdfd58aa99459ed0e0be"
+    },
+    {
+      "semanticId": "unit:zealot/psi-blades-combat-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:zealot",
+      "sourceName": "Psi Blades",
+      "sourcePhase": "Combat Phase",
+      "behaviorHash": "58a08a6f158cfc114a89def3e6fa75bdae5b585a8bf0951657dcdc6c65331766"
+    },
+    {
+      "semanticId": "unit:zealot/we-stand-as-one-combat-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:zealot",
+      "sourceName": "We Stand as One",
+      "sourcePhase": "Combat Phase",
+      "behaviorHash": "8952d3d10d0e395eeb030853a89c0c8f4bdbdcff504c484004a2ecec7add90a8"
+    },
+    {
+      "semanticId": "unit:zeratul/one-with-the-shadows-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:zeratul",
+      "sourceName": "One With the Shadows",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "f19ffacf5d8709ba75c1d5f0f4ce266e94309eee5dac8e55658243862416b650"
+    },
+    {
+      "semanticId": "unit:zeratul/prophetic-vision-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:zeratul",
+      "sourceName": "Prophetic Vision",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "31c6c508d0b5a4e0594d003ebdb817b6d1d430d66337c627e7b0b1ce84ca1db7"
+    },
+    {
+      "semanticId": "unit:zeratul/sentenced-to-death-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:zeratul",
+      "sourceName": "Sentenced to Death",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "be3b576ebede541df5bb974ea0e2d717d3392abf087056752525e031c8f22641"
+    },
+    {
+      "semanticId": "unit:zeratul/void-prison-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:zeratul",
+      "sourceName": "Void Prison",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "82345cc3d35a2f97974e56e971132be311d7a8d2124165aac86766ae2a182e68"
+    },
+    {
+      "semanticId": "unit:zeratul/void-blink-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:zeratul",
+      "sourceName": "Void Blink",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "43f1596c47e6b5302c28e9394b641c78a17319c71af8cd2007f5caa71ecf524f"
+    },
+    {
+      "semanticId": "unit:zeratul/devastating-charge-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:zeratul",
+      "sourceName": "Devastating Charge",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "346fbed468becb4a1ca08aade1f2c20c0db70e849846bd4c5f4ce891ba088cea"
+    },
+    {
+      "semanticId": "unit:zeratul/master-warp-blade-combat-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:zeratul",
+      "sourceName": "Master Warp Blade",
+      "sourcePhase": "Combat Phase",
+      "behaviorHash": "d9ea2fda109e4929dde1b5cd02f4aa37c1cbed36191bf0dca94e1978b9efb2ee"
+    },
+    {
+      "semanticId": "unit:zeratul/shadow-strike-combat-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:zeratul",
+      "sourceName": "Shadow Strike",
+      "sourcePhase": "Combat Phase",
+      "behaviorHash": "473a6149627aca406ff8ffe802c83c7536592f6c1e52a7172104217a28b9411d"
+    },
+    {
+      "semanticId": "unit:zergling/squadron-any-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:zergling",
+      "sourceName": "Squadron",
+      "sourcePhase": "Any Phase",
+      "behaviorHash": "8b78c1c56784d2e0ab4c95d4f9ba6e07447ac25163b5634f6a02f543ca2e735e"
+    },
+    {
+      "semanticId": "unit:zergling/burrow-ambush-movement-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:zergling",
+      "sourceName": "Burrow Ambush",
+      "sourcePhase": "Movement Phase",
+      "behaviorHash": "651d68374b2771cbd8c1e0bc7eb87bbe08b25fe65808a5e8df1f72be2ac41299"
+    },
+    {
+      "semanticId": "unit:zergling/metabolic-boost-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:zergling",
+      "sourceName": "Metabolic Boost",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "da84e4838f2c170c82d4bef7aea73671cbb892ad11f6e438b09f4846e4e8aea4"
+    },
+    {
+      "semanticId": "unit:zergling/devastating-charge-assault-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:zergling",
+      "sourceName": "Devastating Charge",
+      "sourcePhase": "Assault Phase",
+      "behaviorHash": "bc8e50da04005c9a112aaf24c476cb557dfd72c1f8f794799142598462396d22"
+    },
+    {
+      "semanticId": "unit:zergling/claws-combat-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:zergling",
+      "sourceName": "Claws",
+      "sourcePhase": "Combat Phase",
+      "behaviorHash": "574a1f907d574c256655c503e6d331f9154af9579ae6661a020c5995279400e7"
+    },
+    {
+      "semanticId": "unit:zergling/shredding-claws-combat-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:zergling",
+      "sourceName": "Shredding Claws",
+      "sourcePhase": "Combat Phase",
+      "behaviorHash": "3f4c87d91f125e1b8cfff574da56a4a2fa65af27e75fb5f726b6aa7ef83b0541"
+    },
+    {
+      "semanticId": "unit:zergling/adrenal-glands-combat-phase",
+      "semanticVersion": 1,
+      "recordKey": "army_units:zergling",
+      "sourceName": "Adrenal Glands",
+      "sourcePhase": "Combat Phase",
+      "behaviorHash": "d3c2177bae385ea0788d15151217d7ca951ef20444f7e82d6ef762cbe72668cb"
+    },
+    {
+      "semanticId": "card:academy/advanced-training-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:academy",
+      "sourceName": "Advanced Training",
+      "sourcePhase": "",
+      "behaviorHash": "a17cfb6b0318cec98cc2fb0d2be84f64182fbc2f81cfae8fc80e1d9ca45fb6f3"
+    },
+    {
+      "semanticId": "card:accelerating_creep/speed-on-creep-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:accelerating_creep",
+      "sourceName": "Speed on Creep",
+      "sourcePhase": "",
+      "behaviorHash": "83272c112cdc17db82e5aa1a3f13fa80d252bdca963a8cb3c2a7ce08add2ec5b"
+    },
+    {
+      "semanticId": "card:accelerating_creep/living-glob-of-tissue-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:accelerating_creep",
+      "sourceName": "Living Glob of Tissue",
+      "sourcePhase": "",
+      "behaviorHash": "4bbde12de06bb18462b2a5eeab62529a6dcb6cf3c72743e58c0fb1d91f83ffda"
+    },
+    {
+      "semanticId": "card:accelerating_creep/creep-removal-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:accelerating_creep",
+      "sourceName": "Creep Removal",
+      "sourcePhase": "",
+      "behaviorHash": "df02ac5c1f9025f62d2d354ecbb4fbd82cc85e6a6edf353891921abd89682a51"
+    },
+    {
+      "semanticId": "card:armory/vehicle-weapons-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:armory",
+      "sourceName": "Vehicle Weapons",
+      "sourcePhase": "",
+      "behaviorHash": "ff90a5b1df9de89836f2574bb8db5a45d34fb8e98308c5e02f576f7cff2f6197"
+    },
+    {
+      "semanticId": "card:armory/vehicle-plating-any",
+      "semanticVersion": 2,
+      "recordKey": "tactical_cards:armory",
+      "sourceName": "Vehicle Plating",
+      "sourcePhase": "",
+      "behaviorHash": "fd545e5cc61788e27b4d10279d2e4fee79659cdf30b6a158115bd986b545de55"
+    },
+    {
+      "semanticId": "card:barracks/go-go-go-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:barracks",
+      "sourceName": "Go! Go! Go!",
+      "sourcePhase": "",
+      "behaviorHash": "7e9ecba06de2bf46b60d7fcc075487368ccfad3fc11ba9be36f59b863ad573dd"
+    },
+    {
+      "semanticId": "card:barracks__proxy_/go-go-go-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:barracks__proxy_",
+      "sourceName": "Go! Go! Go!",
+      "sourcePhase": "",
+      "behaviorHash": "7e9ecba06de2bf46b60d7fcc075487368ccfad3fc11ba9be36f59b863ad573dd"
+    },
+    {
+      "semanticId": "card:barracks__proxy_/armed-and-ready-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:barracks__proxy_",
+      "sourceName": "Armed and Ready",
+      "sourcePhase": "",
+      "behaviorHash": "5b83afa8e1c6560337491972e1392cca2f5beb959776b2ab6082c0b19d914f2e"
+    },
+    {
+      "semanticId": "card:barracks__reactor_/go-go-go-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:barracks__reactor_",
+      "sourceName": "Go! Go! Go!",
+      "sourcePhase": "",
+      "behaviorHash": "7e9ecba06de2bf46b60d7fcc075487368ccfad3fc11ba9be36f59b863ad573dd"
+    },
+    {
+      "semanticId": "card:barracks__reactor_/terran-charge-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:barracks__reactor_",
+      "sourceName": "Terran Charge",
+      "sourcePhase": "",
+      "behaviorHash": "bf65b39a8702b6aaca2c95b4184f7f832e94775bb2c779b2a8fd7b54fac47a10"
+    },
+    {
+      "semanticId": "card:barracks__tech_lab_/go-go-go-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:barracks__tech_lab_",
+      "sourceName": "Go! Go! Go!",
+      "sourcePhase": "",
+      "behaviorHash": "7e9ecba06de2bf46b60d7fcc075487368ccfad3fc11ba9be36f59b863ad573dd"
+    },
+    {
+      "semanticId": "card:barracks__tech_lab_/let-s-have-a-blast-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:barracks__tech_lab_",
+      "sourceName": "Let's Have a Blast!",
+      "sourcePhase": "",
+      "behaviorHash": "10ec634401c5063dffdfa17162898c0595d48788eee2e3fece0899cef29f500b"
+    },
+    {
+      "semanticId": "card:cocoon/spawn-larva-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:cocoon",
+      "sourceName": "Spawn Larva",
+      "sourcePhase": "",
+      "behaviorHash": "65f1714f04355a706bb20905f792dc8f65f15f96e5bf4f57f9258ea4a79188bd"
+    },
+    {
+      "semanticId": "card:cocoon/ravager-morph-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:cocoon",
+      "sourceName": "Ravager Morph",
+      "sourcePhase": "",
+      "behaviorHash": "47b5e24ce47e908e1dccf56563cfc849af3c2db2d122ce5488aa4ca3a7c624cd"
+    },
+    {
+      "semanticId": "card:daelaam/mass-recall-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:daelaam",
+      "sourceName": "Mass Recall",
+      "sourcePhase": "",
+      "behaviorHash": "6ee0d80649ffe6b07b65cf884d98cab8470c951103f7a6e8d630f9f2a2a89df5"
+    },
+    {
+      "semanticId": "card:daelaam/dae-uhl-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:daelaam",
+      "sourceName": "Dae’Uhl",
+      "sourcePhase": "",
+      "behaviorHash": "a2dbd8e6e58ccf186336df789e108afbefe576592aafb212a41698376dfb1043"
+    },
+    {
+      "semanticId": "card:defiler_mound/poisonous-essence-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:defiler_mound",
+      "sourceName": "Poisonous Essence",
+      "sourcePhase": "",
+      "behaviorHash": "2e023520252ceb07231f85f8ed10e356c15ab3d4eb32946e6bc6dde8af346719"
+    },
+    {
+      "semanticId": "card:defiler_mound/tunnel-network-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:defiler_mound",
+      "sourceName": "Tunnel Network",
+      "sourcePhase": "",
+      "behaviorHash": "b636e62f1f898bf1639eb186449d1cb255fa6f44c18439a1818f16d796ac988f"
+    },
+    {
+      "semanticId": "card:dropship/strap-in-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:dropship",
+      "sourceName": "Strap in!",
+      "sourcePhase": "",
+      "behaviorHash": "40a5db58aa1c401375fa87353261ec070084860864cd02f04bf2dbb23c695955"
+    },
+    {
+      "semanticId": "card:dropship/ready-for-dust-off-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:dropship",
+      "sourceName": "Ready For Dust-off",
+      "sourcePhase": "",
+      "behaviorHash": "18563c75c45b0d8ed0870ef9b7650073c69530825e439d13e88ea07a3bd122c5"
+    },
+    {
+      "semanticId": "card:engineering_bay/infantry-weapons-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:engineering_bay",
+      "sourceName": "Infantry Weapons",
+      "sourcePhase": "",
+      "behaviorHash": "86e46be190726211e31b0f6212439f06efe8bbc060ba655371a619bdba8389bd"
+    },
+    {
+      "semanticId": "card:engineering_bay/infantry-armor-any",
+      "semanticVersion": 2,
+      "recordKey": "tactical_cards:engineering_bay",
+      "sourceName": "Infantry Armor",
+      "sourcePhase": "",
+      "behaviorHash": "37ca8a605f5a009d07be85b25fd91d07ff3bdde4e9072fdd3ab657329ba87b46"
+    },
+    {
+      "semanticId": "card:evolution_chamber/extended-claws-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:evolution_chamber",
+      "sourceName": "Extended Claws",
+      "sourcePhase": "",
+      "behaviorHash": "367afab114d4227c6a363b2032f12107298ce9b2c02a24d5930e39019b40076b"
+    },
+    {
+      "semanticId": "card:evolution_chamber/carapace-any",
+      "semanticVersion": 2,
+      "recordKey": "tactical_cards:evolution_chamber",
+      "sourceName": "Carapace",
+      "sourcePhase": "",
+      "behaviorHash": "3e835ff37329f9ec67a10dee61b03f58f2bf2117f65c7793a899d9ce5fb758d9"
+    },
+    {
+      "semanticId": "card:factory/field-repair-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:factory",
+      "sourceName": "Field Repair",
+      "sourcePhase": "",
+      "behaviorHash": "d2991974ad552b2f10397ed595b2591ddc47b019b522a0f86fb017f97fb021b4"
+    },
+    {
+      "semanticId": "card:factory__tech_lab_/field-repair-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:factory__tech_lab_",
+      "sourceName": "Field Repair",
+      "sourcePhase": "",
+      "behaviorHash": "d2991974ad552b2f10397ed595b2591ddc47b019b522a0f86fb017f97fb021b4"
+    },
+    {
+      "semanticId": "card:factory__tech_lab_/pound-em-flat-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:factory__tech_lab_",
+      "sourceName": "Pound 'em Flat!",
+      "sourcePhase": "",
+      "behaviorHash": "c744634d9aa02e7175713a59ce6ee16ff557b6f2ee970521afebf22ffc26deff"
+    },
+    {
+      "semanticId": "card:forge/ground-weapons-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:forge",
+      "sourceName": "Ground Weapons",
+      "sourcePhase": "",
+      "behaviorHash": "00949260485a0c50a9d0504da8035c7343d72839df0e2a23de419c29f600a2a9"
+    },
+    {
+      "semanticId": "card:forge/ground-armor-any",
+      "semanticVersion": 2,
+      "recordKey": "tactical_cards:forge",
+      "sourceName": "Ground Armor",
+      "sourcePhase": "",
+      "behaviorHash": "6bfb1a6352ae27c552b22423499806f812d4749c79657c010121cd56f0e1df90"
+    },
+    {
+      "semanticId": "card:gate_chronoboosted/quick-strikes-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:gate_chronoboosted",
+      "sourceName": "Quick Strikes",
+      "sourcePhase": "",
+      "behaviorHash": "561157cf94421454d37fa6f48489b4839e0ab1a2551fd5cd14073eb0051a6af4"
+    },
+    {
+      "semanticId": "card:gate_chronoboosted/zealous-charge-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:gate_chronoboosted",
+      "sourceName": "Zealous Charge",
+      "sourcePhase": "",
+      "behaviorHash": "56d16302757c58ad6c85503dfe7747e394727407e7792da83090d3ff14cc7912"
+    },
+    {
+      "semanticId": "card:gateway/quick-strikes-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:gateway",
+      "sourceName": "Quick Strikes",
+      "sourcePhase": "",
+      "behaviorHash": "561157cf94421454d37fa6f48489b4839e0ab1a2551fd5cd14073eb0051a6af4"
+    },
+    {
+      "semanticId": "card:hatchery/lie-in-wait-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:hatchery",
+      "sourceName": "Lie in Wait",
+      "sourcePhase": "",
+      "behaviorHash": "ab5c3c94b7f1684c3e470e55596615ecc07fe934275f1cba08084f32caa3a76a"
+    },
+    {
+      "semanticId": "card:hatchery/creep-spread-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:hatchery",
+      "sourceName": "Creep Spread",
+      "sourcePhase": "",
+      "behaviorHash": "0140921bc9980c06d9cfab1702acbb5caef1c7c180cdfc4aba32fd39746d4ee4"
+    },
+    {
+      "semanticId": "card:healing_pathogen/universal-carrier-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:healing_pathogen",
+      "sourceName": "Universal Carrier",
+      "sourcePhase": "",
+      "behaviorHash": "99ce7234f7c24343a3cb17cbc698eea42dc7d63dce9e56d082741a1018cce545"
+    },
+    {
+      "semanticId": "card:healing_pathogen/stukov-s-creep-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:healing_pathogen",
+      "sourceName": "Stukov's Creep",
+      "sourcePhase": "",
+      "behaviorHash": "25758a8c9bb508d603d6cc794578d93b2db683cf165dbf2464144a8b245f7c4b"
+    },
+    {
+      "semanticId": "card:hive/brutal-instinct-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:hive",
+      "sourceName": "Brutal Instinct",
+      "sourcePhase": "",
+      "behaviorHash": "73e0c6602fc735e578010c6aaf23fd1b6b05d2ac005ba16c35ba5b7990f50c9c"
+    },
+    {
+      "semanticId": "card:hive/creep-spread-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:hive",
+      "sourceName": "Creep Spread",
+      "sourcePhase": "",
+      "behaviorHash": "0140921bc9980c06d9cfab1702acbb5caef1c7c180cdfc4aba32fd39746d4ee4"
+    },
+    {
+      "semanticId": "card:hungering_infestation/growing-infestation-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:hungering_infestation",
+      "sourceName": "Growing Infestation",
+      "sourcePhase": "",
+      "behaviorHash": "4e09bf2f44af58b083d41850f07152bdede5f5c2946787bf5538be5d18e93c35"
+    },
+    {
+      "semanticId": "card:hungering_infestation/stukov-s-creep-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:hungering_infestation",
+      "sourceName": "Stukov's Creep",
+      "sourcePhase": "",
+      "behaviorHash": "25758a8c9bb508d603d6cc794578d93b2db683cf165dbf2464144a8b245f7c4b"
+    },
+    {
+      "semanticId": "card:hydralisk_den/missile-attacks-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:hydralisk_den",
+      "sourceName": "Missile Attacks",
+      "sourcePhase": "",
+      "behaviorHash": "3971a1cd7584d8a0b8aae4ffaee29b421d865f38ced4c45162978d6abafe3867"
+    },
+    {
+      "semanticId": "card:infested_barracks/for-the-swarm-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:infested_barracks",
+      "sourceName": "For the Swarm!",
+      "sourcePhase": "",
+      "behaviorHash": "aeb2f80c6de120769a8109b5cd719670d5416f2ddb518bde36fd465d0a03c6b2"
+    },
+    {
+      "semanticId": "card:infested_command_center/parasitic-bio-toxins-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:infested_command_center",
+      "sourceName": "Parasitic Bio-Toxins",
+      "sourcePhase": "",
+      "behaviorHash": "3e982f2f3dae96f5191f087349813977f3fd0c18acf15bc046d4012968af4466"
+    },
+    {
+      "semanticId": "card:infested_command_center/scanner-sweep-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:infested_command_center",
+      "sourceName": "Scanner Sweep",
+      "sourcePhase": "",
+      "behaviorHash": "4b59657616523f02b6b210d17be18c125237c35352cba4743b3d2a373b9521af"
+    },
+    {
+      "semanticId": "card:kerrigan_s_swarm/omega-network-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:kerrigan_s_swarm",
+      "sourceName": "Omega Network",
+      "sourcePhase": "",
+      "behaviorHash": "bcab6ae583a82fd756a740cda2b27792c60e2d720209044851c8e318ff1c3e6e"
+    },
+    {
+      "semanticId": "card:kerrigan_s_swarm/wild-mutation-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:kerrigan_s_swarm",
+      "sourceName": "Wild Mutation",
+      "sourcePhase": "",
+      "behaviorHash": "b5ab9969871b92b8ff88b6bbe5d3e2e93df63517b57f95f11e39627bd4fb6459"
+    },
+    {
+      "semanticId": "card:kerrigan_s_swarm/zerg-creep-any",
+      "semanticVersion": 2,
+      "recordKey": "tactical_cards:kerrigan_s_swarm",
+      "sourceName": "Zerg Creep",
+      "sourcePhase": "",
+      "behaviorHash": "092a11968250305be6fdf79845e1c6cc0a7eba537e4e570aab4a52bfdeef3b0d"
+    },
+    {
+      "semanticId": "card:khalai/pylon-warp-in-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:khalai",
+      "sourceName": "Pylon Warp-In",
+      "sourcePhase": "",
+      "behaviorHash": "3502b6b665fecdbd669ceb24eaba28c902f4424e97cfbffc6f736e4ed9ff31db"
+    },
+    {
+      "semanticId": "card:khalai/bound-by-the-khala-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:khalai",
+      "sourceName": "Bound by the Khala",
+      "sourcePhase": "",
+      "behaviorHash": "681e2a30b4defb4ad958c06cb71b8e701c743b66d3137a7472b18761e5606ace"
+    },
+    {
+      "semanticId": "card:lair/predation-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:lair",
+      "sourceName": "Predation",
+      "sourcePhase": "",
+      "behaviorHash": "85393f195a82cc6bb095707a8e147ba3b86ec25ea02f877788a7a96f3816c4ef"
+    },
+    {
+      "semanticId": "card:lair/creep-spread-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:lair",
+      "sourceName": "Creep Spread",
+      "sourcePhase": "",
+      "behaviorHash": "0140921bc9980c06d9cfab1702acbb5caef1c7c180cdfc4aba32fd39746d4ee4"
+    },
+    {
+      "semanticId": "card:malignant_creep/malevolent-matriarch-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:malignant_creep",
+      "sourceName": "Malevolent Matriarch",
+      "sourcePhase": "",
+      "behaviorHash": "fba32cab82406739fcaea15678c1fba751fb6d1511f8ee10f06bc5c122efc0f8"
+    },
+    {
+      "semanticId": "card:malignant_creep/living-glob-of-tissue-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:malignant_creep",
+      "sourceName": "Living Glob of Tissue",
+      "sourcePhase": "",
+      "behaviorHash": "4bbde12de06bb18462b2a5eeab62529a6dcb6cf3c72743e58c0fb1d91f83ffda"
+    },
+    {
+      "semanticId": "card:malignant_creep/creep-removal-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:malignant_creep",
+      "sourceName": "Creep Removal",
+      "sourcePhase": "",
+      "behaviorHash": "df02ac5c1f9025f62d2d354ecbb4fbd82cc85e6a6edf353891921abd89682a51"
+    },
+    {
+      "semanticId": "card:nerazim/might-of-the-nerazim-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:nerazim",
+      "sourceName": "Might Of The Nerazim",
+      "sourcePhase": "",
+      "behaviorHash": "18d8cb0830aa0897f82a00ba742d2988de0b6cb6d82c7c6d188f177443e903d4"
+    },
+    {
+      "semanticId": "card:nerazim/darkness-descends-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:nerazim",
+      "sourceName": "Darkness Descends",
+      "sourcePhase": "",
+      "behaviorHash": "152ddd98f0bb75fce3c7e0f7cc9f67dc6cbc6c1443b1f8c72ef83336117b3d43"
+    },
+    {
+      "semanticId": "card:nexus/ancient-pride-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:nexus",
+      "sourceName": "Ancient Pride",
+      "sourcePhase": "",
+      "behaviorHash": "1f3c6630a9be6a75f2c12e89f27822b803b625f1f3275eb5eb351dd8a465f336"
+    },
+    {
+      "semanticId": "card:nexus/strategic-recall-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:nexus",
+      "sourceName": "Strategic Recall",
+      "sourcePhase": "",
+      "behaviorHash": "b8c263f87b40d9bcbc78f27f883705338947d86cb6f30f9ab9e4db01fcb03bd3"
+    },
+    {
+      "semanticId": "card:nova_covert_ops/griffin-support-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:nova_covert_ops",
+      "sourceName": "Griffin Support",
+      "sourcePhase": "",
+      "behaviorHash": "bd4f9268c1aed5c2e2fec74d43b198194adf54efb23719a10926bd67e888ef18"
+    },
+    {
+      "semanticId": "card:nova_covert_ops/mark-for-death-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:nova_covert_ops",
+      "sourceName": "Mark for Death",
+      "sourcePhase": "",
+      "behaviorHash": "a3a7d7bdffbd6467c93b6e9c92fc3add8e7b2b512a4de71bd3d9e2d240b3f6dd"
+    },
+    {
+      "semanticId": "card:observer/surveillance-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:observer",
+      "sourceName": "Surveillance",
+      "sourcePhase": "",
+      "behaviorHash": "8c0820e05e8b4854290f638c30b45875ac6fba9000db4be8d25a02fd2463469b"
+    },
+    {
+      "semanticId": "card:observer/gravitic-boosters-any",
+      "semanticVersion": 2,
+      "recordKey": "tactical_cards:observer",
+      "sourceName": "Gravitic Boosters",
+      "sourcePhase": "",
+      "behaviorHash": "3ab1b02033143aa37c2c557267198f164e590153d95a754f4551ab0d787377b4"
+    },
+    {
+      "semanticId": "card:orbital_command/comsat-station-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:orbital_command",
+      "sourceName": "ComSat Station",
+      "sourcePhase": "",
+      "behaviorHash": "015fb0010a0a3b0ee516e9f10333a17de5a2bdf9f2961294ede6659ccefac3e2"
+    },
+    {
+      "semanticId": "card:orbital_command/scanner-sweep-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:orbital_command",
+      "sourceName": "Scanner Sweep",
+      "sourcePhase": "",
+      "behaviorHash": "a6fe57db82c800bde9189a86a48affbdb62fd9abab2de7701f6c98cc377c6eca"
+    },
+    {
+      "semanticId": "card:overcharged_nexus/photon-overcharge-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:overcharged_nexus",
+      "sourceName": "Photon Overcharge",
+      "sourcePhase": "",
+      "behaviorHash": "5601ca65001a31c4d653eececd979f94fc560d16b471f9315288af98d73582e2"
+    },
+    {
+      "semanticId": "card:overcharged_nexus/strategic-recall-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:overcharged_nexus",
+      "sourceName": "Strategic Recall",
+      "sourcePhase": "",
+      "behaviorHash": "b8c263f87b40d9bcbc78f27f883705338947d86cb6f30f9ab9e4db01fcb03bd3"
+    },
+    {
+      "semanticId": "card:overlord/excrete-creep-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:overlord",
+      "sourceName": "Excrete Creep",
+      "sourcePhase": "",
+      "behaviorHash": "b53646b2d32cb1264a756f61da1a6ab7daca5f30d007ed84aa3dd1b6935f51db"
+    },
+    {
+      "semanticId": "card:overlord/ventral-sacs-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:overlord",
+      "sourceName": "Ventral Sacs",
+      "sourcePhase": "",
+      "behaviorHash": "f180494aab9c9b3accdde07c915fc4d0e90e2427203130e02efcd8a3c48005b5"
+    },
+    {
+      "semanticId": "card:overseer/pneumatized-carapace-any",
+      "semanticVersion": 2,
+      "recordKey": "tactical_cards:overseer",
+      "sourceName": "Pneumatized Carapace",
+      "sourcePhase": "",
+      "behaviorHash": "6fe2e1313b1dd8db7d01b491db8a87f4e55b3e8a5f0e20a4f24d82e65110f6c0"
+    },
+    {
+      "semanticId": "card:overseer/oversight-mode-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:overseer",
+      "sourceName": "Oversight Mode",
+      "sourcePhase": "",
+      "behaviorHash": "08651b39b1c8cf351753f54146bf2c9f52b8a1a1dc41fd6852bf93c57b85e12a"
+    },
+    {
+      "semanticId": "card:power_field/guardian-shell-any",
+      "semanticVersion": 2,
+      "recordKey": "tactical_cards:power_field",
+      "sourceName": "Guardian Shell",
+      "sourcePhase": "",
+      "behaviorHash": "a68d396eb090f57dbc7fb70be37238fdca431ad2bc9836d895e57311c0524907"
+    },
+    {
+      "semanticId": "card:raynor_s_raiders/rapid-ingress-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:raynor_s_raiders",
+      "sourceName": "Rapid Ingress",
+      "sourcePhase": "",
+      "behaviorHash": "f7db2cf4accfeb4138e32c6cbb87910ebc842c798a6548fab2d691196e2af29e"
+    },
+    {
+      "semanticId": "card:raynor_s_raiders/ready-for-pickup-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:raynor_s_raiders",
+      "sourceName": "Ready for Pickup?",
+      "sourcePhase": "",
+      "behaviorHash": "1d63fdce4fcce4d45db920325b753523db8b87a25029d842551bfef74612e6fb"
+    },
+    {
+      "semanticId": "card:reactive_creep/reactive-tissue-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:reactive_creep",
+      "sourceName": "Reactive Tissue",
+      "sourcePhase": "",
+      "behaviorHash": "694bfec84f6df8c9950fc003219cbc0b41c0a0dfbb75a79d51543319c0ba4c68"
+    },
+    {
+      "semanticId": "card:reactive_creep/living-glob-of-tissue-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:reactive_creep",
+      "sourceName": "Living Glob of Tissue",
+      "sourcePhase": "",
+      "behaviorHash": "4bbde12de06bb18462b2a5eeab62529a6dcb6cf3c72743e58c0fb1d91f83ffda"
+    },
+    {
+      "semanticId": "card:reactive_creep/creep-removal-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:reactive_creep",
+      "sourceName": "Creep Removal",
+      "sourcePhase": "",
+      "behaviorHash": "df02ac5c1f9025f62d2d354ecbb4fbd82cc85e6a6edf353891921abd89682a51"
+    },
+    {
+      "semanticId": "card:roach_warren/nasty-surprise-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:roach_warren",
+      "sourceName": "Nasty Surprise",
+      "sourcePhase": "",
+      "behaviorHash": "552c08e3074ceb0054474ba66d7ccb4b489df53be8864bdc5d99f3b514b97377"
+    },
+    {
+      "semanticId": "card:robotics_facility/plasma-shields-any",
+      "semanticVersion": 2,
+      "recordKey": "tactical_cards:robotics_facility",
+      "sourceName": "Plasma Shields",
+      "sourcePhase": "",
+      "behaviorHash": "2e6525eb79c6348dadb6c6c6710f56cafbbb83342c461c9e0563b393da0c5d3e"
+    },
+    {
+      "semanticId": "card:robotics_support_bay/master-of-robotics-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:robotics_support_bay",
+      "sourceName": "Master of Robotics",
+      "sourcePhase": "",
+      "behaviorHash": "71ec2ebb61dc21373cd3fd9311c9152214babac42aabe904edceeb39593404e5"
+    },
+    {
+      "semanticId": "card:spawning_pool/feral-rage-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:spawning_pool",
+      "sourceName": "Feral Rage",
+      "sourcePhase": "",
+      "behaviorHash": "21cabab7f0527de3a5d680f8911c2ad46167790a0d91f8ec03214c720fc192d5"
+    },
+    {
+      "semanticId": "card:spawning_pool__six_pool_/feral-rage-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:spawning_pool__six_pool_",
+      "sourceName": "Feral Rage",
+      "sourcePhase": "",
+      "behaviorHash": "21cabab7f0527de3a5d680f8911c2ad46167790a0d91f8ec03214c720fc192d5"
+    },
+    {
+      "semanticId": "card:spawning_pool__six_pool_/timing-push-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:spawning_pool__six_pool_",
+      "sourceName": "Timing Push",
+      "sourcePhase": "",
+      "behaviorHash": "51bc404e9e2104c2fe63f8431fc956e176d2ea40ade61a125ef3cd1b8966b41b"
+    },
+    {
+      "semanticId": "card:stukov_s_forces/ashes-of-the-ued-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:stukov_s_forces",
+      "sourceName": "Ashes of the UED",
+      "sourcePhase": "",
+      "behaviorHash": "125756ba92d679e1136f5b1018bfc2a1e25c8b4c1a282860f0bedb3b00245f68"
+    },
+    {
+      "semanticId": "card:stukov_s_forces/infestation-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:stukov_s_forces",
+      "sourceName": "Infestation",
+      "sourcePhase": "",
+      "behaviorHash": "13af0b8d2a9ff7fa2e2feabad11dbd7ed503ef44f9a7fc46ab3e8ec81830d334"
+    },
+    {
+      "semanticId": "card:stukov_s_forces/hostile-incubation-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:stukov_s_forces",
+      "sourceName": "Hostile Incubation",
+      "sourcePhase": "",
+      "behaviorHash": "ad41de18ecacf59ed4313ff00dece12fc255bf7563fefac7354bbf534d3184d2"
+    },
+    {
+      "semanticId": "card:supply_depot/additional-supply-depots-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:supply_depot",
+      "sourceName": "Additional Supply Depots",
+      "sourcePhase": "",
+      "behaviorHash": "e486a7c7c8779b0bc94493f62cbeac594ddb8b7ec1983c9e2113f45ed1ea282f"
+    },
+    {
+      "semanticId": "card:tal_darim/proxy-pylon-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:tal_darim",
+      "sourceName": "Proxy Pylon",
+      "sourcePhase": "",
+      "behaviorHash": "7e3b72cb316fe40c8cdca647b596a0ab7d287fe847ba528bd0037665d1b60020"
+    },
+    {
+      "semanticId": "card:tal_darim/chain-of-ascension-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:tal_darim",
+      "sourceName": "Chain of Ascension",
+      "sourcePhase": "",
+      "behaviorHash": "5b83a90cbc9b6822e5e94477e8bf4c2720f3b7c0ffa29c17e7a0d980705eff0e"
+    },
+    {
+      "semanticId": "card:tal_darim/4-or-more-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:tal_darim",
+      "sourceName": "4 or more",
+      "sourcePhase": "",
+      "behaviorHash": "33a00e11051d6d6538feb78ad0aa4833280cd2d110f8ed3c39623cb3630f9b10"
+    },
+    {
+      "semanticId": "card:tal_darim/6-or-more-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:tal_darim",
+      "sourceName": "6 or more",
+      "sourcePhase": "",
+      "behaviorHash": "354f2b8ae926173ed6f4a116703bcbbe5cd2cd877b7410be885ece6fd7553888"
+    },
+    {
+      "semanticId": "card:templar_archives/ancestral-wisdom-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:templar_archives",
+      "sourceName": "Ancestral Wisdom",
+      "sourcePhase": "",
+      "behaviorHash": "026c9a319a7d03e6e15ee5a3a556b3fc1a8319f1387815526096d919971ae14d"
+    },
+    {
+      "semanticId": "card:templar_caste/our-duty-is-unending-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:templar_caste",
+      "sourceName": "Our Duty is Unending",
+      "sourcePhase": "",
+      "behaviorHash": "9d747068e45b02bdc41a54922685c79fd0f59d3b0986e84c054ec674534535a6"
+    },
+    {
+      "semanticId": "card:templar_caste/khassar-de-templari-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:templar_caste",
+      "sourceName": "Khassar de Templari",
+      "sourcePhase": "",
+      "behaviorHash": "2db2216b0aa04d1bab9dfcf32d12e4c3def0e6ab0d7b40aac91bd7fcf78fb2d0"
+    },
+    {
+      "semanticId": "card:terran_armed_forces/tactical-retreat-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:terran_armed_forces",
+      "sourceName": "Tactical Retreat",
+      "sourcePhase": "",
+      "behaviorHash": "c131b2c5e273457adbccbab7dbdca2ac8be960f7ff1eed9bdf5e6da09de795a4"
+    },
+    {
+      "semanticId": "card:terran_armed_forces/terran-tenacity-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:terran_armed_forces",
+      "sourceName": "Terran Tenacity",
+      "sourcePhase": "",
+      "behaviorHash": "d9711d1fd656a31b655943c96e25c67b7918f88faa0fa39d721901ac9914a4bf"
+    },
+    {
+      "semanticId": "card:twilight_council/weapons-of-the-firstborn-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:twilight_council",
+      "sourceName": "Weapons of the Firstborn",
+      "sourcePhase": "",
+      "behaviorHash": "e7a75aef614f525645996464751a177aeaba923f35c0109d3cf02d1b215a143a"
+    },
+    {
+      "semanticId": "card:twilight_council/veil-of-shadows-any",
+      "semanticVersion": 2,
+      "recordKey": "tactical_cards:twilight_council",
+      "sourceName": "Veil of Shadows",
+      "sourcePhase": "",
+      "behaviorHash": "5e5a77d2e8f660c1725938740cf59160597ff6c5c7d6d81f8afb4a89adca9d85"
+    },
+    {
+      "semanticId": "card:vanadium_plating/crystalline-alloy-any",
+      "semanticVersion": 2,
+      "recordKey": "tactical_cards:vanadium_plating",
+      "sourceName": "Crystalline Alloy",
+      "sourcePhase": "",
+      "behaviorHash": "7de740fbc3d2bad6980342fd4a1ba97cf376dfb9e366270d60af26cd66c7c0ec"
+    },
+    {
+      "semanticId": "card:void_seeker/personal-transport-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:void_seeker",
+      "sourceName": "Personal Transport",
+      "sourcePhase": "",
+      "behaviorHash": "129af5176c3e914b5fd6e7f75c9823d92bffa9ccdae87bd862bdf97a348c122c"
+    },
+    {
+      "semanticId": "card:void_seeker/anakh-su-n-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:void_seeker",
+      "sourceName": "Anakh Su'n",
+      "sourcePhase": "",
+      "behaviorHash": "fee98c3c8b14fc73f0e79a4bf2ec3a1b93b61dbbf697c5b05657ab7243ecd970"
+    },
+    {
+      "semanticId": "card:warp_gate/quick-strikes-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:warp_gate",
+      "sourceName": "Quick Strikes",
+      "sourcePhase": "",
+      "behaviorHash": "561157cf94421454d37fa6f48489b4839e0ab1a2551fd5cd14073eb0051a6af4"
+    },
+    {
+      "semanticId": "card:warp_gate/warp-in-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:warp_gate",
+      "sourceName": "Warp In",
+      "sourcePhase": "",
+      "behaviorHash": "22d768c302954e3290893a42808b97c97a25888d2895ac905f6ba650b9d80020"
+    },
+    {
+      "semanticId": "card:warp_prism/phase-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:warp_prism",
+      "sourceName": "Phase",
+      "sourcePhase": "",
+      "behaviorHash": "843ee984d7ed700035ea8a4539e2c3f3280fdf246176e1737074a4d14e4305c8"
+    },
+    {
+      "semanticId": "card:warp_prism/warp-conduit-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:warp_prism",
+      "sourceName": "Warp Conduit",
+      "sourcePhase": "",
+      "behaviorHash": "3571b01e697c764054d91b24644ffeb9481055e054f58e422cc7131470403dca"
+    },
+    {
+      "semanticId": "card:weighted_pustule/fetid-touch-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:weighted_pustule",
+      "sourceName": "Fetid Touch",
+      "sourcePhase": "",
+      "behaviorHash": "4ead34ba295826e7df76b5fec6eb2c6bccb40815270f7c12f29faed71772657b"
+    },
+    {
+      "semanticId": "card:weighted_pustule/stukov-s-creep-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:weighted_pustule",
+      "sourceName": "Stukov's Creep",
+      "sourcePhase": "",
+      "behaviorHash": "25758a8c9bb508d603d6cc794578d93b2db683cf165dbf2464144a8b245f7c4b"
+    },
+    {
+      "semanticId": "card:zagara_s_swarm/scourge-queen-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:zagara_s_swarm",
+      "sourceName": "Scourge Queen",
+      "sourcePhase": "",
+      "behaviorHash": "64f52c025d0adb987a0c5e1e60ed395ef426b66515a55709fa47a7d60781bac8"
+    },
+    {
+      "semanticId": "card:zagara_s_swarm/instinctive-reaction-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:zagara_s_swarm",
+      "sourceName": "Instinctive Reaction",
+      "sourcePhase": "",
+      "behaviorHash": "f99a07de8a5af1ee4d22bbe0f6065b4bc2d8b4447254d614ba0f0e6e7c79b44d"
+    },
+    {
+      "semanticId": "card:zagara_s_swarm/zerg-creep-any",
+      "semanticVersion": 2,
+      "recordKey": "tactical_cards:zagara_s_swarm",
+      "sourceName": "Zerg Creep",
+      "sourcePhase": "",
+      "behaviorHash": "092a11968250305be6fdf79845e1c6cc0a7eba537e4e570aab4a52bfdeef3b0d"
+    },
+    {
+      "semanticId": "card:zerg_swarm/rapid-burrowing-any",
+      "semanticVersion": 1,
+      "recordKey": "tactical_cards:zerg_swarm",
+      "sourceName": "Rapid Burrowing",
+      "sourcePhase": "",
+      "behaviorHash": "afcb60539ad9b4e30d12396eff94d63925cff6fa82a5eb9116394d5f5bfdea05"
+    },
+    {
+      "semanticId": "card:zerg_swarm/brood-instinct-any",
+      "semanticVersion": 2,
+      "recordKey": "tactical_cards:zerg_swarm",
+      "sourceName": "Brood Instinct",
+      "sourcePhase": "",
+      "behaviorHash": "76d603d7a6758186b77cb9a11274f06ead8c0753030e2a79f9b0a678723c9ac6"
+    },
+    {
+      "semanticId": "card:zerg_swarm/zerg-creep-any",
+      "semanticVersion": 2,
+      "recordKey": "tactical_cards:zerg_swarm",
+      "sourceName": "Zerg Creep",
+      "sourcePhase": "",
+      "behaviorHash": "092a11968250305be6fdf79845e1c6cc0a7eba537e4e570aab4a52bfdeef3b0d"
+    }
+  ],
+  "registryHash": "406179134d23cf2ee17ee043f4956d8a80ffb4b928d17fd0e54b8bbeee862e37"
+}

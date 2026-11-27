@@ -1,0 +1,409 @@
+{
+  "name": "projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/army_units/infested_goliath",
+  "fields": {
+    "name": {
+      "stringValue": "Infested Goliath"
+    },
+    "id": {
+      "stringValue": "infested_goliath"
+    },
+    "upgrades": {
+      "arrayValue": {
+        "values": [
+          {
+            "mapValue": {
+              "fields": {
+                "name": {
+                  "stringValue": "Ares-Class Targeting System"
+                },
+                "linkedTo": {
+                  "stringValue": ""
+                },
+                "description": {
+                  "stringValue": "This Unit’s Autocannon and Underbelly Machine Gun weapons gain PRECISION (1)."
+                },
+                "activation": {
+                  "stringValue": "\u003cPassive\u003e"
+                },
+                "phase": {
+                  "stringValue": "Any Phase"
+                },
+                "costS": {
+                  "integerValue": "20"
+                },
+                "costL": {
+                  "integerValue": "20"
+                }
+              }
+            }
+          },
+          {
+            "mapValue": {
+              "fields": {
+                "name": {
+                  "stringValue": "Target Lock"
+                },
+                "linkedTo": {
+                  "stringValue": ""
+                },
+                "description": {
+                  "stringValue": "Select one Enemy Unit Within 12\". Whenever a Friendly Goliath Unit targets that enemy with an Autocannon, that weapon gains Surge Type: Light, Armoured, and S Dice: D3+1."
+                },
+                "activation": {
+                  "stringValue": "\u003cActive\u003e\n(1 Command Point)"
+                },
+                "phase": {
+                  "stringValue": "Movement Phase"
+                },
+                "costS": {
+                  "integerValue": "0"
+                },
+                "costL": {
+                  "integerValue": "0"
+                }
+              }
+            }
+          },
+          {
+            "mapValue": {
+              "fields": {
+                "name": {
+                  "stringValue": "Indomitable"
+                },
+                "linkedTo": {
+                  "stringValue": ""
+                },
+                "description": {
+                  "stringValue": "While Engaged, this Unit may target and be targeted by Unengaged Enemy Units. In both cases, the defending Unit gains an Evade Roll against those attacks."
+                },
+                "activation": {
+                  "stringValue": "\u003cPassive\u003e"
+                },
+                "phase": {
+                  "stringValue": "Assault Phase"
+                },
+                "costS": {
+                  "integerValue": "0"
+                },
+                "costL": {
+                  "integerValue": "0"
+                }
+              }
+            }
+          },
+          {
+            "mapValue": {
+              "fields": {
+                "name": {
+                  "stringValue": "Autocannon"
+                },
+                "linkedTo": {
+                  "stringValue": "-"
+                },
+                "description": {
+                  "stringValue": "RANGE: 12 | TARGET: Ground | RoA: 9 | HIT: 4+ | DMG: 1\nSURGE: -\n\nLONG RANGE (18\")"
+                },
+                "activation": {
+                  "stringValue": ""
+                },
+                "phase": {
+                  "stringValue": "Assault Phase"
+                },
+                "costS": {
+                  "integerValue": "0"
+                },
+                "costL": {
+                  "integerValue": "0"
+                }
+              }
+            }
+          },
+          {
+            "mapValue": {
+              "fields": {
+                "name": {
+                  "stringValue": "Underbelly Machine Gun"
+                },
+                "linkedTo": {
+                  "stringValue": "-"
+                },
+                "description": {
+                  "stringValue": "RANGE: 8 | TARGET: Ground | RoA: 6 | HIT: 3+ | DMG: 1\nSURGE: Light (D3)\n\nPINPOINT, SIDEARM"
+                },
+                "activation": {
+                  "stringValue": ""
+                },
+                "phase": {
+                  "stringValue": "Assault Phase"
+                },
+                "costS": {
+                  "integerValue": "0"
+                },
+                "costL": {
+                  "integerValue": "0"
+                }
+              }
+            }
+          },
+          {
+            "mapValue": {
+              "fields": {
+                "name": {
+                  "stringValue": "Hellfire Missiles"
+                },
+                "linkedTo": {
+                  "stringValue": "-"
+                },
+                "description": {
+                  "stringValue": "RANGE: 16 | TARGET: Flying | RoA: 6 | HIT: 3+ | DMG: 1\nSURGE: Light (D3)\n\nANTI-EVADE (1), SIDEARM"
+                },
+                "activation": {
+                  "stringValue": ""
+                },
+                "phase": {
+                  "stringValue": "Assault Phase"
+                },
+                "costS": {
+                  "integerValue": "0"
+                },
+                "costL": {
+                  "integerValue": "0"
+                }
+              }
+            }
+          },
+          {
+            "mapValue": {
+              "fields": {
+                "name": {
+                  "stringValue": "Scatter Missiles"
+                },
+                "linkedTo": {
+                  "stringValue": "Hellfire Missiles"
+                },
+                "description": {
+                  "stringValue": "RANGE: 18 | TARGET: Ground | RoA: 6 | HIT: 5+ | DMG: 1\nSURGE: Light (D3)\n\nINDIRECT FIRE, LOCKED IN (6), LONG RANGE (24\"), SIDEARM"
+                },
+                "activation": {
+                  "stringValue": ""
+                },
+                "phase": {
+                  "stringValue": "Assault Phase"
+                },
+                "costS": {
+                  "integerValue": "30"
+                },
+                "costL": {
+                  "integerValue": "30"
+                }
+              }
+            }
+          },
+          {
+            "mapValue": {
+              "fields": {
+                "name": {
+                  "stringValue": "Haywire Missiles"
+                },
+                "linkedTo": {
+                  "stringValue": "Hellfire Missiles"
+                },
+                "description": {
+                  "stringValue": "RANGE: 12 | TARGET: Ground | RoA: 3 | HIT: 3+ | DMG: 1\nSURGE: Armoured (D3)\n\nPIERCE Armoured (3), SIDEARM"
+                },
+                "activation": {
+                  "stringValue": ""
+                },
+                "phase": {
+                  "stringValue": "Assault Phase"
+                },
+                "costS": {
+                  "integerValue": "40"
+                },
+                "costL": {
+                  "integerValue": "40"
+                }
+              }
+            }
+          },
+          {
+            "mapValue": {
+              "fields": {
+                "name": {
+                  "stringValue": "Devastating Charge"
+                },
+                "linkedTo": {
+                  "stringValue": ""
+                },
+                "description": {
+                  "stringValue": "Immediately after this Unit completes a successful Charge, resolve the IMPACT (4) 3+ effect."
+                },
+                "activation": {
+                  "stringValue": "\u003cPassive\u003e"
+                },
+                "phase": {
+                  "stringValue": "Assault Phase"
+                },
+                "costS": {
+                  "integerValue": "0"
+                },
+                "costL": {
+                  "integerValue": "0"
+                }
+              }
+            }
+          },
+          {
+            "mapValue": {
+              "fields": {
+                "name": {
+                  "stringValue": "Stomp"
+                },
+                "linkedTo": {
+                  "stringValue": "-"
+                },
+                "description": {
+                  "stringValue": "RANGE: E | TARGET: Ground | RoA: 4 | HIT: 5+ | DMG: 1\nSURGE: -"
+                },
+                "activation": {
+                  "stringValue": ""
+                },
+                "phase": {
+                  "stringValue": "Combat Phase"
+                },
+                "costS": {
+                  "integerValue": "0"
+                },
+                "costL": {
+                  "integerValue": "0"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "squadProfile": {
+      "arrayValue": {
+        "values": [
+          {
+            "mapValue": {
+              "fields": {
+                "tier": {
+                  "integerValue": "1"
+                },
+                "modelCount": {
+                  "stringValue": "-"
+                },
+                "supply": {
+                  "integerValue": "0"
+                }
+              }
+            }
+          },
+          {
+            "mapValue": {
+              "fields": {
+                "tier": {
+                  "integerValue": "2"
+                },
+                "modelCount": {
+                  "stringValue": "1 - 1"
+                },
+                "supply": {
+                  "integerValue": "2"
+                }
+              }
+            }
+          },
+          {
+            "mapValue": {
+              "fields": {
+                "tier": {
+                  "integerValue": "3"
+                },
+                "modelCount": {
+                  "stringValue": "-"
+                },
+                "supply": {
+                  "integerValue": "0"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "tags": {
+      "stringValue": "Armoured, Mechanical, Infested, Ground"
+    },
+    "faction": {
+      "stringValue": "Zerg"
+    },
+    "combatRange": {
+      "stringValue": "5"
+    },
+    "large": {
+      "mapValue": {
+        "fields": {
+          "supply": {
+            "integerValue": "0"
+          },
+          "models": {
+            "integerValue": "0"
+          },
+          "cost": {
+            "integerValue": "0"
+          }
+        }
+      }
+    },
+    "unitType": {
+      "stringValue": "Elite"
+    },
+    "small": {
+      "mapValue": {
+        "fields": {
+          "cost": {
+            "integerValue": "180"
+          },
+          "supply": {
+            "integerValue": "2"
+          },
+          "models": {
+            "integerValue": "1"
+          }
+        }
+      }
+    },
+    "keywords": {
+      "stringValue": ""
+    },
+    "stats": {
+      "mapValue": {
+        "fields": {
+          "evade": {
+            "stringValue": "-"
+          },
+          "size": {
+            "stringValue": "3"
+          },
+          "armor": {
+            "stringValue": "4+"
+          },
+          "hp": {
+            "stringValue": "10"
+          },
+          "shield": {
+            "stringValue": "-"
+          },
+          "speed": {
+            "stringValue": "7"
+          }
+        }
+      }
+    }
+  },
+  "createTime": "2026-11-24T10:47:49.606600Z",
+  "updateTime": "2026-11-24T10:47:49.606600Z"
+}

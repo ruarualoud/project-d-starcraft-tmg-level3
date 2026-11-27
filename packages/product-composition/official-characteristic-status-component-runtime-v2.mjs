@@ -178,7 +178,7 @@ const seal = (body, field) => Object.freeze({ ...body, [field]: hash(body) });
 // Native bridge for a source-reviewed release component. The same family and
 // IR router are used by complete match composition. Full match admission is
 // deliberately represented by a separate capability coverage release.
-export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, definitionIds, spatialState,
+export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, definitionIds, spatialState, sourceDefinitionIds,
   exclusiveRangedContinuation = false, includeRanged = false, includeTemplateAttacks = false, includePrecisionChoices = false,
   includePointDefenseChoices = false, includeArmourChoices = false, includeMelee = false, includeHits = false,
   includeArmourOrdinals = false, includeArmourReactions = false, includeTargetReactions = false,
@@ -218,6 +218,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
     throw Error('CHARACTERISTIC_ABILITY_PHASE_POLICY_MISMATCH');
   }
   const args = { dataset: context.dataset, identityCatalogue: context.resources.abilityIdentities,
+    ...(sourceDefinitionIds === undefined ? {} : { sourceDefinitionIds }),
     ...(sourcePhasePolicy ? { sourcePhasePolicy } : {}) };
   const actionStatusLifecycle = spatialState ? hasOfficialActionStatusLifecyclePolicyV1(spatialState) : false;
   const source = createOfficialAbilityEffectIrCatalogueV1(args);

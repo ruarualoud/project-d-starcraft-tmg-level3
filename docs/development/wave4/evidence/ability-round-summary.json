@@ -1,0 +1,42 @@
+{
+  "harnessLoopUsed": true,
+  "targetGames": [
+    "starcraft-tmg"
+  ],
+  "promptPackRoutes": [],
+  "harnessToolsCalled": [
+    "read_frozen_definitions",
+    "official_read_only_source_review",
+    "compile_stable_identities",
+    "compile_scoped_ability_ir",
+    "resolve_reaction_source",
+    "legalSpace",
+    "preview",
+    "confirm",
+    "apply",
+    "replay",
+    "cold_open"
+  ],
+  "uiTraceEvidence": [],
+  "agentDecisionEvidence": null,
+  "memoryTraceEvidence": [],
+  "trainingTraceCandidates": [],
+  "rollbackOrDemotionRules": [
+    "No full release admission from a selected definition set",
+    "Archon withdrawal, native Zerg CP ambiguity and unsupported explicit phase remain blocked",
+    "Existing Wave3 rooms retain original source bindings and signed replay"
+  ],
+  "userVisibleChecks": [
+    "156 per-ID rule/source/consumer mappings",
+    "Seven source-revised armour reactions consume correct card and modifier via signed Native Room actions",
+    "500/2000 point old-room cold state, binding, replay and metadata bytes preserved"
+  ],
+  "evidence": [
+    "docs/development/wave4/evidence/ability-diff.public.json",
+    "docs/development/wave4/evidence/armour-reaction-components.public.json",
+    "docs/development/wave4/evidence/ability-wave3-cold-read.public.json"
+  ],
+  "implementedNewGameAtoms": 0,
+  "modelCalls": 0,
+  "fullWave4WebAcceptance": false
+}
