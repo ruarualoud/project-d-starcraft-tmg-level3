@@ -1,0 +1,149 @@
+{
+  "schema": "starcraft_tmg_wave4_khassar_settlement_v1",
+  "status": "passed_read_only",
+  "results": [
+    {
+      "id": "shot-recipient-dies",
+      "originalSignedActions": 8,
+      "recipientDestroyed": true,
+      "actorDestroyed": false,
+      "damage": {
+        "schema": "starcraft_tmg_khassar_post_action_damage_skipped_v1",
+        "targetPieceId": "recipient",
+        "amount": 3,
+        "effectiveDamage": 0,
+        "reason": "recipient_destroyed",
+        "trainingTruth": false
+      },
+      "cardExhaustedEvents": 1,
+      "abilityUses": 1,
+      "actorFinishEvents": 1,
+      "noHangingContinuation": true,
+      "newActions": 0
+    },
+    {
+      "id": "shot-recipient-survives",
+      "originalSignedActions": 7,
+      "recipientDestroyed": false,
+      "actorDestroyed": false,
+      "damage": {
+        "schema": "starcraft_tmg_official_non_lethal_damage_resolution_v1",
+        "targetPieceId": "recipient",
+        "targetModelId": "recipient-model-1",
+        "abilityResolutionHash": "95d395ec602f72dfe5ac63fcc02a6c37e7fd0af31ec3c5e046482cf09a1e3e33",
+        "priorDamageMarker": 4,
+        "nonLethalDamage": 3,
+        "postDamageMarker": 7,
+        "targetHitPoints": 3,
+        "totalDamageMayMeetOrExceedHitPoints": true,
+        "casualtyRemovalDeferredUntilLaterStandardDamage": true,
+        "targetDestroyed": false,
+        "casualtyModelIds": [],
+        "discardedOverflowDamage": 0,
+        "trainingTruth": false,
+        "nonLethalResolutionHash": "4dace24e96d0a7f69157e9371e94ef4f4d381b6c83b3d022045856c6eaa93ee4"
+      },
+      "cardExhaustedEvents": 1,
+      "abilityUses": 1,
+      "actorFinishEvents": 1,
+      "noHangingContinuation": true,
+      "newActions": 0
+    },
+    {
+      "id": "shot-declined",
+      "originalSignedActions": 5,
+      "recipientDestroyed": false,
+      "actorDestroyed": false,
+      "damage": {
+        "schema": "starcraft_tmg_official_non_lethal_damage_resolution_v1",
+        "targetPieceId": "recipient",
+        "targetModelId": "recipient-model-1",
+        "abilityResolutionHash": "46fc993ab48a58d340e4ad39e28b2b3ed603beb6632b3750c14322cd40310c7a",
+        "priorDamageMarker": 11,
+        "nonLethalDamage": 3,
+        "postDamageMarker": 14,
+        "targetHitPoints": 3,
+        "totalDamageMayMeetOrExceedHitPoints": true,
+        "casualtyRemovalDeferredUntilLaterStandardDamage": true,
+        "targetDestroyed": false,
+        "casualtyModelIds": [],
+        "discardedOverflowDamage": 0,
+        "trainingTruth": false,
+        "nonLethalResolutionHash": "dc7279133e047a02eb8044fd1d25f71242aaccea05043a31f0fe22ac0c131716"
+      },
+      "cardExhaustedEvents": 1,
+      "abilityUses": 1,
+      "actorFinishEvents": 1,
+      "noHangingContinuation": true,
+      "newActions": 0
+    },
+    {
+      "id": "fight-recipient-dies",
+      "originalSignedActions": 10,
+      "recipientDestroyed": true,
+      "actorDestroyed": false,
+      "damage": {
+        "schema": "starcraft_tmg_khassar_post_action_damage_skipped_v1",
+        "targetPieceId": "recipient",
+        "amount": 3,
+        "effectiveDamage": 0,
+        "reason": "recipient_destroyed",
+        "trainingTruth": false
+      },
+      "cardExhaustedEvents": 1,
+      "abilityUses": 1,
+      "actorFinishEvents": 1,
+      "noHangingContinuation": true,
+      "newActions": 0
+    },
+    {
+      "id": "charge-recipient-dies",
+      "originalSignedActions": 11,
+      "recipientDestroyed": true,
+      "actorDestroyed": false,
+      "damage": {
+        "schema": "starcraft_tmg_khassar_post_action_damage_skipped_v1",
+        "targetPieceId": "recipient",
+        "amount": 3,
+        "effectiveDamage": 0,
+        "reason": "recipient_destroyed",
+        "trainingTruth": false
+      },
+      "cardExhaustedEvents": 1,
+      "abilityUses": 1,
+      "actorFinishEvents": 1,
+      "noHangingContinuation": true,
+      "newActions": 0
+    },
+    {
+      "id": "shot-actor-dies",
+      "originalSignedActions": 10,
+      "recipientDestroyed": false,
+      "actorDestroyed": true,
+      "damage": {
+        "schema": "starcraft_tmg_official_non_lethal_damage_resolution_v1",
+        "targetPieceId": "recipient",
+        "targetModelId": "recipient-model-2",
+        "abilityResolutionHash": "0297b442fd203651960ad31cc4b97feb6ca46c6e533817007c99bc47c49baf48",
+        "priorDamageMarker": 0,
+        "nonLethalDamage": 3,
+        "postDamageMarker": 3,
+        "targetHitPoints": 3,
+        "totalDamageMayMeetOrExceedHitPoints": true,
+        "casualtyRemovalDeferredUntilLaterStandardDamage": true,
+        "targetDestroyed": false,
+        "casualtyModelIds": [],
+        "discardedOverflowDamage": 0,
+        "trainingTruth": false,
+        "nonLethalResolutionHash": "c884dcdf1191902711b73d9902758e0f01fd16aa13006c7699927c52cf2f1ec9"
+      },
+      "cardExhaustedEvents": 1,
+      "abilityUses": 1,
+      "actorFinishEvents": 0,
+      "noHangingContinuation": true,
+      "newActions": 0
+    }
+  ],
+  "modelCalls": 0,
+  "trainingTruth": false
+}

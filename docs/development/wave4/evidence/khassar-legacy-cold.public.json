@@ -1,0 +1,44 @@
+{
+  "schema": "starcraft_tmg_wave4_khassar_legacy_cold_v1",
+  "status": "passed_read_only",
+  "results": [
+    {
+      "kind": "shot",
+      "roomId": "khassar-shot",
+      "inputRef": "build/ticket-28-protoss-wave3-20261120-v1/khassar-shot",
+      "originalSignedActions": 2,
+      "runtimeVersion": "3.162.0",
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "stateHash": "1828a5e4651e2916e8b0dd92e89d39b4673d094d4034b8767532279623b3006c",
+      "newActions": 0,
+      "sourceOpenedReadOnly": true
+    },
+    {
+      "kind": "fight",
+      "roomId": "khassar-fight",
+      "inputRef": "build/ticket-28-protoss-wave3-20261120-v1/khassar-fight",
+      "originalSignedActions": 4,
+      "runtimeVersion": "3.163.0",
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "stateHash": "8e090b473563b542c5a8c1e7f2a64bc67dc14c1fa2d7acfef818ea74ce6906e6",
+      "newActions": 0,
+      "sourceOpenedReadOnly": true
+    },
+    {
+      "kind": "charge",
+      "roomId": "khassar-charge",
+      "inputRef": "build/ticket-28-protoss-wave3-20261120-v1/khassar-charge",
+      "originalSignedActions": 3,
+      "runtimeVersion": "3.161.0",
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "stateHash": "dbef5359d14e01236779588f6f57f94a9b6d0eba9dfc12b621c0198a513507e4",
+      "newActions": 0,
+      "sourceOpenedReadOnly": true
+    }
+  ],
+  "modelCalls": 0,
+  "trainingTruth": false
+}

@@ -1,0 +1,31 @@
+{
+  "schema": "starcraft_tmg_wave4_detonation_khassar_harness_v1",
+  "status": "passed_scoped",
+  "tools": [
+    "Native delegation and original attack",
+    "before-casualty parent suspension",
+    "actual Detonation HITS",
+    "source-bound sealed completion",
+    "NON-LETHAL(3) successor",
+    "original actor finish/death completion",
+    "two-seat explicit Web confirmation",
+    "cold replay and read-only settlement audit"
+  ],
+  "nativeCases": 6,
+  "nativeSignedActions": 51,
+  "webRooms": 2,
+  "webSignedActions": 10,
+  "currentAndPriorColdCases": 8,
+  "currentAndPriorColdOriginalActions": 71,
+  "legacyKhassarColdCases": 3,
+  "legacyKhassarOriginalActions": 9,
+  "evidenceRefs": [
+    "docs/development/wave4/evidence/detonation-khassar.public.json",
+    "docs/development/wave4/evidence/khassar-settlement.public.json",
+    "docs/development/wave4/evidence/khassar-legacy-cold.public.json",
+    "docs/development/wave4/evidence/detonation-khassar-current-cold.public.json",
+    "docs/development/wave4/evidence/detonation-khassar-web.public.json"
+  ],
+  "modelCalls": 0,
+  "trainingTruth": false
+}

@@ -275,7 +275,7 @@
     }
   ],
   "next": [
-    "接Khassar委托攻击，再接Target/声明、其他外部HITS与直接移除；完整原子仍6/18。",
+    "接Target/射击声明父节点，再接其他外部HITS、Disengage/Consume直接移除；完整原子仍6/18。",
     "其余13个已审核记录、整版发布/Builder/大厅/媒体与500/2000分Web继续。"
   ],
   "modelCalls": 0,
@@ -2677,12 +2677,12 @@
     "sourceHeldDefinitions": 39
   },
   "detonationWorkInProgress": {
-    "status": "overwatch_coexistence_verified_other_delegated_and_removal_hosts_pending",
+    "status": "khassar_attacks_verified_target_declaration_and_removal_hosts_pending",
     "sourceDefinitionsCompiled": 2,
-    "nativeCases": 22,
-    "nativeSignedActions": 237,
-    "webRooms": 11,
-    "webSignedActions": 43,
+    "nativeCases": 28,
+    "nativeSignedActions": 288,
+    "webRooms": 13,
+    "webSignedActions": 53,
     "legacyColdReplayCases": 3,
     "legacyOriginalActions": 30,
     "newGameAtomsImplemented": 0,
@@ -2722,7 +2722,14 @@
       "docs/development/wave4/evidence/overwatch-coexistence-cold.public.json",
       "docs/development/wave4/evidence/overwatch-coexistence-web.public.json",
       "docs/development/wave4/evidence/overwatch-coexistence-consumers.public.json",
-      "docs/development/wave4/evidence/overwatch-coexistence-harness.public.json"
+      "docs/development/wave4/evidence/overwatch-coexistence-harness.public.json",
+      "docs/development/wave4/evidence/detonation-khassar.public.json",
+      "docs/development/wave4/evidence/khassar-settlement.public.json",
+      "docs/development/wave4/evidence/khassar-legacy-cold.public.json",
+      "docs/development/wave4/evidence/detonation-khassar-current-cold.public.json",
+      "docs/development/wave4/evidence/detonation-khassar-web.public.json",
+      "docs/development/wave4/evidence/detonation-khassar-consumers.public.json",
+      "docs/development/wave4/evidence/detonation-khassar-harness.public.json"
     ],
     "workbenchRef": "docs/development/wave4/detonation-continuation-workbench.zh-CN.md",
     "multiTargetParentAndNestedPending": false,
@@ -2730,12 +2737,15 @@
     "fullMatchAdmission": false,
     "delegatedAndOutsideActivationHostsPending": true,
     "latestMilestone": {
-      "nativeCases": 2,
-      "nativeSignedActions": 21,
+      "nativeCases": 6,
+      "nativeSignedActions": 51,
       "webRooms": 2,
-      "webSignedActions": 5,
-      "coldReplayCases": 4,
-      "coldOriginalActions": 29,
+      "webSignedActions": 10,
+      "settlementReadOnlyCases": 6,
+      "currentAndPriorColdCases": 8,
+      "currentAndPriorColdOriginalActions": 71,
+      "legacyKhassarColdCases": 3,
+      "legacyKhassarOriginalActions": 9,
       "allConsumersVerified": false
     },
     "directAbilityDamageHostVerified": true,
@@ -2746,7 +2756,8 @@
     "delegatedAttackHostsPending": true,
     "overwatchHostVerified": true,
     "multipleWeaponSequenceVerified": true,
-    "multipleOverwatchSourcesVerified": true
+    "multipleOverwatchSourcesVerified": true,
+    "khassarDelegatedAttacksVerified": true
   },
   "partialRuntimeVerificationByDefinition": [
     {
@@ -2798,6 +2809,18 @@
         {
           "file": "packages/product-composition/official-auto-turret-overwatch-runtime-v1.mjs",
           "exportName": "createOfficialAutoTurretOverwatchRuntimeV1"
+        },
+        {
+          "file": "packages/product-composition/official-khassar-de-templari-v1.mjs",
+          "exportName": "createOfficialKhassarShotV1"
+        },
+        {
+          "file": "packages/product-composition/official-khassar-de-templari-v1.mjs",
+          "exportName": "createOfficialKhassarFightV1"
+        },
+        {
+          "file": "packages/product-composition/official-khassar-de-templari-v1.mjs",
+          "exportName": "createOfficialKhassarChargeV1"
         }
       ],
       "evidenceRefs": [
@@ -2833,7 +2856,14 @@
         "docs/development/wave4/evidence/overwatch-coexistence-cold.public.json",
         "docs/development/wave4/evidence/overwatch-coexistence-web.public.json",
         "docs/development/wave4/evidence/overwatch-coexistence-consumers.public.json",
-        "docs/development/wave4/evidence/overwatch-coexistence-harness.public.json"
+        "docs/development/wave4/evidence/overwatch-coexistence-harness.public.json",
+        "docs/development/wave4/evidence/detonation-khassar.public.json",
+        "docs/development/wave4/evidence/khassar-settlement.public.json",
+        "docs/development/wave4/evidence/khassar-legacy-cold.public.json",
+        "docs/development/wave4/evidence/detonation-khassar-current-cold.public.json",
+        "docs/development/wave4/evidence/detonation-khassar-web.public.json",
+        "docs/development/wave4/evidence/detonation-khassar-consumers.public.json",
+        "docs/development/wave4/evidence/detonation-khassar-harness.public.json"
       ],
       "meleeHostVerified": true,
       "automaticHitsHostVerified": true,
@@ -2851,7 +2881,12 @@
       "webOverwatchVerified": true,
       "multipleWeaponSequenceNativeVerified": true,
       "multipleOverwatchSourcesNativeVerified": true,
-      "outsidePhaseLimitWithOcularVerified": true
+      "outsidePhaseLimitWithOcularVerified": true,
+      "khassarShotNativeVerified": true,
+      "khassarFightNativeVerified": false,
+      "khassarChargeNativeVerified": true,
+      "khassarOriginalActorDeathNativeVerified": true,
+      "webKhassarSuccessorVerified": true
     },
     {
       "definitionId": "unit:infested_trooper/detonation-any-phase@1",
@@ -2898,6 +2933,18 @@
         {
           "file": "packages/product-composition/official-auto-turret-overwatch-runtime-v1.mjs",
           "exportName": "createOfficialAutoTurretOverwatchRuntimeV1"
+        },
+        {
+          "file": "packages/product-composition/official-khassar-de-templari-v1.mjs",
+          "exportName": "createOfficialKhassarShotV1"
+        },
+        {
+          "file": "packages/product-composition/official-khassar-de-templari-v1.mjs",
+          "exportName": "createOfficialKhassarFightV1"
+        },
+        {
+          "file": "packages/product-composition/official-khassar-de-templari-v1.mjs",
+          "exportName": "createOfficialKhassarChargeV1"
         }
       ],
       "evidenceRefs": [
@@ -2928,7 +2975,14 @@
         "docs/development/wave4/evidence/detonation-overwatch-compat.public.json",
         "docs/development/wave4/evidence/atom-admission-scope.public.json",
         "docs/development/wave4/evidence/detonation-overwatch-consumers.public.json",
-        "docs/development/wave4/evidence/detonation-overwatch-harness.public.json"
+        "docs/development/wave4/evidence/detonation-overwatch-harness.public.json",
+        "docs/development/wave4/evidence/detonation-khassar.public.json",
+        "docs/development/wave4/evidence/khassar-settlement.public.json",
+        "docs/development/wave4/evidence/khassar-legacy-cold.public.json",
+        "docs/development/wave4/evidence/detonation-khassar-current-cold.public.json",
+        "docs/development/wave4/evidence/detonation-khassar-web.public.json",
+        "docs/development/wave4/evidence/detonation-khassar-consumers.public.json",
+        "docs/development/wave4/evidence/detonation-khassar-harness.public.json"
       ],
       "meleeHostVerified": true,
       "automaticHitsHostVerified": true,
@@ -2944,7 +2998,12 @@
       "overwatchNativeVerified": true,
       "outsideActivationNativeVerified": true,
       "webOverwatchVerified": true,
-      "multipleWeaponSequenceNativeVerified": false
+      "multipleWeaponSequenceNativeVerified": false,
+      "khassarShotNativeVerified": false,
+      "khassarFightNativeVerified": true,
+      "khassarChargeNativeVerified": false,
+      "khassarOriginalActorDeathNativeVerified": false,
+      "webKhassarSuccessorVerified": true
     }
   ],
   "stukovCombatGate": {

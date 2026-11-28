@@ -10,6 +10,8 @@
 
 新核对：Firefly只Target Flying，不能直接射击Ground感染步兵，因此本批直接射击采用Target All的Auto-Turret；Khassar可作为敌方射击/近战的实际攻击所有者，仍需接。Queen Domineering Presence只有任务Supply效果，不是攻击委托。[Auto/Ocular同房](overwatch-coexistence-wiring.zh-CN.md)现已实际复现并修复：2原生分支21动作、Web2房5确认与4房29原动作冷读通过。双方各一类炮塔，进口Raven同方两类组合仍待。
 
+政策1.4/Root3.235本批[Khassar](detonation-khassar-wiring.zh-CN.md)已验：6原生分支51动作、Web2房10确认、6房结算审计与当前/前批8房71动作、旧Khassar3房9动作冷读；尚未计完整原子。Target/声明、其他HITS和直接移除继续。
+
 接下来按实际消费者推进：
 
 0. Stukov Bio-Kill Switch及武器/冲锋四定义本批已验，见[战斗接线](stukov-combat-wiring.zh-CN.md)：全场感染敌军Damage(2)，结算后只清除实际受伤者INFESTATION。直接伤害恢复已跳过重新发动能力；Corrode Armor已验，见[攻击后接线](corrode-armour-wiring.zh-CN.md)。

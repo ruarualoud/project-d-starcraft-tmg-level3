@@ -1,0 +1,118 @@
+{
+  "schema": "starcraft_tmg_wave4_virus_web_verification_v1",
+  "status": "passed_scoped",
+  "runRef": "build/wave4-web/stukov-units/detonation-khassar-web-v1",
+  "results": [
+    {
+      "kind": "shot-recipient-dies",
+      "definitionId": "unit:infested_marine/detonation-any-phase@1",
+      "sourceRoomId": "wave4-detonation-khassar-shot-recipient-dies-0",
+      "sourceStateHash": "144eaf4492a9b683b772a1a05f5915c444b9a9992fc9ccb0355004d2a3e2232a",
+      "sourcePrefixReceipts": 3,
+      "trace": [
+        {
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:infested_marine/detonation-any-phase@1",
+          "sideKey": "player2",
+          "stateRevision": 1,
+          "stateHash": "fa1fbe700591a7b2be6ae1f6e23ac8a99fc9789a0aefb4554d682fe932790886"
+        },
+        {
+          "actionType": "roll_automatic_hits_armour_pool",
+          "definitionId": null,
+          "sideKey": "player2",
+          "stateRevision": 2,
+          "stateHash": "05ca78abebf0c3d897214831dae3f8f0a2e74a2b5e47125bba9cd982e2b59cfc"
+        },
+        {
+          "actionType": "resolve_automatic_hits_evade_pool",
+          "definitionId": null,
+          "sideKey": "player2",
+          "stateRevision": 3,
+          "stateHash": "07b06d71b7c1abda0bcfdc08bd922f066996ecf529d388b8f4e68762dcfb9238"
+        },
+        {
+          "actionType": "choose_automatic_hits_casualties",
+          "definitionId": null,
+          "sideKey": "player1",
+          "stateRevision": 4,
+          "stateHash": "ce80416f02246cb09c229a5ac214e10a3b849d32e42b5e82c029f839657cc1fa"
+        },
+        {
+          "actionType": "finish_activation",
+          "definitionId": null,
+          "sideKey": "player1",
+          "stateRevision": 5,
+          "stateHash": "35aeaeee39b7c3d20d7e3179dea99df6830c09e7b70252056357ca0940b05c07"
+        }
+      ],
+      "signedActions": 5,
+      "twoSeatsVerified": true,
+      "explicitHumanConfirmation": true,
+      "previewReadOnly": true,
+      "replayMatchesCurrent": true,
+      "seatRecoveryReentryVerified": true,
+      "pageErrors": []
+    },
+    {
+      "kind": "fight-recipient-dies",
+      "definitionId": "unit:infested_trooper/detonation-any-phase@1",
+      "sourceRoomId": "wave4-detonation-khassar-fight-recipient-dies-0",
+      "sourceStateHash": "dc32920d9102b7c41f70af734d1c3e5b0ddde036e90a9f3ee0749c6513b94226",
+      "sourcePrefixReceipts": 5,
+      "trace": [
+        {
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:infested_trooper/detonation-any-phase@1",
+          "sideKey": "player2",
+          "stateRevision": 1,
+          "stateHash": "0843b01678d9ba95f37ab058b97385fa05e90d68955f7fde40f2324241bb3e7a"
+        },
+        {
+          "actionType": "roll_automatic_hits_armour_pool",
+          "definitionId": null,
+          "sideKey": "player2",
+          "stateRevision": 2,
+          "stateHash": "e0ea81bb59f1bb4aadcc74afe68a43725f7f2fd0a86e1d924d5e27d2b181bf2d"
+        },
+        {
+          "actionType": "resolve_automatic_hits_evade_pool",
+          "definitionId": null,
+          "sideKey": "player2",
+          "stateRevision": 3,
+          "stateHash": "bd66cf19e48aedbd67481f98b9f76484e8b322c396c4e5d1e80ef5e969934a55"
+        },
+        {
+          "actionType": "choose_automatic_hits_casualties",
+          "definitionId": null,
+          "sideKey": "player1",
+          "stateRevision": 4,
+          "stateHash": "ed614dbd9aefdf818c91e5ad3706d1076ee434437bac25b815359b4af7587cdd"
+        },
+        {
+          "actionType": "finish_activation",
+          "definitionId": null,
+          "sideKey": "player1",
+          "stateRevision": 5,
+          "stateHash": "478caa4df23569246ac02d6def84a0006079f06ac5316298c203ab1e95104acd"
+        }
+      ],
+      "signedActions": 5,
+      "twoSeatsVerified": true,
+      "explicitHumanConfirmation": true,
+      "previewReadOnly": true,
+      "replayMatchesCurrent": true,
+      "seatRecoveryReentryVerified": true,
+      "pageErrors": []
+    }
+  ],
+  "signedActions": 10,
+  "conditionalTurretGeometryInRestorationCaseOnly": false,
+  "sourceHeldDefinitions": 39,
+  "engineeringEstimatedUnitGeometry": true,
+  "fullWave4LobbyBuilderAdmission": false,
+  "fullMatchAdmission": false,
+  "wave3PlayerRoomsTouched": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

@@ -1,0 +1,88 @@
+{
+  "schema": "starcraft_tmg_wave4_detonation_v3_compat_v1",
+  "status": "passed_scoped",
+  "results": [
+    {
+      "id": "shot-recipient-dies",
+      "roomId": "wave4-detonation-khassar-shot-recipient-dies-0",
+      "originalSignedActions": 8,
+      "runtimeVersion": "3.235.0",
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "stateHash": "6dc26691dd7e5752a5004f1e7d078c561de449eda99ec5ac6b8c152e14a7789f",
+      "newActions": 0
+    },
+    {
+      "id": "shot-recipient-survives",
+      "roomId": "wave4-detonation-khassar-shot-recipient-survives-0",
+      "originalSignedActions": 7,
+      "runtimeVersion": "3.235.0",
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "stateHash": "3f6307935c2634ac4689e6e6f2b9db09b0d47495f9670627b4001ce90c727dd3",
+      "newActions": 0
+    },
+    {
+      "id": "shot-declined",
+      "roomId": "wave4-detonation-khassar-shot-declined-0",
+      "originalSignedActions": 5,
+      "runtimeVersion": "3.235.0",
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "stateHash": "807414f25d9c9142a0a7d6bf9833c38102c36eddd8705470dedbe8a3be254d80",
+      "newActions": 0
+    },
+    {
+      "id": "fight-recipient-dies",
+      "roomId": "wave4-detonation-khassar-fight-recipient-dies-0",
+      "originalSignedActions": 10,
+      "runtimeVersion": "3.235.0",
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "stateHash": "70515fa2948fb5357d81697f86f56ec6ce56541ddb66e2e70208abe9aacb176a",
+      "newActions": 0
+    },
+    {
+      "id": "charge-recipient-dies",
+      "roomId": "wave4-detonation-khassar-charge-recipient-dies-0",
+      "originalSignedActions": 11,
+      "runtimeVersion": "3.235.0",
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "stateHash": "f1449ba46756a1b6070a4dcb8ae45c556adc67b51c78bb784281714ab18c0d79",
+      "newActions": 0
+    },
+    {
+      "id": "shot-actor-dies",
+      "roomId": "wave4-detonation-khassar-shot-actor-dies-0",
+      "originalSignedActions": 10,
+      "runtimeVersion": "3.235.0",
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "stateHash": "1a44379d34ea738c2d4fe7e077157ae8456c57c0ddacc8349290bec3dad49421",
+      "newActions": 0
+    },
+    {
+      "id": "marine-use",
+      "roomId": "wave4-detonation-overwatch-marine-use-0",
+      "originalSignedActions": 11,
+      "runtimeVersion": "3.233.0",
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "stateHash": "744559e8038fba02269e7fe06cb5e37547a13e123963c3b90b61772524a7151d",
+      "newActions": 0
+    },
+    {
+      "id": "ocular-used-blocks-detonation",
+      "roomId": "wave4-overwatch-coexistence-ocular-used-blocks-detonation-0",
+      "originalSignedActions": 9,
+      "runtimeVersion": "3.234.0",
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "stateHash": "d72f5bade2901ea1dd6bd6cb1d0477a6653dbab6af93ddfe2646daf4c848aa0e",
+      "newActions": 0
+    }
+  ],
+  "modelCalls": 0,
+  "trainingTruth": false
+}

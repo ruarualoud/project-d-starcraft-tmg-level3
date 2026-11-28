@@ -7,11 +7,12 @@ import { resolveOfficialNonLethalDamageV1 } from '../rule-atoms/official-non-let
 import { applyOfficialSelectedRosterResolvedDamageV1 } from './official-selected-roster-ranged-action-runtime-v1.mjs';
 import { hashStarcraftTmgContract as hash } from '../authoritative-engine/referee-crypto-v1.mjs';
 import { getOfficialCardBuildPaymentProfileV1 } from '../source-data/official-card-build-payment-data-bundle-v1.mjs';
-import { listOfficialPhaseActivationUnitIdsV1, isOfficialMorphActivationLockedV1 }
+import { listOfficialPhaseActivationUnitIdsV1, isOfficialMorphActivationLockedV1, alternateOfficialPhaseActivationV1 }
   from '../rule-atoms/official-phase-activation-availability-v1.mjs';
 import { isOfficialUnitVisibleForActiveAbilityV1, resolveOfficialEffectiveCombatProfileV1 }
   from './official-characteristic-status-family-adapter-v1.mjs';
 import { openOfficialSelectedRosterSpecialAbilityWindowV1 } from './official-selected-roster-ability-runtime-v1.mjs';
+import {hasOfficialKhassarBeforeCasualtyPolicyV1} from '../rule-atoms/official-before-casualty-batch-v1.mjs';
 
 export const OFFICIAL_KHASSAR_DE_TEMPLARI_ID = 'card:templar_caste/khassar-de-templari-any@1';
 const definitionId = OFFICIAL_KHASSAR_DE_TEMPLARI_ID;
@@ -159,13 +160,24 @@ export function createOfficialKhassarEligibilityV1({ catalogue, enumerate, inclu
 
 
 function settleReplacement(next, actor, recipient, { phase, planHash, amount }) {
+  const participantCompletion=hasOfficialKhassarBeforeCasualtyPolicyV1(next);
   actor.activatedPhases = { ...actor.activatedPhases, [phase]: true };
-  openOfficialSelectedRosterSpecialAbilityWindowV1(next, actor.sideKey, actor.id, phase);
-  next.selectedRosterActivationWindow.stage = 'after_action';
+  if(!participantCompletion||live(actor)){
+    if(participantCompletion)next.activeSideKey=actor.sideKey;
+    openOfficialSelectedRosterSpecialAbilityWindowV1(next, actor.sideKey, actor.id, phase);
+    next.selectedRosterActivationWindow.stage = 'after_action';
+  }else{
+    delete next.selectedRosterActivationWindow;
+    alternateOfficialPhaseActivationV1(next,actor.sideKey,phase);
+  }
 
+  let damage;
+  if(participantCompletion&&!live(recipient))damage={schema:'starcraft_tmg_khassar_post_action_damage_skipped_v1',
+    targetPieceId:recipient.id,amount,effectiveDamage:0,reason:'recipient_destroyed',trainingTruth:false};
+  else{
   const targetProfile = resolveOfficialEffectiveCombatProfileV1(next, recipient);
   const liveModels = recipient.models.filter(model => model.isDestroyed !== true);
-  const damage = resolveOfficialNonLethalDamageV1({ targetPieceId: recipient.id, targetModelId: liveModels[0].id,
+  damage = resolveOfficialNonLethalDamageV1({ targetPieceId: recipient.id, targetModelId: liveModels[0].id,
     abilityResolutionHash: planHash, priorDamageMarker: Number(recipient.damageMarker || 0),
     targetHitPoints: targetProfile.hitPoints, amount });
   const shieldedBefore = (recipient.statuses || []).some(status =>
@@ -174,12 +186,24 @@ function settleReplacement(next, actor, recipient, { phase, planHash, amount }) 
     remainingModelIds: liveModels.map(model => model.id), targetDestroyed: false,
     postDamageMarker: damage.postDamageMarker, shieldedBefore,
     shieldedAfter: shieldedBefore && damage.postDamageMarker <= Number(targetProfile.shield || 0) });
+  }
   next.activeAbilityUseHistory = [...(next.activeAbilityUseHistory || []), {
     useKey: next.round + ':Khassar de Templari:' + actor.id, round: Number(next.round),
     phase: next.phase, sideKey: actor.sideKey, pieceId: actor.id, routeId: definitionId,
     abilityName: 'Khassar de Templari', planHash: planHash, trainingTruth: false,
   }];
   return damage;
+}
+
+function sealedKhassarCompletion(state,frame,parentKey,nativeActionType){
+  const parent=state[parentKey];
+  return Boolean(parent&&hasOfficialKhassarBeforeCasualtyPolicyV1(state)
+    &&frame?.frameHash===hash(Object.fromEntries(Object.entries(frame).filter(([key])=>key!=='frameHash')))
+    &&frame.round===Number(state.round)&&frame.phase===state.phase
+    &&frame.sourceBundleHash===state.officialReactionFamilySourceBundle?.bundleHash
+    &&isDeepStrictEqual(parent,frame.suspendedHostSlots?.[parentKey])
+    &&frame.originalAction?.pieceId===parent.recipientUnitId&&frame.originalAction.sideKey===parent.sideKey
+    &&frame.originalAction.actionType===nativeActionType&&frame.hostKind===(nativeActionType==='ranged_attack'?'ranged':'melee'));
 }
 
 const movementKind = 'khassar_movement';
@@ -311,11 +335,12 @@ function nativeChargePending(state, receiverId) {
 }
 
 export function createOfficialKhassarChargeV1({ eligibility, enumerateNative, instantiateNative, applyNative,
-  includeDamageReactions, chargeDeclaration, supplyLossReaction }) {
+  includeDamageReactions, chargeDeclaration, supplyLossReaction, includeBeforeCasualtyCompletion=false }) {
   const { sourceFeatureHash, nonLethalDamageAfterCompletedAction: amount } = eligibility.descriptor;
   const descriptor = Object.freeze({ definitionId, sourceFeatureHash, sourceRuntimeKind: chargeKind,
     actionTypes: [chargeAction], ruleAtomIds: [chargeAtom], scope: 'charge_and_native_mandatory_impact',
-    pendingParentKey: chargeParentKey, timing: 'after_complete_native_charge_and_impact', trainingTruth: false });
+    pendingParentKey: chargeParentKey, timing: 'after_complete_native_charge_and_impact',
+    ...(includeBeforeCasualtyCompletion?{beforeCasualtyParticipantCompletion:true}:{}),trainingTruth: false });
 
   const hasDamageReaction = (state, recipientId) => includeDamageReactions
     && nativeDamageReaction(state, meleeDamageParentKey, recipientId, 'resolve_impact');
@@ -336,7 +361,7 @@ export function createOfficialKhassarChargeV1({ eligibility, enumerateNative, in
     return projected;
   }
 
-  function pending(state) {
+  function pending(state, sealedFrame=null) {
     const parent = state[chargeParentKey];
     if (!parent) return null;
     const { parentHash, ...body } = parent;
@@ -346,7 +371,8 @@ export function createOfficialKhassarChargeV1({ eligibility, enumerateNative, in
       || parent.phase !== state.phase || parent.round !== Number(state.round)
       || actor?.sideKey !== parent.sideKey || recipient?.sideKey !== parent.sideKey
       || sourceCard(state, parent.sideKey)?.readiness !== 'exhausted'
-      || (!nativeChargePending(state, parent.recipientUnitId) && !hasDamageReaction(state, parent.recipientUnitId)
+      || (!(sealedFrame&&includeBeforeCasualtyCompletion&&sealedKhassarCompletion(state,sealedFrame,chargeParentKey,'resolve_impact'))
+        && !nativeChargePending(state, parent.recipientUnitId) && !hasDamageReaction(state, parent.recipientUnitId)
         && !declarationFor(state, parent.recipientUnitId) && !supplyLossReaction?.ownsWindow(state))) {
       throw Error('KHASSAR_CHARGE_PARENT_INVALID');
     }
@@ -449,6 +475,7 @@ export function createOfficialKhassarChargeV1({ eligibility, enumerateNative, in
   }
 
   function afterTransition(result, parent) {
+    if(includeBeforeCasualtyCompletion&&result.state.officialBeforeCasualtyContinuations?.length)return result;
     const projectedRecipient = result.state.pieces.find(piece => piece.id === parent.recipientUnitId);
     if (result.state.pendingAction?.stage === 'resolve_charge_after_roll' && projectedRecipient.activatedPhases.assault === false) {
       const next = structuredClone(result.state);
@@ -461,8 +488,10 @@ export function createOfficialKhassarChargeV1({ eligibility, enumerateNative, in
       return result;
     }
     const window = result.state.selectedRosterActivationWindow;
-    if (window?.pieceId !== parent.recipientUnitId || window.stage !== 'after_action'
-      || result.state.pendingOfficialReactionWindow || result.state.activeSideKey !== parent.sideKey) {
+    const deadCompletion=includeBeforeCasualtyCompletion&&!live(projectedRecipient)
+      &&result.events.some(e=>e.type==='impact_damage'&&e.pieceId===parent.recipientUnitId);
+    if (!deadCompletion&&(window?.pieceId !== parent.recipientUnitId || window.stage !== 'after_action'
+      || result.state.pendingOfficialReactionWindow || result.state.activeSideKey !== parent.sideKey)) {
       throw Error('KHASSAR_NATIVE_CHARGE_NOT_COMPLETE');
     }
     const next = structuredClone(result.state);
@@ -476,7 +505,12 @@ export function createOfficialKhassarChargeV1({ eligibility, enumerateNative, in
     return { ...result, state: next, events: [...result.events, event] };
   }
 
-  return Object.freeze({ descriptor, pending, domains, instantiate, open, projectDeclaredRoll, assertNativeContinuation, afterTransition });
+  const sealedCompletionParent=(state,frame)=>{
+    if(!frame.suspendedHostSlots?.[chargeParentKey])return null;
+    if(!includeBeforeCasualtyCompletion||!sealedKhassarCompletion(state,frame,chargeParentKey,'resolve_impact'))throw Error('KHASSAR_SEALED_CHARGE_COMPLETION_INVALID');
+    return pending(state,frame);
+  };
+  return Object.freeze({ descriptor, pending, domains, instantiate, open, projectDeclaredRoll, assertNativeContinuation, afterTransition,sealedCompletionParent });
 }
 
 
@@ -535,11 +569,12 @@ export function createOfficialKhassarFightV1(options) {
   return createKhassarAttack(options, fightAttack);
 }
 
-function createKhassarAttack({ eligibility, enumerateNative, instantiateNative, applyNative, targetReactions, includeDamageReactions, supplyLossReaction, rangedLunge }, attack) {
+function createKhassarAttack({ eligibility, enumerateNative, instantiateNative, applyNative, targetReactions, includeDamageReactions, supplyLossReaction, rangedLunge, includeBeforeCasualtyCompletion=false }, attack) {
   const { sourceFeatureHash, nonLethalDamageAfterCompletedAction: amount } = eligibility.descriptor;
   const descriptor = Object.freeze({ definitionId, sourceFeatureHash, sourceRuntimeKind: attack.kind,
     actionTypes: [attack.actionType], ruleAtomIds: [attack.atomId], scope: attack.scope,
-    pendingParentKey: attack.parentKey, timing: attack.timing, trainingTruth: false });
+    pendingParentKey: attack.parentKey, timing: attack.timing,
+    ...(includeBeforeCasualtyCompletion?{beforeCasualtyParticipantCompletion:true}:{}),trainingTruth: false });
   const planFor = action => action[attack.planKey];
   const openingProjections = new WeakSet();
   const isOpeningProjection = state => openingProjections.has(state);
@@ -559,7 +594,7 @@ function createKhassarAttack({ eligibility, enumerateNative, instantiateNative, 
     return projected;
   }
 
-  function pending(state) {
+  function pending(state, sealedFrame=null) {
     const parent = state[attack.parentKey];
     if (!parent || isOpeningProjection(state)) return null;
     const { parentHash, ...body } = parent;
@@ -570,7 +605,8 @@ function createKhassarAttack({ eligibility, enumerateNative, instantiateNative, 
       || parent.phase !== state.phase || parent.round !== Number(state.round)
       || actor?.sideKey !== parent.sideKey || recipient?.sideKey !== parent.sideKey
       || card?.cardInstanceId !== parent.cardInstanceId || card.readiness !== 'exhausted'
-      || !frontierFor(state, recipient.id)) throw Error(attack.errorPrefix + '_PARENT_INVALID');
+      || !(sealedFrame&&includeBeforeCasualtyCompletion&&sealedKhassarCompletion(state,sealedFrame,attack.parentKey,attack.nativeActionType))
+        && !frontierFor(state, recipient.id)) throw Error(attack.errorPrefix + '_PARENT_INVALID');
     return parent;
   }
 
@@ -664,14 +700,17 @@ function createKhassarAttack({ eligibility, enumerateNative, instantiateNative, 
   }
 
   function afterTransition(result, parent) {
+    if(includeBeforeCasualtyCompletion&&result.state.officialBeforeCasualtyContinuations?.length)return result;
     if ((attack === rangedAttack && rangedLunge?.pending(result.state)) || supplyLossReaction?.ownsWindow(result.state) || attack.hasPending(result.state) || hasDamageReaction(result.state, parent.recipientUnitId)
       || targetParentFor(result.state, parent.recipientUnitId)) {
       pending(result.state);
       return result;
     }
     const window = result.state.selectedRosterActivationWindow;
-    if (window?.pieceId !== parent.recipientUnitId || window.stage !== 'after_action'
-      || result.state.pendingOfficialReactionWindow || result.state.activeSideKey !== parent.sideKey) {
+    const deadCompletion=includeBeforeCasualtyCompletion&&!live(result.state.pieces.find(p=>p.id===parent.recipientUnitId))
+      &&result.events.some(e=>e.type===(attack===rangedAttack?'ranged_attack':'close_combat_attack')&&e.pieceId===parent.recipientUnitId);
+    if (!deadCompletion&&(window?.pieceId !== parent.recipientUnitId || window.stage !== 'after_action'
+      || result.state.pendingOfficialReactionWindow || result.state.activeSideKey !== parent.sideKey)) {
       throw Error(attack.errorPrefix + '_NATIVE_ACTION_NOT_COMPLETE');
     }
     const next = structuredClone(result.state);
@@ -702,6 +741,11 @@ function createKhassarAttack({ eligibility, enumerateNative, instantiateNative, 
     return afterTransition({ ...native, state: next, action, events }, parent);
   }
 
+  const sealedCompletionParent=(state,frame)=>{
+    if(!frame.suspendedHostSlots?.[attack.parentKey])return null;
+    if(!includeBeforeCasualtyCompletion||!sealedKhassarCompletion(state,frame,attack.parentKey,attack.nativeActionType))throw Error('KHASSAR_SEALED_ATTACK_COMPLETION_INVALID');
+    return pending(state,frame);
+  };
   return Object.freeze({ descriptor, isOpeningProjection, pending, domains, instantiate, open, planFor,
-    continuationMenu, assertNativeContinuation, afterTransition });
+    continuationMenu, assertNativeContinuation, afterTransition,sealedCompletionParent });
 }

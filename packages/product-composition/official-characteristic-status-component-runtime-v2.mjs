@@ -4,7 +4,7 @@ import {OFFICIAL_CORRODE_ARMOUR_ID} from '../source-data/official-corrode-armour
 import {createOfficialCorrodeRestorationRuntimeV1} from './official-corrode-restoration-runtime-v1.mjs';
 import {createOfficialPlaguedMunitionsRuntimeV1} from './official-plagued-munitions-runtime-v1.mjs';
 import {createOfficialBeforeCasualtyRuntimeV1} from './official-before-casualty-runtime-v1.mjs';
-import {hasOfficialBeforeCasualtyBatchPolicyV1,hasOfficialExtendedBeforeCasualtyPolicyV1,hasOfficialTemplateBeforeCasualtyPolicyV1,hasOfficialOverwatchBeforeCasualtyPolicyV1} from '../rule-atoms/official-before-casualty-batch-v1.mjs';
+import {hasOfficialBeforeCasualtyBatchPolicyV1,hasOfficialExtendedBeforeCasualtyPolicyV1,hasOfficialTemplateBeforeCasualtyPolicyV1,hasOfficialOverwatchBeforeCasualtyPolicyV1,hasOfficialKhassarBeforeCasualtyPolicyV1} from '../rule-atoms/official-before-casualty-batch-v1.mjs';
 import {resumeOfficialSelectedRosterRangedBeforeCasualtyV1} from './official-selected-roster-ranged-action-runtime-v1.mjs';
 import {resumeOfficialSelectedRosterMeleeBeforeCasualtyV1} from './official-selected-roster-melee-action-runtime-v1.mjs';
 import {createOfficialStukovContextualSupplyRoutesV1} from '../source-data/official-stukov-infestation-source-v1.mjs';
@@ -1529,6 +1529,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
       (route.nativeChargeDie || route.nativeChargeDistance) && afterChargeRoll && !sharesKhassarFactionSideV1(spatialState, route.recordKey)
       || route.effectKind === 'evade_roll_modifier' && includeBeforeRangedEvadeReaction && includeBeforeMeleeEvadeReaction
       || (route.requiresRangedTargetSnapshot||route.definitionId===OFFICIAL_CORRODE_ARMOUR_ID) && lunge && includeLungeDeferredReaction))
+    && !(hasOfficialKhassarBeforeCasualtyPolicyV1(spatialState)&&route.effectKind==='before_casualty_detonation')
     && !(includeKhassarChargeDeclaration && route.chargeDeclarationOwner === 'current_source_v1')
     && !(khassarSupplyLoss && route.definitionId === khassarSupplyLoss.descriptor.definitionId)
     && !independentKhassarReaction(route)) : [];
@@ -1551,6 +1552,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
   const independentTemplateWindowPending = state => khassarWithIndependentTemplates
     && (templateAttack.hasPending(state) || rangedDeclaration?.pending(state));
   const khassarAttackOptions = { eligibility: khassarEligibility, enumerateNative,
+    includeBeforeCasualtyCompletion:hasOfficialKhassarBeforeCasualtyPolicyV1(spatialState),
     instantiateNative: instantiate, applyNative: apply, includeDamageReactions: includeKhassarDamageReactions,
     ...(khassarSupplyLoss ? { supplyLossReaction: khassarSupplyLoss } : {}),
     ...(includeMixedRosterReactions && lunge ? { rangedLunge: lunge } : {}),
@@ -1566,9 +1568,9 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
     eligibility: khassarEligibility, state: spatialState, includeRun: includeKhassarRun || includeKhassarCharge || includeKhassarCombatExecution,
     enumerateNative, instantiateNative: instantiate, applyNative: apply,
   }) : null;
-  if(hasOfficialTemplateBeforeCasualtyPolicyV1(spatialState)&&(targetReactions||rangedDeclaration||overwatch&&!hasOfficialOverwatchBeforeCasualtyPolicyV1(spatialState)||khassarAttacks.length||khassarCharge))
+  if(hasOfficialTemplateBeforeCasualtyPolicyV1(spatialState)&&(targetReactions||rangedDeclaration||overwatch&&!hasOfficialOverwatchBeforeCasualtyPolicyV1(spatialState)||(khassarAttacks.length||khassarCharge)&&!hasOfficialKhassarBeforeCasualtyPolicyV1(spatialState)))
     throw Error('BEFORE_CASUALTY_DELEGATED_ATTACK_OWNER_NOT_ADMITTED');
-  const version = overwatch?.descriptor.runtimeVersion === '1.2.0' ? '3.234.0' : hasOfficialOverwatchBeforeCasualtyPolicyV1(spatialState) ? '3.233.0' : hasOfficialTemplateBeforeCasualtyPolicyV1(spatialState) ? '3.232.0' : includeCorrodeRoundCleanup ? '3.231.0' : corrodeArmour ? '3.230.0' : infestationDamage ? '3.229.0' : hasOfficialExtendedBeforeCasualtyPolicyV1(spatialState) ? '3.228.0' : beforeCasualty ? '3.227.0' : plaguedMunitions ? '3.226.0' : repeatedActivationIdentity ? '3.225.0' : infantryPrecision ? '3.224.0' : stukovInfestation ? '3.223.0' : universalCarrier ? '3.222.0' : includeReleaseMoundAssaultOrder ? '3.221.0' : includeBilePhysicalPlacement && bile ? '3.220.0' : psionicRoundEnd?.scheduledEffects ? '3.219.0' : includeReleaseBileAssaultOrder ? '3.218.0' : releaseZergTargets ? '3.217.0' : includePsionicStormAssaultSameName ? '3.216.0'
+  const version = hasOfficialKhassarBeforeCasualtyPolicyV1(spatialState)?'3.235.0':overwatch?.descriptor.runtimeVersion === '1.2.0' ? '3.234.0' : hasOfficialOverwatchBeforeCasualtyPolicyV1(spatialState) ? '3.233.0' : hasOfficialTemplateBeforeCasualtyPolicyV1(spatialState) ? '3.232.0' : includeCorrodeRoundCleanup ? '3.231.0' : corrodeArmour ? '3.230.0' : infestationDamage ? '3.229.0' : hasOfficialExtendedBeforeCasualtyPolicyV1(spatialState) ? '3.228.0' : beforeCasualty ? '3.227.0' : plaguedMunitions ? '3.226.0' : repeatedActivationIdentity ? '3.225.0' : infantryPrecision ? '3.224.0' : stukovInfestation ? '3.223.0' : universalCarrier ? '3.222.0' : includeReleaseMoundAssaultOrder ? '3.221.0' : includeBilePhysicalPlacement && bile ? '3.220.0' : psionicRoundEnd?.scheduledEffects ? '3.219.0' : includeReleaseBileAssaultOrder ? '3.218.0' : releaseZergTargets ? '3.217.0' : includePsionicStormAssaultSameName ? '3.216.0'
     : includePsionicStormTokenCleanup ? '3.215.0'
     : includePsionicStormNamedOverlapChoices ? '3.214.0'
     : stormCast ? '3.213.0'
@@ -3020,8 +3022,10 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
        :resumed.frame.hostKind==='blast_template'?templateAttack.resumeBeforeCasualty({...resumed,options})
       :(()=>{throw Error('BEFORE_CASUALTY_NATIVE_HOST_NOT_ADMITTED');})();
     const settled=hasOfficialTemplateBeforeCasualtyPolicyV1(raw.state)?completeAutomaticHitsOwners(raw):raw;
-     const native=completeNativeOutcome(resumed.before,settled,resumed.frame.rootAction,options,
-      {attack:khassarAttackContinuation(resumed.before),chargeParent:khassarCharge?.pending(resumed.before),resumeSealedDamage:true});
+    const sealedAttack=hasOfficialKhassarBeforeCasualtyPolicyV1(resumed.state)?khassarAttacks.map(owner=>({owner,parent:owner.sealedCompletionParent(resumed.state,resumed.frame)})).find(row=>row.parent):null;
+    const sealedCharge=hasOfficialKhassarBeforeCasualtyPolicyV1(resumed.state)?khassarCharge?.sealedCompletionParent(resumed.state,resumed.frame):null;
+    const native=completeNativeOutcome(resumed.before,settled,resumed.frame.rootAction,options,
+      {attack:sealedAttack||khassarAttackContinuation(resumed.before),chargeParent:sealedCharge||khassarCharge?.pending(resumed.before),resumeSealedDamage:true});
     const completed=completeCompositionTail(resumed.before,native,resumed.frame.rootAction);
     const merged={...result,state:completed.state,events:[...(result.events||[]),...completed.events]};
     return hasOfficialExtendedBeforeCasualtyPolicyV1(merged.state)?resumeBeforeCasualtyIfReady(merged,options):merged;

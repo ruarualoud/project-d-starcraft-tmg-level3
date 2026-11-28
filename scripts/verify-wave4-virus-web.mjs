@@ -157,7 +157,8 @@ try {
         if(primaryUsed&&!state.pendingOfficialPlaguedMunitions&&!state.pendingOfficialUniversalCarrier&&!state.pendingOfficialReactionWindow&&!state.pendingOfficialAutoTurretOverwatch
           &&!state.pendingOfficialInfestationTransfer&&!state.pendingCurrentProductRangedCasualtyChoice&&!state.pendingOfficialAutomaticHits
            &&!state.pendingOfficialHitsPoolChoice&&!state.officialBeforeCasualtyContinuations?.length
-           &&!state.pendingOfficialBlastTemplateAttack&&!state.pendingOfficialRavenSeekerPhaseEnd)break;
+           &&!state.pendingOfficialBlastTemplateAttack&&!state.pendingOfficialRavenSeekerPhaseEnd
+          &&(item.flow!=='detonation-khassar'||!state.selectedRosterActivationWindow))break;
         const owner=state.activeSideKey;assert.ok(pages[owner]);
         const menu=await legal(pages[owner]);
         if(!primaryUsed&&item.id==='infected-ordinary-move'){assert.ok(!menu.parameterDomains.some(row=>['unit:stalker/blink-movement-phase@1','card:nexus/strategic-recall-any@1'].includes(row.definitionId)));}
@@ -170,7 +171,7 @@ try {
         }
         let choice;
         if(!primaryUsed)choice=menu.parameterDomains.find(row=>item.id==='infected-ordinary-move'?row.actionType==='move'&&row.pieceId==='enemy':item.id==='clean-blink'?row.definitionId==='unit:stalker/blink-movement-phase@1':item.id==='clean-recall'?row.definitionId==='card:nexus/strategic-recall-any@1':row.definitionId===item.definitionId);
-        else if(['detonation-nested','bio-kill-switch','detonation-template','detonation-outside','detonation-overwatch'].includes(item.flow))choice=menu.parameterDomains.find(row=>row.effectKind==='before_casualty_detonation');
+        else if(['detonation-nested','bio-kill-switch','detonation-template','detonation-outside','detonation-overwatch','detonation-khassar'].includes(item.flow))choice=menu.parameterDomains.find(row=>row.effectKind==='before_casualty_detonation');
         else if(item.flow==='corrode-restoration'&&!restorationUsed)choice=menu.parameterDomains.find(row=>row.definitionId==='unit:medic/restoration-any-phase@1');
         else if((item.kind==='ocular-use'||item.flow==='coexisting-ocular')&&!shotUsed)choice=menu.parameterDomains.find(row=>row.weaponName==='Firefly Missiles');
         else if((item.kind==='growing-restoration-exception'||item.flow==='carrier-restoration'||item.flow==='trooper-restoration')&&!restorationUsed)choice=menu.parameterDomains.find(row=>row.definitionId==='unit:medic/restoration-any-phase@1'||item.flow==='carrier-restoration'&&row.effectKind==='infestation_transfer');
@@ -202,6 +203,14 @@ try {
         assert.ok(!state.pieces.find(p=>p.id==='infected').statuses.some(s=>String(typeof s==='string'?s:s.statusName).toLowerCase()==='infestation'));
         assert.equal(state.log.flatMap(l=>l.events||[]).filter(e=>e.type==='ability_direct_damage').length,1);
         assert.ok(!state.pendingOfficialInfestationDamageCleanup);
+      } else if(item.flow==='detonation-khassar'){
+        const state=final.envelope.state,events=state.log.flatMap(l=>l.events||[]),parentKey=item.khassarKind==='shot'?'pendingOfficialKhassarShot':'pendingOfficialKhassarFight';
+        assert.ok(!state[parentKey]&&!state.selectedRosterActivationWindow&&!state.officialBeforeCasualtyContinuations?.length&&!state.pendingOfficialAutomaticHits);
+        const completed=events.filter(e=>e.type==='khassar_non_lethal_damage_after_'+item.khassarKind);assert.equal(completed.length,1);
+        assert.equal(state.cardResources.player1.find(c=>c.cardKind==='faction').readiness,'exhausted');
+        assert.equal(state.activeAbilityUseHistory.filter(h=>h.pieceId==='actor'&&h.routeId==='card:templar_caste/khassar-de-templari-any@1').length,1);
+        const original=events.filter(e=>['ranged_attack','close_combat_attack'].includes(e.type)&&(e.attackResolutionHash||e.resolutionHash)===item.expectedOriginalResolutionHash);assert.equal(original.length,1);
+        assert.equal(completed[0].damage.reason==='recipient_destroyed',state.pieces.find(p=>p.id==='recipient').isDestroyed);
       } else if(item.flow==='coexisting-ocular'){
         const state=final.envelope.state;assert.ok(!state.pendingOfficialAutoTurretOverwatch&&!state.pendingOfficialReactionWindow);
         assert.equal(state.officialOcularOverwatchHistory.length,1);assert.equal(state.officialOcularOverwatchHistory[0].outcome,'ranged_attack_completed');
@@ -279,7 +288,7 @@ try {
 const result={schema:'starcraft_tmg_wave4_virus_web_verification_v1',status:'passed_scoped',
   runRef:path.relative(root,directory),results,signedActions:results.reduce((sum,row)=>sum+row.signedActions,0),
   conditionalTurretGeometryInRestorationCaseOnly:service.rooms.some(item=>item.id==='growing-restoration-exception'||item.flow==='carrier-restoration'),sourceHeldDefinitions:39,
-   engineeringEstimatedUnitGeometry:service.rooms.some(item=>['admiral-exchange','trooper-restoration','stukov-spread','munitions-support','infantry-burrow','detonation-ranged','detonation-nested','bio-kill-switch','corrode-armour','corrode-restoration','detonation-template','detonation-outside','detonation-overwatch','coexisting-ocular'].includes(item.flow)),
+   engineeringEstimatedUnitGeometry:service.rooms.some(item=>['admiral-exchange','trooper-restoration','stukov-spread','munitions-support','infantry-burrow','detonation-ranged','detonation-nested','bio-kill-switch','corrode-armour','corrode-restoration','detonation-template','detonation-outside','detonation-overwatch','coexisting-ocular','detonation-khassar'].includes(item.flow)),
   fullWave4LobbyBuilderAdmission:false,fullMatchAdmission:false,wave3PlayerRoomsTouched:false,modelCalls:0,trainingTruth:false};
 await atomicWrite(path.join(directory,'web-result.public.json'),JSON.stringify(result,null,2)+'\n');
 await atomicWrite(path.join(root,'docs/development/wave4/evidence/'+(process.argv[3]||'virus-web.public.json')),JSON.stringify(result,null,2)+'\n');

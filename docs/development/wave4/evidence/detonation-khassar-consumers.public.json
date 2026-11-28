@@ -1,0 +1,88 @@
+{
+  "schema": "starcraft_tmg_wave4_detonation_khassar_consumers_v1",
+  "status": "passed_scoped",
+  "policyVersion": "1.4.0",
+  "rootRuntimeVersion": "3.235.0",
+  "definitions": [
+    {
+      "definitionId": "unit:infested_marine/detonation-any-phase@1",
+      "classification": "new_semantics_partial",
+      "nativeCases": [
+        "shot-recipient-dies",
+        "shot-recipient-survives",
+        "shot-declined",
+        "charge-recipient-dies",
+        "shot-actor-dies"
+      ],
+      "webCase": "shot-recipient-dies",
+      "allConsumersVerified": false,
+      "fullAtomAdmission": false
+    },
+    {
+      "definitionId": "unit:infested_trooper/detonation-any-phase@1",
+      "classification": "new_semantics_partial",
+      "nativeCases": [
+        "fight-recipient-dies"
+      ],
+      "webCase": "fight-recipient-dies",
+      "allConsumersVerified": false,
+      "fullAtomAdmission": false
+    },
+    {
+      "definitionId": "card:templar_caste/khassar-de-templari-any@1",
+      "classification": "existing_atoms_new_combination",
+      "actualConsumers": [
+        "delegated numeric ranged",
+        "delegated close combat",
+        "delegated charge and mandatory IMPACT",
+        "recipient destroyed completion",
+        "original actor destroyed completion",
+        "actual post-action NON-LETHAL DAMAGE(3)"
+      ]
+    }
+  ],
+  "consumerRefs": [
+    {
+      "file": "packages/product-composition/official-before-casualty-runtime-v1.mjs",
+      "exportName": "stageOfficialBeforeCasualtyContinuationV1"
+    },
+    {
+      "file": "packages/product-composition/official-khassar-de-templari-v1.mjs",
+      "exportName": "createOfficialKhassarShotV1"
+    },
+    {
+      "file": "packages/product-composition/official-khassar-de-templari-v1.mjs",
+      "exportName": "createOfficialKhassarFightV1"
+    },
+    {
+      "file": "packages/product-composition/official-khassar-de-templari-v1.mjs",
+      "exportName": "createOfficialKhassarChargeV1"
+    },
+    {
+      "file": "packages/product-composition/official-characteristic-status-component-runtime-v2.mjs",
+      "exportName": "createOfficialCharacteristicStatusComponentRuntimeV2"
+    }
+  ],
+  "nativeCases": 6,
+  "nativeSignedActions": 51,
+  "webRooms": 2,
+  "webSignedActions": 10,
+  "currentAndPriorColdCases": 8,
+  "currentAndPriorColdOriginalActions": 71,
+  "legacyKhassarColdCases": 3,
+  "legacyKhassarOriginalActions": 9,
+  "settlementReadOnlyCases": 6,
+  "newGameAtomsImplemented": 0,
+  "implementedCumulativeAtoms": 6,
+  "evidenceRefs": [
+    "docs/development/wave4/evidence/detonation-khassar.public.json",
+    "docs/development/wave4/evidence/khassar-settlement.public.json",
+    "docs/development/wave4/evidence/khassar-legacy-cold.public.json",
+    "docs/development/wave4/evidence/detonation-khassar-current-cold.public.json",
+    "docs/development/wave4/evidence/detonation-khassar-web.public.json"
+  ],
+  "sourceHeldDefinitions": 39,
+  "fullMatchAdmission": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

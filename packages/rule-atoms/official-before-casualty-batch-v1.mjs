@@ -14,21 +14,26 @@ export const OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V3=Object.freeze({...OFFICIAL
  sealedHostCompletionDeferred:true});
 export const OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V4=Object.freeze({...OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V3,
  version:'1.3.0',delegatedAttackOwners:Object.freeze(['auto_turret_overwatch']),preserveRangedWeaponSequence:true});
+export const OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V5=Object.freeze({...OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V4,
+ version:'1.4.0',delegatedAttackOwners:Object.freeze(['auto_turret_overwatch','khassar_shot','khassar_fight','khassar_charge']),
+ preserveDelegatedCompletionAfterParticipantDeath:true});
 const without=(x,k)=>Object.fromEntries(Object.entries(x).filter(([name])=>name!==k));
 const seal=(x,k)=>({...x,[k]:hash(x)});
 const digest=x=>/^[a-f0-9]{64}$/u.test(x||'');
 export function hasOfficialBeforeCasualtyBatchPolicyV1(state){
  const policy=state?.officialBeforeCasualtyBatchPolicy;if(policy===undefined)return false;
  if(!isDeepStrictEqual(policy,OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V1)&&!isDeepStrictEqual(policy,OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V2)
-  &&!isDeepStrictEqual(policy,OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V3)&&!isDeepStrictEqual(policy,OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V4))
+  &&!isDeepStrictEqual(policy,OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V3)&&!isDeepStrictEqual(policy,OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V4)&&!isDeepStrictEqual(policy,OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V5))
   throw Error('BEFORE_CASUALTY_BATCH_POLICY_INVALID');return true;
 }
 export function hasOfficialExtendedBeforeCasualtyPolicyV1(state){return hasOfficialBeforeCasualtyBatchPolicyV1(state)
- &&['1.1.0','1.2.0','1.3.0'].includes(state.officialBeforeCasualtyBatchPolicy.version);}
+ &&['1.1.0','1.2.0','1.3.0','1.4.0'].includes(state.officialBeforeCasualtyBatchPolicy.version);}
 export function hasOfficialTemplateBeforeCasualtyPolicyV1(state){return hasOfficialBeforeCasualtyBatchPolicyV1(state)
- &&['1.2.0','1.3.0'].includes(state.officialBeforeCasualtyBatchPolicy.version);}
+ &&['1.2.0','1.3.0','1.4.0'].includes(state.officialBeforeCasualtyBatchPolicy.version);}
 export function hasOfficialOverwatchBeforeCasualtyPolicyV1(state){return hasOfficialBeforeCasualtyBatchPolicyV1(state)
- &&state.officialBeforeCasualtyBatchPolicy.version==='1.3.0';}
+ &&['1.3.0','1.4.0'].includes(state.officialBeforeCasualtyBatchPolicy.version);}
+export function hasOfficialKhassarBeforeCasualtyPolicyV1(state){return hasOfficialBeforeCasualtyBatchPolicyV1(state)
+ &&state.officialBeforeCasualtyBatchPolicy.version==='1.4.0';}
 function reservations(state,piece){
  const rows=piece.officialBeforeCasualtyReservations||[];
  if(!rows.length)return[];
