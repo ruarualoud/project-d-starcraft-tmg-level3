@@ -1,0 +1,56 @@
+{
+  "schema": "starcraft_tmg_wave4_consume_web_cold_v1",
+  "status": "passed_read_only",
+  "results": [
+    {
+      "id": "consume-web-infested_marine-plague-2-use",
+      "roomId": "product-wave4-web-infested_marine-plague-2-use",
+      "inputRef": "build/wave4-web/stukov-units/consume-web-v2/rooms/infested_marine-plague-2-use",
+      "sourceOpenedReadOnly": true,
+      "humanWrapperVersion": "1.1.0",
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "originalSignedActions": 13,
+      "newActions": 0,
+      "stateHash": "956f76a246f16d0370c4c630da2c43126b3171c4b0f4da35d31a704f5b4ad283"
+    },
+    {
+      "id": "consume-web-infested_marine-self-source",
+      "roomId": "product-wave4-web-infested_marine-self-source",
+      "inputRef": "build/wave4-web/stukov-units/consume-web-v2/rooms/infested_marine-self-source",
+      "sourceOpenedReadOnly": true,
+      "humanWrapperVersion": "1.1.0",
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "originalSignedActions": 4,
+      "newActions": 0,
+      "stateHash": "dbfbb2dac40faf252e4146eed1731e4d355f2d2ab56c757435038938d9868a22"
+    },
+    {
+      "id": "detonation-disengage-web-infested_trooper-leading-use",
+      "roomId": "product-wave4-web-infested_trooper-leading-use",
+      "inputRef": "build/wave4-web/stukov-units/detonation-disengage-web-v1/rooms/infested_trooper-leading-use",
+      "sourceOpenedReadOnly": true,
+      "humanWrapperVersion": "1.0.0",
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "originalSignedActions": 9,
+      "newActions": 0,
+      "stateHash": "59738f785d12f6cb91fcdd23dc89c07a64bcaed7e47a9bedc2e1b675fe58e5c2"
+    },
+    {
+      "id": "detonation-disengage-web-infested_marine-other-use",
+      "roomId": "product-wave4-web-infested_marine-other-use",
+      "inputRef": "build/wave4-web/stukov-units/detonation-disengage-web-v1/rooms/infested_marine-other-use",
+      "sourceOpenedReadOnly": true,
+      "humanWrapperVersion": "1.0.0",
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "originalSignedActions": 10,
+      "newActions": 0,
+      "stateHash": "8f5b70785dd96c6e0e77196909a5f1914d6df3e94cc405e376bad57019c03631"
+    }
+  ],
+  "modelCalls": 0,
+  "trainingTruth": false
+}

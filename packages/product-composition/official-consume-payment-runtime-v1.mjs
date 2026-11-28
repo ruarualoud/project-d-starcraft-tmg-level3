@@ -100,18 +100,43 @@ export function applyOfficialConsumePaymentPlanV1(state, route, action, events, 
     && state.officialConsumePaymentPolicy?.activeAbilityPayment !== true) throw Error('CONSUME_ACTIVE_PAYMENT_CONSUMER_REQUIRED');
   const expected = prepareOfficialConsumePaymentV1(state, route, sourceId, parameters);
   if (!isDeepStrictEqual(plan, expected)) throw Error('CONSUME_PAYMENT_PLAN_STALE');
+  return commitPayment(state, action, events, plan);
+}
+
+// Only the source-bound, sealed continuation may bypass a fresh quote. Its
+// original victim is reserved from child damage, while the other survivors and
+// Supply may have changed. A quote is never recomputed after the interruption.
+export function applyOfficialSealedConsumePaymentV1(state, action, events, checkpoint, casualty) {
+  sourceFor(state);
+  if (!isDeepStrictEqual(state.pendingOfficialConsumePayment, checkpoint)
+    || checkpoint.checkpointHash !== hash(without(checkpoint, 'checkpointHash'))
+    || checkpoint.round !== Number(state.round) || checkpoint.phase !== state.phase
+    || checkpoint.policyHash !== hash(state.officialBeforeCasualtyBatchPolicy)
+    || checkpoint.plan.paymentPlanHash !== hash(without(checkpoint.plan, 'paymentPlanHash'))
+    || checkpoint.plan.sourceBundleHash !== state.officialConsumePaymentSourceBundle.bundleHash
+    || checkpoint.plan.policyHash !== state.officialConsumePaymentPolicy.policyHash
+    || hash(action) !== checkpoint.sourceActionHash
+    || (state.officialConsumePaymentHistory || []).some(r=>r.paymentPlanHash===checkpoint.plan.paymentPlanHash)
+    || checkpoint.plan.cardPayment.selectedCardsExhaustOnCommit.some(id=>
+      state.cardResources[checkpoint.plan.sideKey].find(c=>c.cardInstanceId===id)?.readiness!=='exhausted')) {
+    throw Error('CONSUME_SEALED_PAYMENT_INVALID');
+  }
+  return commitPayment(state, action, events, checkpoint.plan, casualty);
+}
+
+function commitPayment(state, action, events, plan, rebasedCasualty = null) {
   const before = structuredClone(state), target = state.pieces.find(row => row.id === plan.sacrifice.pieceId);
   const remainingModelIds = target.models.filter(model => !model.isDestroyed && model.isOnField !== false
     && model.id !== plan.sacrificeModelId).map(model => model.id);
   const shielded = target.statuses.some(entry => String(typeof entry === 'string' ? entry
     : entry.statusName || entry.name).toLowerCase() === 'shielded');
-  applyOfficialSelectedRosterResolvedDamageV1(state, target, resolveOfficialEffectiveCombatProfileV1(state, target), {
+  applyOfficialSelectedRosterResolvedDamageV1(state, target, resolveOfficialEffectiveCombatProfileV1(state, target), rebasedCasualty || {
     casualtyModelIds: [plan.sacrificeModelId], remainingModelIds, targetDestroyed: remainingModelIds.length === 0,
     postDamageMarker: remainingModelIds.length ? target.damageMarker : 0, shieldedBefore: shielded, shieldedAfter: false,
   });
-  if (target.currentSupply !== plan.sacrifice.remainingSupply) throw Error('CONSUME_SUPPLY_WRITER_MISMATCH');
+  if (!rebasedCasualty && target.currentSupply !== plan.sacrifice.remainingSupply) throw Error('CONSUME_SUPPLY_WRITER_MISMATCH');
   let destruction = null;
-  if (target.isDestroyed) {
+  if (target.isDestroyed && !before.pieces.find(p=>p.id===target.id).isDestroyed) {
     destruction = projectOfficialDestroyedUnitConsequencesV1({ state, pieceId: target.id,
       tokenIdentityField: 'tokenId', includeCurrentProductEffects: true,
       dispatchCreatedTokensAfterTransition: state.officialCreatorTokenLifecycle === true });
@@ -126,8 +151,10 @@ export function applyOfficialConsumePaymentPlanV1(state, route, action, events, 
   const receipt = seal({ schema: 'starcraft_tmg_consume_payment_receipt_v1', round: Number(state.round), phase: state.phase,
     paymentPlanHash: plan.paymentPlanHash, sourcePieceId: plan.sourcePieceId, sideKey: plan.sideKey,
     definitionId: plan.definitionId, sacrificePieceId: target.id, sacrificeModelId: plan.sacrificeModelId,
-    modelsBefore: plan.sacrifice.currentModels, modelsAfter: target.currentModels,
-    supplyBefore: plan.sacrifice.currentSupply, supplyAfter: target.currentSupply,
+    modelsBefore: rebasedCasualty ? before.pieces.find(p=>p.id===target.id).currentModels : plan.sacrifice.currentModels, modelsAfter: target.currentModels,
+    supplyBefore: rebasedCasualty ? before.pieces.find(p=>p.id===target.id).currentSupply : plan.sacrifice.currentSupply, supplyAfter: target.currentSupply,
+    ...(rebasedCasualty ? { quotedModelsBefore:plan.sacrifice.currentModels, quotedSupplyBefore:plan.sacrifice.currentSupply,
+      quotedSupplyAfter:plan.sacrifice.remainingSupply, casualtyResolutionHash:rebasedCasualty.resolutionHash } : {}),
     resourceCost: plan.resourceCost, generatedFromModel: 1, retainedAfterPayment: 0,
     exhaustedCardInstanceIds: plan.cardPayment.selectedCardsExhaustOnCommit, darkSwarmFacts: plan.darkSwarmFacts,
     unitDestroyed: target.isDestroyed, destruction, trainingTruth: false }, 'paymentReceiptHash');

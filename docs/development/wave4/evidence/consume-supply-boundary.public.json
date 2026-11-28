@@ -1,0 +1,17 @@
+{
+  "schema": "starcraft_tmg_wave4_consume_supply_boundary_v1",
+  "status": "passed_component",
+  "inputRef": "build/wave4-web/stukov-units/consume-dark-swarm-umo6HI/infested_marine-self-source",
+  "sourceOpenedReadOnly": true,
+  "sourceSignedPrefix": 9,
+  "newActions": 0,
+  "cases": [
+    "actual_self_source_payment_reproduces_stale_cache",
+    "native_supply_projection_resealed",
+    "physical_position_change_rejected",
+    "card_change_rejected",
+    "non_native_supply_cache_rejected"
+  ],
+  "modelCalls": 0,
+  "trainingTruth": false
+}

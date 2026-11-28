@@ -1,0 +1,631 @@
+{
+  "schema": "starcraft_tmg_wave4_consume_dark_swarm_v1",
+  "status": "passed_scoped",
+  "directoryRef": "build/wave4-web/stukov-units/consume-dark-swarm-Mryh3A",
+  "results": [
+    {
+      "id": "infested_marine-target",
+      "unitKey": "infested_marine",
+      "self": false,
+      "roomId": "wave4-consume-dark-infested_marine-target",
+      "directoryRef": "build/wave4-web/stukov-units/consume-dark-swarm-Mryh3A/infested_marine-target",
+      "signedActions": 24,
+      "stateHash": "75d4167da10049da69f6889659351f3533d59db0374647ff2e0670f151bf6d3d",
+      "trace": [
+        {
+          "revision": 1,
+          "round": 1,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "definitionId": null
+        },
+        {
+          "revision": 2,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "choose_first_actor",
+          "definitionId": null
+        },
+        {
+          "revision": 3,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "set_dark_swarm",
+          "definitionId": "unit:defiler/gestate-dark-swarm-movement-phase@1"
+        },
+        {
+          "revision": 4,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "finish_activation",
+          "definitionId": null
+        },
+        {
+          "revision": 5,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "definitionId": null
+        },
+        {
+          "revision": 6,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "definitionId": null
+        },
+        {
+          "revision": 7,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "choose_first_actor",
+          "definitionId": null
+        },
+        {
+          "revision": 8,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "ranged_attack",
+          "definitionId": null
+        },
+        {
+          "revision": 9,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null
+        },
+        {
+          "revision": 10,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:defiler/dark-swarm-assault-phase@1"
+        },
+        {
+          "revision": 11,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "finish_ranged_attack_sequence",
+          "definitionId": null
+        },
+        {
+          "revision": 12,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "finish_activation",
+          "definitionId": null
+        },
+        {
+          "revision": 13,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "definitionId": null
+        },
+        {
+          "revision": 14,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "definitionId": null
+        },
+        {
+          "revision": 15,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "choose_first_actor",
+          "definitionId": null
+        },
+        {
+          "revision": 16,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "definitionId": null
+        },
+        {
+          "revision": 17,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "definitionId": null
+        },
+        {
+          "revision": 18,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "determine_current_product_mission_marker_control",
+          "definitionId": null
+        },
+        {
+          "revision": 19,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "score_mission",
+          "definitionId": null
+        },
+        {
+          "revision": 20,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "check_mission_end_game",
+          "definitionId": null
+        },
+        {
+          "revision": 21,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_end_of_round_effects",
+          "definitionId": null
+        },
+        {
+          "revision": 22,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_cleanup_refresh",
+          "definitionId": null
+        },
+        {
+          "revision": 23,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_next_round_initiative",
+          "definitionId": null
+        },
+        {
+          "revision": 24,
+          "round": 2,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "definitionId": null
+        }
+      ],
+      "originalEffect": {
+        "schema": "starcraft_tmg_official_reaction_effect_v1",
+        "definitionId": "unit:defiler/dark-swarm-assault-phase@1",
+        "sourceFeatureHash": "901d62e12e4ab06f4dabef300eeaaced10d32c33f10f269a108149910d3cee47",
+        "sourceInstanceId": "defiler",
+        "sideKey": "player1",
+        "abilityName": "Dark Swarm",
+        "effectKind": "evade_eligibility",
+        "triggerKind": "attack_target_selected",
+        "targetPieceId": "victim",
+        "sourcePieceId": "defiler",
+        "attackerPieceId": "shooter",
+        "effectDuration": "this_attack",
+        "trainingTruth": false,
+        "evadeEligible": true,
+        "darkSwarmFacts": {
+          "tokenId": "dark-swarm-9e7fdcb2494aded5afbcb44d",
+          "tokenHash": "7b4e60e3d6e22bff9a5a682b2c5817155818c7d6b69b1de0e831ce7162c49b76",
+          "sourceBindingHash": "141f8043756e9bd331e2f06fe3269a82d46ab6b3e7e134e73dbbb87b7db1e340",
+          "sourcePieceId": "defiler",
+          "targetPieceId": "victim",
+          "sideKey": "player1",
+          "sourceDistanceMilliInches": 644,
+          "targetDistanceMilliInches": 1740,
+          "targetSize": 2,
+          "evadeEligible": true,
+          "evadeModifier": 0,
+          "trainingTruth": false,
+          "factsHash": "53f86eb4c28e0b5079951c936b99c055d3b3604e29da78006b215b0abc7c94f6"
+        },
+        "evadeModifier": 0,
+        "consumePaymentReceiptHash": "78b6e12192e635a963fa39239cbc138da27dd45929b33ef5dea315a0d558dd6f",
+        "effectHash": "6857d949c87bacffc523664bcb184d95a1bce9b54dc858d32efa0075518a4253"
+      },
+      "fullNativeRound": true,
+      "actualGestate": true,
+      "reactionQuotaReservedBeforeCasualty": true,
+      "paymentExactlyOnce": true,
+      "originalAttackSuccessorVerified": true,
+      "supplyExactlyOnce": true,
+      "idempotencyVerified": true,
+      "coldReplay": true
+    },
+    {
+      "id": "infested_trooper-target",
+      "unitKey": "infested_trooper",
+      "self": false,
+      "roomId": "wave4-consume-dark-infested_trooper-target",
+      "directoryRef": "build/wave4-web/stukov-units/consume-dark-swarm-Mryh3A/infested_trooper-target",
+      "signedActions": 24,
+      "stateHash": "97249f912788b718ab30d679fd99184ef8d1645920129190c5b4d33f40d37482",
+      "trace": [
+        {
+          "revision": 1,
+          "round": 1,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "definitionId": null
+        },
+        {
+          "revision": 2,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "choose_first_actor",
+          "definitionId": null
+        },
+        {
+          "revision": 3,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "set_dark_swarm",
+          "definitionId": "unit:defiler/gestate-dark-swarm-movement-phase@1"
+        },
+        {
+          "revision": 4,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "finish_activation",
+          "definitionId": null
+        },
+        {
+          "revision": 5,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "definitionId": null
+        },
+        {
+          "revision": 6,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "definitionId": null
+        },
+        {
+          "revision": 7,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "choose_first_actor",
+          "definitionId": null
+        },
+        {
+          "revision": 8,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "ranged_attack",
+          "definitionId": null
+        },
+        {
+          "revision": 9,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null
+        },
+        {
+          "revision": 10,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:defiler/dark-swarm-assault-phase@1"
+        },
+        {
+          "revision": 11,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "finish_ranged_attack_sequence",
+          "definitionId": null
+        },
+        {
+          "revision": 12,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "finish_activation",
+          "definitionId": null
+        },
+        {
+          "revision": 13,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "definitionId": null
+        },
+        {
+          "revision": 14,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "definitionId": null
+        },
+        {
+          "revision": 15,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "choose_first_actor",
+          "definitionId": null
+        },
+        {
+          "revision": 16,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "definitionId": null
+        },
+        {
+          "revision": 17,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "definitionId": null
+        },
+        {
+          "revision": 18,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "determine_current_product_mission_marker_control",
+          "definitionId": null
+        },
+        {
+          "revision": 19,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "score_mission",
+          "definitionId": null
+        },
+        {
+          "revision": 20,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "check_mission_end_game",
+          "definitionId": null
+        },
+        {
+          "revision": 21,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_end_of_round_effects",
+          "definitionId": null
+        },
+        {
+          "revision": 22,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_cleanup_refresh",
+          "definitionId": null
+        },
+        {
+          "revision": 23,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_next_round_initiative",
+          "definitionId": null
+        },
+        {
+          "revision": 24,
+          "round": 2,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "definitionId": null
+        }
+      ],
+      "originalEffect": {
+        "schema": "starcraft_tmg_official_reaction_effect_v1",
+        "definitionId": "unit:defiler/dark-swarm-assault-phase@1",
+        "sourceFeatureHash": "901d62e12e4ab06f4dabef300eeaaced10d32c33f10f269a108149910d3cee47",
+        "sourceInstanceId": "defiler",
+        "sideKey": "player1",
+        "abilityName": "Dark Swarm",
+        "effectKind": "evade_eligibility",
+        "triggerKind": "attack_target_selected",
+        "targetPieceId": "victim",
+        "sourcePieceId": "defiler",
+        "attackerPieceId": "shooter",
+        "effectDuration": "this_attack",
+        "trainingTruth": false,
+        "evadeEligible": true,
+        "darkSwarmFacts": {
+          "tokenId": "dark-swarm-37513672af8418597ef63a1c",
+          "tokenHash": "247dd660674d5cc0ae829ae3251fb1b1fe38937c4e0e1f2394301c303cfce417",
+          "sourceBindingHash": "3971c9fdf9f54bb73ec2df806bb64efe601fbe673401e0c5dde2fe025b01e94a",
+          "sourcePieceId": "defiler",
+          "targetPieceId": "victim",
+          "sideKey": "player1",
+          "sourceDistanceMilliInches": 644,
+          "targetDistanceMilliInches": 1740,
+          "targetSize": 2,
+          "evadeEligible": true,
+          "evadeModifier": 0,
+          "trainingTruth": false,
+          "factsHash": "e5b22000b6faf56729ee0acdac1a9738a7a2eaaaf04380616bd6e99e4d541e0d"
+        },
+        "evadeModifier": 0,
+        "consumePaymentReceiptHash": "feae61bf96f950643989cfd79386174244f3340e6f149777a9f114ed7448ca9e",
+        "effectHash": "98c999e53187e52baeb48c8d967e7a5185af74a3fefea2c4e01991af5729d5d4"
+      },
+      "fullNativeRound": true,
+      "actualGestate": true,
+      "reactionQuotaReservedBeforeCasualty": true,
+      "paymentExactlyOnce": true,
+      "originalAttackSuccessorVerified": true,
+      "supplyExactlyOnce": true,
+      "idempotencyVerified": true,
+      "coldReplay": true
+    },
+    {
+      "id": "infested_marine-self-source",
+      "unitKey": "infested_marine",
+      "self": true,
+      "roomId": "wave4-consume-dark-infested_marine-self-source",
+      "directoryRef": "build/wave4-web/stukov-units/consume-dark-swarm-Mryh3A/infested_marine-self-source",
+      "signedActions": 25,
+      "stateHash": "4c655ba0575074a278c0298ff687e8202fb4441ba17afe3f20a9452afd0a8226",
+      "trace": [
+        {
+          "revision": 1,
+          "actionType": "resolve_mission_start_of_round",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 2,
+          "actionType": "choose_first_actor",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 3,
+          "actionType": "set_dark_swarm",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 4,
+          "actionType": "finish_activation",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 5,
+          "actionType": "pass",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 6,
+          "actionType": "pass",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 7,
+          "actionType": "choose_first_actor",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 8,
+          "actionType": "declare_ranged_attack_before_target_reaction",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 9,
+          "actionType": "pass_reaction_family_window",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 10,
+          "actionType": "resolve_reaction_family_ability",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 11,
+          "actionType": "ranged_attack",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 12,
+          "actionType": "finish_ranged_attack_sequence",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 13,
+          "actionType": "finish_activation",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 14,
+          "actionType": "pass",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 15,
+          "actionType": "pass",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 16,
+          "actionType": "choose_first_actor",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 17,
+          "actionType": "pass",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 18,
+          "actionType": "pass",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 19,
+          "actionType": "determine_current_product_mission_marker_control",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 20,
+          "actionType": "score_mission",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 21,
+          "actionType": "check_mission_end_game",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 22,
+          "actionType": "resolve_current_product_end_of_round_effects",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 23,
+          "actionType": "resolve_current_product_cleanup_refresh",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 24,
+          "actionType": "resolve_current_product_next_round_initiative",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 25,
+          "actionType": "resolve_mission_start_of_round",
+          "restoredFromSignedJournal": true
+        }
+      ],
+      "originalEffect": {
+        "schema": "starcraft_tmg_official_reaction_effect_v1",
+        "definitionId": "unit:defiler/dark-swarm-assault-phase@1",
+        "sourceFeatureHash": "901d62e12e4ab06f4dabef300eeaaced10d32c33f10f269a108149910d3cee47",
+        "sourceInstanceId": "defiler",
+        "sideKey": "player1",
+        "abilityName": "Dark Swarm",
+        "effectKind": "evade_eligibility",
+        "triggerKind": "attack_target_selected",
+        "targetPieceId": "victim",
+        "sourcePieceId": "defiler",
+        "attackerPieceId": "shooter",
+        "effectDuration": "this_attack",
+        "trainingTruth": false,
+        "evadeEligible": true,
+        "darkSwarmFacts": {
+          "tokenId": "dark-swarm-9e7fdcb2494aded5afbcb44d",
+          "tokenHash": "7b4e60e3d6e22bff9a5a682b2c5817155818c7d6b69b1de0e831ce7162c49b76",
+          "sourceBindingHash": "141f8043756e9bd331e2f06fe3269a82d46ab6b3e7e134e73dbbb87b7db1e340",
+          "sourcePieceId": "defiler",
+          "targetPieceId": "victim",
+          "sideKey": "player1",
+          "sourceDistanceMilliInches": 644,
+          "targetDistanceMilliInches": 1740,
+          "targetSize": 2,
+          "evadeEligible": true,
+          "evadeModifier": 0,
+          "trainingTruth": false,
+          "factsHash": "53f86eb4c28e0b5079951c936b99c055d3b3604e29da78006b215b0abc7c94f6"
+        },
+        "evadeModifier": 0,
+        "consumePaymentReceiptHash": "f2ad8ae56ff1ac82168c9c7d79c6278d15c396de57ed6e26e98c6ee916d85bf8",
+        "effectHash": "2100c4eb942e1f3d668caeb7dae8b02de20a08b870a8cf71a62e0b5ecd06d0c3"
+      },
+      "fullNativeRound": true,
+      "actualGestate": true,
+      "reactionQuotaReservedBeforeCasualty": true,
+      "paymentExactlyOnce": true,
+      "originalAttackSuccessorVerified": true,
+      "supplyExactlyOnce": true,
+      "idempotencyVerified": true,
+      "coldReplay": true
+    }
+  ],
+  "modelCalls": 0,
+  "sourceHeldDefinitions": 39,
+  "fullMatchAdmission": false,
+  "trainingTruth": false
+}

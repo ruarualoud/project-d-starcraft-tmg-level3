@@ -1,0 +1,152 @@
+{
+  "schema": "starcraft_tmg_wave4_consume_consumers_v1",
+  "status": "passed_scoped",
+  "policyVersion": "1.9.0",
+  "rootRuntimeVersion": "3.242.0",
+  "humanWrapperVersion": "1.1.0",
+  "nativeCases": 9,
+  "nativeSignedActions": 215,
+  "nativeFullRounds": 9,
+  "plagueCasterDeathCases": 2,
+  "darkSwarmFullRounds": 3,
+  "webRooms": 2,
+  "webSignedActions": 17,
+  "webActualProducerCases": 2,
+  "independentColdCases": 19,
+  "independentColdOriginalActions": 311,
+  "consumeSupplyLost": 5,
+  "zeroSupplyDestructions": 4,
+  "naturalArmourControlCases": 1,
+  "naturalArmourControlActions": 11,
+  "evidenceRefs": [
+    "docs/development/wave4/evidence/detonation-consume.public.json",
+    "docs/development/wave4/evidence/consume-dark-swarm.public.json",
+    "docs/development/wave4/evidence/consume-web.public.json",
+    "docs/development/wave4/evidence/consume-current-cold.public.json",
+    "docs/development/wave4/evidence/consume-legacy-cold.public.json",
+    "docs/development/wave4/evidence/consume-web-cold.public.json",
+    "docs/development/wave4/evidence/consume-settlement.public.json",
+    "docs/development/wave4/evidence/consume-form.public.json",
+    "docs/development/wave4/evidence/consume-supply-boundary.public.json",
+    "docs/development/wave4/evidence/consume-web-build.public.json",
+    "docs/development/wave4/evidence/consume-latest-bundle-reentry.public.json",
+    "docs/development/wave4/evidence/consume-typecheck.public.json"
+  ],
+  "newGameAtomsImplemented": 0,
+  "implementedCumulativeAtoms": 6,
+  "sourceHeldDefinitions": 39,
+  "fullMatchAdmission": false,
+  "allConsumersVerified": false,
+  "fullAppTypecheckPassed": false,
+  "remainingBaselineTypeErrors": 37,
+  "modelCalls": 0,
+  "trainingTruth": false,
+  "consumerRefs": [
+    {
+      "file": "packages/product-composition/official-consume-continuation-v1.mjs",
+      "exportName": "stageOfficialConsumePaymentV1"
+    },
+    {
+      "file": "packages/product-composition/official-consume-continuation-v1.mjs",
+      "exportName": "resumeOfficialConsumePaymentV1"
+    },
+    {
+      "file": "packages/product-composition/official-consume-payment-runtime-v1.mjs",
+      "exportName": "applyOfficialSealedConsumePaymentV1"
+    },
+    {
+      "file": "packages/product-composition/official-plague-runtime-v1.mjs",
+      "exportName": "createOfficialPlagueRuntimeV1"
+    },
+    {
+      "file": "packages/product-composition/official-reaction-family-adapter-v1.mjs",
+      "exportName": "createOfficialReactionFamilyAdapterV1"
+    },
+    {
+      "file": "packages/product-composition/official-attack-target-reaction-context-v1.mjs",
+      "exportName": "synchronizeOfficialTargetReactionSupplyProjectionV1"
+    },
+    {
+      "file": "packages/product-composition/official-current-product-match-runtime-v1.mjs",
+      "exportName": "createOfficialEngineeringScopedRoundRuntimeV1"
+    },
+    {
+      "file": "packages/product-composition/official-characteristic-status-component-runtime-v2.mjs",
+      "exportName": "createOfficialCharacteristicStatusComponentRuntimeV2"
+    },
+    {
+      "file": "packages/product-composition/official-human-confirmed-runtime-v1.mjs",
+      "exportName": "createOfficialHumanConfirmedRuntimeV2"
+    },
+    {
+      "file": "packages/client-domain/native-action-form-v1.mjs",
+      "exportName": "compileNativeActionFormValuesV1"
+    },
+    {
+      "file": "packages/client-domain/native-action-form-v1.mjs",
+      "exportName": "nativePlaguePaymentSummaryV1"
+    },
+    {
+      "file": "apps/starcraft-tmg-expo/components/battlefield/authoritative-battle-workspace.tsx",
+      "exportName": "AuthoritativeBattleWorkspace"
+    }
+  ],
+  "definitions": [
+    {
+      "definitionId": "unit:infested_marine/detonation-any-phase@1",
+      "classification": "new_semantics_partial",
+      "atomId": "rule-atom:wave4/before-casualty-batch-detonation@1",
+      "nativeCases": [
+        "infested_marine-plague-2-use",
+        "infested_marine-plague-2-decline",
+        "infested_marine-plague-3-use"
+      ],
+      "darkSwarmQuotaCases": [
+        "infested_marine-target"
+      ],
+      "actualConsumers": [
+        "Consume original single-model removal",
+        "Plague payment before future dice",
+        "committed Dark Swarm quota prevents another Detonation"
+      ],
+      "allConsumersVerified": false,
+      "fullAtomAdmission": false
+    },
+    {
+      "definitionId": "unit:infested_trooper/detonation-any-phase@1",
+      "classification": "new_semantics_partial",
+      "atomId": "rule-atom:wave4/before-casualty-batch-detonation@1",
+      "nativeCases": [
+        "infested_trooper-plague-2-use-attempt1",
+        "infested_trooper-plague-2-decline",
+        "infested_trooper-plague-3-use"
+      ],
+      "darkSwarmQuotaCases": [
+        "infested_trooper-target"
+      ],
+      "actualConsumers": [
+        "Consume original single-model removal",
+        "Plague payment before future dice",
+        "committed Dark Swarm quota prevents another Detonation"
+      ],
+      "allConsumersVerified": false,
+      "fullAtomAdmission": false
+    }
+  ],
+  "unchangedSourceDefinitions": [
+    "unit:defiler/consume-any-phase@1",
+    "unit:defiler/plague-assault-phase@1",
+    "unit:defiler/dark-swarm-assault-phase@1"
+  ],
+  "reusedAtoms": [
+    "single-model removal and destruction lifecycle",
+    "source-bound BM card payment",
+    "template geometry and NON-LETHAL DAMAGE",
+    "reaction timing and Supply attribution"
+  ],
+  "newCombination": "existing Defiler payment and paid effects with Wave4 before-casualty Detonation",
+  "pendingConsumers": [
+    "new Firebat/Scarab combinations",
+    "whole release Builder/lobby and 500/2000 PvP"
+  ]
+}

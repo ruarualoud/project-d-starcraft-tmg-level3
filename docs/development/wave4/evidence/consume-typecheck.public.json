@@ -1,0 +1,198 @@
+{
+  "schema": "starcraft_tmg_wave4_consume_typecheck_v1",
+  "status": "no_new_errors_existing_app_errors_remain",
+  "baselineCommit": "7268d9498d051b2d9ff71b73a8f7805c8a99c82a",
+  "baselineDiagnostics": 44,
+  "currentDiagnostics": 37,
+  "newDiagnostics": [],
+  "ownedNativeFormDiagnosticsResolved": true,
+  "baselineReadOnlyOverlay": true,
+  "currentErrors": [
+    {
+      "file": null,
+      "code": 2688,
+      "message": "Cannot find type definition file for 'nativewind/types'.   The file is in the program because:     Entry point of type library 'nativewind/types' specified in compilerOptions"
+    },
+    {
+      "file": null,
+      "code": 2688,
+      "message": "Cannot find type definition file for 'node'.   The file is in the program because:     Entry point of type library 'node' specified in compilerOptions"
+    },
+    {
+      "file": "apps/starcraft-tmg-expo/app/prepare.tsx",
+      "code": 2322,
+      "message": "Type 'Promise<boolean>' is not assignable to type 'Promise<void>'.   Type 'boolean' is not assignable to type 'void'."
+    },
+    {
+      "file": "apps/starcraft-tmg-expo/components/character/companion-catalogue-panel.tsx",
+      "code": 2322,
+      "message": "Type 'Readonly<{ stateContractHash: string; schemaVersion: string; contractId: string; characterId: string; version: string; presentationOnly: boolean; styleProfile: Readonly<{ styleProfileId: \"starcraft-raynor-sc1-comms-highres-2d-v1\"; ... 4 more ...; reject: string[]; }>; ... 5 more ...; authority: { ...; }; }>' is not assignable to type '{ states: any[]; }'.   Types of property 'states' are incompatible.     The type 'readonly { stateId: string; frameRole: string; phase: string; trigger: string; reducedMotion: string; deterministicFallback: string; }[]' is 'readonly' and cannot be assigned to the mutable type 'any[]'."
+    },
+    {
+      "file": "apps/starcraft-tmg-expo/components/character/companion-catalogue-panel.tsx",
+      "code": 2322,
+      "message": "Type 'Readonly<{ stateContractHash: string; schemaVersion: string; contractId: string; characterId: string; version: string; presentationOnly: boolean; styleProfile: Readonly<{ styleProfileId: \"starcraft-artanis-sc1-comms-highres-2d-v1\"; ... 4 more ...; reject: string[]; }>; ... 5 more ...; authority: { ...; }; }>' is not assignable to type '{ states: any[]; }'.   Types of property 'states' are incompatible.     The type 'readonly { stateId: string; frameRole: string; phase: string; trigger: string; reducedMotion: string; deterministicFallback: string; }[]' is 'readonly' and cannot be assigned to the mutable type 'any[]'."
+    },
+    {
+      "file": "apps/starcraft-tmg-expo/components/character/companion-catalogue-panel.tsx",
+      "code": 2322,
+      "message": "Type 'Readonly<{ stateContractHash: string; schemaVersion: string; contractId: string; characterId: string; version: string; presentationOnly: boolean; styleProfile: Readonly<{ styleProfileId: \"starcraft-nova-sc1-comms-highres-2d-v1\"; ... 4 more ...; reject: string[]; }>; ... 5 more ...; authority: { ...; }; }>' is not assignable to type '{ states: any[]; }'.   Types of property 'states' are incompatible.     The type 'readonly { stateId: string; frameRole: string; phase: string; trigger: string; reducedMotion: string; deterministicFallback: string; }[]' is 'readonly' and cannot be assigned to the mutable type 'any[]'."
+    },
+    {
+      "file": "apps/starcraft-tmg-expo/components/character/companion-catalogue-panel.tsx",
+      "code": 2322,
+      "message": "Type 'Readonly<{ stateContractHash: string; schemaVersion: string; contractId: string; characterId: string; version: string; presentationOnly: boolean; styleProfile: Readonly<{ styleProfileId: \"starcraft-zagara-sc1-comms-highres-2d-v1\"; ... 4 more ...; reject: string[]; }>; ... 5 more ...; authority: { ...; }; }>' is not assignable to type '{ states: any[]; }'.   Types of property 'states' are incompatible.     The type 'readonly { stateId: string; frameRole: string; phase: string; trigger: string; reducedMotion: string; deterministicFallback: string; }[]' is 'readonly' and cannot be assigned to the mutable type 'any[]'."
+    },
+    {
+      "file": "apps/starcraft-tmg-expo/components/character/companion-catalogue-panel.tsx",
+      "code": 2322,
+      "message": "Type 'Readonly<{ stateContractHash: string; schemaVersion: string; contractId: string; characterId: string; version: string; presentationOnly: boolean; styleProfile: Readonly<{ styleProfileId: \"starcraft-zeratul-sc1-comms-highres-2d-v1\"; ... 4 more ...; reject: string[]; }>; ... 5 more ...; authority: { ...; }; }>' is not assignable to type '{ states: any[]; }'.   Types of property 'states' are incompatible.     The type 'readonly { stateId: string; frameRole: string; phase: string; trigger: string; reducedMotion: string; deterministicFallback: string; }[]' is 'readonly' and cannot be assigned to the mutable type 'any[]'."
+    },
+    {
+      "file": "apps/starcraft-tmg-expo/components/character/companion-catalogue-panel.tsx",
+      "code": 2339,
+      "message": "Property 'referencePointer' does not exist on type '{ characterId: any; displayName: any; displayNameZh: any; factionAlignment: any; factionColor: any; roleLabel: string; roleLabelZh: string; packStatus: string; pack: any; eraCount: any; defaultPersonaState: any; portraitStatesRef: any; portraitStatus: string; portraitAdmissionClass: string; portraitAuditRef: any; } ...'.   Property 'referencePointer' does not exist on type '{ characterId: any; displayName: any; displayNameZh: any; factionAlignment: any; factionColor: any; roleLabel: string; roleLabelZh: string; packStatus: string; pack: any; eraCount: any; defaultPersonaState: any; portraitStatesRef: any; portraitStatus: string; portraitAdmissionClass: string; portraitAuditRef: any; }'."
+    },
+    {
+      "file": "apps/starcraft-tmg-expo/components/character/companion-catalogue-panel.tsx",
+      "code": 2339,
+      "message": "Property 'referencePointer' does not exist on type '{ characterId: any; displayName: any; displayNameZh: any; factionAlignment: any; factionColor: any; roleLabel: string; roleLabelZh: string; packStatus: string; pack: any; eraCount: any; defaultPersonaState: any; portraitStatesRef: any; portraitStatus: string; portraitAdmissionClass: string; portraitAuditRef: any; } ...'.   Property 'referencePointer' does not exist on type '{ characterId: any; displayName: any; displayNameZh: any; factionAlignment: any; factionColor: any; roleLabel: string; roleLabelZh: string; packStatus: string; pack: any; eraCount: any; defaultPersonaState: any; portraitStatesRef: any; portraitStatus: string; portraitAdmissionClass: string; portraitAuditRef: any; }'."
+    },
+    {
+      "file": "apps/starcraft-tmg-expo/components/character/companion-catalogue-panel.tsx",
+      "code": 2339,
+      "message": "Property 'referencePointer' does not exist on type '{ characterId: any; displayName: any; displayNameZh: any; factionAlignment: any; factionColor: any; roleLabel: string; roleLabelZh: string; packStatus: string; pack: any; eraCount: any; defaultPersonaState: any; portraitStatesRef: any; portraitStatus: string; portraitAdmissionClass: string; portraitAuditRef: any; } ...'.   Property 'referencePointer' does not exist on type '{ characterId: any; displayName: any; displayNameZh: any; factionAlignment: any; factionColor: any; roleLabel: string; roleLabelZh: string; packStatus: string; pack: any; eraCount: any; defaultPersonaState: any; portraitStatesRef: any; portraitStatus: string; portraitAdmissionClass: string; portraitAuditRef: any; }'."
+    },
+    {
+      "file": "apps/starcraft-tmg-expo/components/character/companion-catalogue-panel.tsx",
+      "code": 2339,
+      "message": "Property 'referencePointer' does not exist on type '{ characterId: any; displayName: any; displayNameZh: any; factionAlignment: any; factionColor: any; roleLabel: string; roleLabelZh: string; packStatus: string; pack: any; eraCount: any; defaultPersonaState: any; portraitStatesRef: any; portraitStatus: string; portraitAdmissionClass: string; portraitAuditRef: any; } ...'.   Property 'referencePointer' does not exist on type '{ characterId: any; displayName: any; displayNameZh: any; factionAlignment: any; factionColor: any; roleLabel: string; roleLabelZh: string; packStatus: string; pack: any; eraCount: any; defaultPersonaState: any; portraitStatesRef: any; portraitStatus: string; portraitAdmissionClass: string; portraitAuditRef: any; }'."
+    },
+    {
+      "file": "apps/starcraft-tmg-expo/components/character/companion-catalogue-panel.tsx",
+      "code": 2339,
+      "message": "Property 'referencePointer' does not exist on type '{ characterId: any; displayName: any; displayNameZh: any; factionAlignment: any; factionColor: any; roleLabel: string; roleLabelZh: string; packStatus: string; pack: any; eraCount: any; defaultPersonaState: any; portraitStatesRef: any; portraitStatus: string; portraitAdmissionClass: string; portraitAuditRef: any; } ...'.   Property 'referencePointer' does not exist on type '{ characterId: any; displayName: any; displayNameZh: any; factionAlignment: any; factionColor: any; roleLabel: string; roleLabelZh: string; packStatus: string; pack: any; eraCount: any; defaultPersonaState: any; portraitStatesRef: any; portraitStatus: string; portraitAdmissionClass: string; portraitAuditRef: any; }'."
+    },
+    {
+      "file": "apps/starcraft-tmg-expo/components/character/tactical-adjutant-panel.tsx",
+      "code": 7016,
+      "message": "Could not find a declaration file for module 'react-dom'. '<workspace>/apps/starcraft-tmg-expo/node_modules/react-dom/index.js' implicitly has an 'any' type.   Try `npm i --save-dev @types/react-dom` if it exists or add a new declaration (.d.ts) file containing `declare module 'react-dom';`"
+    },
+    {
+      "file": "apps/starcraft-tmg-expo/components/character/tactical-adjutant-panel.tsx",
+      "code": 2322,
+      "message": "Type 'unknown' is not assignable to type 'string | undefined'."
+    },
+    {
+      "file": "apps/starcraft-tmg-expo/components/character/tactical-adjutant-panel.tsx",
+      "code": 2322,
+      "message": "Type 'unknown' is not assignable to type 'string | undefined'."
+    },
+    {
+      "file": "apps/starcraft-tmg-expo/components/character/tactical-adjutant-panel.tsx",
+      "code": 2322,
+      "message": "Type 'unknown' is not assignable to type 'string | undefined'."
+    },
+    {
+      "file": "apps/starcraft-tmg-expo/components/character/tactical-adjutant-panel.tsx",
+      "code": 2322,
+      "message": "Type 'unknown' is not assignable to type 'string | undefined'."
+    },
+    {
+      "file": "apps/starcraft-tmg-expo/components/character/tactical-adjutant-panel.tsx",
+      "code": 2339,
+      "message": "Property 'checkpointId' does not exist on type '{}'."
+    },
+    {
+      "file": "apps/starcraft-tmg-expo/components/character/tactical-adjutant-panel.tsx",
+      "code": 2339,
+      "message": "Property 'checkpointId' does not exist on type '{}'."
+    },
+    {
+      "file": "apps/starcraft-tmg-expo/components/character/tactical-adjutant-panel.tsx",
+      "code": 2339,
+      "message": "Property 'label' does not exist on type '{}'."
+    },
+    {
+      "file": "apps/starcraft-tmg-expo/components/character/tactical-adjutant-panel.tsx",
+      "code": 2339,
+      "message": "Property 'turnSequence' does not exist on type '{}'."
+    },
+    {
+      "file": "apps/starcraft-tmg-expo/components/character/tactical-adjutant-panel.tsx",
+      "code": 18047,
+      "message": "'secureProvider.attachment.provider.profileRef' is possibly 'null'."
+    },
+    {
+      "file": "apps/starcraft-tmg-expo/components/character/tactical-adjutant-panel.tsx",
+      "code": 18048,
+      "message": "'roleAgent' is possibly 'undefined'."
+    },
+    {
+      "file": "apps/starcraft-tmg-expo/components/character/tactical-adjutant-panel.tsx",
+      "code": 18048,
+      "message": "'roleAgent' is possibly 'undefined'."
+    },
+    {
+      "file": "apps/starcraft-tmg-expo/components/character/tactical-adjutant-panel.tsx",
+      "code": 18048,
+      "message": "'roleAgent' is possibly 'undefined'."
+    },
+    {
+      "file": "apps/starcraft-tmg-expo/components/character/tactical-adjutant-panel.tsx",
+      "code": 18048,
+      "message": "'roleAgent' is possibly 'undefined'."
+    },
+    {
+      "file": "apps/starcraft-tmg-expo/components/character/tactical-adjutant-panel.tsx",
+      "code": 18048,
+      "message": "'roleAgent' is possibly 'undefined'."
+    },
+    {
+      "file": "apps/starcraft-tmg-expo/components/character/tactical-adjutant-panel.tsx",
+      "code": 18048,
+      "message": "'roleAgent' is possibly 'undefined'."
+    },
+    {
+      "file": "apps/starcraft-tmg-expo/components/character/tactical-adjutant-panel.tsx",
+      "code": 18048,
+      "message": "'roleAgent' is possibly 'undefined'."
+    },
+    {
+      "file": "apps/starcraft-tmg-expo/components/character/tactical-adjutant-panel.tsx",
+      "code": 18048,
+      "message": "'roleAgent' is possibly 'undefined'."
+    },
+    {
+      "file": "apps/starcraft-tmg-expo/components/character/tactical-adjutant-panel.tsx",
+      "code": 18048,
+      "message": "'roleAgent' is possibly 'undefined'."
+    },
+    {
+      "file": "apps/starcraft-tmg-expo/components/character/tactical-adjutant-panel.tsx",
+      "code": 18048,
+      "message": "'roleAgent' is possibly 'undefined'."
+    },
+    {
+      "file": "apps/starcraft-tmg-expo/components/character/tactical-adjutant-panel.tsx",
+      "code": 18048,
+      "message": "'roleAgent' is possibly 'undefined'."
+    },
+    {
+      "file": "apps/starcraft-tmg-expo/components/character/tactical-adjutant-panel.tsx",
+      "code": 18048,
+      "message": "'roleAgent' is possibly 'undefined'."
+    },
+    {
+      "file": "apps/starcraft-tmg-expo/components/character/tactical-adjutant-panel.tsx",
+      "code": 18048,
+      "message": "'roleAgent' is possibly 'undefined'."
+    },
+    {
+      "file": "apps/starcraft-tmg-expo/lib/level3/client-domain-provider.tsx",
+      "code": 18047,
+      "message": "'latest.roomProjection' is possibly 'null'."
+    }
+  ],
+  "modelCalls": 0
+}

@@ -1,3 +1,5 @@
+import {resumeOfficialConsumePaymentV1} from './official-consume-continuation-v1.mjs';
+import {hasOfficialConsumeBeforeCasualtyPolicyV1} from '../rule-atoms/official-before-casualty-batch-v1.mjs';
 import {resumeOfficialDisengageRemovalV1} from './official-disengage-removal-v1.mjs';
 import {hasOfficialRepeatedActivationIdentityPolicyV1} from '../rule-atoms/official-repeated-activation-identity-v1.mjs';
 import {createOfficialInfestationDamageCleanupV1} from './official-infestation-damage-cleanup-v1.mjs';
@@ -734,7 +736,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
     hasUnsettled:state=>Boolean(state.pendingOfficialAutomaticHits||state.pendingOfficialHitsPoolChoice||state.pendingOfficialReactionWindow
       ||state.officialBeforeCasualtyContinuations?.length||universalCarrier?.pending(state)||infestationTransfer?.pending(state)
       ||friendlySupplyLossReaction?.pending(state)||plaguedMunitions?.pending(state)||hiddenLossReactions?.pending(state))}):null;
-  if(hasOfficialDirectRemovalBeforeCasualtyPolicyV1(spatialState)&&consumePayment)throw Error('BEFORE_CASUALTY_CONSUME_OWNER_NOT_ADMITTED');
+  if(hasOfficialDirectRemovalBeforeCasualtyPolicyV1(spatialState)&&!hasOfficialConsumeBeforeCasualtyPolicyV1(spatialState)&&consumePayment)throw Error('BEFORE_CASUALTY_CONSUME_OWNER_NOT_ADMITTED');
   const beforeCasualty=hasOfficialBeforeCasualtyBatchPolicyV1(spatialState)
     ?createOfficialBeforeCasualtyRuntimeV1({reactionBundle,policy:spatialState.officialBeforeCasualtyBatchPolicy}):null;
   if(beforeCasualty&&(!includeRanged||!includeHits||!bundle))throw Error('BEFORE_CASUALTY_NATIVE_ATTACK_AND_HITS_REQUIRED');
@@ -1580,7 +1582,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
   }) : null;
   if(hasOfficialTemplateBeforeCasualtyPolicyV1(spatialState)&&((targetReactions||rangedDeclaration)&&!hasOfficialDeclaredAttackBeforeCasualtyPolicyV1(spatialState)||overwatch&&!hasOfficialOverwatchBeforeCasualtyPolicyV1(spatialState)||(khassarAttacks.length||khassarCharge)&&!hasOfficialKhassarBeforeCasualtyPolicyV1(spatialState)))
     throw Error('BEFORE_CASUALTY_DELEGATED_ATTACK_OWNER_NOT_ADMITTED');
-  const version = hasOfficialDirectRemovalBeforeCasualtyPolicyV1(spatialState)?'3.241.0':hasOfficialSourceOwnedArmourContextPolicyV1(spatialState)?'3.240.0':includeExternalBeaconEntryObservation?'3.239.0':hasOfficialStormPhotonBeforeCasualtyPolicyV1(spatialState)?'3.238.0':hasOfficialDelayedHitsBeforeCasualtyPolicyV1(spatialState)?'3.237.0':hasOfficialDeclaredAttackBeforeCasualtyPolicyV1(spatialState)?'3.236.0':hasOfficialKhassarBeforeCasualtyPolicyV1(spatialState)?'3.235.0':overwatch?.descriptor.runtimeVersion === '1.2.0' ? '3.234.0' : hasOfficialOverwatchBeforeCasualtyPolicyV1(spatialState) ? '3.233.0' : hasOfficialTemplateBeforeCasualtyPolicyV1(spatialState) ? '3.232.0' : includeCorrodeRoundCleanup ? '3.231.0' : corrodeArmour ? '3.230.0' : infestationDamage ? '3.229.0' : hasOfficialExtendedBeforeCasualtyPolicyV1(spatialState) ? '3.228.0' : beforeCasualty ? '3.227.0' : plaguedMunitions ? '3.226.0' : repeatedActivationIdentity ? '3.225.0' : infantryPrecision ? '3.224.0' : stukovInfestation ? '3.223.0' : universalCarrier ? '3.222.0' : includeReleaseMoundAssaultOrder ? '3.221.0' : includeBilePhysicalPlacement && bile ? '3.220.0' : psionicRoundEnd?.scheduledEffects ? '3.219.0' : includeReleaseBileAssaultOrder ? '3.218.0' : releaseZergTargets ? '3.217.0' : includePsionicStormAssaultSameName ? '3.216.0'
+  const version = hasOfficialConsumeBeforeCasualtyPolicyV1(spatialState)?'3.242.0':hasOfficialDirectRemovalBeforeCasualtyPolicyV1(spatialState)?'3.241.0':hasOfficialSourceOwnedArmourContextPolicyV1(spatialState)?'3.240.0':includeExternalBeaconEntryObservation?'3.239.0':hasOfficialStormPhotonBeforeCasualtyPolicyV1(spatialState)?'3.238.0':hasOfficialDelayedHitsBeforeCasualtyPolicyV1(spatialState)?'3.237.0':hasOfficialDeclaredAttackBeforeCasualtyPolicyV1(spatialState)?'3.236.0':hasOfficialKhassarBeforeCasualtyPolicyV1(spatialState)?'3.235.0':overwatch?.descriptor.runtimeVersion === '1.2.0' ? '3.234.0' : hasOfficialOverwatchBeforeCasualtyPolicyV1(spatialState) ? '3.233.0' : hasOfficialTemplateBeforeCasualtyPolicyV1(spatialState) ? '3.232.0' : includeCorrodeRoundCleanup ? '3.231.0' : corrodeArmour ? '3.230.0' : infestationDamage ? '3.229.0' : hasOfficialExtendedBeforeCasualtyPolicyV1(spatialState) ? '3.228.0' : beforeCasualty ? '3.227.0' : plaguedMunitions ? '3.226.0' : repeatedActivationIdentity ? '3.225.0' : infantryPrecision ? '3.224.0' : stukovInfestation ? '3.223.0' : universalCarrier ? '3.222.0' : includeReleaseMoundAssaultOrder ? '3.221.0' : includeBilePhysicalPlacement && bile ? '3.220.0' : psionicRoundEnd?.scheduledEffects ? '3.219.0' : includeReleaseBileAssaultOrder ? '3.218.0' : releaseZergTargets ? '3.217.0' : includePsionicStormAssaultSameName ? '3.216.0'
     : includePsionicStormTokenCleanup ? '3.215.0'
     : includePsionicStormNamedOverlapChoices ? '3.214.0'
     : stormCast ? '3.213.0'
@@ -1636,7 +1638,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
     ...(bile ? ['set_corrosive_bile'] : []),
       ...(bombard ? ['set_bile_bomb'] : []),
     ...(darkSwarmPlacement ? ['set_dark_swarm'] : []),
-    ...(plague ? ['cast_plague'] : []),
+    ...(plague ? ['cast_plague',...(hasOfficialConsumeBeforeCasualtyPolicyV1(spatialState)?['resolve_paid_plague']:[])] : []),
     ...(plague || selectedAbilityAdapter ? ['use_active_ability'] : []),
     ...(unitLifecycleAdapter ? ['resolve_unit_lifecycle_ability'] : []),
     ...(terranSupplyAdapter ? ['resolve_terran_unique_ability'] : []),
@@ -1933,6 +1935,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
   function enumerate(state, options = {}) {
     if(corrodeRestoration?.pending(state))return {...meleeEnumeration(state,reactionAdapter.legalSpace(state,options),'reaction'),releasePhaseControl:'blocked'};
     if(beforeCasualty?.pending(state)?.stage==='reaction')return {...meleeEnumeration(state,reactionAdapter.legalSpace(state,options),'reaction'),releasePhaseControl:'blocked'};
+    if(state.pendingOfficialPaidPlague)return {...meleeEnumeration(state,plague.legalSpace(state,options),'plague'),releasePhaseControl:'blocked'};
     if(plaguedMunitions?.pending(state))return {...meleeEnumeration(state,reactionAdapter.legalSpace(state,options),'reaction'),releasePhaseControl:'blocked'};
     if (universalCarrier?.pending(state)) return { ...meleeEnumeration(state,universalCarrier.enumerate(state,options),'universal_carrier'), releasePhaseControl:'blocked' };
     assertTargetedAbilityPolicy(state);
@@ -3032,7 +3035,15 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
       :resumed.frame.hostKind==='automatic_hits'?hits.resumeBeforeCasualty({...resumed,options})
        :resumed.frame.hostKind==='blast_template'?templateAttack.resumeBeforeCasualty({...resumed,options})
       :resumed.frame.hostKind==='direct_removal'?resumeOfficialDisengageRemovalV1({...resumed,options})
+      :resumed.frame.hostKind==='consume_payment'?resumeOfficialConsumePaymentV1(resumed)
       :(()=>{throw Error('BEFORE_CASUALTY_NATIVE_HOST_NOT_ADMITTED');})();
+    if(resumed.frame.hostKind==='consume_payment'){
+      if(raw.consumeCheckpoint.owner.kind!=='plague')throw Error('CONSUME_INTERRUPTED_EFFECT_OWNER_NOT_ADMITTED');
+      const paid=plague.resumeConsume(raw);
+      const native=completeNativeOutcome(resumed.before,paid,resumed.frame.rootAction,options,{resumeSealedDamage:true,sealedFrame:resumed.frame});
+      const completed=completeCompositionTail(resumed.before,native,resumed.frame.rootAction);
+      return resumeBeforeCasualtyIfReady({...result,state:completed.state,events:[...(result.events||[]),...completed.events]},options);
+    }
     const savedTarget=resumed.frame.suspendedHostSlots?.pendingOfficialAttackTargetReaction;
     if(savedTarget&&(!targetReactions||!isDeepStrictEqual(raw.state.pendingOfficialAttackTargetReaction,savedTarget)))throw Error('BEFORE_CASUALTY_TARGET_COMPLETION_PARENT_MISMATCH');
     const targetCompleted=savedTarget?targetReactions.completeAttack(raw,savedTarget):raw;
@@ -3532,6 +3543,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
     if (infestationDamageCleanup?.pending(state))throw Error('INFESTATION_DAMAGE_CLEANUP_REQUIRED');
     if (corrodeRestoration?.pending(state))throw Error('CORRODE_RESTORATION_CONTINUATION_REQUIRED');
     if (beforeCasualty?.pending(state)) throw Error('BEFORE_CASUALTY_CONTINUATION_REQUIRED');
+    if (state.pendingOfficialPaidPlague||state.pendingOfficialConsumePayment)throw Error('CONSUME_PAID_EFFECT_CONTINUATION_REQUIRED');
     if (plaguedMunitions?.pending(state)) throw Error('PLAGUED_MUNITIONS_REACTION_CONTINUATION_REQUIRED');
     if (ancestralWisdom?.pending(state)) throw Error('ANCESTRAL_WISDOM_PAYMENT_CONTINUATION_REQUIRED');
     if (holoRoundEnd && ['round_end', 'cleanup_and_refresh'].includes(request.eventKind)

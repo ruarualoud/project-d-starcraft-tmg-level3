@@ -1,0 +1,118 @@
+{
+  "schema": "starcraft_tmg_wave4_detonation_v3_compat_v1",
+  "status": "passed_scoped",
+  "results": [
+    {
+      "id": "infested_marine-plague-2-use",
+      "roomId": "wave4-consume-infested_marine-plague-2-use",
+      "originalSignedActions": 29,
+      "runtimeVersion": "2.2.0",
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "stateHash": "64c8518c8dbac587ede6b311658340684e50132a2ec1b783aac72479424ee93c",
+      "newActions": 0
+    },
+    {
+      "id": "infested_marine-plague-2-decline",
+      "roomId": "wave4-consume-infested_marine-plague-2-decline",
+      "originalSignedActions": 22,
+      "runtimeVersion": "2.2.0",
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "stateHash": "1037f3dbfb89db5ca12ff70eb504ad6b842b6a5f22345814c68009a4686a63ae",
+      "newActions": 0
+    },
+    {
+      "id": "infested_marine-plague-3-use",
+      "roomId": "wave4-consume-infested_marine-plague-3-use",
+      "originalSignedActions": 20,
+      "runtimeVersion": "2.2.0",
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "stateHash": "53d02df742998a92c32cc596191f916e2cf8a496a4478cbd96d8acb7ff4ca0d2",
+      "newActions": 0
+    },
+    {
+      "id": "infested_trooper-plague-2-use-attempt1",
+      "roomId": "wave4-consume-infested_trooper-plague-2-use-attempt1",
+      "originalSignedActions": 29,
+      "runtimeVersion": "2.2.0",
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "stateHash": "6c61ab8378b651d7573970e3a3107276d007bb74ef4bc02128b8beac4cb80338",
+      "newActions": 0
+    },
+    {
+      "id": "infested_trooper-plague-2-decline",
+      "roomId": "wave4-consume-infested_trooper-plague-2-decline",
+      "originalSignedActions": 22,
+      "runtimeVersion": "2.2.0",
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "stateHash": "89fd99886cde5e5ff5e869357ff40fe7dc35ca0efc49277c0d488002d1099ebc",
+      "newActions": 0
+    },
+    {
+      "id": "infested_trooper-plague-3-use",
+      "roomId": "wave4-consume-infested_trooper-plague-3-use",
+      "originalSignedActions": 20,
+      "runtimeVersion": "2.2.0",
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "stateHash": "93547d5c32b52226e69abbf0829d475abb6c2a7eca0fb21648aec58d4bb81f89",
+      "newActions": 0
+    },
+    {
+      "id": "infested_marine-target",
+      "roomId": "wave4-consume-dark-infested_marine-target",
+      "originalSignedActions": 24,
+      "runtimeVersion": "2.2.0",
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "stateHash": "75d4167da10049da69f6889659351f3533d59db0374647ff2e0670f151bf6d3d",
+      "newActions": 0
+    },
+    {
+      "id": "infested_trooper-target",
+      "roomId": "wave4-consume-dark-infested_trooper-target",
+      "originalSignedActions": 24,
+      "runtimeVersion": "2.2.0",
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "stateHash": "97249f912788b718ab30d679fd99184ef8d1645920129190c5b4d33f40d37482",
+      "newActions": 0
+    },
+    {
+      "id": "infested_marine-self-source",
+      "roomId": "wave4-consume-dark-infested_marine-self-source",
+      "originalSignedActions": 25,
+      "runtimeVersion": "2.2.0",
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "stateHash": "4c655ba0575074a278c0298ff687e8202fb4441ba17afe3f20a9452afd0a8226",
+      "newActions": 0
+    },
+    {
+      "id": "infested_marine-last-use",
+      "roomId": "wave4-disengage-infested_marine-last-use",
+      "originalSignedActions": 23,
+      "runtimeVersion": "2.2.0",
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "stateHash": "4621dac0761f31fc855e8d2cf216e356270368ef5a95cbc741bdc3c7546fda43",
+      "newActions": 0
+    },
+    {
+      "id": "infested_trooper-last-use",
+      "roomId": "wave4-disengage-infested_trooper-last-use",
+      "originalSignedActions": 23,
+      "runtimeVersion": "2.2.0",
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "stateHash": "a4f24892c518c8ec1e87990e2adf188e42c737118fe40be87c901f5378feacb2",
+      "newActions": 0
+    }
+  ],
+  "modelCalls": 0,
+  "trainingTruth": false
+}

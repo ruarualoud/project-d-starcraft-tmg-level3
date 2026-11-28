@@ -1522,7 +1522,9 @@ function createCurrentProductMatchRuntime(input, scale, releaseOpening) {
     }
     if (descriptor.refreshSupplyOccupancyAfterTransition
       && stateAfter.officialRoundSupplyState?.round === Number(stateAfter.round)) {
-      stateAfter.officialRoundSupplyState = refreshOfficialRoundSupplyOccupancyV1({ state: stateAfter });
+      const beforeSupplyProjection=stateAfter;
+      stateAfter={...stateAfter,officialRoundSupplyState:refreshOfficialRoundSupplyOccupancyV1({ state: stateAfter })};
+      stateAfter=synchronizeOfficialTargetReactionSupplyProjectionV1(beforeSupplyProjection,stateAfter);
     }
     return freezeDeep({
       ok: true,
@@ -1723,3 +1725,4 @@ function createCurrentProductMatchRuntime(input, scale, releaseOpening) {
     apply,
   });
 }
+import {synchronizeOfficialTargetReactionSupplyProjectionV1} from './official-attack-target-reaction-context-v1.mjs';

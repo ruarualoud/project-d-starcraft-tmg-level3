@@ -1,5 +1,7 @@
 import { isDeepStrictEqual } from 'node:util';
 import { hashStarcraftTmgContract as hash } from '../authoritative-engine/referee-crypto-v1.mjs';
+import {hasOfficialConsumeBeforeCasualtyPolicyV1} from '../rule-atoms/official-before-casualty-batch-v1.mjs';
+import {refreshOfficialRoundSupplyOccupancyV1} from '../rule-atoms/official-round-supply-state-v1.mjs';
 import { projectOfficialDarkSwarmReactionFactsV1 } from './official-dark-swarm-reaction-facts-v1.mjs';
 import { readOfficialConsumeReactionEffectFactsV1 } from './official-consume-payment-runtime-v1.mjs';
 import { readOfficialRangedCasualtyContextV1, officialRangedCasualtyBelongsToTargetReactionV1 }
@@ -22,6 +24,23 @@ export function officialAttackTargetReactionFactsHashV1(state) {
   }
   if (facts.gameClock) facts.gameClock = { ...facts.gameClock, transition: 0 };
   return hash(facts);
+}
+
+// The match wrapper owns this derived projection, after the Native reaction
+// owner has already sealed every real mutation. Only that one cache may differ.
+export function synchronizeOfficialTargetReactionSupplyProjectionV1(before,after){
+  if(!hasOfficialConsumeBeforeCasualtyPolicyV1(before)||!before[OFFICIAL_ATTACK_TARGET_REACTION_PARENT_KEY])return after;
+  const parent=readOfficialAttackTargetReactionParentV1(before);
+  if(!isDeepStrictEqual(without(before,['officialRoundSupplyState']),without(after,['officialRoundSupplyState'])))
+    throw Error('TARGET_REACTION_SUPPLY_PROJECTION_ONLY');
+  if(!isDeepStrictEqual(after.officialRoundSupplyState,refreshOfficialRoundSupplyOccupancyV1({state:before})))
+    throw Error('TARGET_REACTION_SUPPLY_PROJECTION_NOT_NATIVE');
+  if(isDeepStrictEqual(before.officialRoundSupplyState,after.officialRoundSupplyState))return after;
+  const state=structuredClone(after),body=without(parent,['parentHash','factsHash']);
+  body.factsHash=officialAttackTargetReactionFactsHashV1(state);
+  state[OFFICIAL_ATTACK_TARGET_REACTION_PARENT_KEY]={...body,parentHash:hash(body)};
+  readOfficialAttackTargetReactionParentV1(state);
+  return state;
 }
 
 export function officialRangedDamageBelongsToTargetReactionV1(parent, damage, window) {

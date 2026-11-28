@@ -13,6 +13,7 @@ const labels: Record<string, string> = {
   friendlyUnitId: '友方单位（可跳过）',
   leadingModelId: '领队模型', leadingOutcome: '领队结果', modelId: '模型', unitId: '单位',
   paymentCardInstanceIds: '支付卡牌', choice: '能力选项', edgeSide: '进入边',
+  biomassToSpend: '本次花费的 BM', sacrificePieceId: 'Consume 移除的友方单位', sacrificeModelId: 'Consume 移除的模型',
   entrySegmentId: '进场区段', anchorPieceId: '锚点单位', anchorModelId: '锚点模型',
   placements: '模型最终站位', path: '领队路径', targets: '冲锋目标',
   outcome: '冲锋结果', failureProof: '失败依据', kind: '规则依据', tokenDisplacements: '标记落点',

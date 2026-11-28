@@ -18,8 +18,12 @@ const delayedOnly=process.argv.includes('--delayed-only');
 const stormPhotonOnly=process.argv.includes('--storm-photon-only');
 const disengageOnly=process.argv.includes('--disengage-only');
 const lastDisengageOnly=process.argv.includes('--last-disengage-only');
+const consumeOnly=process.argv.includes('--consume-only');
 let currentInputs,droneInputs;
-const specs=lastDisengageOnly?['infested_trooper','infested_marine'].flatMap(unit=>['use','decline'].map(choice=>['detonation-disengage',unit+'-last-'+choice]))
+const specs=consumeOnly?[...(await read('docs/development/wave4/evidence/detonation-consume.public.json')).results.map(r=>['detonation-consume',r.id]),
+  ...(await read('docs/development/wave4/evidence/consume-dark-swarm.public.json')).results.map(r=>['consume-dark-swarm',r.id]),
+  ['detonation-disengage','infested_marine-last-use'],['detonation-disengage','infested_trooper-last-use']]
+ :lastDisengageOnly?['infested_trooper','infested_marine'].flatMap(unit=>['use','decline'].map(choice=>['detonation-disengage',unit+'-last-'+choice]))
  :disengageOnly?[...['infested_trooper','infested_marine'].flatMap(unit=>['leading','other'].flatMap(kind=>['use','decline'].map(choice=>['detonation-disengage',unit+'-'+kind+'-'+choice]))),['detonation-storm','storm-use'],['detonation-photon','photon-use']]
  :stormPhotonOnly?[...['storm-use','storm-decline'].map(id=>['detonation-storm',id]),...['photon-use','photon-decline'].map(id=>['detonation-photon',id]),['detonation-delayed','bile-use'],['detonation-delayed','drone-use']]
  :delayedOnly?[...['bile-use','bile-decline','drone-use','drone-decline'].map(id=>['detonation-delayed',id]),
@@ -37,7 +41,7 @@ const specs=lastDisengageOnly?['infested_trooper','infested_marine'].flatMap(uni
  ['corrode-armour-restoration','medic-restores'],['corrode-armour-round',null],['detonation-template','main-first-use'],['detonation-template','spillover-first-use']];
 for(const [name,id]of specs){
  const proof=await read('docs/development/wave4/evidence/'+name+'.public.json'),entry=id?proof.results.find(r=>r.id===id):proof;
- const inputs=['detonation-storm','detonation-photon','detonation-disengage'].includes(name)||name==='detonation-delayed'&&entry.kind==='drone'?(droneInputs ||= await loadWave4StukovUnitInputsV3(root))
+ const inputs=['detonation-storm','detonation-photon','detonation-disengage','detonation-consume','consume-dark-swarm'].includes(name)||name==='detonation-delayed'&&entry.kind==='drone'?(droneInputs ||= await loadWave4StukovUnitInputsV3(root))
   :['detonation-target','detonation-delayed'].includes(name)?(currentInputs ||= await loadWave4StukovUnitInputsV2(root)):legacyInputs;
  const authority=await read(entry.directoryRef+'/authority.json'),scope=await read(entry.directoryRef+'/scope.json'),descriptor=await read(entry.directoryRef+'/runtime.json');
  const bound=await bindWave4TurretRoom({inputs,state:authority.state,...scope,directory:path.join(directory,id||name)});
@@ -50,5 +54,5 @@ for(const [name,id]of specs){
    descriptorUnchanged:true,coldReplay:true,stateHash:head.envelope.stateHash,newActions:0});console.log(JSON.stringify(results.at(-1)));
  }finally{native.close();}
 }
-await atomicWrite(path.join(root,'docs/development/wave4/evidence/'+(lastDisengageOnly?'detonation-disengage-last-cold':disengageOnly?'detonation-disengage-current-cold':stormPhotonOnly?'detonation-storm-photon-current-cold':delayedOnly?'detonation-delayed-current-cold':declaredOnly?'detonation-declared-current-cold':khassarOnly?'detonation-khassar-current-cold':overwatchOnly?'detonation-overwatch-compat':currentV3Only?'detonation-v3-current-cold':'detonation-v3-compat')+'.public.json'),JSON.stringify({
+await atomicWrite(path.join(root,'docs/development/wave4/evidence/'+(consumeOnly?'consume-current-cold':lastDisengageOnly?'detonation-disengage-last-cold':disengageOnly?'detonation-disengage-current-cold':stormPhotonOnly?'detonation-storm-photon-current-cold':delayedOnly?'detonation-delayed-current-cold':declaredOnly?'detonation-declared-current-cold':khassarOnly?'detonation-khassar-current-cold':overwatchOnly?'detonation-overwatch-compat':currentV3Only?'detonation-v3-current-cold':'detonation-v3-compat')+'.public.json'),JSON.stringify({
  schema:'starcraft_tmg_wave4_detonation_v3_compat_v1',status:'passed_scoped',results,modelCalls:0,trainingTruth:false},null,2));

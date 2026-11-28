@@ -13,10 +13,11 @@ const directory=path.resolve(process.argv[2]);
 assert.ok(directory.startsWith(path.join(root,'build/wave4-web')+path.sep));
 const service=JSON.parse(await fs.readFile(path.join(directory,'service.private.json'),'utf8'));
 const resumeConfirmed=process.argv.includes('--resume-confirmed');
+const reenterCompleted=process.argv.includes('--reenter-completed');
 assert.equal(service.origin,'http://127.0.0.1:5484');assert.equal(service.liveEnabled,false);
 const api=service.origin+'/starcraft-tmg-level3/api/v1/rooms/';
 const browser=await chromium.launch({headless:true,...(process.env.CHROME_BIN?{executablePath:process.env.CHROME_BIN}:{})});
-const results=[],readableCasualtyChecks=[];
+const results=[],readableCasualtyChecks=[],producerFormChecks=[];
 const escape=text=>text.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
 async function current(item) {
   const store=openWave3EngineeringStoreV1({directory:path.join(directory,'rooms',item.kind),filename:'room.sqlite',readOnly:true});
@@ -36,8 +37,15 @@ async function legal(page) {
 }
 async function operate(page,item,choice,parameterized) {
   const before=await current(item);
-  const title=choice.abilityName||choice.weaponName||(choice.actionType==='move'?'move · Stalker':choice.actionType);
-  const card=page.getByText(new RegExp(escape(title))).first().locator('..');
+  const title=choice.abilityName||choice.weaponName||(choice.actionType==='move'?'move · Stalker':choice.actionType==='resolve_paid_plague'?'结算瘟疫':choice.actionType);
+  const exactCard=parameterized&&choice.domainId?page.getByTestId('native-domain-'+choice.domainId):null;
+  if(exactCard&&['consume-plague-initiation','consume-dark-swarm-initiation'].includes(item.flow)){
+    try{await exactCard.waitFor({timeout:15000});}catch(error){
+      await page.screenshot({path:path.join(directory,item.kind+'-missing-card.png')});
+      console.log(JSON.stringify({expectedDomainId:choice.domainId,renderedDomainIds:await page.locator('[data-testid^="native-domain-"]').evaluateAll(els=>els.map(e=>e.getAttribute('data-testid'))),visibleStatus:(await page.locator('body').innerText()).slice(-3500)}));throw error;
+    }
+  }
+  const card=exactCard&&await exactCard.count()?exactCard:page.getByText(new RegExp(escape(title))).first().locator('..');
   const standardMove=choice.actionType==='move';
   if(standardMove) {
     await card.getByRole('button',{name:'编辑参数',exact:true}).click();
@@ -49,6 +57,18 @@ async function operate(page,item,choice,parameterized) {
     await card.getByRole('button',{name:'设置行动',exact:true}).click();
     const form=page.getByTestId('native-action-form');
     const parameterSchema=choice.sourceDomain?.parameterSchema||choice.parameterSchema;
+    if(['consume-plague-initiation','consume-dark-swarm-initiation'].includes(item.flow)
+      &&choice.definitionId===item.definitionId){
+      const params=item.expectedConsumeParameters;
+      if(params.coordinate){await form.getByLabel('横向位置（英寸）',{exact:true}).fill(String(params.coordinate.xMilliInches/1000));
+        await form.getByLabel('纵向位置（英寸）',{exact:true}).fill(String(params.coordinate.yMilliInches/1000));}
+      const models=parameterSchema.sacrificeModelId.enum,index=models.indexOf(params.sacrificeModelId);assert.ok(index>=0);
+      await form.getByTestId('native-choice-sacrificeModelId-'+index).click();
+      const dimensions=await form.evaluate(el=>({clientWidth:el.clientWidth,scrollWidth:el.scrollWidth}));
+      assert.ok(dimensions.scrollWidth<=dimensions.clientWidth+1,'CONSUME_PRODUCER_FORM_HORIZONTAL_OVERFLOW');
+      producerFormChecks.push({kind:item.kind,actionType:choice.actionType,viewportWidth:page.viewportSize().width,...dimensions,
+        nativeCostAndCardConstants:true,modelChoiceFromNativeEnum:true});
+    }
     if(item.flow==='detonation-disengage-initiation'&&choice.actionType==='disengage'){
       const params=item.expectedDisengageParameters;let raw=choice;while(raw.sourceDomain)raw=raw.sourceDomain;
       const ids=raw.constraints.modelProfiles.map(m=>m.modelId);
@@ -151,7 +171,17 @@ try {
   for(const item of service.rooms) {
     const completedRef=path.join(directory,item.kind+'-result.public.json');
     const completed=await fs.readFile(completedRef,'utf8').then(JSON.parse).catch(error=>{if(error.code==='ENOENT')return null;throw error;});
-    if(completed){assert.equal((await current(item)).envelope.stateHash,completed.trace.at(-1).stateHash);if(process.argv.includes('--readable-casualties')){assert.ok(Array.isArray(completed.readableCasualtyChecks),'READABLE_CASUALTY_CHECKS_REQUIRED');readableCasualtyChecks.push(...completed.readableCasualtyChecks);}results.push(completed);continue;}
+    if(completed&&completed.status!=='needs_completion'&&!reenterCompleted){
+      const head=await current(item);assert.equal(head.envelope.stateHash,completed.trace.at(-1).stateHash);
+      if(['consume-plague-initiation','consume-dark-swarm-initiation'].includes(item.flow)){
+        assert.ok(!head.envelope.state.pendingCurrentProductRangedSequence&&!head.envelope.state.pendingAction&&!head.envelope.state.selectedRosterActivationWindow,
+          'COMPLETED_CONSUME_ORIGINAL_SEQUENCE_STILL_PENDING');
+        completed.fullWeaponSequenceAndActivationVerified=true;await atomicWrite(completedRef,JSON.stringify(completed,null,2));
+      }
+      if(process.argv.includes('--readable-casualties')){assert.ok(Array.isArray(completed.readableCasualtyChecks),'READABLE_CASUALTY_CHECKS_REQUIRED');readableCasualtyChecks.push(...completed.readableCasualtyChecks);}
+      producerFormChecks.push(...(completed.producerFormChecks||[]));results.push(completed);continue;
+    }
+    if(completed&&(completed.status==='needs_completion'||reenterCompleted))producerFormChecks.push(...(completed.producerFormChecks||[]));
     const contexts=await Promise.all([browser.newContext({viewport:item.phoneSide==='player1'?{width:390,height:844}:{width:1500,height:1000}}),
       browser.newContext({viewport:item.phoneSide==='player1'?{width:1500,height:1000}:{width:390,height:844}})]);
     const pages={player1:await contexts[0].newPage(),player2:await contexts[1].newPage()};
@@ -179,17 +209,24 @@ try {
         assert.equal((await(await recovering).json()).result.credential.seatKey,side);
         await page.getByTestId('battlefield-map-contract-v1').waitFor({timeout:60000});
       }
+      if(reenterCompleted){
+        assert.ok(completed&&head.stateRevision===completed.signedActions);
+        const owner=head.envelope.state.activeSideKey;
+        await legal(pages[owner]);
+        await pages[owner].getByText(/LegalSpace hash:\s*[a-f0-9]{64}/).waitFor({timeout:15000});
+      }
       let primaryUsed=trace.some(t=>t.definitionId===item.definitionId),producerUsed=trace.some(t=>t.actionType==='disengage'),shotUsed=false,restorationUsed=false;
        for(let step=0;step<32;step++) {
         const aggregate=await current(item);const state=aggregate.envelope.state;
         if(primaryUsed&&!state.pendingOfficialPlaguedMunitions&&!state.pendingOfficialUniversalCarrier&&!state.pendingOfficialReactionWindow&&!state.pendingOfficialAutoTurretOverwatch
           &&!state.pendingOfficialInfestationTransfer&&!state.pendingCurrentProductRangedCasualtyChoice&&!state.pendingOfficialAutomaticHits
-           &&!state.pendingOfficialHitsPoolChoice&&!state.officialBeforeCasualtyContinuations?.length
+           &&!state.pendingOfficialHitsPoolChoice&&!state.officialBeforeCasualtyContinuations?.length&&!state.pendingOfficialConsumePayment&&!state.pendingOfficialPaidPlague
            &&!state.pendingOfficialBlastTemplateAttack&&!state.pendingOfficialRavenSeekerPhaseEnd
           &&!state.pendingCorrosiveBileResolution&&!state.pendingSabotageDronePhaseEnd
           &&!state.pendingOfficialPsionicStormAssaultOrder&&!state.pendingOfficialPsionicStormMovementEnd&&!state.pendingOfficialPhotonOvercharge
           &&!state.pendingOfficialAttackTargetReaction&&!state.pendingOfficialRangedAttackDeclaration
-          &&(!['detonation-khassar','detonation-declaration','detonation-target','detonation-delayed','detonation-storm-photon','detonation-disengage','detonation-disengage-initiation'].includes(item.flow)&&!item.declarationDefinitionId||!state.selectedRosterActivationWindow))break;
+          &&!state.pendingCurrentProductRangedSequence&&!state.pendingAction
+          &&(!['detonation-khassar','detonation-declaration','detonation-target','detonation-delayed','detonation-storm-photon','detonation-disengage','detonation-disengage-initiation','consume-plague-initiation','consume-dark-swarm-initiation'].includes(item.flow)&&!item.declarationDefinitionId||!state.selectedRosterActivationWindow))break;
         const owner=state.activeSideKey;assert.ok(pages[owner]);
         const menu=await legal(pages[owner]);
         if(!primaryUsed&&item.id==='infected-ordinary-move'){assert.ok(!menu.parameterDomains.some(row=>['unit:stalker/blink-movement-phase@1','card:nexus/strategic-recall-any@1'].includes(row.definitionId)));}
@@ -201,12 +238,22 @@ try {
           assert.ok(!forbidden.result.ok||!forbidden.result.legalSpace.parameterDomains.some(row=>row.definitionId===item.definitionId));
         }
         let choice;
-        if(item.flow==='detonation-disengage-initiation'&&!producerUsed)choice=menu.parameterDomains.find(row=>row.actionType==='disengage'&&row.pieceId==='actor');
+        if(['consume-plague-initiation','consume-dark-swarm-initiation'].includes(item.flow)&&!primaryUsed)choice=menu.parameterDomains.find(row=>{
+          const schema=row.sourceDomain?.parameterSchema||row.parameterSchema,p=item.expectedConsumeParameters;
+          return row.definitionId===item.definitionId&&schema.sacrificePieceId?.const===p.sacrificePieceId
+            &&(!p.biomassToSpend||schema.biomassToSpend?.const===p.biomassToSpend)
+            &&JSON.stringify(schema.paymentCardInstanceIds.const)===JSON.stringify(p.paymentCardInstanceIds);});
+        else if(item.flow==='detonation-disengage-initiation'&&!producerUsed)choice=menu.parameterDomains.find(row=>row.actionType==='disengage'&&row.pieceId==='actor');
         else if(!primaryUsed)choice=menu.parameterDomains.find(row=>item.id==='infected-ordinary-move'?row.actionType==='move'&&row.pieceId==='enemy':item.id==='clean-blink'?row.definitionId==='unit:stalker/blink-movement-phase@1':item.id==='clean-recall'?row.definitionId==='card:nexus/strategic-recall-any@1':row.definitionId===item.definitionId);
-        else if(['detonation-nested','bio-kill-switch','detonation-template','detonation-outside','detonation-overwatch','detonation-khassar','detonation-declaration','detonation-target','detonation-delayed','detonation-storm-photon','detonation-disengage','detonation-disengage-initiation'].includes(item.flow))choice=menu.parameterDomains.find(row=>row.effectKind==='before_casualty_detonation');
+        else if(item.flow==='consume-plague-initiation')choice=menu.parameterDomains.find(row=>row.effectKind==='before_casualty_detonation');
+        else if(['detonation-nested','bio-kill-switch','detonation-template','detonation-outside','detonation-overwatch','detonation-khassar','detonation-declaration','detonation-target','detonation-delayed','detonation-storm-photon','detonation-disengage','detonation-disengage-initiation','consume-plague-initiation','consume-dark-swarm-initiation'].includes(item.flow))choice=menu.parameterDomains.find(row=>row.effectKind==='before_casualty_detonation');
         else if(item.flow==='corrode-restoration'&&!restorationUsed)choice=menu.parameterDomains.find(row=>row.definitionId==='unit:medic/restoration-any-phase@1');
         else if((item.kind==='ocular-use'||item.flow==='coexisting-ocular')&&!shotUsed)choice=menu.parameterDomains.find(row=>row.weaponName==='Firefly Missiles');
         else if((item.kind==='growing-restoration-exception'||item.flow==='carrier-restoration'||item.flow==='trooper-restoration')&&!restorationUsed)choice=menu.parameterDomains.find(row=>row.definitionId==='unit:medic/restoration-any-phase@1'||item.flow==='carrier-restoration'&&row.effectKind==='infestation_transfer');
+        if(!choice&&state.pendingCurrentProductRangedSequence){
+          choice=menu.finiteActions.find(row=>row.action.actionType==='finish_ranged_attack_sequence')?.action;
+          assert.ok(choice,'WEB_ORIGINAL_WEAPON_SEQUENCE_COMPLETION_REQUIRED');
+        }
         choice ||= menu.parameterDomains.find(row=>row.actionType==='pass_reaction_family_window')
           ||menu.parameterDomains.find(row=>row.actionType==='finish_activation')||menu.parameterDomains[0];
         const schema=choice?.sourceDomain?.parameterSchema||choice?.parameterSchema;
@@ -220,6 +267,7 @@ try {
         if(choice.definitionId==='unit:medic/restoration-any-phase@1')restorationUsed=true;
       }
       const final=await current(item);assert.ok(primaryUsed);
+      if(reenterCompleted)assert.equal(final.envelope.stateHash,head.envelope.stateHash);
       if(item.kind==='growing-restoration-exception'||item.flow==='carrier-restoration') {
         if(item.flow==='carrier-restoration'){assert.equal(final.envelope.state.pieces.find(piece=>piece.id===item.healTarget).damageMarker,0);assert.equal(final.envelope.state.officialUniversalCarrierHistory.at(-1).healResolution.effectiveHeal,1);}
         const recipient=final.envelope.state.pieces.find(piece=>piece.id==='recipient');
@@ -245,7 +293,29 @@ try {
         assert.equal(state.activeAbilityUseHistory.filter(h=>h.pieceId==='actor'&&h.routeId==='card:templar_caste/khassar-de-templari-any@1').length,1);
         const original=events.filter(e=>['ranged_attack','close_combat_attack'].includes(e.type)&&(e.attackResolutionHash||e.resolutionHash)===item.expectedOriginalResolutionHash);assert.equal(original.length,1);
         assert.equal(completed[0].damage.reason==='recipient_destroyed',state.pieces.find(p=>p.id==='recipient').isDestroyed);
-      } else if(['detonation-disengage','detonation-disengage-initiation'].includes(item.flow)){
+      } else if(['consume-plague-initiation','consume-dark-swarm-initiation'].includes(item.flow)){
+        const state=final.envelope.state,events=await signedEvents(item),p=item.expectedConsumeParameters;
+        assert.ok(!state.pendingOfficialConsumePayment&&!state.pendingOfficialPaidPlague&&!state.pendingOfficialAutomaticHits&&!state.pendingOfficialReactionWindow
+          &&!state.pendingOfficialAttackTargetReaction&&!state.officialBeforeCasualtyContinuations?.length
+          &&!state.pendingCurrentProductRangedSequence&&!state.pendingAction&&!state.selectedRosterActivationWindow);
+        const payments=state.officialConsumePaymentHistory.filter(r=>r.sacrificePieceId===p.sacrificePieceId&&r.sacrificeModelId===p.sacrificeModelId);
+        assert.equal(payments.length,1);assert.equal(payments[0].generatedFromModel,1);assert.equal(payments[0].retainedAfterPayment,0);
+        assert.equal(events.filter(e=>e.type==='consume_model_removed').length,1);originalRemovalVerified=true;
+        if(item.flow==='consume-plague-initiation'){
+          assert.equal(trace[0].actionType,'cast_plague');assert.equal(state.officialPlagueUseHistory.length,1);
+          const cast=state.officialPlagueUseHistory[0];assert.equal(cast.consumePaymentReceiptHash,payments[0].paymentReceiptHash);
+          assert.ok(cast.resolutions.some(r=>r.targetPieceId===item.expectedCastTargetId));
+          assert.equal(events.filter(e=>e.type==='plague_complete').length,1);
+          originalSourceDeathVerified=cast.sourceDestroyedByPayment;
+        }else{
+          assert.equal(trace[0].definitionId,item.definitionId);assert.equal(state.pieces.find(p=>p.id===item.expectedCasterId).isDestroyed,true);
+          const reaction=state.officialReactionHistory.filter(r=>r.definitionId===item.definitionId);assert.equal(reaction.length,1);
+          const effect=state.officialReactionResolutionHistory.flatMap(r=>r.effects).find(e=>e.effectHash===reaction[0].effectHash);
+          assert.equal(effect.consumePaymentReceiptHash,payments[0].paymentReceiptHash);
+          assert.equal(state.officialReactionHistory.filter(r=>r.definitionId.includes('/detonation-')).length,0);
+          assert.ok(events.some(e=>e.type==='ranged_attack'&&e.targetId===item.expectedAttackTargetId));originalSourceDeathVerified=true;
+        }
+      } else if(['detonation-disengage','detonation-disengage-initiation','consume-plague-initiation','consume-dark-swarm-initiation'].includes(item.flow)){
         const state=final.envelope.state,events=await signedEvents(item),actor=state.pieces.find(p=>p.id==='actor');
         assert.ok(!state.pendingOfficialAutomaticHits&&!state.pendingOfficialReactionWindow&&!state.officialBeforeCasualtyContinuations?.length&&!state.selectedRosterActivationWindow);
         const original=events.filter(e=>e.type==='unit_disengage_resolved'&&e.spatialPlanHash===item.expectedOriginalPlanHash);assert.equal(original.length,1);
@@ -348,8 +418,9 @@ try {
       }
       assert.equal((await current(item)).envelope.stateHash,final.envelope.stateHash);
       results.push({kind:item.kind,definitionId:item.definitionId,sourceRoomId:item.sourceRoomId,sourceStateHash:item.sourceStateHash,
-        sourcePrefixReceipts:item.sourcePrefixReceipts,...(['detonation-disengage','detonation-disengage-initiation'].includes(item.flow)?{originalRemovalVerified,disengageKind:item.disengageKind}:{}),...(['detonation-delayed','detonation-storm-photon'].includes(item.flow)?{originalSourceDeathVerified}:{}),trace,signedActions:trace.length,twoSeatsVerified:true,
+        sourcePrefixReceipts:item.sourcePrefixReceipts,...(['detonation-disengage','detonation-disengage-initiation','consume-plague-initiation','consume-dark-swarm-initiation'].includes(item.flow)?{originalRemovalVerified,disengageKind:item.disengageKind}:{}),...(['detonation-delayed','detonation-storm-photon','consume-plague-initiation','consume-dark-swarm-initiation'].includes(item.flow)?{originalSourceDeathVerified}:{}),trace,signedActions:trace.length,twoSeatsVerified:true,
         explicitHumanConfirmation:true,previewReadOnly:true,replayMatchesCurrent:true,seatRecoveryReentryVerified:true,pageErrors:errors,
+        ...(['consume-plague-initiation','consume-dark-swarm-initiation'].includes(item.flow)?{producerFormChecks:producerFormChecks.filter(r=>r.kind===item.kind),fullWeaponSequenceAndActivationVerified:true}:{}),
         ...(process.argv.includes('--readable-casualties')?{readableCasualtyChecks:readableCasualtyChecks.filter(r=>r.kind===item.kind)}:{})});
       await atomicWrite(completedRef,JSON.stringify(results.at(-1),null,2));
       console.log(JSON.stringify({case:item.kind,status:'passed',signedActions:trace.length}));
@@ -358,9 +429,10 @@ try {
 } finally {await browser.close();}
 if(process.argv.includes('--readable-casualties'))assert.ok(readableCasualtyChecks.some(r=>r.viewportWidth===390),'READABLE_MOBILE_CASUALTY_REQUIRED');
 const result={schema:'starcraft_tmg_wave4_virus_web_verification_v1',status:'passed_scoped',
-  runRef:path.relative(root,directory),results,...(process.argv.includes('--readable-casualties')?{readableCasualtyChecks}:{}),signedActions:results.reduce((sum,row)=>sum+row.signedActions,0),
+  ...(reenterCompleted?{latestBundleReadOnlyReentry:true,newSignedActions:0}:{}),
+  runRef:path.relative(root,directory),results,...(producerFormChecks.length?{producerFormChecks}:{}),...(process.argv.includes('--readable-casualties')?{readableCasualtyChecks}:{}),signedActions:results.reduce((sum,row)=>sum+row.signedActions,0),
   conditionalTurretGeometryInRestorationCaseOnly:service.rooms.some(item=>item.id==='growing-restoration-exception'||item.flow==='carrier-restoration'),sourceHeldDefinitions:39,
-   engineeringEstimatedUnitGeometry:service.rooms.some(item=>['admiral-exchange','trooper-restoration','stukov-spread','munitions-support','infantry-burrow','detonation-ranged','detonation-nested','bio-kill-switch','corrode-armour','corrode-restoration','detonation-template','detonation-outside','detonation-overwatch','coexisting-ocular','detonation-khassar','detonation-declaration','detonation-target','detonation-delayed','detonation-storm-photon','detonation-disengage','detonation-disengage-initiation'].includes(item.flow)),
+   engineeringEstimatedUnitGeometry:service.rooms.some(item=>['admiral-exchange','trooper-restoration','stukov-spread','munitions-support','infantry-burrow','detonation-ranged','detonation-nested','bio-kill-switch','corrode-armour','corrode-restoration','detonation-template','detonation-outside','detonation-overwatch','coexisting-ocular','detonation-khassar','detonation-declaration','detonation-target','detonation-delayed','detonation-storm-photon','detonation-disengage','detonation-disengage-initiation','consume-plague-initiation','consume-dark-swarm-initiation'].includes(item.flow)),
   fullWave4LobbyBuilderAdmission:false,fullMatchAdmission:false,wave3PlayerRoomsTouched:false,modelCalls:0,trainingTruth:false};
 await atomicWrite(path.join(directory,'web-result.public.json'),JSON.stringify(result,null,2)+'\n');
 await atomicWrite(path.join(root,'docs/development/wave4/evidence/'+(process.argv[3]||'virus-web.public.json')),JSON.stringify(result,null,2)+'\n');

@@ -1,0 +1,18 @@
+{
+  "schema": "starcraft_tmg_wave4_consume_form_v1",
+  "status": "passed_component",
+  "inputRef": "build/wave4-web/stukov-units/detonation-consume-mN5PNI/infested_marine-plague-2-use",
+  "sourceOpenedReadOnly": true,
+  "sourceSignedPrefix": 5,
+  "newActions": 0,
+  "cases": [
+    "actual_plague_form_equals_signed_native_action",
+    "cost_and_cards_remain_native_constants",
+    "cross_payment_domain_rejected",
+    "coordinate_required",
+    "readable_native_payment_summary",
+    "future_dice_only_in_paid_successor"
+  ],
+  "modelCalls": 0,
+  "trainingTruth": false
+}

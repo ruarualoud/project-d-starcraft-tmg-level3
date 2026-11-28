@@ -27,6 +27,7 @@ function normalize(field) {
   return ['integer', 'number', 'boolean', 'string'].includes(field.type) ? field : null;
 }
 
+/** @param {any} outer @param {{modelIds?: string[], tokenIds?: string[]}} [options] */
 export function describeNativeActionFormV1(outer, {modelIds = [], tokenIds = []} = {}) {
   const domain = outer?.constraints?.delegateDomain || outer || {};
   const schema = domain.parameterSchema || {};
@@ -58,6 +59,7 @@ export function describeNativeActionFormV1(outer, {modelIds = [], tokenIds = []}
     const keys = value === 'success' ? schema.successRequires : schema.failureRequires;
     return keys?.length ? [{when: {field: 'outcome', value}, required: keys}] : [];
   }) : schema.conditionalRequiredFields || [];
+  /** @type {Record<string,string>|null} */
   const chargeFieldOutcomes = resolution ? {path: 'success', placements: 'success', tokenDisplacements: 'success', failureProof: 'failure'} : null;
   for (const row of conditional) for (const key of row.required || []) {
     if (!normalized[key] && !missing.includes(key)) missing.push(key);
@@ -83,6 +85,14 @@ export function nativeCasualtyOptionLabelsV1(form, names = {}) {
     `方案 ${index + 1} · ${row.casualtyModelIds.length ? '移除顺序：' + row.casualtyModelIds.map(modelName).join(' → ') : '不移除模型'} · 剩余 ${row.remainingModelIds.length} 模型`]));
 }
 
+export function nativePlaguePaymentSummaryV1(outer,names={}) {
+  const domain=outer?.constraints?.delegateDomain||outer||{},schema=domain.parameterSchema||{};
+  if(domain.actionType!=='cast_plague'||!Number.isSafeInteger(schema.biomassToSpend?.const)
+    ||!Array.isArray(schema.paymentCardInstanceIds?.const))return null;
+  const victim=schema.sacrificePieceId?.const,cards=schema.paymentCardInstanceIds.const;
+  return `${schema.biomassToSpend.const} BM · ${victim?'Consume：'+(names[victim]||victim):'仅卡牌支付'} · ${cards.length} 张卡牌`;
+}
+
 export function nativeActionFormDefaultsV1(form) {
   return Object.fromEntries(Object.entries(form.fields).flatMap(([key, field]) =>
     Object.hasOwn(field, 'const') ? [[key, structuredClone(field.const)]] : []));
@@ -91,6 +101,7 @@ export function nativeActionFormDefaultsV1(form) {
 export function compileNativeActionFormValuesV1(form, values) {
   const required = [...new Set([...form.required, ...form.conditional.flatMap(row =>
     values[row.when?.field] === row.when?.value ? row.required : [])])];
+  /** @type {Record<string,any>} */
   const parameters = {};
   for (const [key, value] of Object.entries(values)) {
     if (!form.fields[key] || value === undefined) continue;

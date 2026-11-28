@@ -1710,6 +1710,13 @@ function apply(bundle, stateInput, request = {}, copyOwnedPassState = null) {
       fail("REACTION_ROUTE_STALE", String(action.definitionId || ""));
     }
     const prePaymentEffect = action.reactionPlan.consumePaymentPlan ? reactionEffect(route, state, window, action) : null;
+    if(prePaymentEffect&&hasOfficialConsumeBeforeCasualtyPolicyV1(state)){
+      if(route.definitionId!=='unit:defiler/dark-swarm-assault-phase@1')fail('CONSUME_REACTION_OWNER_UNSUPPORTED');
+      const staged=stageOfficialConsumePaymentV1({state,action,plan:action.reactionPlan.consumePaymentPlan,
+        owner:{kind:'dark_swarm_reaction',prePaymentEffect,historyReservation:consumeReactionHistory(state,window,route,action,prePaymentEffect)},
+        activationContext:{activeSideKey:window.activeSideKey,activationId:window.activationId}});
+      return staged.consumeReceipt?resumeConsumeReaction(bundle,staged):staged;
+    }
     const payment = pay(state, route, action, events);
     window = currentWindow(state);
     const effect = prePaymentEffect ? seal({ ...without(prePaymentEffect, ['effectHash']),
@@ -1757,6 +1764,34 @@ function apply(bundle, stateInput, request = {}, copyOwnedPassState = null) {
     settlementRequired: false,
     rulesTruth: "official_current_product_reaction_transition",
     trainingTruth: false });
+}
+
+function consumeReactionHistory(state,window,route,action,effect){
+  return{round:Number(state.round),phase:state.phase,activationId:window.activationId,triggerHash:window.triggerHash,
+    sideKey:action.sideKey,definitionId:route.definitionId,sourceInstanceId:action.reactionPlan.sourceInstanceId,
+    abilityName:route.abilityName,...(hasOfficialFaqReactionPolicyV13(state)?{timing:window.timing}:{}),
+    effectKind:route.effectKind,planHash:action.reactionPlan.planHash,effectHash:effect.effectHash,trainingTruth:false};
+}
+function resumeConsumeReaction(bundle,result){
+  const {consumeCheckpoint:cp,consumeReceipt:payment}=result,action=cp?.action;
+  if(cp?.owner.kind!=='dark_swarm_reaction'||!payment||!action)fail('CONSUME_REACTION_PARENT_REQUIRED');
+  const state=clone(result.state),window=currentWindow(state),route=bundle.routes.find(r=>r.definitionId===action.definitionId);
+  if(!isDeepStrictEqual(window,cp.reactionWindow)||route?.definitionId!=='unit:defiler/dark-swarm-assault-phase@1'
+    ||payment.paymentPlanHash!==cp.plan.paymentPlanHash)fail('CONSUME_REACTION_PARENT_MISMATCH');
+  const effect=seal({...without(cp.owner.prePaymentEffect,['effectHash']),consumePaymentReceiptHash:payment.paymentReceiptHash},'effectHash');
+  window.effects.push(clone(effect));
+  window.resolvedChoices.push({sideKey:action.sideKey,choice:'reaction',definitionId:route.definitionId,
+    sourceInstanceId:action.reactionPlan.sourceInstanceId,abilityName:route.abilityName,planHash:action.reactionPlan.planHash,
+    effectHash:effect.effectHash,trainingTruth:false});
+  const index=(state.officialReactionHistory||[]).findIndex(r=>isDeepStrictEqual(r,cp.owner.historyReservation));
+  if(index<0)fail('CONSUME_REACTION_QUOTA_RESERVATION_MISSING');
+  state.officialReactionHistory[index]=consumeReactionHistory(state,window,route,action,effect);
+  const events=[...result.events,{type:'reaction_ability_resolved',sideKey:action.sideKey,definitionId:route.definitionId,
+    sourceInstanceId:action.reactionPlan.sourceInstanceId,effectKind:route.effectKind,effectHash:effect.effectHash,
+    triggerHash:window.triggerHash,trainingTruth:false}];
+  closeOrAdvanceWindow(state,window,events);
+  state.log||=[];state.log.push({id:'log-'+(state.log.length+1),round:Number(state.round),phase:state.phase,action:clone(action),events:clone(events.slice(result.events.length))});
+  return{...result,state,events};
 }
 
 export function openOfficialOpticalFlareRestorationWindowV1(bundle, transition, { recordSource = false } = {}) {
@@ -2033,3 +2068,5 @@ export function createOfficialReactionFamilyAdapterV1(bundle, { afterApply } = {
 }
 import {OFFICIAL_DETONATION_REACTION_COMPONENTS_V1} from '../source-data/official-detonation-source-v1.mjs';
 import {inspectOfficialDetonationFactsV1} from './official-detonation-facts-v1.mjs';
+import {hasOfficialConsumeBeforeCasualtyPolicyV1} from '../rule-atoms/official-before-casualty-batch-v1.mjs';
+import {stageOfficialConsumePaymentV1} from './official-consume-continuation-v1.mjs';

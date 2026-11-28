@@ -338,7 +338,7 @@ function actionLabel(action) {
         ?? action.choiceId
         ?? action.cardName
         ?? action.abilityName);
-    return [actionType, pieceId, target, explicitChoice]
+    return [actionType==='resolve_paid_plague'?'结算瘟疫':actionType, pieceId, target, explicitChoice]
         .filter(Boolean).join(" · ");
 }
 function parameterSupport(domain) {

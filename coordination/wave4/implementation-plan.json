@@ -18,7 +18,22 @@
       "title": "逐ID规则、单位与势力消费者",
       "status": "in_progress",
       "evidenceRefs": [
-        "coordination/wave4/ability-wiring-progress.json"
+        "coordination/wave4/ability-wiring-progress.json",
+        "docs/development/wave4/detonation-consume-wiring.zh-CN.md",
+        "docs/development/wave4/evidence/detonation-consume.public.json",
+        "docs/development/wave4/evidence/consume-dark-swarm.public.json",
+        "docs/development/wave4/evidence/consume-web.public.json",
+        "docs/development/wave4/evidence/consume-current-cold.public.json",
+        "docs/development/wave4/evidence/consume-legacy-cold.public.json",
+        "docs/development/wave4/evidence/consume-web-cold.public.json",
+        "docs/development/wave4/evidence/consume-settlement.public.json",
+        "docs/development/wave4/evidence/consume-form.public.json",
+        "docs/development/wave4/evidence/consume-supply-boundary.public.json",
+        "docs/development/wave4/evidence/consume-web-build.public.json",
+        "docs/development/wave4/evidence/consume-latest-bundle-reentry.public.json",
+        "docs/development/wave4/evidence/consume-typecheck.public.json",
+        "docs/development/wave4/evidence/consume-consumers.public.json",
+        "docs/development/wave4/evidence/consume-harness.public.json"
       ],
       "exit": "Every admitted changed definition has source binding, actual consumer and Native successor/recovery evidence; source holds remain explicit."
     },
@@ -30,7 +45,13 @@
         "T28-W4-02"
       ],
       "exit": "Same release selected by manual Builder/import/export, lobby/room factory, map/mission/player query; new IDs have reviewed media and clear unavailable-source labels.",
-      "usabilityPending": [],
+      "usabilityPending": [
+        {
+          "criterion": "Display public payment card names instead of raw immutable IDs; public card projection already contains names",
+          "source": "Consume phone form",
+          "status": "pending"
+        }
+      ],
       "usabilityVerified": [
         {
           "criterion": "Readable enumerated casualty choices with original hash submission and no 390px form overflow",
@@ -48,6 +69,13 @@
             "docs/development/wave4/evidence/detonation-disengage-web.public.json",
             "docs/development/wave4/evidence/disengage-form.public.json",
             "docs/development/wave4/evidence/disengage-web-build.public.json"
+          ]
+        },
+        {
+          "criterion": "Actual Native Plague/Consume cost form at 390px, original payment and full weapon/activation successor",
+          "evidenceRefs": [
+            "docs/development/wave4/evidence/consume-web.public.json",
+            "docs/development/wave4/evidence/consume-latest-bundle-reentry.public.json"
           ]
         }
       ]
@@ -74,11 +102,6 @@
     "postgameReview": false,
     "productionPublish": false
   },
-  "next": [
-    "Disengage verified; continue Consume and new Firebat/Scarab combinations",
-    "Remaining 13 reviewed records; 39 source holds isolated",
-    "Complete release/Builder/lobby/media",
-    "500/2000 Web human seats"
-  ],
-  "updatedAt": "2026-11-28T04:34:14.142Z"
+  "next": "接 Firebat、Reaver/Scarabs、Slayer及剩余势力；Detonation仍部分消费者，整版发布/Builder/大厅/媒体与500/2000分Web继续。",
+  "updatedAt": "2026-11-28T05:58:29.899Z"
 }

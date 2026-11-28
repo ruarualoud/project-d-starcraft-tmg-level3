@@ -274,10 +274,7 @@
       ]
     }
   ],
-  "next": [
-    "接Consume费用保留和原效果封存；新Firebat／Scarab组合继续，完整原子6/18。",
-    "其余13个已审核记录和完整发布／Builder／大厅／媒体、500／2000分Web双席。"
-  ],
+  "next": "接 Firebat、Reaver/Scarabs、Slayer及剩余势力；Detonation仍部分消费者，整版发布/Builder/大厅/媒体与500/2000分Web继续。",
   "modelCalls": 0,
   "trainingTruth": false,
   "inventoryRole": "Initial frozen difference snapshot. Current per-ID execution and implemented atoms are recorded here; counts are not inferred from catalogue availability.",
@@ -2677,12 +2674,12 @@
     "sourceHeldDefinitions": 39
   },
   "detonationWorkInProgress": {
-    "status": "disengage_verified_consume_and_new_unit_combinations_pending",
+    "status": "consume_verified_new_unit_combinations_pending",
     "sourceDefinitionsCompiled": 2,
-    "nativeCases": 53,
-    "nativeSignedActions": 935,
-    "webRooms": 22,
-    "webSignedActions": 104,
+    "nativeCases": 62,
+    "nativeSignedActions": 1150,
+    "webRooms": 24,
+    "webSignedActions": 121,
     "legacyColdReplayCases": 3,
     "legacyOriginalActions": 30,
     "newGameAtomsImplemented": 0,
@@ -2773,7 +2770,23 @@
       "docs/development/wave4/evidence/disengage-web-build.public.json",
       "docs/development/wave4/evidence/detonation-disengage-consumers.public.json",
       "docs/development/wave4/evidence/detonation-disengage-harness.public.json",
-      "docs/development/wave4/evidence/disengage-producer-web-390.png"
+      "docs/development/wave4/evidence/disengage-producer-web-390.png",
+      "docs/development/wave4/evidence/detonation-consume.public.json",
+      "docs/development/wave4/evidence/consume-dark-swarm.public.json",
+      "docs/development/wave4/evidence/consume-web.public.json",
+      "docs/development/wave4/evidence/consume-current-cold.public.json",
+      "docs/development/wave4/evidence/consume-legacy-cold.public.json",
+      "docs/development/wave4/evidence/consume-web-cold.public.json",
+      "docs/development/wave4/evidence/consume-settlement.public.json",
+      "docs/development/wave4/evidence/consume-form.public.json",
+      "docs/development/wave4/evidence/consume-supply-boundary.public.json",
+      "docs/development/wave4/evidence/consume-web-build.public.json",
+      "docs/development/wave4/evidence/consume-latest-bundle-reentry.public.json",
+      "docs/development/wave4/evidence/consume-typecheck.public.json",
+      "docs/development/wave4/evidence/consume-consumers.public.json",
+      "docs/development/wave4/evidence/consume-harness.public.json",
+      "docs/development/wave4/evidence/consume-plague-producer-390.png",
+      "docs/development/wave4/evidence/consume-dark-swarm-producer-390.png"
     ],
     "workbenchRef": "docs/development/wave4/detonation-continuation-workbench.zh-CN.md",
     "multiTargetParentAndNestedPending": false,
@@ -2781,40 +2794,55 @@
     "fullMatchAdmission": false,
     "delegatedAndOutsideActivationHostsPending": true,
     "latestMilestone": {
+      "schema": "starcraft_tmg_wave4_consume_consumers_v1",
       "status": "passed_scoped",
-      "policyVersion": "1.8.0",
-      "rootRuntimeVersion": "3.241.0",
-      "nativeCases": 12,
-      "nativeSignedActions": 334,
-      "nativeFullRounds": 12,
-      "lastModelDestructionCases": 4,
+      "policyVersion": "1.9.0",
+      "rootRuntimeVersion": "3.242.0",
+      "humanWrapperVersion": "1.1.0",
+      "nativeCases": 9,
+      "nativeSignedActions": 215,
+      "nativeFullRounds": 9,
+      "plagueCasterDeathCases": 2,
+      "darkSwarmFullRounds": 3,
       "webRooms": 2,
-      "webSignedActions": 19,
+      "webSignedActions": 17,
       "webActualProducerCases": 2,
-      "currentAndPriorColdCases": 14,
-      "currentAndPriorColdOriginalActions": 396,
-      "readOnlySettlementCases": 12,
-      "directSupplyLossCases": 4,
-      "directSupplyLost": 4,
+      "independentColdCases": 19,
+      "independentColdOriginalActions": 311,
+      "consumeSupplyLost": 5,
+      "zeroSupplyDestructions": 4,
+      "naturalArmourControlCases": 1,
+      "naturalArmourControlActions": 11,
       "evidenceRefs": [
-        "docs/development/wave4/evidence/detonation-disengage.public.json",
-        "docs/development/wave4/evidence/detonation-disengage-web.public.json",
-        "docs/development/wave4/evidence/detonation-disengage-current-cold.public.json",
-        "docs/development/wave4/evidence/detonation-disengage-last-cold.public.json",
-        "docs/development/wave4/evidence/disengage-boundaries.public.json",
-        "docs/development/wave4/evidence/disengage-form.public.json",
-        "docs/development/wave4/evidence/disengage-settlement.public.json",
-        "docs/development/wave4/evidence/disengage-web-build.public.json",
-        "docs/development/wave4/evidence/detonation-disengage-consumers.public.json",
-        "docs/development/wave4/evidence/detonation-disengage-harness.public.json",
-        "docs/development/wave4/evidence/disengage-producer-web-390.png"
+        "docs/development/wave4/evidence/detonation-consume.public.json",
+        "docs/development/wave4/evidence/consume-dark-swarm.public.json",
+        "docs/development/wave4/evidence/consume-web.public.json",
+        "docs/development/wave4/evidence/consume-current-cold.public.json",
+        "docs/development/wave4/evidence/consume-legacy-cold.public.json",
+        "docs/development/wave4/evidence/consume-web-cold.public.json",
+        "docs/development/wave4/evidence/consume-settlement.public.json",
+        "docs/development/wave4/evidence/consume-form.public.json",
+        "docs/development/wave4/evidence/consume-supply-boundary.public.json",
+        "docs/development/wave4/evidence/consume-web-build.public.json",
+        "docs/development/wave4/evidence/consume-latest-bundle-reentry.public.json",
+        "docs/development/wave4/evidence/consume-typecheck.public.json",
+        "docs/development/wave4/evidence/consume-consumers.public.json",
+        "docs/development/wave4/evidence/consume-harness.public.json",
+        "docs/development/wave4/evidence/consume-plague-producer-390.png",
+        "docs/development/wave4/evidence/consume-dark-swarm-producer-390.png"
       ],
       "newGameAtomsImplemented": 0,
+      "implementedCumulativeAtoms": 6,
+      "sourceHeldDefinitions": 39,
       "fullMatchAdmission": false,
-      "allConsumersVerified": false
+      "allConsumersVerified": false,
+      "fullAppTypecheckPassed": false,
+      "remainingBaselineTypeErrors": 37,
+      "modelCalls": 0,
+      "trainingTruth": false
     },
     "directAbilityDamageHostVerified": true,
-    "nativeCountScope": "Dedicated scoped Native cases through Disengage; duplicate UI regression and natural-result controls excluded",
+    "nativeCountScope": "Dedicated scoped Native cases through Consume; duplicate UI regression and natural-result controls excluded",
     "templateHostVerified": true,
     "seekerOutsideHostVerified": true,
     "otherOutsideActivationHostsPending": true,
@@ -2828,7 +2856,12 @@
     "stormAndPhotonHostsVerified": true,
     "directRemovalHostsPending": true,
     "newUnitCombinationsPending": true,
-    "disengageDirectRemovalVerified": true
+    "disengageDirectRemovalVerified": true,
+    "consumePlagueNativeVerified": true,
+    "consumePaymentReservationVerified": true,
+    "consumeDarkSwarmQuotaNativeVerified": true,
+    "consumeSourceDeathNativeVerified": true,
+    "consumeWebActualProducerVerified": true
   },
   "partialRuntimeVerificationByDefinition": [
     {
@@ -2944,6 +2977,42 @@
         {
           "file": "packages/product-composition/official-selected-roster-spatial-action-runtime-v1.mjs",
           "exportName": "applyOfficialSelectedRosterSpatialActionV1"
+        },
+        {
+          "file": "packages/product-composition/official-consume-continuation-v1.mjs",
+          "exportName": "stageOfficialConsumePaymentV1"
+        },
+        {
+          "file": "packages/product-composition/official-consume-continuation-v1.mjs",
+          "exportName": "resumeOfficialConsumePaymentV1"
+        },
+        {
+          "file": "packages/product-composition/official-consume-payment-runtime-v1.mjs",
+          "exportName": "applyOfficialSealedConsumePaymentV1"
+        },
+        {
+          "file": "packages/product-composition/official-plague-runtime-v1.mjs",
+          "exportName": "createOfficialPlagueRuntimeV1"
+        },
+        {
+          "file": "packages/product-composition/official-reaction-family-adapter-v1.mjs",
+          "exportName": "createOfficialReactionFamilyAdapterV1"
+        },
+        {
+          "file": "packages/product-composition/official-attack-target-reaction-context-v1.mjs",
+          "exportName": "synchronizeOfficialTargetReactionSupplyProjectionV1"
+        },
+        {
+          "file": "packages/product-composition/official-human-confirmed-runtime-v1.mjs",
+          "exportName": "createOfficialHumanConfirmedRuntimeV2"
+        },
+        {
+          "file": "packages/client-domain/native-action-form-v1.mjs",
+          "exportName": "nativePlaguePaymentSummaryV1"
+        },
+        {
+          "file": "apps/starcraft-tmg-expo/components/battlefield/authoritative-battle-workspace.tsx",
+          "exportName": "AuthoritativeBattleWorkspace"
         }
       ],
       "evidenceRefs": [
@@ -3030,7 +3099,23 @@
         "docs/development/wave4/evidence/disengage-web-build.public.json",
         "docs/development/wave4/evidence/detonation-disengage-consumers.public.json",
         "docs/development/wave4/evidence/detonation-disengage-harness.public.json",
-        "docs/development/wave4/evidence/disengage-producer-web-390.png"
+        "docs/development/wave4/evidence/disengage-producer-web-390.png",
+        "docs/development/wave4/evidence/detonation-consume.public.json",
+        "docs/development/wave4/evidence/consume-dark-swarm.public.json",
+        "docs/development/wave4/evidence/consume-web.public.json",
+        "docs/development/wave4/evidence/consume-current-cold.public.json",
+        "docs/development/wave4/evidence/consume-legacy-cold.public.json",
+        "docs/development/wave4/evidence/consume-web-cold.public.json",
+        "docs/development/wave4/evidence/consume-settlement.public.json",
+        "docs/development/wave4/evidence/consume-form.public.json",
+        "docs/development/wave4/evidence/consume-supply-boundary.public.json",
+        "docs/development/wave4/evidence/consume-web-build.public.json",
+        "docs/development/wave4/evidence/consume-latest-bundle-reentry.public.json",
+        "docs/development/wave4/evidence/consume-typecheck.public.json",
+        "docs/development/wave4/evidence/consume-consumers.public.json",
+        "docs/development/wave4/evidence/consume-harness.public.json",
+        "docs/development/wave4/evidence/consume-plague-producer-390.png",
+        "docs/development/wave4/evidence/consume-dark-swarm-producer-390.png"
       ],
       "meleeHostVerified": true,
       "automaticHitsHostVerified": true,
@@ -3071,7 +3156,14 @@
       "webDisengageKinds": [
         "other"
       ],
-      "webDisengageLastModelVerified": false
+      "webDisengageLastModelVerified": false,
+      "consumePlagueNativeVerified": true,
+      "consumePaymentReservationVerified": true,
+      "consumeDarkSwarmQuotaNativeVerified": true,
+      "consumeSourceDeathNativeVerified": true,
+      "consumeWebActualProducerVerified": true,
+      "webPlagueSourceDeathVerified": false,
+      "webDarkSwarmSourceDeathVerified": true
     },
     {
       "definitionId": "unit:infested_trooper/detonation-any-phase@1",
@@ -3186,6 +3278,42 @@
         {
           "file": "packages/product-composition/official-selected-roster-spatial-action-runtime-v1.mjs",
           "exportName": "applyOfficialSelectedRosterSpatialActionV1"
+        },
+        {
+          "file": "packages/product-composition/official-consume-continuation-v1.mjs",
+          "exportName": "stageOfficialConsumePaymentV1"
+        },
+        {
+          "file": "packages/product-composition/official-consume-continuation-v1.mjs",
+          "exportName": "resumeOfficialConsumePaymentV1"
+        },
+        {
+          "file": "packages/product-composition/official-consume-payment-runtime-v1.mjs",
+          "exportName": "applyOfficialSealedConsumePaymentV1"
+        },
+        {
+          "file": "packages/product-composition/official-plague-runtime-v1.mjs",
+          "exportName": "createOfficialPlagueRuntimeV1"
+        },
+        {
+          "file": "packages/product-composition/official-reaction-family-adapter-v1.mjs",
+          "exportName": "createOfficialReactionFamilyAdapterV1"
+        },
+        {
+          "file": "packages/product-composition/official-attack-target-reaction-context-v1.mjs",
+          "exportName": "synchronizeOfficialTargetReactionSupplyProjectionV1"
+        },
+        {
+          "file": "packages/product-composition/official-human-confirmed-runtime-v1.mjs",
+          "exportName": "createOfficialHumanConfirmedRuntimeV2"
+        },
+        {
+          "file": "packages/client-domain/native-action-form-v1.mjs",
+          "exportName": "nativePlaguePaymentSummaryV1"
+        },
+        {
+          "file": "apps/starcraft-tmg-expo/components/battlefield/authoritative-battle-workspace.tsx",
+          "exportName": "AuthoritativeBattleWorkspace"
         }
       ],
       "evidenceRefs": [
@@ -3267,7 +3395,23 @@
         "docs/development/wave4/evidence/disengage-web-build.public.json",
         "docs/development/wave4/evidence/detonation-disengage-consumers.public.json",
         "docs/development/wave4/evidence/detonation-disengage-harness.public.json",
-        "docs/development/wave4/evidence/disengage-producer-web-390.png"
+        "docs/development/wave4/evidence/disengage-producer-web-390.png",
+        "docs/development/wave4/evidence/detonation-consume.public.json",
+        "docs/development/wave4/evidence/consume-dark-swarm.public.json",
+        "docs/development/wave4/evidence/consume-web.public.json",
+        "docs/development/wave4/evidence/consume-current-cold.public.json",
+        "docs/development/wave4/evidence/consume-legacy-cold.public.json",
+        "docs/development/wave4/evidence/consume-web-cold.public.json",
+        "docs/development/wave4/evidence/consume-settlement.public.json",
+        "docs/development/wave4/evidence/consume-form.public.json",
+        "docs/development/wave4/evidence/consume-supply-boundary.public.json",
+        "docs/development/wave4/evidence/consume-web-build.public.json",
+        "docs/development/wave4/evidence/consume-latest-bundle-reentry.public.json",
+        "docs/development/wave4/evidence/consume-typecheck.public.json",
+        "docs/development/wave4/evidence/consume-consumers.public.json",
+        "docs/development/wave4/evidence/consume-harness.public.json",
+        "docs/development/wave4/evidence/consume-plague-producer-390.png",
+        "docs/development/wave4/evidence/consume-dark-swarm-producer-390.png"
       ],
       "meleeHostVerified": true,
       "automaticHitsHostVerified": true,
@@ -3306,7 +3450,14 @@
       "webDisengageKinds": [
         "leading"
       ],
-      "webDisengageLastModelVerified": false
+      "webDisengageLastModelVerified": false,
+      "consumePlagueNativeVerified": true,
+      "consumePaymentReservationVerified": true,
+      "consumeDarkSwarmQuotaNativeVerified": true,
+      "consumeSourceDeathNativeVerified": true,
+      "consumeWebActualProducerVerified": false,
+      "webPlagueSourceDeathVerified": false,
+      "webDarkSwarmSourceDeathVerified": false
     }
   ],
   "stukovCombatGate": {
@@ -3557,5 +3708,53 @@
     ],
     "newGameAtomsImplemented": 0,
     "fullMatchAdmission": false
+  },
+  "consumeGate": {
+    "schema": "starcraft_tmg_wave4_consume_consumers_v1",
+    "status": "passed_scoped",
+    "policyVersion": "1.9.0",
+    "rootRuntimeVersion": "3.242.0",
+    "humanWrapperVersion": "1.1.0",
+    "nativeCases": 9,
+    "nativeSignedActions": 215,
+    "nativeFullRounds": 9,
+    "plagueCasterDeathCases": 2,
+    "darkSwarmFullRounds": 3,
+    "webRooms": 2,
+    "webSignedActions": 17,
+    "webActualProducerCases": 2,
+    "independentColdCases": 19,
+    "independentColdOriginalActions": 311,
+    "consumeSupplyLost": 5,
+    "zeroSupplyDestructions": 4,
+    "naturalArmourControlCases": 1,
+    "naturalArmourControlActions": 11,
+    "evidenceRefs": [
+      "docs/development/wave4/evidence/detonation-consume.public.json",
+      "docs/development/wave4/evidence/consume-dark-swarm.public.json",
+      "docs/development/wave4/evidence/consume-web.public.json",
+      "docs/development/wave4/evidence/consume-current-cold.public.json",
+      "docs/development/wave4/evidence/consume-legacy-cold.public.json",
+      "docs/development/wave4/evidence/consume-web-cold.public.json",
+      "docs/development/wave4/evidence/consume-settlement.public.json",
+      "docs/development/wave4/evidence/consume-form.public.json",
+      "docs/development/wave4/evidence/consume-supply-boundary.public.json",
+      "docs/development/wave4/evidence/consume-web-build.public.json",
+      "docs/development/wave4/evidence/consume-latest-bundle-reentry.public.json",
+      "docs/development/wave4/evidence/consume-typecheck.public.json",
+      "docs/development/wave4/evidence/consume-consumers.public.json",
+      "docs/development/wave4/evidence/consume-harness.public.json",
+      "docs/development/wave4/evidence/consume-plague-producer-390.png",
+      "docs/development/wave4/evidence/consume-dark-swarm-producer-390.png"
+    ],
+    "newGameAtomsImplemented": 0,
+    "implementedCumulativeAtoms": 6,
+    "sourceHeldDefinitions": 39,
+    "fullMatchAdmission": false,
+    "allConsumersVerified": false,
+    "fullAppTypecheckPassed": false,
+    "remainingBaselineTypeErrors": 37,
+    "modelCalls": 0,
+    "trainingTruth": false
   }
 }

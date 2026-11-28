@@ -1,0 +1,56 @@
+{
+  "schema": "starcraft_tmg_wave4_consume_legacy_cold_v1",
+  "status": "passed_read_only",
+  "results": [
+    {
+      "id": "consume-multi",
+      "roomId": "wave3-consume-payment-multi",
+      "inputRef": "build/ticket-28-zerg-wave3-20261118-v1/consume-payment/multi",
+      "originalSignedActions": 5,
+      "runtimeVersion": "3.116.0",
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "stateHash": "f40a3e3de098a41a092c023b39ee23cc84528234643ef54aa3ebbc6a16e19fe8",
+      "sourceOpenedReadOnly": true,
+      "newActions": 0
+    },
+    {
+      "id": "consume-self-source",
+      "roomId": "wave3-consume-payment-self-source",
+      "inputRef": "build/ticket-28-zerg-wave3-20261118-v1/consume-payment/self-source",
+      "originalSignedActions": 6,
+      "runtimeVersion": "3.116.0",
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "stateHash": "6f7feb09af1933cbafe8a688d0d3e702338c44fb06d379bac0af7edbbd74eaee",
+      "sourceOpenedReadOnly": true,
+      "newActions": 0
+    },
+    {
+      "id": "plague-card-2",
+      "roomId": "wave3-plague-cast-card-2",
+      "inputRef": "build/ticket-28-zerg-wave3-20261118-v1/plague-cast/card-2",
+      "originalSignedActions": 2,
+      "runtimeVersion": "3.121.0",
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "stateHash": "fc65dc738186045051c6b557363974984a7e01c7ff43d4e7507b6bcec97568a8",
+      "sourceOpenedReadOnly": true,
+      "newActions": 0
+    },
+    {
+      "id": "plague-consume-source",
+      "roomId": "wave3-plague-cast-consume-source",
+      "inputRef": "build/ticket-28-zerg-wave3-20261118-v1/plague-cast/consume-source",
+      "originalSignedActions": 1,
+      "runtimeVersion": "3.121.0",
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "stateHash": "d869a50a11b635d2897292bd95223347cf81722e5af9b99b111673bd4a472a37",
+      "sourceOpenedReadOnly": true,
+      "newActions": 0
+    }
+  ],
+  "modelCalls": 0,
+  "trainingTruth": false
+}

@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { Image as ExpoImage } from "expo-image";
 import { battlefieldSoundtrack } from "../../../../packages/client-domain/battlefield-soundtrack-v1.mjs";
+import { nativePlaguePaymentSummaryV1 } from "../../../../packages/client-domain/native-action-form-v1.mjs";
 import { setAudioModeAsync, useAudioPlayer } from "expo-audio";
 import * as DocumentPicker from "expo-document-picker";
 import Svg, {
@@ -1705,8 +1706,10 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
             ))}
 
             {scene.parameterDomains.map((domain) => (
-              <View key={domain.domainId} style={styles.actionCard}>
+              <View key={domain.domainId} testID={`native-domain-${domain.domainId}`} style={styles.actionCard}>
                 <Text style={styles.actionTitle}>{actionLabel(domain.label, domain.pieceId)}</Text>
+                {nativePlaguePaymentSummaryV1(domain.raw,unitNames)&&<Text style={styles.metaText}>
+                  {nativePlaguePaymentSummaryV1(domain.raw,unitNames)}</Text>}
                 <Text style={styles.metaText}>{domain.parameterKind || "legacy_path_only"}</Text>
                 {domain.support === "unsupported" ? (
                   <>
@@ -1718,7 +1721,7 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
                       modelIds={scene.models.filter(model => model.pieceId === domain.pieceId && model.kind === "model").map(model => model.id)}
                       tokenIds={scene.tokens.flatMap(token => token.sourceTokenId ? [token.sourceTokenId] : [])}
                       names={Object.fromEntries([...scene.models.flatMap(model =>
-                        [[model.id, model.label || model.id], [model.pieceId, model.pieceId]]),
+                        [[model.id, model.label || model.id], [model.pieceId, unitNames[model.pieceId] || model.pieceId]]),
                         ...scene.tokens.flatMap(token => token.sourceTokenId
                           ? [[token.sourceTokenId, token.label + " (" + token.xMilliInches / 1000 + ", " + token.yMilliInches / 1000 + ")"]] : [])])}
                       disabled={!canPreview || Boolean(visiblePreview)}

@@ -6,7 +6,7 @@ import { createOfficialReleaseRosterStateV2 } from '../../packages/product-compo
 import { createOfficialCharacteristicStatusComponentRuntimeV2 } from '../../packages/product-composition/official-characteristic-status-component-runtime-v2.mjs';
 import { createOfficialSpecialUnitPieceV1 } from '../../packages/product-composition/official-unit-lifecycle-family-adapter-v1.mjs';
 import { createOfficialReleaseManifestV2, bindOfficialReleaseRulesRuntimeV2 } from '../../packages/source-data/official-release-context-v2.mjs';
-import { createOfficialHumanConfirmedRuntimeV1 } from '../../packages/product-composition/official-human-confirmed-runtime-v1.mjs';
+import { createOfficialHumanConfirmedRuntimeV1,createOfficialHumanConfirmedRuntimeV2 } from '../../packages/product-composition/official-human-confirmed-runtime-v1.mjs';
 import { createOfficialEngineeringScopedRoundRuntimeV1 } from '../../packages/product-composition/official-current-product-match-runtime-v1.mjs';
 import { createOfficialSupplyLossLedgerV1 } from '../../packages/rule-atoms/official-supply-loss-ledger-v1.mjs';
 import { bindOfficialSpawnRoundAbilityLockV1 } from '../../packages/rule-atoms/official-spawn-round-ability-lock-v1.mjs';
@@ -123,7 +123,7 @@ export function createWave4LegacyOverwatchControlScene(inputs) {
   scenario:{kind:'legacy_auto_turret_current_snapshot_native_control',fullMatchAdmission:false,modelCalls:0}};
 }
 
-export async function bindWave4TurretRoom({ inputs, state, sourceDefinitionIds, runtimeOptions, scenario, directory, humanConfirmed = false, roundControl = false, roundDefinitionIds,
+export async function bindWave4TurretRoom({ inputs, state, sourceDefinitionIds, runtimeOptions, scenario, directory, humanConfirmed = false, humanParameterConstraints=false, roundControl = false, roundDefinitionIds,
   characteristicRuntimeDefinitionIds=['unit:infested_missile_turret/detection-any-phase@1'],runtimeInitialState=state,expectedNativeRuntimeHash }) {
   const restoredInitial=runtimeInitialState!==state;
   if(restoredInitial){
@@ -145,7 +145,8 @@ export async function bindWave4TurretRoom({ inputs, state, sourceDefinitionIds, 
     if(restoredInitial&&source.descriptor.runtimeHash!==expectedNativeRuntimeHash)throw Error('WAVE4_RUNTIME_INITIAL_BINDING_MISMATCH');
     return source;
   };
-  const runtimeFor = () => humanConfirmed ? createOfficialHumanConfirmedRuntimeV1(sourceRuntimeFor()) : sourceRuntimeFor();
+  if(humanParameterConstraints&&!humanConfirmed)throw Error('WAVE4_HUMAN_PARAMETER_CONSTRAINT_WRAPPER_REQUIRED');
+  const runtimeFor = () => humanConfirmed ? (humanParameterConstraints?createOfficialHumanConfirmedRuntimeV2:createOfficialHumanConfirmedRuntimeV1)(sourceRuntimeFor()) : sourceRuntimeFor();
   const runtime = runtimeFor();
   const m = inputs.context.manifest;
   const manifest = createOfficialReleaseManifestV2({ releaseId: m.releaseId, dataset: inputs.dataset, snapshot: inputs.snapshot,
@@ -157,6 +158,7 @@ export async function bindWave4TurretRoom({ inputs, state, sourceDefinitionIds, 
   const authority = createWave3ComponentEngineeringAuthorityV1({ context, state, scenario });
   await fs.mkdir(directory, { recursive: true });
   for (const [name,value] of Object.entries({ authority, runtime: runtime.descriptor, scope: { sourceDefinitionIds, runtimeOptions, scenario, roundControl, ...(roundDefinitionIds ? {roundDefinitionIds} : {}), characteristicRuntimeDefinitionIds,
+    ...(humanParameterConstraints?{humanConfirmed:true,humanParameterConstraints:true}:{}),
     ...(restoredInitial?{runtimeInitialState,expectedNativeRuntimeHash,humanConfirmed}:{} ) } })) {
     await atomicWrite(path.join(directory,name+'.json'),JSON.stringify(value,null,2)+'\n');
   }

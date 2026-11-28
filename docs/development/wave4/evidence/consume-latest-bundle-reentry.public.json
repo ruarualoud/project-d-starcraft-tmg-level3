@@ -1,0 +1,234 @@
+{
+  "schema": "starcraft_tmg_wave4_virus_web_verification_v1",
+  "status": "passed_scoped",
+  "latestBundleReadOnlyReentry": true,
+  "newSignedActions": 0,
+  "runRef": "build/wave4-web/stukov-units/consume-web-v2",
+  "results": [
+    {
+      "kind": "infested_marine-plague-2-use",
+      "definitionId": "unit:defiler/plague-assault-phase@1",
+      "sourceRoomId": "wave4-consume-infested_marine-plague-2-use",
+      "sourceStateHash": "d0ef478da8cbc13c55121951b1f6df58bde6cfd73e9821d526f9deebd791caab",
+      "sourcePrefixReceipts": 5,
+      "originalRemovalVerified": true,
+      "originalSourceDeathVerified": false,
+      "trace": [
+        {
+          "actionType": "cast_plague",
+          "definitionId": "unit:defiler/plague-assault-phase@1",
+          "sideKey": "player1",
+          "stateRevision": 1,
+          "stateHash": "26f55905d96a7d4df073c78e70a3e35882bd28a162cffaf34cec4f0f79e1a21e",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:infested_marine/detonation-any-phase@1",
+          "sideKey": "player1",
+          "stateRevision": 2,
+          "stateHash": "66a09692901cbf13ac621d49e1a429c5dab3853cd5389be2f61e524ebae8ec75",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null,
+          "sideKey": "player2",
+          "stateRevision": 3,
+          "stateHash": "3ccae80152a0afecabe0b62075d59381dca79b0ff389ff93eef3df7049376b5e",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "actionType": "roll_automatic_hits_armour_pool",
+          "definitionId": null,
+          "sideKey": "player1",
+          "stateRevision": 4,
+          "stateHash": "d6d2406bab80d1b6c772210c3c708c7f5ede31954ec79690b58b992d35e8019a",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "actionType": "resolve_automatic_hits_evade_pool",
+          "definitionId": null,
+          "sideKey": "player1",
+          "stateRevision": 5,
+          "stateHash": "40143eafabc06ab2ca7dc97c1fdbf9780118bd7c36fe317a94d19d141512d9db",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null,
+          "sideKey": "player1",
+          "stateRevision": 6,
+          "stateHash": "924e0dd68e22ea346a49b84e37dc6756ff64d37e4f21cea6fb3a53e99993094a",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:infested_trooper/detonation-any-phase@1",
+          "sideKey": "player2",
+          "stateRevision": 7,
+          "stateHash": "d9545ae45f4e9f8469336f9a7784940b26dc7194bb51217cee21f5c960b2ddb0",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "actionType": "roll_automatic_hits_armour_pool",
+          "definitionId": null,
+          "sideKey": "player2",
+          "stateRevision": 8,
+          "stateHash": "f4abe5670a30260de4d7472d9c871269cb523b7da70e6803f9fa34de2f46b57b",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "actionType": "resolve_automatic_hits_evade_pool",
+          "definitionId": null,
+          "sideKey": "player2",
+          "stateRevision": 9,
+          "stateHash": "a685c3cdc95550bed14eb3429f023af941aafcfc7516f65679ad313bd359a622",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "actionType": "roll_automatic_hits_armour_pool",
+          "definitionId": null,
+          "sideKey": "player2",
+          "stateRevision": 10,
+          "stateHash": "37ceb3eda982123d2aabf7499d670089828d4eac4e5891b2dc48c42c4bcbbec4",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "actionType": "resolve_automatic_hits_evade_pool",
+          "definitionId": null,
+          "sideKey": "player2",
+          "stateRevision": 11,
+          "stateHash": "f40ba605031d97044b35b7cc3fd8fbf5fbd53cb2ac7a542137483cbcf5ee764d",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "actionType": "resolve_paid_plague",
+          "definitionId": "unit:defiler/plague-assault-phase@1",
+          "sideKey": "player1",
+          "stateRevision": 12,
+          "stateHash": "912b1d7f38e371af61ca13bfa60b8db51aa9b1892a5919c3cb94e0d6eb71f0a9",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "actionType": "finish_activation",
+          "definitionId": null,
+          "sideKey": "player1",
+          "stateRevision": 13,
+          "stateHash": "956f76a246f16d0370c4c630da2c43126b3171c4b0f4da35d31a704f5b4ad283",
+          "restoredFromSignedJournal": true
+        }
+      ],
+      "signedActions": 13,
+      "twoSeatsVerified": true,
+      "explicitHumanConfirmation": true,
+      "previewReadOnly": true,
+      "replayMatchesCurrent": true,
+      "seatRecoveryReentryVerified": true,
+      "pageErrors": [],
+      "producerFormChecks": [
+        {
+          "kind": "infested_marine-plague-2-use",
+          "actionType": "cast_plague",
+          "viewportWidth": 390,
+          "clientWidth": 298,
+          "scrollWidth": 298,
+          "nativeCostAndCardConstants": true,
+          "modelChoiceFromNativeEnum": true
+        }
+      ],
+      "fullWeaponSequenceAndActivationVerified": true
+    },
+    {
+      "kind": "infested_marine-self-source",
+      "definitionId": "unit:defiler/dark-swarm-assault-phase@1",
+      "sourceRoomId": "wave4-consume-dark-infested_marine-self-source",
+      "sourceStateHash": "d734a9b9d7a401eb083cde53ecee50443e68598092df9810ec4af8612106f3b9",
+      "sourcePrefixReceipts": 9,
+      "originalRemovalVerified": true,
+      "originalSourceDeathVerified": true,
+      "trace": [
+        {
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:defiler/dark-swarm-assault-phase@1",
+          "sideKey": "player1",
+          "stateRevision": 1,
+          "stateHash": "a54ad45934d630c7d7b8a52dfeeccb74ebf6970c6ceaa37da905252a55e35aa4",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "actionType": "ranged_attack",
+          "definitionId": null,
+          "sideKey": "player2",
+          "stateRevision": 2,
+          "stateHash": "b75fa5a16fcf9e87333d8e73c7193e4e2db166e5c70f5c2a59c0712726970298",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "actionType": "finish_ranged_attack_sequence",
+          "definitionId": null,
+          "sideKey": "player2",
+          "stateRevision": 3,
+          "stateHash": "015648647fb4d93332ee3d6e39e96cefe9dc6579feaacb0517d0cc56c2d6d875",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "actionType": "finish_activation",
+          "definitionId": null,
+          "sideKey": "player2",
+          "stateRevision": 4,
+          "stateHash": "dbfbb2dac40faf252e4146eed1731e4d355f2d2ab56c757435038938d9868a22",
+          "restoredFromSignedJournal": true
+        }
+      ],
+      "signedActions": 4,
+      "twoSeatsVerified": true,
+      "explicitHumanConfirmation": true,
+      "previewReadOnly": true,
+      "replayMatchesCurrent": true,
+      "seatRecoveryReentryVerified": true,
+      "pageErrors": [],
+      "producerFormChecks": [
+        {
+          "kind": "infested_marine-self-source",
+          "actionType": "resolve_reaction_family_ability",
+          "viewportWidth": 390,
+          "clientWidth": 298,
+          "scrollWidth": 298,
+          "nativeCostAndCardConstants": true,
+          "modelChoiceFromNativeEnum": true
+        }
+      ],
+      "fullWeaponSequenceAndActivationVerified": true
+    }
+  ],
+  "producerFormChecks": [
+    {
+      "kind": "infested_marine-plague-2-use",
+      "actionType": "cast_plague",
+      "viewportWidth": 390,
+      "clientWidth": 298,
+      "scrollWidth": 298,
+      "nativeCostAndCardConstants": true,
+      "modelChoiceFromNativeEnum": true
+    },
+    {
+      "kind": "infested_marine-self-source",
+      "actionType": "resolve_reaction_family_ability",
+      "viewportWidth": 390,
+      "clientWidth": 298,
+      "scrollWidth": 298,
+      "nativeCostAndCardConstants": true,
+      "modelChoiceFromNativeEnum": true
+    }
+  ],
+  "signedActions": 17,
+  "conditionalTurretGeometryInRestorationCaseOnly": false,
+  "sourceHeldDefinitions": 39,
+  "engineeringEstimatedUnitGeometry": true,
+  "fullWave4LobbyBuilderAdmission": false,
+  "fullMatchAdmission": false,
+  "wave3PlayerRoomsTouched": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

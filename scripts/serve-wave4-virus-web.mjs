@@ -23,7 +23,8 @@ if(process.argv[4])assert.ok(webRoot.startsWith(path.join(root,'build/wave4-web'
 const delayedSource=['starcraft_tmg_wave4_detonation_delayed_v1','starcraft_tmg_wave4_detonation_delayed_control_web_source_v1'].includes(sourceResult.schema);
 const stormPhotonSource=['starcraft_tmg_wave4_detonation_storm_v1','starcraft_tmg_wave4_detonation_photon_v1'].includes(sourceResult.schema);
 const disengageSource=sourceResult.schema==='starcraft_tmg_wave4_detonation_disengage_v1';
-const baseInputs=stormPhotonSource||disengageSource?await loadWave4StukovUnitInputsV3(root):sourceResult.schema==='starcraft_tmg_wave4_detonation_target_v1'||delayedSource?await loadWave4StukovUnitInputsV2(root):['starcraft_tmg_wave4_stukov_infestation_native_v1','starcraft_tmg_wave4_plagued_munitions_v1',
+const consumeSource=sourceResult.schema==='starcraft_tmg_wave4_consume_web_source_v1';
+const baseInputs=stormPhotonSource||disengageSource||consumeSource?await loadWave4StukovUnitInputsV3(root):sourceResult.schema==='starcraft_tmg_wave4_detonation_target_v1'||delayedSource?await loadWave4StukovUnitInputsV2(root):['starcraft_tmg_wave4_stukov_infestation_native_v1','starcraft_tmg_wave4_plagued_munitions_v1',
    'starcraft_tmg_wave4_infested_infantry_base_wiring_v1','starcraft_tmg_wave4_detonation_ranged_host_v1','starcraft_tmg_wave4_detonation_nested_host_v1',
    'starcraft_tmg_wave4_bio_kill_switch_v1','starcraft_tmg_wave4_corrode_web_source_v1','starcraft_tmg_wave4_detonation_template_v1','starcraft_tmg_wave4_detonation_outside_v1','starcraft_tmg_wave4_detonation_overwatch_v1','starcraft_tmg_wave4_overwatch_coexistence_v1','starcraft_tmg_wave4_detonation_khassar_web_source_v1','starcraft_tmg_wave4_detonation_declaration_v1'].includes(sourceResult.schema)?await loadWave4StukovUnitInputs(root)
   :sourceResult.schema==='starcraft_tmg_wave4_virus_creep_native_v1'?await loadWave4VirusEffectsInputs(root):await loadWave4TurretInputs(root);
@@ -48,12 +49,18 @@ for(const spec of specs) {  const proof=sourceResult.results.find(row=>row.id===
   const source=await bindWave4TurretRoom({inputs,state:sourceAuthority.state,...scope,
     directory:path.join(directory,'source-bindings',spec.id)});
   const nativeSource=source.open({readOnly:true,directory:sourceDirectory});
-  let prefix,prefixReceipts,sourceDisengagePlan;
+  let prefix,prefixReceipts,sourceDisengagePlan,sourceConsumeParameters;
   try {
     await nativeSource.restoreDependencies(proof.roomId,sourceAuthority);
     const bundle=await nativeSource.store.loadReplayBundle(proof.roomId);
     const journal=bundle.privateJournal.filter(row=>row.payload.type==='accepted_transition').map(row=>row.payload.payload.receipt);
     if(spec.flow==='detonation-disengage-initiation'){let a=journal.find(r=>r.action.actionType==='disengage')?.action;while(a&&!a.spatialPlan)a=a.sourceAction;sourceDisengagePlan=a?.spatialPlan;assert.equal(sourceDisengagePlan?.spatialPlanHash,proof.originalPlanHash);}
+    if(['consume-plague-initiation','consume-dark-swarm-initiation'].includes(spec.flow)){
+      let a=journal.find(r=>r.action.actionType===(spec.flow==='consume-plague-initiation'?'cast_plague':'resolve_reaction_family_ability')
+        &&JSON.stringify(r.action).includes(spec.definitionId))?.action;
+      while(a&&!a.plaguePlan&&!a.reactionPlan)a=a.sourceAction;
+      sourceConsumeParameters=a?.plaguePlan?.canonicalParameters||a?.reactionPlan?.canonicalParameters;assert.ok(sourceConsumeParameters?.sacrificeModelId);
+    }
     const hintedPrefix=spec.minimumSourceRevision??(spec.minimumContinuationDepth?proof.trace?.find(row=>row.stackDepth>=spec.minimumContinuationDepth)?.revision-1:0);
     for(let count=Number.isSafeInteger(hintedPrefix)?hintedPrefix:0;count<=journal.length;count++) {
       const replay=nativeSource.engine.replay({initialEnvelope:bundle.initialEnvelope,journal:journal.slice(0,count)});
@@ -69,6 +76,7 @@ for(const spec of specs) {  const proof=sourceResult.results.find(row=>row.id===
   const roomDirectory=path.join(directory,'rooms',spec.id);
   const generatedPrefix=scope.roundControl&&prefix.state.pieces.some(p=>!sourceAuthority.state.pieces.some(prior=>prior.id===p.id));
   const bound=await bindWave4TurretRoom({inputs,state:prefix.state,...scope,directory:roomDirectory,humanConfirmed:true,
+    ...(consumeSource?{humanParameterConstraints:true}:{}),
     ...(generatedPrefix?{runtimeInitialState:sourceAuthority.state,expectedNativeRuntimeHash:source.runtime.descriptor.runtimeHash}:{}),
     scenario:{...scope.scenario,kind:'web_from_signed_native_virus_prefix',sourceRoomId:proof.roomId,
       sourceStateHash:prefix.stateHash,sourceBindingHash:prefix.matchBindingHash,sourcePrefixReceipts:prefixReceipts}});
@@ -84,6 +92,8 @@ for(const spec of specs) {  const proof=sourceResult.results.find(row=>row.id===
   }
   const originalResolutionHash=proof.originalResolutionHash||(['detonation-overwatch','detonation-khassar','detonation-declaration','detonation-template','detonation-target','detonation-delayed','detonation-storm-photon'].includes(spec.flow)?proof.frames?.[0]?.rows?.[0]?.attackResolutionHash:null);
   service.rooms.push({...spec,kind:spec.id,roomId,links,sourcePrefixReceipts:prefixReceipts,
+    ...(sourceConsumeParameters?{expectedConsumeParameters:sourceConsumeParameters,expectedCasterId:'defiler',expectedAttackTargetId:'victim',
+      expectedCastTargetId:spec.flow==='consume-plague-initiation'?'target':null}:{}),
     ...(spec.flow==='detonation-delayed'?{delayedKind:proof.kind,originalSourceId:proof.sourceId}:{}),
     ...(['detonation-disengage','detonation-disengage-initiation'].includes(spec.flow)?{disengageKind:proof.kind,expectedOriginalPlanHash:proof.originalPlanHash,
       expectedCasualtyModelIds:proof.frames[0].rows[0].casualty.casualtyModelIds,expectedSurvivorModelIds:proof.frames[0].rows[0].casualty.remainingModelIds,

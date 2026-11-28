@@ -1,0 +1,53 @@
+{
+  "schema": "starcraft_tmg_wave4_consume_web_build_v1",
+  "status": "passed",
+  "functionalBundleRef": "build/wave4-web/stukov-units/web-bundle-v6",
+  "latestBundleRef": "build/wave4-web/stukov-units/web-bundle-v7",
+  "functionalWebRef": "docs/development/wave4/evidence/consume-web.public.json",
+  "latestBundleReentryRef": "docs/development/wave4/evidence/consume-latest-bundle-reentry.public.json",
+  "bundles": [
+    {
+      "version": 6,
+      "entryRef": "build/wave4-web/stukov-units/web-bundle-v6/_expo/static/js/web/entry-bb157982af413e40dbe9430118707ba7.js",
+      "byteHash": "4ac7edd966af7617b8f2d80127a77c89b1e47ac3ebda66572663da26d9c8c781",
+      "bytes": 3828091
+    },
+    {
+      "version": 7,
+      "entryRef": "build/wave4-web/stukov-units/web-bundle-v7/_expo/static/js/web/entry-c97f55f46d9578f02ce20b30d52b609b.js",
+      "byteHash": "82bd184897678bb23d993c3b7985a196514f715e35b08cd84c18a81e018cd8b1",
+      "bytes": 3828858
+    }
+  ],
+  "sourceFiles": [
+    {
+      "file": "packages/client-domain/native-action-form-v1.mjs",
+      "byteHash": "4a53cea9af4368c76152068ff689e94c325eb21180fa9c4f03de3ac85579fe46"
+    },
+    {
+      "file": "packages/client-domain/battlefield-presentation-v1.mjs",
+      "byteHash": "51627960205331e2ec212b89644825d80ff6b4955b7f0c3e1ee66902c38063bf"
+    },
+    {
+      "file": "apps/starcraft-tmg-expo/components/battlefield/native-action-form.tsx",
+      "byteHash": "da683f9c09d000e987cf11c44021d5665034fab2e092181b9883ba5c374056c4"
+    },
+    {
+      "file": "apps/starcraft-tmg-expo/components/battlefield/authoritative-battle-workspace.tsx",
+      "byteHash": "bf28f1a1849a620d9c48c886fccd01eaae91f38dfd3aae5df4b78d94b29512f0"
+    },
+    {
+      "file": "packages/product-composition/official-human-confirmed-runtime-v1.mjs",
+      "byteHash": "ccd38d91f3c9446e46040cb1d9246574e426693af894da6c818d00cafdd88474"
+    }
+  ],
+  "latestChangeAfterFunctionalTest": "JSDoc typing only; related 7 TypeScript diagnostics resolved without changing Native submissions",
+  "humanWrapperVersion": "1.1.0",
+  "phoneProducerScreenshots": [
+    "consume-plague-producer-390.png",
+    "consume-dark-swarm-producer-390.png"
+  ],
+  "productionPublished": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

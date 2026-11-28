@@ -4,9 +4,9 @@
 
 当前执行 T28-W4-02。
 Ticket 23 / Slice 249；整体 33/36；剩余 248、249、250。
-状态日期：2026-11-28T04:34:14.166Z。本页由 coordination/current-development.json 生成，不追加历史。
+状态日期：2026-11-28T05:58:29.899Z。本页由 coordination/current-development.json 生成，不追加历史。
 
-Wave4人人长任务继续，完整原子6/18。Disengage本批12完整原生回合334动作、Web实际发起2房19确认、14房396原动作冷验通过；末模型销毁和零Supply已验。继续Consume、新单位、13记录及整版产品，39来源和估算保持。
+Wave4人人长任务继续。Consume政策1.9/Root3.242具名验收通过：9完整原生回合215动作、Web2房17确认、独立19房311原动作冷验。完整原子仍6/18；下一步新单位与整版产品。
 
 运行限制：本分支仅推进Wave4人人对战，按Wave3模式补齐数据、规则、建军、房间、媒体和Web双席；使用5484及build/wave4-web，按可验证成果提交推送。其他同步开发线不在本分支展开；付费模型、K3、AI对局、复盘与生产发布继续暂停。
 
@@ -23,11 +23,12 @@ Wave4人人长任务继续，完整原子6/18。Disengage本批12完整原生回
 | T27/S272 军表与 Plan／Teach，P0–P6 验收 3/7 | 部分完成 | 部分完成 | 部分完成 | 未测效果 |
 
 下一步：
-1. 接Consume费用保留和原效果封存；完整原子仍6/18。
-2. 其余13个已审核记录、完整发布／Builder／大厅／媒体与500／2000分Web继续。
+1. 接Firebat、Reaver/Scarabs、Slayer及余下势力，完整原子仍6/18。
+2. 完整发布／Builder／大厅／媒体与500／2000分Web继续；付款卡名列W4-03。
 
 ## Navigation
 
+- 查看Consume付款、原来源死亡、Dark Swarm及实际Web发起：[Detonation Consume接线](docs/development/wave4/detonation-consume-wiring.zh-CN.md)
 - 查看Disengage证明、末模型销毁与Web实际发起：[Detonation直接移除接线](docs/development/wave4/detonation-disengage-wiring.zh-CN.md)
 - 查看390px伤亡顺序、原哈希提交及双席回归：[Web伤亡方案摘要](docs/development/wave4/casualty-summary-web.zh-CN.md)
 - 查看Storm/Photon、真实运输入场、阶段外护甲和Web：[Detonation风暴与Photon接线](docs/development/wave4/detonation-storm-photon-wiring.zh-CN.md)
