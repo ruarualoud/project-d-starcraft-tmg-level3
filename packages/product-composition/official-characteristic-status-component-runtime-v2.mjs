@@ -4,7 +4,7 @@ import {OFFICIAL_CORRODE_ARMOUR_ID} from '../source-data/official-corrode-armour
 import {createOfficialCorrodeRestorationRuntimeV1} from './official-corrode-restoration-runtime-v1.mjs';
 import {createOfficialPlaguedMunitionsRuntimeV1} from './official-plagued-munitions-runtime-v1.mjs';
 import {createOfficialBeforeCasualtyRuntimeV1} from './official-before-casualty-runtime-v1.mjs';
-import {hasOfficialBeforeCasualtyBatchPolicyV1,hasOfficialExtendedBeforeCasualtyPolicyV1,hasOfficialTemplateBeforeCasualtyPolicyV1,hasOfficialOverwatchBeforeCasualtyPolicyV1,hasOfficialKhassarBeforeCasualtyPolicyV1,hasOfficialDeclaredAttackBeforeCasualtyPolicyV1} from '../rule-atoms/official-before-casualty-batch-v1.mjs';
+import {hasOfficialBeforeCasualtyBatchPolicyV1,hasOfficialExtendedBeforeCasualtyPolicyV1,hasOfficialTemplateBeforeCasualtyPolicyV1,hasOfficialOverwatchBeforeCasualtyPolicyV1,hasOfficialKhassarBeforeCasualtyPolicyV1,hasOfficialDeclaredAttackBeforeCasualtyPolicyV1,hasOfficialDelayedHitsBeforeCasualtyPolicyV1} from '../rule-atoms/official-before-casualty-batch-v1.mjs';
 import {resumeOfficialSelectedRosterRangedBeforeCasualtyV1} from './official-selected-roster-ranged-action-runtime-v1.mjs';
 import {resumeOfficialSelectedRosterMeleeBeforeCasualtyV1} from './official-selected-roster-melee-action-runtime-v1.mjs';
 import {createOfficialStukovContextualSupplyRoutesV1} from '../source-data/official-stukov-infestation-source-v1.mjs';
@@ -1104,7 +1104,8 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
   const multipleOverwatchSources = reactionBundle?.routes.filter(route => route.activationEndOwner === 'current_source_v1').length > 1;
   const hitOwners = [beforeCasualty?.sourceAuthority,photonEntry?.sourceAuthority, bileResolution?.sourceAuthority, sabotageDronePhaseEnd?.sourceAuthority,
     seekerPhaseEnd?.sourceAuthority, stormPhaseEnd?.sourceAuthority].filter(Boolean);
-  if(hasOfficialTemplateBeforeCasualtyPolicyV1(spatialState)&&hitOwners.some(owner=>owner!==beforeCasualty?.sourceAuthority&&owner!==seekerPhaseEnd?.sourceAuthority))
+  if(hasOfficialTemplateBeforeCasualtyPolicyV1(spatialState)&&hitOwners.some(owner=>owner!==beforeCasualty?.sourceAuthority&&owner!==seekerPhaseEnd?.sourceAuthority
+    &&!(hasOfficialDelayedHitsBeforeCasualtyPolicyV1(spatialState)&&[bileResolution?.sourceAuthority,sabotageDronePhaseEnd?.sourceAuthority].includes(owner))))
     throw Error('BEFORE_CASUALTY_EXTERNAL_HITS_OWNER_NOT_ADMITTED');
   const evadeGrantOwners = hitOwners.filter(owner => owner.evadeGrant);
   const hitsAuthority = hitOwners.length > 1 ? {
@@ -1571,7 +1572,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
   }) : null;
   if(hasOfficialTemplateBeforeCasualtyPolicyV1(spatialState)&&((targetReactions||rangedDeclaration)&&!hasOfficialDeclaredAttackBeforeCasualtyPolicyV1(spatialState)||overwatch&&!hasOfficialOverwatchBeforeCasualtyPolicyV1(spatialState)||(khassarAttacks.length||khassarCharge)&&!hasOfficialKhassarBeforeCasualtyPolicyV1(spatialState)))
     throw Error('BEFORE_CASUALTY_DELEGATED_ATTACK_OWNER_NOT_ADMITTED');
-  const version = hasOfficialDeclaredAttackBeforeCasualtyPolicyV1(spatialState)?'3.236.0':hasOfficialKhassarBeforeCasualtyPolicyV1(spatialState)?'3.235.0':overwatch?.descriptor.runtimeVersion === '1.2.0' ? '3.234.0' : hasOfficialOverwatchBeforeCasualtyPolicyV1(spatialState) ? '3.233.0' : hasOfficialTemplateBeforeCasualtyPolicyV1(spatialState) ? '3.232.0' : includeCorrodeRoundCleanup ? '3.231.0' : corrodeArmour ? '3.230.0' : infestationDamage ? '3.229.0' : hasOfficialExtendedBeforeCasualtyPolicyV1(spatialState) ? '3.228.0' : beforeCasualty ? '3.227.0' : plaguedMunitions ? '3.226.0' : repeatedActivationIdentity ? '3.225.0' : infantryPrecision ? '3.224.0' : stukovInfestation ? '3.223.0' : universalCarrier ? '3.222.0' : includeReleaseMoundAssaultOrder ? '3.221.0' : includeBilePhysicalPlacement && bile ? '3.220.0' : psionicRoundEnd?.scheduledEffects ? '3.219.0' : includeReleaseBileAssaultOrder ? '3.218.0' : releaseZergTargets ? '3.217.0' : includePsionicStormAssaultSameName ? '3.216.0'
+  const version = hasOfficialDelayedHitsBeforeCasualtyPolicyV1(spatialState)?'3.237.0':hasOfficialDeclaredAttackBeforeCasualtyPolicyV1(spatialState)?'3.236.0':hasOfficialKhassarBeforeCasualtyPolicyV1(spatialState)?'3.235.0':overwatch?.descriptor.runtimeVersion === '1.2.0' ? '3.234.0' : hasOfficialOverwatchBeforeCasualtyPolicyV1(spatialState) ? '3.233.0' : hasOfficialTemplateBeforeCasualtyPolicyV1(spatialState) ? '3.232.0' : includeCorrodeRoundCleanup ? '3.231.0' : corrodeArmour ? '3.230.0' : infestationDamage ? '3.229.0' : hasOfficialExtendedBeforeCasualtyPolicyV1(spatialState) ? '3.228.0' : beforeCasualty ? '3.227.0' : plaguedMunitions ? '3.226.0' : repeatedActivationIdentity ? '3.225.0' : infantryPrecision ? '3.224.0' : stukovInfestation ? '3.223.0' : universalCarrier ? '3.222.0' : includeReleaseMoundAssaultOrder ? '3.221.0' : includeBilePhysicalPlacement && bile ? '3.220.0' : psionicRoundEnd?.scheduledEffects ? '3.219.0' : includeReleaseBileAssaultOrder ? '3.218.0' : releaseZergTargets ? '3.217.0' : includePsionicStormAssaultSameName ? '3.216.0'
     : includePsionicStormTokenCleanup ? '3.215.0'
     : includePsionicStormNamedOverlapChoices ? '3.214.0'
     : stormCast ? '3.213.0'

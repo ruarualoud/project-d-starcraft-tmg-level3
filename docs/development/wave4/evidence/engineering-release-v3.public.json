@@ -1,0 +1,54 @@
+{
+  "schema": "starcraft_tmg_wave4_engineering_release_v3_v1",
+  "status": "passed_scoped",
+  "dependencyRebinding": {
+    "previousReleaseId": "wave4-u98-c88-r50-stukov-units-engineering-v1",
+    "releaseId": "wave4-u98-c88-r50-stukov-units-engineering-v3",
+    "selectedRecordCount": 102,
+    "reviewedDeploymentRecords": [
+      "faction_cards:EyCV5SmTPXTrpqS6iy3e",
+      "faction_cards:gWudxJ1dMPAF8vP6UghB"
+    ],
+    "originalDeploymentRecordsAndEvidenceBytesUnchanged": true,
+    "armyBuilderRecompiledForRelease": true,
+    "sourceHeldDefinitions": 39,
+    "fullMatchAdmission": false,
+    "frozenFaq": {
+      "version": "1.3",
+      "byteHash": "65cb2399c44e29b45d65faddbade7c72a46726e7b9c812e2c4af57c1704cc213",
+      "actualBytesVerified": true
+    }
+  },
+  "results": [
+    {
+      "recordKey": "army_units:goliath",
+      "definitionId": "unit:goliath/target-lock-movement-phase@1",
+      "roomId": "wave4-release-v3-goliath",
+      "directoryRef": "build/wave4-web/stukov-units/release-v3-4M2BHL/goliath",
+      "signedActions": 1,
+      "resourceType": "BM",
+      "effectiveResourceCost": 1,
+      "releaseId": "wave4-u98-c88-r50-stukov-units-engineering-v3",
+      "idempotencyVerified": true,
+      "coldReplay": true
+    },
+    {
+      "recordKey": "army_units:siege_tank",
+      "definitionId": "unit:siege_tank/mode-transformation-movement-phase@1",
+      "roomId": "wave4-release-v3-siege_tank",
+      "directoryRef": "build/wave4-web/stukov-units/release-v3-4M2BHL/siege_tank",
+      "signedActions": 1,
+      "resourceType": "BM",
+      "effectiveResourceCost": 1,
+      "releaseId": "wave4-u98-c88-r50-stukov-units-engineering-v3",
+      "idempotencyVerified": true,
+      "coldReplay": true
+    }
+  ],
+  "newGameAtomsImplemented": 0,
+  "implementedCumulativeAtoms": 6,
+  "fullMatchAdmission": false,
+  "sourceHeldDefinitions": 39,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

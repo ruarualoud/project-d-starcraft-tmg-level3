@@ -1,0 +1,22 @@
+{
+  "schema": "starcraft_tmg_wave4_generated_prefix_verification_v1",
+  "status": "passed_read_only",
+  "inputRef": "build/wave4-web/stukov-units/detonation-delayed-control-web-v1/rooms/drone-source-reserved-control",
+  "roomId": "product-wave4-web-drone-source-reserved-control",
+  "purchasedInitialPieces": 2,
+  "actualPrefixPieces": 3,
+  "originalNativeRuntimeHash": "96eca6b7ebeb22bdaa81b7ea483794e22520d3f07b55ebfb96ea27673244ba88",
+  "sourcePrefixReceipts": 16,
+  "originalWebSignedActions": 5,
+  "newActions": 0,
+  "descriptorUnchanged": true,
+  "coldReplay": true,
+  "rejected": [
+    "wrong_signed_state_hash",
+    "changed_generated_unit_bundle",
+    "wrong_original_runtime_hash"
+  ],
+  "fullMatchAdmission": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

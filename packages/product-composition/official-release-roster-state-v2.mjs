@@ -222,8 +222,8 @@ export function createOfficialReleaseRosterStateV2({ context, candidatesBySide, 
   if(includeBeforeCasualtyBatch){
     if(!reactionDefinitionIds?.some(id=>OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V1.sourceDefinitionIds.includes(id)))
       throw Error('RELEASE_ROSTER_DETONATION_SOURCE_REQUIRED');
-    if(!['1.0.0','1.1.0','1.2.0','1.3.0','1.4.0','1.5.0'].includes(beforeCasualtyPolicyVersion))throw Error('RELEASE_ROSTER_BEFORE_CASUALTY_POLICY_VERSION_INVALID');
-    state.officialBeforeCasualtyBatchPolicy=structuredClone(beforeCasualtyPolicyVersion==='1.5.0'?OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V6:beforeCasualtyPolicyVersion==='1.4.0'?OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V5:beforeCasualtyPolicyVersion==='1.3.0'?OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V4:beforeCasualtyPolicyVersion==='1.2.0'?OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V3:beforeCasualtyPolicyVersion==='1.1.0'
+    if(!['1.0.0','1.1.0','1.2.0','1.3.0','1.4.0','1.5.0','1.6.0'].includes(beforeCasualtyPolicyVersion))throw Error('RELEASE_ROSTER_BEFORE_CASUALTY_POLICY_VERSION_INVALID');
+    state.officialBeforeCasualtyBatchPolicy=structuredClone(beforeCasualtyPolicyVersion==='1.6.0'?OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V7:beforeCasualtyPolicyVersion==='1.5.0'?OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V6:beforeCasualtyPolicyVersion==='1.4.0'?OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V5:beforeCasualtyPolicyVersion==='1.3.0'?OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V4:beforeCasualtyPolicyVersion==='1.2.0'?OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V3:beforeCasualtyPolicyVersion==='1.1.0'
       ?OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V2:OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V1);
   }
   if (otherGeneratedRecordKeys.length) {
@@ -638,4 +638,4 @@ export function refreshOfficialReleaseRosterDerivedStateV2({ context, state }) {
   next.officialSelectedRosterAbilityRuntimeDescriptor = createOfficialSelectedRosterAbilityRuntimeV1(next).descriptor;
   return next;
 }
-import {OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V1,OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V2,OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V3,OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V4,OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V5,OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V6} from '../rule-atoms/official-before-casualty-batch-v1.mjs';
+import {OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V1,OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V2,OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V3,OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V4,OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V5,OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V6,OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V7} from '../rule-atoms/official-before-casualty-batch-v1.mjs';

@@ -4,9 +4,9 @@
 
 当前执行 T28-W4-02。
 Ticket 23 / Slice 249；整体 33/36；剩余 248、249、250。
-状态日期：2026-11-28T01:07:38.244Z。本页由 coordination/current-development.json 生成，不追加历史。
+状态日期：2026-11-28T02:20:08.285Z。本页由 coordination/current-development.json 生成，不追加历史。
 
-Wave4人人长任务继续，完整原子6/18。Target/声明本批5原生分支82动作、2完整回合、Web3房13确认通过；当前/前批7房99及旧2房11动作冷读一致。工程发布V2重编Builder，进口Goliath/Tank实付BM。继续其他HITS/直接移除、13记录和整版产品，39来源与估算保持。
+Wave4人人长任务继续，完整原子6/18。Bile/Drone本批4原生分支112动作、4完整回合、Web2房9确认通过；当前/前批6房148及旧Bile5原动作冷读一致。工程V3冻结FAQ字节，生成单位Web恢复已修。继续Storm/Photon、直接移除、13记录及整版产品，39来源和估算保持。
 
 运行限制：本分支仅推进Wave4人人对战，按Wave3模式补齐数据、规则、建军、房间、媒体和Web双席；使用5484及build/wave4-web，按可验证成果提交推送。其他同步开发线不在本分支展开；付费模型、K3、AI对局、复盘与生产发布继续暂停。
 
@@ -23,11 +23,12 @@ Wave4人人长任务继续，完整原子6/18。Target/声明本批5原生分支
 | T27/S272 军表与 Plan／Teach，P0–P6 验收 3/7 | 部分完成 | 部分完成 | 部分完成 | 未测效果 |
 
 下一步：
-1. 接其他外部HITS与Disengage/Consume直接移除；完整原子仍6/18。
+1. 接Storm/Photon及Disengage/Consume；完整原子仍6/18。
 2. 其余13个已审核记录、整版发布/Builder/大厅/媒体与500/2000分Web继续。
 
 ## Navigation
 
+- 查看Bile/Drone完整回合、生成单位恢复与Web：[Detonation延迟伤害接线](docs/development/wave4/detonation-delayed-wiring.zh-CN.md)
 - 查看Target/声明、原攻击者阵亡、工程发布绑定与Web：[Detonation声明与目标接线](docs/development/wave4/detonation-declared-target-wiring.zh-CN.md)
 - 查看Khassar委托、阵亡后NLD/激活及Web：[Detonation Khassar接线](docs/development/wave4/detonation-khassar-wiring.zh-CN.md)
 - 查看Auto/Ocular同房、阶段外反应额度及Web：[双Overwatch接线](docs/development/wave4/overwatch-coexistence-wiring.zh-CN.md)

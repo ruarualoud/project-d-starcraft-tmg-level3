@@ -1,0 +1,12 @@
+{
+  "schema": "starcraft_tmg_wave4_generated_prefix_regression_v1",
+  "status": "reproduced_not_qualified",
+  "sourceRoomId": "wave4-detonation-delayed-drone-use-0",
+  "webRef": "build/wave4-web/stukov-units/detonation-delayed-control-web-v1",
+  "error": "CURRENT_PRODUCT_MATCH_RUNTIME_INPUT_INVALID",
+  "cause": "Generated Drone in signed prefix was rechecked as a purchased initial roster unit",
+  "newSignedActions": 0,
+  "fullMatchAdmission": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

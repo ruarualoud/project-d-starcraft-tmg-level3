@@ -1,0 +1,42 @@
+{
+  "schema": "starcraft_tmg_wave4_detonation_delayed_harness_v1",
+  "status": "passed_scoped",
+  "tools": [
+    "source-bound Movement producer",
+    "real delayed phase-end HITS",
+    "sealed parent suspension",
+    "Detonation child and original source death",
+    "mission scoring/cleanup/R2",
+    "explicit two-seat Web confirmation/recovery",
+    "current and archived cold replay",
+    "frozen FAQ bytes and release conversion"
+  ],
+  "nativeCases": 4,
+  "nativeSignedActions": 112,
+  "nativeFullRounds": 4,
+  "controlCases": 12,
+  "controlSignedActions": 374,
+  "webRooms": 2,
+  "webSignedActions": 9,
+  "currentAndPriorColdCases": 6,
+  "currentAndPriorColdOriginalActions": 148,
+  "legacyColdCases": 1,
+  "legacyOriginalActions": 5,
+  "engineeringConversionCases": 2,
+  "engineeringConversionSignedActions": 2,
+  "evidenceRefs": [
+    "docs/development/wave4/evidence/detonation-delayed.public.json",
+    "docs/development/wave4/evidence/detonation-delayed-web.public.json",
+    "docs/development/wave4/evidence/detonation-delayed-current-cold.public.json",
+    "docs/development/wave4/evidence/bile-legacy-cold.public.json",
+    "docs/development/wave4/evidence/engineering-release-v3.public.json",
+    "docs/development/wave4/evidence/engineering-v3-boundaries.public.json",
+    "docs/development/wave4/evidence/generated-prefix.public.json",
+    "docs/development/wave4/evidence/drone-reservation-control.public.json",
+    "docs/development/wave4/evidence/drone-structure-armour-control.public.json",
+    "docs/development/wave4/evidence/detonation-delayed-control-web.public.json"
+  ],
+  "scope": "scoped consumers; remaining Storm/Photon/direct removal and full Wave4 product admission pending",
+  "modelCalls": 0,
+  "trainingTruth": false
+}

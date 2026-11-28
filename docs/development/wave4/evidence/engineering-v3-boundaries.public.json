@@ -1,0 +1,33 @@
+{
+  "schema": "starcraft_tmg_wave4_engineering_v3_boundaries_v1",
+  "status": "passed_scoped",
+  "releaseId": "wave4-u98-c88-r50-stukov-units-engineering-v3",
+  "sourceHeldDefinitions": 39,
+  "selectedRecords": 102,
+  "heldResults": [
+    {
+      "recordKey": "army_units:archon",
+      "status": "invalid_candidate",
+      "rulesErrorCode": null
+    },
+    {
+      "recordKey": "army_units:alarak",
+      "status": "invalid_candidate",
+      "rulesErrorCode": null
+    },
+    {
+      "recordKey": "army_units:infested_goliath",
+      "status": "invalid_candidate",
+      "rulesErrorCode": null
+    },
+    {
+      "recordKey": "army_units:infested_siege_tank",
+      "status": "invalid_candidate",
+      "rulesErrorCode": null
+    }
+  ],
+  "standardAndSkirmishRejectEstimates": true,
+  "fullMatchAdmission": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

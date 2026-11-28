@@ -487,6 +487,17 @@ export function createOfficialEngineeringScopedRoundRuntimeV1({ context, state, 
       ||!nativeActions.descriptor.ravenSeekerMissileRules?.paidImpactQueryKind)fail('ENGINEERING_ROUND_SEEKER_CONSUMER_REQUIRED');
     Object.assign(coverage,{contractVersion:'1.1.0',seekerAssaultTimingPolicy:clone(policy)});
   }
+  if(state.officialReleaseBileAssaultTiming){
+    if(state.officialReleaseBileAssaultTiming!==state.officialCorrosiveBileDamagePolicy?.policyHash
+      ||!nativeActions.releaseAssaultOrder||!nativeActions.descriptor.corrosiveBileResolutionRuntime)
+      fail('ENGINEERING_ROUND_BILE_CONSUMER_REQUIRED');
+    Object.assign(coverage,{contractVersion:'1.2.0',bileAssaultTimingPolicyHash:state.officialReleaseBileAssaultTiming});
+  }
+  if(state.officialReleaseDroneAssaultTiming){
+    if(state.officialReleaseDroneAssaultTiming!==state.officialSabotageDronePhaseEndPolicy?.policyHash
+      ||!nativeActions.descriptor.sabotageDronePhaseEndRuntime)fail('ENGINEERING_ROUND_DRONE_CONSUMER_REQUIRED');
+    Object.assign(coverage,{contractVersion:'1.2.0',droneAssaultTimingPolicyHash:state.officialReleaseDroneAssaultTiming});
+  }
   return createCurrentProductMatchRuntime({ state, dataset: context.dataset, wave3MissionSourceContext: context,
     releaseMatchVersion: '2.2.0', engineeringRoundScope: coverage, engineeringSourceDefinitionCount: sourceDefinitionCount },
   { scaleId: 'Standard', widthInches: 54, heightInches: 36 },
@@ -1382,7 +1393,8 @@ function createCurrentProductMatchRuntime(input, scale, releaseOpening) {
         appendLog(stateAfter, {actionType:'complete_deferred_seeker_assault'}, completed.events);
       }
     }
-    if (descriptor.releaseNovaShared && currentState.officialDeferredDroneAssaultRound === Number(currentState.round)
+    if ((descriptor.releaseNovaShared || descriptor.engineeringRoundScope?.droneAssaultTimingPolicyHash)
+      && currentState.officialDeferredDroneAssaultRound === Number(currentState.round)
       && stateAfter.sabotageDronePhaseEndCompletedRound === Number(currentState.round)
       && events.some(event => event.type === 'sabotage_drone_phase_end_completed')) {
       delete stateAfter.officialDeferredDroneAssaultRound;

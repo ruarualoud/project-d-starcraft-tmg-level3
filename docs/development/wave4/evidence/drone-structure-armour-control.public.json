@@ -1,0 +1,16 @@
+{
+  "schema": "starcraft_tmg_wave4_drone_structure_armour_control_v1",
+  "status": "passed_read_only_control",
+  "inputRef": "build/wave4-web/stukov-units/detonation-delayed-pZwmwr/drone-use-5",
+  "roomId": "wave4-detonation-delayed-drone-use-5",
+  "sourceRevision": 14,
+  "subsequentTargetArmourPrepared": true,
+  "armourDice": 5,
+  "armoryCardReady": true,
+  "mechanicalStructureRecipient": true,
+  "vehiclePlatingRejected": true,
+  "reason": "Structure recipient is excluded; later target beginArmour was not skipped",
+  "newActions": 0,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

@@ -275,8 +275,8 @@
     }
   ],
   "next": [
-    "其他外部HITS所有者：Corrosive Bile、Sabotage Drone、Psionic Storm、Photon Overcharge；直接移除Disengage/Consume。",
-    "剩余13个已审核记录和整版发布/Builder/大厅/媒体、500/2000分Web双席。"
+    "Psionic Storm／Photon Overcharge外部HITS；Disengage／Consume直接移除。",
+    "剩余13个已审核记录和整版发布／Builder／大厅／媒体、500／2000分Web双席。"
   ],
   "modelCalls": 0,
   "trainingTruth": false,
@@ -2677,12 +2677,12 @@
     "sourceHeldDefinitions": 39
   },
   "detonationWorkInProgress": {
-    "status": "declared_target_attacks_verified_external_hits_and_removal_pending",
+    "status": "delayed_hits_verified_area_hits_and_removal_pending",
     "sourceDefinitionsCompiled": 2,
-    "nativeCases": 33,
-    "nativeSignedActions": 370,
-    "webRooms": 16,
-    "webSignedActions": 66,
+    "nativeCases": 37,
+    "nativeSignedActions": 482,
+    "webRooms": 18,
+    "webSignedActions": 75,
     "legacyColdReplayCases": 3,
     "legacyOriginalActions": 30,
     "newGameAtomsImplemented": 0,
@@ -2740,7 +2740,19 @@
       "docs/development/wave4/evidence/deployment-rebinding.public.json",
       "docs/development/wave4/evidence/stukov-import-scope.public.json",
       "docs/development/wave4/evidence/detonation-declared-target-consumers.public.json",
-      "docs/development/wave4/evidence/detonation-declared-target-harness.public.json"
+      "docs/development/wave4/evidence/detonation-declared-target-harness.public.json",
+      "docs/development/wave4/evidence/detonation-delayed.public.json",
+      "docs/development/wave4/evidence/detonation-delayed-web.public.json",
+      "docs/development/wave4/evidence/detonation-delayed-current-cold.public.json",
+      "docs/development/wave4/evidence/bile-legacy-cold.public.json",
+      "docs/development/wave4/evidence/engineering-release-v3.public.json",
+      "docs/development/wave4/evidence/engineering-v3-boundaries.public.json",
+      "docs/development/wave4/evidence/generated-prefix.public.json",
+      "docs/development/wave4/evidence/drone-reservation-control.public.json",
+      "docs/development/wave4/evidence/drone-structure-armour-control.public.json",
+      "docs/development/wave4/evidence/detonation-delayed-control-web.public.json",
+      "docs/development/wave4/evidence/detonation-delayed-consumers.public.json",
+      "docs/development/wave4/evidence/detonation-delayed-harness.public.json"
     ],
     "workbenchRef": "docs/development/wave4/detonation-continuation-workbench.zh-CN.md",
     "multiTargetParentAndNestedPending": false,
@@ -2748,17 +2760,38 @@
     "fullMatchAdmission": false,
     "delegatedAndOutsideActivationHostsPending": true,
     "latestMilestone": {
-      "nativeCases": 5,
-      "nativeSignedActions": 82,
-      "nativeFullRounds": 2,
-      "webRooms": 3,
-      "webSignedActions": 13,
-      "currentAndPriorColdCases": 7,
-      "currentAndPriorColdOriginalActions": 99,
-      "legacyColdCases": 2,
-      "legacyOriginalActions": 11,
-      "engineeringConversionCases": 2,
-      "engineeringConversionSignedActions": 2,
+      "status": "passed_scoped",
+      "policyVersion": "1.6.0",
+      "rootRuntimeVersion": "3.237.0",
+      "nativeCases": 4,
+      "nativeSignedActions": 112,
+      "nativeFullRounds": 4,
+      "webRooms": 2,
+      "webSignedActions": 9,
+      "currentAndPriorColdCases": 6,
+      "currentAndPriorColdOriginalActions": 148,
+      "legacyColdCases": 1,
+      "legacyOriginalActions": 5,
+      "controlCases": 12,
+      "controlSignedActions": 374,
+      "controlWebRooms": 1,
+      "controlWebSignedActions": 5,
+      "evidenceRefs": [
+        "docs/development/wave4/evidence/detonation-delayed.public.json",
+        "docs/development/wave4/evidence/detonation-delayed-web.public.json",
+        "docs/development/wave4/evidence/detonation-delayed-current-cold.public.json",
+        "docs/development/wave4/evidence/bile-legacy-cold.public.json",
+        "docs/development/wave4/evidence/engineering-release-v3.public.json",
+        "docs/development/wave4/evidence/engineering-v3-boundaries.public.json",
+        "docs/development/wave4/evidence/generated-prefix.public.json",
+        "docs/development/wave4/evidence/drone-reservation-control.public.json",
+        "docs/development/wave4/evidence/drone-structure-armour-control.public.json",
+        "docs/development/wave4/evidence/detonation-delayed-control-web.public.json",
+        "docs/development/wave4/evidence/detonation-delayed-consumers.public.json",
+        "docs/development/wave4/evidence/detonation-delayed-harness.public.json"
+      ],
+      "fullMatchAdmission": false,
+      "newGameAtomsImplemented": 0,
       "allConsumersVerified": false
     },
     "directAbilityDamageHostVerified": true,
@@ -2771,7 +2804,8 @@
     "multipleWeaponSequenceVerified": true,
     "multipleOverwatchSourcesVerified": true,
     "khassarDelegatedAttacksVerified": true,
-    "targetAndDeclarationHostsVerified": true
+    "targetAndDeclarationHostsVerified": true,
+    "bileAndDroneHostsVerified": true
   },
   "partialRuntimeVerificationByDefinition": [
     {
@@ -2835,6 +2869,14 @@
         {
           "file": "packages/product-composition/official-khassar-de-templari-v1.mjs",
           "exportName": "createOfficialKhassarChargeV1"
+        },
+        {
+          "file": "packages/product-composition/official-corrosive-bile-resolution-runtime-v1.mjs",
+          "exportName": "createOfficialCorrosiveBileResolutionRuntimeV1"
+        },
+        {
+          "file": "packages/product-composition/official-sabotage-drone-phase-end-v1.mjs",
+          "exportName": "createOfficialSabotageDronePhaseEndRuntimeV1"
         }
       ],
       "evidenceRefs": [
@@ -2888,7 +2930,19 @@
         "docs/development/wave4/evidence/deployment-rebinding.public.json",
         "docs/development/wave4/evidence/stukov-import-scope.public.json",
         "docs/development/wave4/evidence/detonation-declared-target-consumers.public.json",
-        "docs/development/wave4/evidence/detonation-declared-target-harness.public.json"
+        "docs/development/wave4/evidence/detonation-declared-target-harness.public.json",
+        "docs/development/wave4/evidence/detonation-delayed.public.json",
+        "docs/development/wave4/evidence/detonation-delayed-web.public.json",
+        "docs/development/wave4/evidence/detonation-delayed-current-cold.public.json",
+        "docs/development/wave4/evidence/bile-legacy-cold.public.json",
+        "docs/development/wave4/evidence/engineering-release-v3.public.json",
+        "docs/development/wave4/evidence/engineering-v3-boundaries.public.json",
+        "docs/development/wave4/evidence/generated-prefix.public.json",
+        "docs/development/wave4/evidence/drone-reservation-control.public.json",
+        "docs/development/wave4/evidence/drone-structure-armour-control.public.json",
+        "docs/development/wave4/evidence/detonation-delayed-control-web.public.json",
+        "docs/development/wave4/evidence/detonation-delayed-consumers.public.json",
+        "docs/development/wave4/evidence/detonation-delayed-harness.public.json"
       ],
       "meleeHostVerified": true,
       "automaticHitsHostVerified": true,
@@ -2914,7 +2968,10 @@
       "webKhassarSuccessorVerified": true,
       "declaredAttackNativeVerified": true,
       "targetReactionNativeVerified": true,
-      "webDeclaredTargetSuccessorVerified": true
+      "webDeclaredTargetSuccessorVerified": true,
+      "bileNativeVerified": true,
+      "droneNativeVerified": false,
+      "webDelayedSuccessorVerified": true
     },
     {
       "definitionId": "unit:infested_trooper/detonation-any-phase@1",
@@ -2973,6 +3030,18 @@
         {
           "file": "packages/product-composition/official-khassar-de-templari-v1.mjs",
           "exportName": "createOfficialKhassarChargeV1"
+        },
+        {
+          "file": "packages/product-composition/official-corrosive-bile-resolution-runtime-v1.mjs",
+          "exportName": "createOfficialCorrosiveBileResolutionRuntimeV1"
+        },
+        {
+          "file": "packages/product-composition/official-sabotage-drone-phase-end-v1.mjs",
+          "exportName": "createOfficialSabotageDronePhaseEndRuntimeV1"
+        },
+        {
+          "file": "packages/product-composition/official-current-product-match-runtime-v1.mjs",
+          "exportName": "createOfficialEngineeringScopedRoundRuntimeV1"
         }
       ],
       "evidenceRefs": [
@@ -3021,7 +3090,19 @@
         "docs/development/wave4/evidence/deployment-rebinding.public.json",
         "docs/development/wave4/evidence/stukov-import-scope.public.json",
         "docs/development/wave4/evidence/detonation-declared-target-consumers.public.json",
-        "docs/development/wave4/evidence/detonation-declared-target-harness.public.json"
+        "docs/development/wave4/evidence/detonation-declared-target-harness.public.json",
+        "docs/development/wave4/evidence/detonation-delayed.public.json",
+        "docs/development/wave4/evidence/detonation-delayed-web.public.json",
+        "docs/development/wave4/evidence/detonation-delayed-current-cold.public.json",
+        "docs/development/wave4/evidence/bile-legacy-cold.public.json",
+        "docs/development/wave4/evidence/engineering-release-v3.public.json",
+        "docs/development/wave4/evidence/engineering-v3-boundaries.public.json",
+        "docs/development/wave4/evidence/generated-prefix.public.json",
+        "docs/development/wave4/evidence/drone-reservation-control.public.json",
+        "docs/development/wave4/evidence/drone-structure-armour-control.public.json",
+        "docs/development/wave4/evidence/detonation-delayed-control-web.public.json",
+        "docs/development/wave4/evidence/detonation-delayed-consumers.public.json",
+        "docs/development/wave4/evidence/detonation-delayed-harness.public.json"
       ],
       "meleeHostVerified": true,
       "automaticHitsHostVerified": true,
@@ -3045,7 +3126,10 @@
       "webKhassarSuccessorVerified": true,
       "declaredAttackNativeVerified": false,
       "targetReactionNativeVerified": false,
-      "webDeclaredTargetSuccessorVerified": false
+      "webDeclaredTargetSuccessorVerified": false,
+      "bileNativeVerified": false,
+      "droneNativeVerified": true,
+      "webDelayedSuccessorVerified": true
     }
   ],
   "stukovCombatGate": {
@@ -3171,6 +3255,44 @@
       "docs/development/wave4/evidence/deployment-rebinding.public.json",
       "docs/development/wave4/evidence/stukov-import-scope.public.json"
     ],
-    "fullMatchAdmission": false
+    "fullMatchAdmission": false,
+    "latestEngineeringRelease": "wave4-u98-c88-r50-stukov-units-engineering-v3",
+    "frozenFaqBytesVerified": true,
+    "v3EvidenceRef": "docs/development/wave4/evidence/engineering-release-v3.public.json",
+    "v3BoundaryEvidenceRef": "docs/development/wave4/evidence/engineering-v3-boundaries.public.json"
+  },
+  "delayedHitsGate": {
+    "status": "passed_scoped",
+    "policyVersion": "1.6.0",
+    "rootRuntimeVersion": "3.237.0",
+    "nativeCases": 4,
+    "nativeSignedActions": 112,
+    "nativeFullRounds": 4,
+    "webRooms": 2,
+    "webSignedActions": 9,
+    "currentAndPriorColdCases": 6,
+    "currentAndPriorColdOriginalActions": 148,
+    "legacyColdCases": 1,
+    "legacyOriginalActions": 5,
+    "controlCases": 12,
+    "controlSignedActions": 374,
+    "controlWebRooms": 1,
+    "controlWebSignedActions": 5,
+    "evidenceRefs": [
+      "docs/development/wave4/evidence/detonation-delayed.public.json",
+      "docs/development/wave4/evidence/detonation-delayed-web.public.json",
+      "docs/development/wave4/evidence/detonation-delayed-current-cold.public.json",
+      "docs/development/wave4/evidence/bile-legacy-cold.public.json",
+      "docs/development/wave4/evidence/engineering-release-v3.public.json",
+      "docs/development/wave4/evidence/engineering-v3-boundaries.public.json",
+      "docs/development/wave4/evidence/generated-prefix.public.json",
+      "docs/development/wave4/evidence/drone-reservation-control.public.json",
+      "docs/development/wave4/evidence/drone-structure-armour-control.public.json",
+      "docs/development/wave4/evidence/detonation-delayed-control-web.public.json",
+      "docs/development/wave4/evidence/detonation-delayed-consumers.public.json",
+      "docs/development/wave4/evidence/detonation-delayed-harness.public.json"
+    ],
+    "fullMatchAdmission": false,
+    "newGameAtomsImplemented": 0
   }
 }

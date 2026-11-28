@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-11-28T01:07:38.244Z",
+  "updatedAt": "2026-11-28T02:20:08.285Z",
   "ticket": 23,
   "slice": 249,
   "completion": "33/36",
@@ -9,7 +9,7 @@
     249,
     250
   ],
-  "summary": "Wave4人人长任务继续，完整原子6/18。Target/声明本批5原生分支82动作、2完整回合、Web3房13确认通过；当前/前批7房99及旧2房11动作冷读一致。工程发布V2重编Builder，进口Goliath/Tank实付BM。继续其他HITS/直接移除、13记录和整版产品，39来源与估算保持。",
+  "summary": "Wave4人人长任务继续，完整原子6/18。Bile/Drone本批4原生分支112动作、4完整回合、Web2房9确认通过；当前/前批6房148及旧Bile5原动作冷读一致。工程V3冻结FAQ字节，生成单位Web恢复已修。继续Storm/Photon、直接移除、13记录及整版产品，39来源和估算保持。",
   "runPolicy": "本分支仅推进Wave4人人对战，按Wave3模式补齐数据、规则、建军、房间、媒体和Web双席；使用5484及build/wave4-web，按可验证成果提交推送。其他同步开发线不在本分支展开；付费模型、K3、AI对局、复盘与生产发布继续暂停。",
   "items": [
     {
@@ -17,7 +17,7 @@
       "title": "Wave4人人更新：6/18原子；Stukov9/9具名工程定义",
       "implementation": {
         "status": "partial",
-        "note": "政策1.5/Root3.236接Target/声明封存与阵亡来源完成；工程V2修转换发布绑定。新增完整原子0，累计6/18。",
+        "note": "政策1.6/Root3.237接Bile/Drone父节点；工程V3冻结FAQ；生成单位Web前缀按原购买初态恢复。新增完整原子0，累计6/18。",
         "evidence": [
           "content/source-releases/wave4-20261127/abilities/ability-diff.json",
           "docs/development/wave4/evidence/ability-diff.public.json",
@@ -113,12 +113,24 @@
           "docs/development/wave4/evidence/deployment-rebinding.public.json",
           "docs/development/wave4/evidence/stukov-import-scope.public.json",
           "docs/development/wave4/evidence/detonation-declared-target-consumers.public.json",
-          "docs/development/wave4/evidence/detonation-declared-target-harness.public.json"
+          "docs/development/wave4/evidence/detonation-declared-target-harness.public.json",
+          "docs/development/wave4/evidence/detonation-delayed.public.json",
+          "docs/development/wave4/evidence/detonation-delayed-web.public.json",
+          "docs/development/wave4/evidence/detonation-delayed-current-cold.public.json",
+          "docs/development/wave4/evidence/bile-legacy-cold.public.json",
+          "docs/development/wave4/evidence/engineering-release-v3.public.json",
+          "docs/development/wave4/evidence/engineering-v3-boundaries.public.json",
+          "docs/development/wave4/evidence/generated-prefix.public.json",
+          "docs/development/wave4/evidence/drone-reservation-control.public.json",
+          "docs/development/wave4/evidence/drone-structure-armour-control.public.json",
+          "docs/development/wave4/evidence/detonation-delayed-control-web.public.json",
+          "docs/development/wave4/evidence/detonation-delayed-consumers.public.json",
+          "docs/development/wave4/evidence/detonation-delayed-harness.public.json"
         ]
       },
       "productHandoff": {
         "status": "partial",
-        "note": "本批5原生82动作、2完整回合、Web3房13确认；当前/前批7房99及旧2房11动作冷读通过，整版出口继续。",
+        "note": "本批4原生112动作、4完整回合、Web2房9确认；当前/前批6房148及旧Bile5原动作冷读通过，整版出口继续。",
         "evidence": [
           "docs/development/wave4/evidence/native-armour-timing.public.json",
           "docs/development/wave4/evidence/native-other-timing.public.json",
@@ -215,7 +227,19 @@
           "docs/development/wave4/evidence/deployment-rebinding.public.json",
           "docs/development/wave4/evidence/stukov-import-scope.public.json",
           "docs/development/wave4/evidence/detonation-declared-target-consumers.public.json",
-          "docs/development/wave4/evidence/detonation-declared-target-harness.public.json"
+          "docs/development/wave4/evidence/detonation-declared-target-harness.public.json",
+          "docs/development/wave4/evidence/detonation-delayed.public.json",
+          "docs/development/wave4/evidence/detonation-delayed-web.public.json",
+          "docs/development/wave4/evidence/detonation-delayed-current-cold.public.json",
+          "docs/development/wave4/evidence/bile-legacy-cold.public.json",
+          "docs/development/wave4/evidence/engineering-release-v3.public.json",
+          "docs/development/wave4/evidence/engineering-v3-boundaries.public.json",
+          "docs/development/wave4/evidence/generated-prefix.public.json",
+          "docs/development/wave4/evidence/drone-reservation-control.public.json",
+          "docs/development/wave4/evidence/drone-structure-armour-control.public.json",
+          "docs/development/wave4/evidence/detonation-delayed-control-web.public.json",
+          "docs/development/wave4/evidence/detonation-delayed-consumers.public.json",
+          "docs/development/wave4/evidence/detonation-delayed-harness.public.json"
         ]
       },
       "liveOutput": {
@@ -829,10 +853,15 @@
     }
   ],
   "next": [
-    "接其他外部HITS与Disengage/Consume直接移除；完整原子仍6/18。",
+    "接Storm/Photon及Disengage/Consume；完整原子仍6/18。",
     "其余13个已审核记录、整版发布/Builder/大厅/媒体与500/2000分Web继续。"
   ],
   "navigation": [
+    {
+      "when": "查看Bile/Drone完整回合、生成单位恢复与Web",
+      "title": "Detonation延迟伤害接线",
+      "path": "docs/development/wave4/detonation-delayed-wiring.zh-CN.md"
+    },
     {
       "when": "查看Target/声明、原攻击者阵亡、工程发布绑定与Web",
       "title": "Detonation声明与目标接线",

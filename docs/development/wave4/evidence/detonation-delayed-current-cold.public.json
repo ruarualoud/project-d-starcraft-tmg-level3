@@ -1,0 +1,68 @@
+{
+  "schema": "starcraft_tmg_wave4_detonation_v3_compat_v1",
+  "status": "passed_scoped",
+  "results": [
+    {
+      "id": "bile-use",
+      "roomId": "wave4-detonation-delayed-bile-use-0",
+      "originalSignedActions": 27,
+      "runtimeVersion": "2.2.0",
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "stateHash": "27a2f0ce9b1caf56672e15f42a2c9c1b83152ea42dcdf50646d0b664468f8edf",
+      "newActions": 0
+    },
+    {
+      "id": "bile-decline",
+      "roomId": "wave4-detonation-delayed-bile-decline-0",
+      "originalSignedActions": 25,
+      "runtimeVersion": "2.2.0",
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "stateHash": "adf0c008c5a9da0c1044ba096333ea45131ff4261e976886b6539158c27ec204",
+      "newActions": 0
+    },
+    {
+      "id": "drone-use",
+      "roomId": "wave4-detonation-delayed-drone-use-12",
+      "originalSignedActions": 31,
+      "runtimeVersion": "2.2.0",
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "stateHash": "1493e8f9cfac0d5595777afc6522c8a778bafd30a516e2f7e6208604d5adc157",
+      "newActions": 0
+    },
+    {
+      "id": "drone-decline",
+      "roomId": "wave4-detonation-delayed-drone-decline-0",
+      "originalSignedActions": 29,
+      "runtimeVersion": "2.2.0",
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "stateHash": "d215368c943d80c93846004f010f3dc4e6b2106acbaf92075319ea059adbc98d",
+      "newActions": 0
+    },
+    {
+      "id": "shaped-blast",
+      "roomId": "wave4-detonation-declaration-shaped-blast-0",
+      "originalSignedActions": 10,
+      "runtimeVersion": "3.236.0",
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "stateHash": "9262e25169f2442a93d3f89565e4584483bd194461562d439104854f5c89999f",
+      "newActions": 0
+    },
+    {
+      "id": "dark-swarm-use-blocks",
+      "roomId": "wave4-detonation-target-dark-swarm-use-blocks-0",
+      "originalSignedActions": 26,
+      "runtimeVersion": "2.2.0",
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "stateHash": "ead2c0cfe30f7693b19b612eef8f3051cad64c8987f2927762d4d54f6aa2e0f0",
+      "newActions": 0
+    }
+  ],
+  "modelCalls": 0,
+  "trainingTruth": false
+}

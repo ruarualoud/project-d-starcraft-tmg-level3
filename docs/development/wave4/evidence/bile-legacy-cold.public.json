@@ -1,0 +1,18 @@
+{
+  "schema": "starcraft_tmg_wave4_bile_legacy_cold_v1",
+  "status": "passed_read_only",
+  "roomId": "wave2-bile-resolution-destroyed-source-end",
+  "inputRef": "build/ticket-28-wave2-capabilities-20261113-v1/corrosive-bile-resolution/destroyed-source/end",
+  "runRef": "build/wave4-web/stukov-units/bile-legacy-cold-AY44xK",
+  "originalSignedActions": 5,
+  "runtimeVersion": "3.28.0",
+  "descriptorUnchanged": true,
+  "coldReplay": true,
+  "archiveSha256": "44e50f5e47e764c2733f0afa5df853ea68f3ea8c9eb402cb223853520989526c",
+  "decompressedDatabaseSha256": "d78d8e977127b3731869ade9be48972e0d5a6454b1489bc3271fa142fdc93f87",
+  "originalArchiveUnchanged": true,
+  "sourceOpenedReadOnly": true,
+  "newActions": 0,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

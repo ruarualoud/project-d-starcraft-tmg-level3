@@ -1,0 +1,113 @@
+{
+  "schema": "starcraft_tmg_wave4_virus_web_verification_v1",
+  "status": "passed_scoped",
+  "runRef": "build/wave4-web/stukov-units/detonation-delayed-web-v1",
+  "results": [
+    {
+      "kind": "bile-use",
+      "definitionId": "unit:infested_marine/detonation-any-phase@1",
+      "sourceRoomId": "wave4-detonation-delayed-bile-use-0",
+      "sourceStateHash": "f610bea21e0dd5120e2c285703706e8215a1aae46f4624d733ac3a53549702bc",
+      "sourcePrefixReceipts": 13,
+      "originalSourceDeathVerified": true,
+      "trace": [
+        {
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:infested_marine/detonation-any-phase@1",
+          "sideKey": "player2",
+          "stateRevision": 1,
+          "stateHash": "7900109aef21c040a4ae9022fac6c0e2730d853cb0ef6dfbdcba60c548ab649d"
+        },
+        {
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null,
+          "sideKey": "player1",
+          "stateRevision": 2,
+          "stateHash": "2839ac91c17d9aafd6d036a29b45d2b5fb4b20c160ef1fee05f64f9c8d72c774"
+        },
+        {
+          "actionType": "roll_automatic_hits_armour_pool",
+          "definitionId": null,
+          "sideKey": "player2",
+          "stateRevision": 3,
+          "stateHash": "681cf165029b8c777cb8256b6fe7dc7a6ae23052048ee6377fdb10202d94fc05"
+        },
+        {
+          "actionType": "resolve_automatic_hits_evade_pool",
+          "definitionId": null,
+          "sideKey": "player2",
+          "stateRevision": 4,
+          "stateHash": "3dc7be9b98a6eb5aae5435b7e76a6f6790f98598cdbbdcde211236f0eede3eff"
+        }
+      ],
+      "signedActions": 4,
+      "twoSeatsVerified": true,
+      "explicitHumanConfirmation": true,
+      "previewReadOnly": true,
+      "replayMatchesCurrent": true,
+      "seatRecoveryReentryVerified": true,
+      "pageErrors": []
+    },
+    {
+      "kind": "drone-use",
+      "definitionId": "unit:infested_trooper/detonation-any-phase@1",
+      "sourceRoomId": "wave4-detonation-delayed-drone-use-12",
+      "sourceStateHash": "10b38f6ce6079c36b5d312442350d9ba195ae28618050f04134414245cc1c065",
+      "sourcePrefixReceipts": 16,
+      "originalSourceDeathVerified": true,
+      "trace": [
+        {
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:infested_trooper/detonation-any-phase@1",
+          "sideKey": "player2",
+          "stateRevision": 1,
+          "stateHash": "51e04bf9bebd9fb162dbf76e82b709e169ee35486e2271783846274a3d901cf0"
+        },
+        {
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null,
+          "sideKey": "player1",
+          "stateRevision": 2,
+          "stateHash": "6d5da5f112f2cc3c0fa974c54c09444cb5436856af92198512eec472904b789c"
+        },
+        {
+          "actionType": "roll_automatic_hits_armour_pool",
+          "definitionId": null,
+          "sideKey": "player2",
+          "stateRevision": 3,
+          "stateHash": "d20305f525ee79698e87f1003ab85f66eaade0bda42f003e6f84db4c131cc0c8"
+        },
+        {
+          "actionType": "resolve_automatic_hits_evade_pool",
+          "definitionId": null,
+          "sideKey": "player2",
+          "stateRevision": 4,
+          "stateHash": "0c83c5fccc4e9784c2d6643edacdbb0c43e1810002241dbbf1478b1f284da065"
+        },
+        {
+          "actionType": "complete_sabotage_drone_phase_end",
+          "definitionId": null,
+          "sideKey": "player2",
+          "stateRevision": 5,
+          "stateHash": "e16894e4331ecb1be0567cba3fb50fbceff4629d415c7075466b2e695b9c8de5"
+        }
+      ],
+      "signedActions": 5,
+      "twoSeatsVerified": true,
+      "explicitHumanConfirmation": true,
+      "previewReadOnly": true,
+      "replayMatchesCurrent": true,
+      "seatRecoveryReentryVerified": true,
+      "pageErrors": []
+    }
+  ],
+  "signedActions": 9,
+  "conditionalTurretGeometryInRestorationCaseOnly": false,
+  "sourceHeldDefinitions": 39,
+  "engineeringEstimatedUnitGeometry": true,
+  "fullWave4LobbyBuilderAdmission": false,
+  "fullMatchAdmission": false,
+  "wave3PlayerRoomsTouched": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

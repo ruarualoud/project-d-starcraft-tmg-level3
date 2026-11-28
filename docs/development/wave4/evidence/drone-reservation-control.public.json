@@ -1,0 +1,14 @@
+{
+  "schema": "starcraft_tmg_wave4_drone_reservation_control_v1",
+  "status": "passed_read_only_control",
+  "roomId": "wave4-detonation-delayed-drone-use-0",
+  "inputRef": "build/wave4-web/stukov-units/detonation-delayed-pZwmwr/drone-use-0",
+  "originalSignedActions": 31,
+  "newActions": 0,
+  "sourceOriginallyAllocated": true,
+  "childReallocatedModels": 0,
+  "originalRemovalExactlyOnce": true,
+  "scope": "control verifies already-doomed source reservation; does not qualify the source-killed-by-Detonation use case",
+  "modelCalls": 0,
+  "trainingTruth": false
+}

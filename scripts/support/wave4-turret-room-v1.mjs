@@ -13,6 +13,7 @@ import { bindOfficialSpawnRoundAbilityLockV1 } from '../../packages/rule-atoms/o
 import { OFFICIAL_PHYSICAL_GAP_TRANSIT_POLICY_V13 } from '../../packages/rule-atoms/official-movement-clearance-contract-v13.mjs';
 import { createOfficialSpecialTerrainAgreementV1 } from '../../packages/rule-atoms/official-special-terrain-rules-kernel-v1.mjs';
 import { OFFICIAL_FAQ_REACTION_POLICY_V13 } from '../../packages/rule-atoms/official-faq-reaction-policy-v13.mjs';
+import {hashStarcraftTmgContract as hash} from '../../packages/authoritative-engine/referee-crypto-v1.mjs';
 import { declareWave3EngineeringCoherencyV1, createWave3ComponentEngineeringAuthorityV1, openWave3EngineeringRoomV1 } from './wave3-room-boundary-fixture-v1.mjs';
 
 export async function loadWave4TurretInputs(root) {
@@ -123,12 +124,26 @@ export function createWave4LegacyOverwatchControlScene(inputs) {
 }
 
 export async function bindWave4TurretRoom({ inputs, state, sourceDefinitionIds, runtimeOptions, scenario, directory, humanConfirmed = false, roundControl = false, roundDefinitionIds,
-  characteristicRuntimeDefinitionIds=['unit:infested_missile_turret/detection-any-phase@1'] }) {
+  characteristicRuntimeDefinitionIds=['unit:infested_missile_turret/detection-any-phase@1'],runtimeInitialState=state,expectedNativeRuntimeHash }) {
+  const restoredInitial=runtimeInitialState!==state;
+  if(restoredInitial){
+    const immutable=['officialReactionFamilySourceBundle','officialCharacteristicStatusFamilySourceBundle','officialGeneratedUnitDataBundle',
+      'officialUnitLifecycleFamilySourceBundle','officialModelBaseGeometryDataBundle'];
+    if(!humanConfirmed||!roundControl||scenario?.kind!=='web_from_signed_native_virus_prefix'
+      ||!scenario.sourceRoomId||!Number.isSafeInteger(scenario.sourcePrefixReceipts)||scenario.sourcePrefixReceipts<0
+      ||scenario.sourceStateHash!==hash(state)||!/^[a-f0-9]{64}$/.test(scenario.sourceBindingHash||'')
+      ||!/^[a-f0-9]{64}$/.test(expectedNativeRuntimeHash||'')
+      ||immutable.some(key=>!state[key]?.bundleHash||state[key].bundleHash!==runtimeInitialState[key]?.bundleHash)
+      ||hash(state.armyCompositionUpgradeAuditsBySide)!==hash(runtimeInitialState.armyCompositionUpgradeAuditsBySide))
+      throw Error('WAVE4_SIGNED_GENERATED_PREFIX_RUNTIME_INITIAL_REQUIRED');
+  }
   const sourceRuntimeFor = () => {
     const nativeActions = createOfficialCharacteristicStatusComponentRuntimeV2({ context: inputs.context,
-      spatialState: state, definitionIds: characteristicRuntimeDefinitionIds, sourceDefinitionIds, ...runtimeOptions });
-    return roundControl ? createOfficialEngineeringScopedRoundRuntimeV1({ context: inputs.context, state, nativeActions,
+      spatialState: runtimeInitialState, definitionIds: characteristicRuntimeDefinitionIds, sourceDefinitionIds, ...runtimeOptions });
+    const source=roundControl ? createOfficialEngineeringScopedRoundRuntimeV1({ context: inputs.context, state:runtimeInitialState, nativeActions,
       definitionIds: roundDefinitionIds || inputs.scope.definitionIds }) : nativeActions;
+    if(restoredInitial&&source.descriptor.runtimeHash!==expectedNativeRuntimeHash)throw Error('WAVE4_RUNTIME_INITIAL_BINDING_MISMATCH');
+    return source;
   };
   const runtimeFor = () => humanConfirmed ? createOfficialHumanConfirmedRuntimeV1(sourceRuntimeFor()) : sourceRuntimeFor();
   const runtime = runtimeFor();
@@ -141,7 +156,8 @@ export async function bindWave4TurretRoom({ inputs, state, sourceDefinitionIds, 
   const context = { ...inputs.context, manifest };
   const authority = createWave3ComponentEngineeringAuthorityV1({ context, state, scenario });
   await fs.mkdir(directory, { recursive: true });
-  for (const [name,value] of Object.entries({ authority, runtime: runtime.descriptor, scope: { sourceDefinitionIds, runtimeOptions, scenario, roundControl, ...(roundDefinitionIds ? {roundDefinitionIds} : {}), characteristicRuntimeDefinitionIds } })) {
+  for (const [name,value] of Object.entries({ authority, runtime: runtime.descriptor, scope: { sourceDefinitionIds, runtimeOptions, scenario, roundControl, ...(roundDefinitionIds ? {roundDefinitionIds} : {}), characteristicRuntimeDefinitionIds,
+    ...(restoredInitial?{runtimeInitialState,expectedNativeRuntimeHash,humanConfirmed}:{} ) } })) {
     await atomicWrite(path.join(directory,name+'.json'),JSON.stringify(value,null,2)+'\n');
   }
   return { context, authority, runtime, open: (options = {}) => openWave3EngineeringRoomV1({ directory, filename: 'room.sqlite',
