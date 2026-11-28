@@ -27,7 +27,7 @@ const stormPhotonSource=['starcraft_tmg_wave4_detonation_storm_v1','starcraft_tm
 const disengageSource=sourceResult.schema==='starcraft_tmg_wave4_detonation_disengage_v1';
 const consumeSource=sourceResult.schema==='starcraft_tmg_wave4_consume_web_source_v1';
 const talDarimSource=sourceResult.schema==='starcraft_tmg_wave4_tal_darim_threshold_v1';
-const addedCardSource=sourceResult.schema==='starcraft_tmg_wave4_added_card_active_v1';
+const addedCardSource=['starcraft_tmg_wave4_added_card_active_v1','starcraft_tmg_wave4_added_status_reactions_v1'].includes(sourceResult.schema);
 const baseInputs=addedCardSource?await loadWave4AddedCardInputs(root):talDarimSource?await loadWave4TalDarimThresholdInputs(root):stormPhotonSource||disengageSource||consumeSource?await loadWave4StukovUnitInputsV3(root):sourceResult.schema==='starcraft_tmg_wave4_detonation_target_v1'||delayedSource?await loadWave4StukovUnitInputsV2(root):['starcraft_tmg_wave4_stukov_infestation_native_v1','starcraft_tmg_wave4_plagued_munitions_v1',
    'starcraft_tmg_wave4_infested_infantry_base_wiring_v1','starcraft_tmg_wave4_detonation_ranged_host_v1','starcraft_tmg_wave4_detonation_nested_host_v1',
    'starcraft_tmg_wave4_bio_kill_switch_v1','starcraft_tmg_wave4_corrode_web_source_v1','starcraft_tmg_wave4_detonation_template_v1','starcraft_tmg_wave4_detonation_outside_v1','starcraft_tmg_wave4_detonation_overwatch_v1','starcraft_tmg_wave4_overwatch_coexistence_v1','starcraft_tmg_wave4_detonation_khassar_web_source_v1','starcraft_tmg_wave4_detonation_declaration_v1'].includes(sourceResult.schema)?await loadWave4StukovUnitInputs(root)
@@ -61,7 +61,7 @@ for(const spec of specs) {  const proof=sourceResult.results.find(row=>row.id===
     if(addedCardSource){
       const unwrap=action=>{while(action.sourceAction||action.attackAction)action=action.sourceAction||action.attackAction;return action;},
         actions=journal.map(r=>unwrap(r.action)),producer=actions.find(a=>a.definitionId===spec.definitionId);
-      sourceParameters=producer?.characteristicStatusPlan?.canonicalParameters||producer?.relocationPlan?.canonicalParameters||producer?.battlefieldAssetPlan?.canonicalParameters;
+      sourceParameters=producer?.characteristicStatusPlan?.canonicalParameters||producer?.relocationPlan?.canonicalParameters||producer?.battlefieldAssetPlan?.canonicalParameters||producer?.reactionPlan?.canonicalParameters;
       sourceStandardMoveParameters=actions.find(a=>a.actionType==='move'&&a.pieceId==='actor')?.spatialPlan?.canonicalParameters;
       assert.ok(sourceParameters&&sourceStandardMoveParameters,'ADDED_CARD_SIGNED_INTENT_PARAMETERS_REQUIRED');
     }

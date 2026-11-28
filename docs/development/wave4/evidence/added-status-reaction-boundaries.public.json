@@ -1,0 +1,87 @@
+{
+  "schema": "starcraft_tmg_wave4_added_status_reaction_boundaries_v1",
+  "status": "passed_scoped",
+  "checks": [
+    {
+      "id": "brutal-exact-after-activation-targets-and-read-only",
+      "passed": true,
+      "scope": "component_boundary_from_signed_native_prefix"
+    },
+    {
+      "id": "enemy-move-is-not-enemy-activation-end",
+      "passed": true,
+      "scope": "component_boundary_from_signed_native_prefix"
+    },
+    {
+      "id": "brutal-flying-recipient-excluded",
+      "passed": true,
+      "scope": "component_boundary_from_signed_native_prefix"
+    },
+    {
+      "id": "brutal-outside-twelve-footprints-excluded",
+      "passed": true,
+      "scope": "component_boundary_from_signed_native_prefix"
+    },
+    {
+      "id": "trigger-witness-forgery-rejected",
+      "passed": true,
+      "scope": "component_boundary_from_signed_native_prefix"
+    },
+    {
+      "id": "source-card-readiness-required",
+      "passed": true,
+      "scope": "component_boundary_from_signed_native_prefix"
+    },
+    {
+      "id": "source-granted-burrow-shared-movement-successor",
+      "passed": true,
+      "scope": "component_boundary_from_signed_native_prefix"
+    },
+    {
+      "id": "source-granted-burrow-feature-forgery-rejected",
+      "passed": true,
+      "scope": "component_boundary_from_signed_native_prefix"
+    },
+    {
+      "id": "parasite-after-action-before-activation-end",
+      "passed": true,
+      "scope": "component_boundary_from_signed_native_prefix"
+    },
+    {
+      "id": "parasite-non-infested-actor-excluded",
+      "passed": true,
+      "scope": "component_boundary_from_signed_native_prefix"
+    },
+    {
+      "id": "parasite-outside-eight-footprints-excluded",
+      "passed": true,
+      "scope": "component_boundary_from_signed_native_prefix"
+    },
+    {
+      "id": "reaction-target-and-parameters-sealed",
+      "passed": true,
+      "scope": "component_boundary_from_signed_native_prefix"
+    },
+    {
+      "id": "end-activation-does-not-repeat-action-end",
+      "passed": true,
+      "scope": "component_boundary_from_signed_native_prefix"
+    },
+    {
+      "id": "extra-move-is-an-action-without-consuming-normal-limit",
+      "passed": true,
+      "scope": "component_boundary_from_signed_native_prefix"
+    },
+    {
+      "id": "mixed-ranged-melee-hits-target-and-armour-owners-compose",
+      "passed": true,
+      "scope": "component_boundary_from_signed_native_prefix"
+    }
+  ],
+  "counterfactualQualificationInputsAreComponentOnly": true,
+  "newCompleteAtoms": 0,
+  "sourceHeldDefinitions": 39,
+  "fullMatchAdmission": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

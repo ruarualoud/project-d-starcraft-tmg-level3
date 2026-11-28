@@ -33,9 +33,14 @@ export function applyOfficialInfestationTransferStatusV1(state, route, source, t
     throw Error('INFESTATION_TRANSFER_TARGET_INVALID');
   }
   const target = state.pieces.find(piece => piece.id === targetId);
+  return applyOfficialInfestationDebuffV1(state,route,source,target,context.infestationWitness.witnessHash);
+}
+
+// Shared status representation; each caller validates its own source-bound target witness.
+export function applyOfficialInfestationDebuffV1(state,route,source,target,sourceWitnessHash){
   const body = { statusName: 'INFESTATION', statusKind: 'DEBUFF', sourceDefinitionId: route.definitionId,
     sourceFeatureHash: route.sourceFeatureHash, sourcePieceId: source.id, sourceSideKey: source.sideKey,
-    targetPieceId: target.id, sourceWitnessHash: context.infestationWitness.witnessHash,
+    targetPieceId: target.id, sourceWitnessHash,
     appliedRound: Number(state.round), appliedPhase: state.phase, trainingTruth: false };
   const status = { ...body, statusEffectHash: hash(body) };
   target.statuses = [...(target.statuses || []).filter(entry => officialInfestationStatusNameV1(entry) !== 'infestation'), status];

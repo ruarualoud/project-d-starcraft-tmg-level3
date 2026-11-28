@@ -1,3 +1,5 @@
+import {OFFICIAL_CHARACTERISTIC_CONSUMER_POLICY_V6} from './official-characteristic-status-family-adapter-v1.mjs';
+import {OFFICIAL_SOURCE_GRANTED_BURROW_POLICY_V1} from '../rule-atoms/official-source-granted-burrow-policy-v1.mjs';
 import { OFFICIAL_ANCESTRAL_WISDOM_DEFINITION_ID } from './official-ancestral-wisdom-payment-v1.mjs';
 import {createOfficialFriendlyLostSupplyBaselineV1} from '../rule-atoms/official-friendly-lost-supply-threshold-v1.mjs';
 import {assertOfficialTalDarimThresholdStateV1} from './official-tal-darim-threshold-v1.mjs';
@@ -433,6 +435,11 @@ export function createOfficialReleaseRosterStateV2({ context, candidatesBySide, 
   if (reactionDefinitionIds !== undefined) {
     state.officialReactionFamilySourceBundle = createOfficialReactionFamilySourceBundleV2({
       catalogue: abilityCatalogue(), definitionIds: reactionDefinitionIds });
+    if(state.officialReactionFamilySourceBundle.definitionIds.includes(OFFICIAL_SOURCE_GRANTED_BURROW_POLICY_V1.definitionId)){
+      if(!includeCharacteristicConsumers||!includeHiddenRangedAndEvade)throw Error('RELEASE_ROSTER_CARD_BURROW_CHARACTERISTIC_CONSUMERS_REQUIRED');
+      state.officialSourceGrantedBurrowPolicy=structuredClone(OFFICIAL_SOURCE_GRANTED_BURROW_POLICY_V1);
+      state.officialCharacteristicConsumerPolicy=structuredClone(OFFICIAL_CHARACTERISTIC_CONSUMER_POLICY_V6);
+    }
     if (state.officialReactionFamilySourceBundle.routes.some(route => route.effectKind === 'ranged_declaration_keywords')) {
       state.officialRangedDeclarationPolicy = structuredClone(state.officialReactionFamilySourceBundle.definitionIds
         .includes('unit:nova_stealth_mode/head-shot-assault-phase@1')

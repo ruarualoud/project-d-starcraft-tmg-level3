@@ -223,12 +223,12 @@
 | `card:forge/ground-armor-any@2` | 已有原子 | reaction / reactionRuntime | 0 | 无源级阻断；接线待验 |
 | `card:healing_pathogen/universal-carrier-any@1` | 已有原子新组合 | supplyLoss / characteristic | 0 | 无源级阻断；接线待验 |
 | `card:healing_pathogen/stukov-s-creep-any@1` | 已有原子新组合 | asset | 0 | 无源级阻断；接线待验 |
-| `card:hive/brutal-instinct-any@1` | 已有原子新组合 | reaction / characteristic | 0 | 无源级阻断；接线待验 |
+| `card:hive/brutal-instinct-any@1` | 已有原子新组合 | reaction / characteristic | 0 | Native／Web具名消费者已验；整版准入待验 |
 | `card:hive/creep-spread-any@1` | 已有原子 | asset | 0 | 原生／Web主动消费者已验；整记录／整版准入待 |
 | `card:hungering_infestation/growing-infestation-any@1` | 新增语义 | reaction | 1 | 原生／Web实际消费者已验；整版待 |
 | `card:hungering_infestation/stukov-s-creep-any@1` | 已有原子新组合 | asset | 0 | 无源级阻断；接线待验 |
 | `card:infested_barracks/for-the-swarm-any@1` | 已有原子新组合 | relocation | 0 | 原生／Web主动消费者已验；整记录／整版准入待 |
-| `card:infested_command_center/parasitic-bio-toxins-any@1` | 已有原子新组合 | reaction / characteristic | 0 | 无源级阻断；接线待验 |
+| `card:infested_command_center/parasitic-bio-toxins-any@1` | 已有原子新组合 | reaction / characteristic | 0 | Native／Web具名消费者已验；整版准入待验 |
 | `card:infested_command_center/scanner-sweep-any@1` | 已有原子新组合 | asset / characteristic | 0 | 原生／Web主动消费者已验；整记录／整版准入待 |
 | `card:kerrigan_s_swarm/zerg-creep-any@2` | 已有原子 | builder | 0 | 无源级阻断；接线待验 |
 | `card:observer/gravitic-boosters-any@2` | 已有原子 | reaction / reactionRuntime | 0 | 无源级阻断；接线待验 |
@@ -271,3 +271,5 @@ node scripts/verify-wave4-wave3-cold-read.mjs build/wave4-web/host/run-qI3May
 Tal’darim三个门槛定义现共用一个新增损失投影原子，已完成原生7房155动作、Web3房33确认及15房310原动作冷验；累计7/18，见[本批消费者与边界](tal-darim-threshold-wiring.zh-CN.md)。整版准入、剩余新卡与单位继续。
 
 新增5条主动卡牌具名消费者通过，复用原子、新增0；6原生回合130动作、Web五房9确认和14房203原动作冷验见[本批记录](added-card-active-wiring.zh-CN.md)。扫描已接HIDDEN、射击／Evade与Nerazim后继，三条新增反应仍待。
+
+新增状态反应本批通过：两条定义均为已有原子新组合，新增0、累计7/18；Native5完整回合124动作、Web4房12确认、独立冷验12房172原动作。实际消费者和新增接线边界见[状态反应接线](added-status-reaction-wiring.zh-CN.md)。

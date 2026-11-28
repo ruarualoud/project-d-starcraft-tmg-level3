@@ -58,7 +58,7 @@ async function operate(page,item,choice,parameterized) {
     await card.getByRole('button',{name:'设置行动',exact:true}).click();
     const form=page.getByTestId('native-action-form');
     const parameterSchema=choice.sourceDomain?.parameterSchema||choice.parameterSchema;
-    if(item.flow==='added-card'&&choice.definitionId===item.definitionId){
+    if(['added-card','added-status-reaction'].includes(item.flow)&&choice.definitionId===item.definitionId){
       const fields=await fillWave4NativeFormUiV1(form,choice,item.sourceParameters,before.envelope.state),
         size=await form.evaluate(el=>({clientWidth:el.clientWidth,scrollWidth:el.scrollWidth}));
       assert.ok(size.scrollWidth<=size.clientWidth+1,'ADDED_CARD_FORM_HORIZONTAL_OVERFLOW');
@@ -154,7 +154,7 @@ async function operate(page,item,choice,parameterized) {
     }
     if(choice.effectKind==='infestation_transfer')await form.getByRole('button',{name:'recipient',exact:true}).click();
   }
-  if(item.flow==='added-card'&&choice.definitionId===item.definitionId)await page.getByTestId('native-action-form').getByText('设置行动',{exact:true}).scrollIntoViewIfNeeded();
+  if(['added-card','added-status-reaction'].includes(item.flow)&&choice.definitionId===item.definitionId)await page.getByTestId('native-action-form').getByText('设置行动',{exact:true}).scrollIntoViewIfNeeded();
   await page.screenshot({path:path.join(directory,item.kind+'-r'+before.stateRevision+'-form.png')});
   const [response]=await Promise.all([page.waitForResponse(r=>r.url().endsWith('/preview')&&r.request().method()==='POST'),
     standardMove?page.getByRole('button',{name:'提交权威 Preview',exact:true}).click():parameterized?page.getByTestId('native-action-form').getByRole('button',{name:'预览此行动',exact:true}).click()
@@ -163,7 +163,7 @@ async function operate(page,item,choice,parameterized) {
   assert.equal(value.result.preview.core.confirmationPolicy.requiresExplicitHuman,true);
   assert.equal((await current(item)).envelope.stateHash,before.envelope.stateHash);
   await page.getByText('密封 Preview，等待真人确认',{exact:true}).waitFor();
-  if(item.flow==='added-card')await page.getByText('密封 Preview，等待真人确认',{exact:true}).scrollIntoViewIfNeeded();
+  if(['added-card','added-status-reaction'].includes(item.flow))await page.getByText('密封 Preview，等待真人确认',{exact:true}).scrollIntoViewIfNeeded();
   await page.screenshot({path:path.join(directory,item.kind+'-r'+before.stateRevision+'-preview.png')});
   const [apply,replay]=await Promise.all([
     page.waitForResponse(r=>r.url().endsWith('/apply')&&r.request().method()==='POST'),
@@ -235,7 +235,7 @@ try {
           &&!state.pendingOfficialPsionicStormAssaultOrder&&!state.pendingOfficialPsionicStormMovementEnd&&!state.pendingOfficialPhotonOvercharge
           &&!state.pendingOfficialAttackTargetReaction&&!state.pendingOfficialRangedAttackDeclaration
           &&!state.pendingCurrentProductRangedSequence&&!state.pendingAction
-          &&(!['added-card','detonation-khassar','detonation-declaration','detonation-target','detonation-delayed','detonation-storm-photon','detonation-disengage','detonation-disengage-initiation','consume-plague-initiation','consume-dark-swarm-initiation'].includes(item.flow)&&!item.declarationDefinitionId||!state.selectedRosterActivationWindow))break;
+          &&(!['added-card','added-status-reaction','detonation-khassar','detonation-declaration','detonation-target','detonation-delayed','detonation-storm-photon','detonation-disengage','detonation-disengage-initiation','consume-plague-initiation','consume-dark-swarm-initiation'].includes(item.flow)&&!item.declarationDefinitionId||!state.selectedRosterActivationWindow))break;
         const owner=state.activeSideKey;assert.ok(pages[owner]);
         const menu=await legal(pages[owner]);
         if(!primaryUsed&&item.id==='infected-ordinary-move'){assert.ok(!menu.parameterDomains.some(row=>['unit:stalker/blink-movement-phase@1','card:nexus/strategic-recall-any@1'].includes(row.definitionId)));}
@@ -256,7 +256,7 @@ try {
         else if(!primaryUsed)choice=menu.parameterDomains.find(row=>item.id==='infected-ordinary-move'?row.actionType==='move'&&row.pieceId==='enemy':item.id==='clean-blink'?row.definitionId==='unit:stalker/blink-movement-phase@1':item.id==='clean-recall'?row.definitionId==='card:nexus/strategic-recall-any@1':row.definitionId===item.definitionId);
         else if(item.flow==='consume-plague-initiation')choice=menu.parameterDomains.find(row=>row.effectKind==='before_casualty_detonation');
         else if(['detonation-nested','bio-kill-switch','detonation-template','detonation-outside','detonation-overwatch','detonation-khassar','detonation-declaration','detonation-target','detonation-delayed','detonation-storm-photon','detonation-disengage','detonation-disengage-initiation','consume-plague-initiation','consume-dark-swarm-initiation'].includes(item.flow))choice=menu.parameterDomains.find(row=>row.effectKind==='before_casualty_detonation');
-        else if(item.flow==='corrode-restoration'&&!restorationUsed)choice=menu.parameterDomains.find(row=>row.definitionId==='unit:medic/restoration-any-phase@1');
+        else if((item.flow==='corrode-restoration'||item.flow==='added-status-reaction'&&item.id==='parasite-restoration')&&!restorationUsed)choice=menu.parameterDomains.find(row=>row.definitionId==='unit:medic/restoration-any-phase@1');
         else if((item.kind==='ocular-use'||item.flow==='coexisting-ocular')&&!shotUsed)choice=menu.parameterDomains.find(row=>row.weaponName==='Firefly Missiles');
         else if((item.kind==='growing-restoration-exception'||item.flow==='carrier-restoration'||item.flow==='trooper-restoration')&&!restorationUsed)choice=menu.parameterDomains.find(row=>row.definitionId==='unit:medic/restoration-any-phase@1'||item.flow==='carrier-restoration'&&row.effectKind==='infestation_transfer');
         if(!choice&&state.pendingCurrentProductRangedSequence){
@@ -277,7 +277,14 @@ try {
       }
       const final=await current(item);assert.ok(primaryUsed);
       if(reenterCompleted)assert.equal(final.envelope.stateHash,head.envelope.stateHash);
-      if(item.flow==='added-card'){
+      if(item.flow==='added-status-reaction'){
+        const state=final.envelope.state,actor=state.pieces.find(p=>p.id==='actor'),enemy=state.pieces.find(p=>p.id==='enemy'),
+          card=state.cardResources.player1.find(c=>c.officialCardRecordKey===item.sourceRecordKey),
+          has=(p,n)=>p.statuses.some(s=>String(s.statusName||s).toLowerCase()===n);
+        assert.equal(card.readiness,'exhausted');assert.ok(!state.selectedRosterActivationWindow&&!state.pendingOfficialReactionWindow&&!state.pendingOfficialAddedCardStatusReaction);
+        if(item.id.startsWith('brutal')){assert.equal(has(actor,'burrowed'),item.id==='brutal-gain');assert.equal(has(actor,'hidden'),item.id==='brutal-gain');}
+        else{assert.equal(has(enemy,'infestation'),item.id!=='parasite-restoration');if(item.id==='parasite-restoration')assert.ok(restorationUsed);}
+      }else if(item.flow==='added-card'){
         const state=final.envelope.state,actor=state.pieces.find(p=>p.id==='actor'),card=state.cardResources.player1.find(c=>c.officialCardRecordKey===item.sourceRecordKey);
         assert.equal(card.readiness,'exhausted');assert.ok(!state.selectedRosterActivationWindow&&!state.pendingOfficialReactionWindow);
         if(item.id==='heal')assert.equal(actor.damageMarker,0);
@@ -441,7 +448,7 @@ try {
       results.push({kind:item.kind,definitionId:item.definitionId,sourceRoomId:item.sourceRoomId,sourceStateHash:item.sourceStateHash,
         sourcePrefixReceipts:item.sourcePrefixReceipts,...(['detonation-disengage','detonation-disengage-initiation','consume-plague-initiation','consume-dark-swarm-initiation'].includes(item.flow)?{originalRemovalVerified,disengageKind:item.disengageKind}:{}),...(['detonation-delayed','detonation-storm-photon','consume-plague-initiation','consume-dark-swarm-initiation'].includes(item.flow)?{originalSourceDeathVerified}:{}),trace,signedActions:trace.length,twoSeatsVerified:true,
         explicitHumanConfirmation:true,previewReadOnly:true,replayMatchesCurrent:true,seatRecoveryReentryVerified:true,pageErrors:errors,
-        ...(['added-card','consume-plague-initiation','consume-dark-swarm-initiation'].includes(item.flow)?{producerFormChecks:producerFormChecks.filter(r=>r.kind===item.kind),fullWeaponSequenceAndActivationVerified:true}:{}),
+        ...(['added-card','added-status-reaction','consume-plague-initiation','consume-dark-swarm-initiation'].includes(item.flow)?{producerFormChecks:producerFormChecks.filter(r=>r.kind===item.kind),fullWeaponSequenceAndActivationVerified:true}:{}),
         ...(process.argv.includes('--readable-casualties')?{readableCasualtyChecks:readableCasualtyChecks.filter(r=>r.kind===item.kind)}:{})});
       await atomicWrite(completedRef,JSON.stringify(results.at(-1),null,2));
       console.log(JSON.stringify({case:item.kind,status:'passed',signedActions:trace.length}));

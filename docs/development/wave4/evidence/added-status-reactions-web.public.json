@@ -1,0 +1,282 @@
+{
+  "schema": "starcraft_tmg_wave4_virus_web_verification_v1",
+  "status": "passed_scoped",
+  "runRef": "build/wave4-web/added-status-reactions/web-v1",
+  "results": [
+    {
+      "kind": "brutal-gain",
+      "definitionId": "card:hive/brutal-instinct-any@1",
+      "sourceRoomId": "wave4-added-status-brutal-gain",
+      "sourceStateHash": "746a7630de22641676fffe1f94743b8de7f4c3a736ee903161cacfb40b7bacca",
+      "sourcePrefixReceipts": 4,
+      "trace": [
+        {
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "card:hive/brutal-instinct-any@1",
+          "sideKey": "player1",
+          "stateRevision": 1,
+          "stateHash": "d4485e7a0c2b6568769cb2cb75144067f67fc79ca50f22ec1b09e313279f17fe"
+        },
+        {
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null,
+          "sideKey": "player2",
+          "stateRevision": 2,
+          "stateHash": "58d02d242fb8884a29738d4c690445a0ca8e055865372dddec6cbbddaa9a6fb3"
+        }
+      ],
+      "signedActions": 2,
+      "twoSeatsVerified": true,
+      "explicitHumanConfirmation": true,
+      "previewReadOnly": true,
+      "replayMatchesCurrent": true,
+      "seatRecoveryReentryVerified": true,
+      "pageErrors": [],
+      "producerFormChecks": [
+        {
+          "kind": "brutal-gain",
+          "actionType": "resolve_reaction_family_ability",
+          "viewportWidth": 390,
+          "clientWidth": 298,
+          "scrollWidth": 298,
+          "requiredFields": [
+            "paymentCardInstanceIds",
+            "targetUnitId"
+          ],
+          "modelCount": 0,
+          "nativeIntentOnly": true
+        }
+      ],
+      "fullWeaponSequenceAndActivationVerified": true
+    },
+    {
+      "kind": "brutal-lose",
+      "definitionId": "card:hive/brutal-instinct-any@1",
+      "sourceRoomId": "wave4-added-status-brutal-lose",
+      "sourceStateHash": "927e8056ae9e1af628ceaeeb8264b8d857d16c8ae3f397dc2d0565016b4d86ce",
+      "sourcePrefixReceipts": 4,
+      "trace": [
+        {
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "card:hive/brutal-instinct-any@1",
+          "sideKey": "player1",
+          "stateRevision": 1,
+          "stateHash": "dd63c3a22c12d441c032dbeb3950df64f8885d82fdfdd23d708d547fad877c9b"
+        },
+        {
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null,
+          "sideKey": "player2",
+          "stateRevision": 2,
+          "stateHash": "3702c5a285f8f63a1ddb0f3563a9b5eb60cf08b98052da19e0527bcda400c516"
+        }
+      ],
+      "signedActions": 2,
+      "twoSeatsVerified": true,
+      "explicitHumanConfirmation": true,
+      "previewReadOnly": true,
+      "replayMatchesCurrent": true,
+      "seatRecoveryReentryVerified": true,
+      "pageErrors": [],
+      "producerFormChecks": [
+        {
+          "kind": "brutal-lose",
+          "actionType": "resolve_reaction_family_ability",
+          "viewportWidth": 1500,
+          "clientWidth": 334,
+          "scrollWidth": 334,
+          "requiredFields": [
+            "paymentCardInstanceIds",
+            "targetUnitId"
+          ],
+          "modelCount": 0,
+          "nativeIntentOnly": true
+        }
+      ],
+      "fullWeaponSequenceAndActivationVerified": true
+    },
+    {
+      "kind": "parasite",
+      "definitionId": "card:infested_command_center/parasitic-bio-toxins-any@1",
+      "sourceRoomId": "wave4-added-status-parasite",
+      "sourceStateHash": "de9990d2d1b626720cc86d408959135bcaa2d96336f0bacb1f03d8bed0edfa89",
+      "sourcePrefixReceipts": 3,
+      "trace": [
+        {
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "card:infested_command_center/parasitic-bio-toxins-any@1",
+          "sideKey": "player1",
+          "stateRevision": 1,
+          "stateHash": "a587f7863cf8a09dcd8b0c2ec01f9a12cd9d331cda3768c90727a874203ad62d"
+        },
+        {
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null,
+          "sideKey": "player2",
+          "stateRevision": 2,
+          "stateHash": "0ddc399261f7407f16c10eb35c6d810ba6af9deade9bf0598e83be64518974d6"
+        },
+        {
+          "actionType": "finish_activation",
+          "definitionId": null,
+          "sideKey": "player1",
+          "stateRevision": 3,
+          "stateHash": "90a6bbc887c9bcc05c90eba35ed9ca2fa709d21d741d3612b2052ee0c770cabf"
+        }
+      ],
+      "signedActions": 3,
+      "twoSeatsVerified": true,
+      "explicitHumanConfirmation": true,
+      "previewReadOnly": true,
+      "replayMatchesCurrent": true,
+      "seatRecoveryReentryVerified": true,
+      "pageErrors": [],
+      "producerFormChecks": [
+        {
+          "kind": "parasite",
+          "actionType": "resolve_reaction_family_ability",
+          "viewportWidth": 390,
+          "clientWidth": 298,
+          "scrollWidth": 298,
+          "requiredFields": [
+            "paymentCardInstanceIds",
+            "targetUnitId"
+          ],
+          "modelCount": 0,
+          "nativeIntentOnly": true
+        }
+      ],
+      "fullWeaponSequenceAndActivationVerified": true
+    },
+    {
+      "kind": "parasite-restoration",
+      "definitionId": "card:infested_command_center/parasitic-bio-toxins-any@1",
+      "sourceRoomId": "wave4-added-status-parasite-restoration",
+      "sourceStateHash": "12ad6939d4cd4bfa6fc69f087db87dd7789a200e711b5a7074076894192d1d33",
+      "sourcePrefixReceipts": 3,
+      "trace": [
+        {
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "card:infested_command_center/parasitic-bio-toxins-any@1",
+          "sideKey": "player1",
+          "stateRevision": 1,
+          "stateHash": "cd744d6bcacad1c124f9759dde654f7a73ae54d5001b59db4f10f778bd8b9e4d"
+        },
+        {
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null,
+          "sideKey": "player1",
+          "stateRevision": 2,
+          "stateHash": "5a33a72b63492970d85bfbf05b59403c2088924ca3477b35069847581b2f0131"
+        },
+        {
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:medic/restoration-any-phase@1",
+          "sideKey": "player2",
+          "stateRevision": 3,
+          "stateHash": "ed417c9146f70239b31949196f3795139b1ea6a1bf37ff6f0244c52614d26078"
+        },
+        {
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null,
+          "sideKey": "player2",
+          "stateRevision": 4,
+          "stateHash": "acbea98ff5e056f52e3d231a09bfbb93d734b3470d6fdf93d6f2d2ecc0bd1a31"
+        },
+        {
+          "actionType": "finish_activation",
+          "definitionId": null,
+          "sideKey": "player1",
+          "stateRevision": 5,
+          "stateHash": "f253b0c9ff60a680bb0771340247df04d97544ec9bad09677806a0fd7888cc67"
+        }
+      ],
+      "signedActions": 5,
+      "twoSeatsVerified": true,
+      "explicitHumanConfirmation": true,
+      "previewReadOnly": true,
+      "replayMatchesCurrent": true,
+      "seatRecoveryReentryVerified": true,
+      "pageErrors": [],
+      "producerFormChecks": [
+        {
+          "kind": "parasite-restoration",
+          "actionType": "resolve_reaction_family_ability",
+          "viewportWidth": 1500,
+          "clientWidth": 334,
+          "scrollWidth": 334,
+          "requiredFields": [
+            "paymentCardInstanceIds",
+            "targetUnitId"
+          ],
+          "modelCount": 0,
+          "nativeIntentOnly": true
+        }
+      ],
+      "fullWeaponSequenceAndActivationVerified": true
+    }
+  ],
+  "producerFormChecks": [
+    {
+      "kind": "brutal-gain",
+      "actionType": "resolve_reaction_family_ability",
+      "viewportWidth": 390,
+      "clientWidth": 298,
+      "scrollWidth": 298,
+      "requiredFields": [
+        "paymentCardInstanceIds",
+        "targetUnitId"
+      ],
+      "modelCount": 0,
+      "nativeIntentOnly": true
+    },
+    {
+      "kind": "brutal-lose",
+      "actionType": "resolve_reaction_family_ability",
+      "viewportWidth": 1500,
+      "clientWidth": 334,
+      "scrollWidth": 334,
+      "requiredFields": [
+        "paymentCardInstanceIds",
+        "targetUnitId"
+      ],
+      "modelCount": 0,
+      "nativeIntentOnly": true
+    },
+    {
+      "kind": "parasite",
+      "actionType": "resolve_reaction_family_ability",
+      "viewportWidth": 390,
+      "clientWidth": 298,
+      "scrollWidth": 298,
+      "requiredFields": [
+        "paymentCardInstanceIds",
+        "targetUnitId"
+      ],
+      "modelCount": 0,
+      "nativeIntentOnly": true
+    },
+    {
+      "kind": "parasite-restoration",
+      "actionType": "resolve_reaction_family_ability",
+      "viewportWidth": 1500,
+      "clientWidth": 334,
+      "scrollWidth": 334,
+      "requiredFields": [
+        "paymentCardInstanceIds",
+        "targetUnitId"
+      ],
+      "modelCount": 0,
+      "nativeIntentOnly": true
+    }
+  ],
+  "signedActions": 12,
+  "conditionalTurretGeometryInRestorationCaseOnly": false,
+  "sourceHeldDefinitions": 39,
+  "engineeringEstimatedUnitGeometry": false,
+  "fullWave4LobbyBuilderAdmission": false,
+  "fullMatchAdmission": false,
+  "wave3PlayerRoomsTouched": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

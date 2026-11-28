@@ -13,24 +13,24 @@ export const WAVE4_ADDED_ACTIVE_CARD_SCENES={
   scanner:{definitionId:'card:infested_command_center/scanner-sweep-any@1',card:'infested_command_center',faction:'stukov_s_forces',unit:'hydralisk',family:'battlefield'},
 };
 export const NERAZIM_MIGHT_ID='card:nerazim/might-of-the-nerazim-any@1';
-export function createWave4AddedCardScene(inputs,{kind='heal',actorUnit,indicatorDetection=false,nerazimReaction=false}={}){
-  const spec=WAVE4_ADDED_ACTIVE_CARD_SCENES[kind];if(!spec)throw Error('ADDED_CARD_SCENE_KIND_INVALID');
-  const template=createWave4TurretRoundScene(inputs),ids=[...TAL_DARIM_THRESHOLD_IDS,spec.definitionId,...(nerazimReaction?[NERAZIM_MIGHT_ID]:[])],
-    characteristicIds=[...TAL_DARIM_THRESHOLD_IDS,...(spec.family==='characteristic'?[spec.definitionId]:[])],
+export function createWave4AddedCardScene(inputs,{kind='heal',actorUnit,indicatorDetection=false,nerazimReaction=false,sceneSpec,enemyUnit,extraReactionIds=[],extraCharacteristicIds=[],companionRelocation,hiddenConsumers=false}={}){
+  const spec=sceneSpec||WAVE4_ADDED_ACTIVE_CARD_SCENES[kind];if(!spec)throw Error('ADDED_CARD_SCENE_KIND_INVALID');
+  const template=createWave4TurretRoundScene(inputs),ids=[...TAL_DARIM_THRESHOLD_IDS,spec.definitionId,...(nerazimReaction?[NERAZIM_MIGHT_ID]:[]),...extraReactionIds,...extraCharacteristicIds,...(companionRelocation?[companionRelocation.definitionId]:[])],
+    characteristicIds=[...TAL_DARIM_THRESHOLD_IDS,...(spec.family==='characteristic'?[spec.definitionId]:[]),...extraCharacteristicIds],
     unit=(id,key)=>({unitInstanceId:id,recordKey:'army_units:'+key,compositionKind:'small',upgrades:[]}),
     built=createOfficialReleaseRosterStateV2({context:inputs.context,sourceDefinitionIds:ids,characteristicDefinitionIds:characteristicIds,
       includeTalDarimThresholds:true,includeCharacteristicConsumers:true,includeAbilitySourcePhases:true,canonicalResourceTypes:true,includeMelee:true,
-      includeHiddenRangedAndEvade:kind==='scanner',
+      includeHiddenRangedAndEvade:kind==='scanner'||hiddenConsumers,
       includeIndicatorDetectionHiddenLoss:kind==='scanner'&&indicatorDetection,
-      ...(nerazimReaction?{reactionDefinitionIds:[NERAZIM_MIGHT_ID]}:{}),
-      ...(spec.family==='relocation'?{relocationDefinitionIds:[spec.definitionId]}:{}),
+      ...((nerazimReaction||spec.family==='reaction'||extraReactionIds.length)?{reactionDefinitionIds:[...(nerazimReaction?[NERAZIM_MIGHT_ID]:[]),...(spec.family==='reaction'?[spec.definitionId]:[]),...extraReactionIds]}:{}),
+      ...((spec.family==='relocation'||companionRelocation)?{relocationDefinitionIds:[...(spec.family==='relocation'?[spec.definitionId]:[]),...(companionRelocation?[companionRelocation.definitionId]:[])]}:{}),
       ...(spec.family==='battlefield'?{battlefieldModifierDefinitionIds:[spec.definitionId]}:{}),
       candidatesBySide:{player1:{sideKey:'player1',scaleId:'Standard',mineralBudget:2000,factionRecordKey:'tactical_cards:'+spec.faction,
-        tacticalCardRecordKeys:['tactical_cards:'+spec.card,
+        tacticalCardRecordKeys:['tactical_cards:'+spec.card,...(companionRelocation?['tactical_cards:'+companionRelocation.card]:[]),
           ...(spec.faction==='zerg_swarm'?['tactical_cards:accelerating_creep']:[]),
           ...(spec.faction==='stukov_s_forces'?['tactical_cards:healing_pathogen']:[])],units:[unit('actor',actorUnit||spec.unit)]},
         player2:{sideKey:'player2',scaleId:'Standard',mineralBudget:2000,factionRecordKey:'tactical_cards:'+(nerazimReaction?'nerazim':'terran_armed_forces'),
-          tacticalCardRecordKeys:nerazimReaction?[]:['tactical_cards:armory'],units:[unit('enemy',nerazimReaction?'stalker':'goliath')]}}}),
+          tacticalCardRecordKeys:nerazimReaction?[]:['tactical_cards:armory'],units:[unit('enemy',enemyUnit||(nerazimReaction?'stalker':'goliath'))]}}}),
     keys=['round','firstPassSideByPhase','scores','gameOver','terminal','engagementScale','armyBuildingEngagementScale',
       'board','officialModelGapTransitPolicy','officialMissionRuntimeDescriptor','officialMissionSupplyProfile','supplyLossLedger',
       'officialMissionRuntimeState','officialMissionDeploymentDraftDataBundle','officialMissionEffectCatalogue'],

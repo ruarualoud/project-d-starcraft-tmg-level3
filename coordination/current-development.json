@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-11-28T08:17:12.346Z",
+  "updatedAt": "2026-11-28T08:57:32.432Z",
   "ticket": 23,
   "slice": 249,
   "completion": "33/36",
@@ -9,15 +9,15 @@
     249,
     250
   ],
-  "summary": "Wave4人人长任务继续。新增5条主动卡牌／扫描后继：6完整原生回合130动作、Web5房9确认、14房203原动作冷验通过；政策1.1／Root3.246保留旧扫描20动作对照。新增原子0、累计7/18；主Builder102/119，继续三条反应与整版出口。39来源和暂停保持。",
+  "summary": "Wave4人人长任务继续。新增两条状态反应：5完整原生回合124动作、Web4房12确认、15边界、12房172原动作冷验通过。Root3.247/3.248保留旧钻地7动作对照。新增原子0、累计7/18；主Builder102/119，继续Terran Charge、新单位与整版出口。39来源和暂停保持。",
   "runPolicy": "本分支仅推进Wave4人人对战，按Wave3模式补齐数据、规则、建军、房间、媒体和Web双席；使用5484及build/wave4-web，按可验证成果提交推送。其他同步开发线不在本分支展开；付费模型、K3、AI对局、复盘与生产发布继续暂停。",
   "items": [
     {
       "id": "wave4-ability-diff",
-      "title": "Wave4人人更新：7/18原子；5新增主动卡牌具名接线通过",
+      "title": "Wave4人人更新：7/18原子；新增状态反应具名接线通过",
       "implementation": {
         "status": "partial",
-        "note": "Tal’darim损失基线、每轮首武器与Root3.244接线未提交，原生验收中；Firebat基础5回合122动作已推送，完整原子仍6/18。",
+        "note": "Tal’darim、5条主动卡及两条状态反应的具名消费者均已通过；本批5完整原生回合124动作、Web4房12确认、12房172原动作冷验。整版人人出口尚未通过。",
         "evidence": [
           "content/source-releases/wave4-20261127/abilities/ability-diff.json",
           "docs/development/wave4/evidence/ability-diff.public.json",
@@ -156,7 +156,17 @@
           "docs/development/wave4/evidence/detonation-disengage-harness.public.json",
           "docs/development/wave4/evidence/disengage-producer-web-390.png",
           "docs/development/wave4/detonation-consume-wiring.zh-CN.md",
-          "docs/development/wave4/firebat-foundation.zh-CN.md"
+          "docs/development/wave4/firebat-foundation.zh-CN.md",
+          "docs/development/wave4/added-status-reaction-wiring.zh-CN.md",
+          "docs/development/wave4/evidence/added-status-reactions-native.public.json",
+          "docs/development/wave4/evidence/added-status-reaction-boundaries.public.json",
+          "docs/development/wave4/evidence/added-status-reactions-web.public.json",
+          "docs/development/wave4/evidence/added-status-reactions-native-cold.public.json",
+          "docs/development/wave4/evidence/added-status-reactions-web-cold.public.json",
+          "docs/development/wave4/evidence/added-status-reaction-consumers.public.json",
+          "docs/development/wave4/evidence/added-status-reaction-harness.public.json",
+          "docs/development/wave4/evidence/added-brutal-target-390.png",
+          "docs/development/wave4/evidence/added-parasite-target-390.png"
         ]
       },
       "productHandoff": {
@@ -915,10 +925,16 @@
     }
   ],
   "next": [
-    "继续Terran Charge、Brutal Instinct和Parasitic Bio-Toxins三条反应。",
-    "继续Firebat FT/Fire Wall、Reaver/Scarabs/Slayer、Tal’darim Pylon与整版500/2000人人出口；FT尺寸待答。"
+    "接Terran Charge成功冲锋后的完整IMPACT反应后继",
+    "继续新单位／势力和FT／Fire Wall；FT尺寸待答",
+    "整版Builder／发布／房间／媒体和500/2000分人人出口"
   ],
   "navigation": [
+    {
+      "when": "查看Brutal、Parasitic、额外Move、Restoration与原生／Web范围",
+      "title": "新增状态反应接线",
+      "path": "docs/development/wave4/added-status-reaction-wiring.zh-CN.md"
+    },
     {
       "when": "查看新增主动卡牌、扫描HIDDEN与Nerazim后继",
       "title": "新增主动卡牌接线",

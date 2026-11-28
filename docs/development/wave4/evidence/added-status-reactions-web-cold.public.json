@@ -1,0 +1,65 @@
+{
+  "schema": "starcraft_tmg_wave4_added_status_reactions_cold_v1",
+  "status": "passed_read_only",
+  "results": [
+    {
+      "id": "brutal-gain",
+      "roomId": "product-wave4-web-brutal-gain",
+      "stateHash": "58d02d242fb8884a29738d4c690445a0ca8e055865372dddec6cbbddaa9a6fb3",
+      "originalSignedActions": 2,
+      "newActions": 0,
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "sourceOpenedReadOnly": true,
+      "oldPolicyControl": false,
+      "legacy": false,
+      "humanConfirmed": true
+    },
+    {
+      "id": "brutal-lose",
+      "roomId": "product-wave4-web-brutal-lose",
+      "stateHash": "3702c5a285f8f63a1ddb0f3563a9b5eb60cf08b98052da19e0527bcda400c516",
+      "originalSignedActions": 2,
+      "newActions": 0,
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "sourceOpenedReadOnly": true,
+      "oldPolicyControl": false,
+      "legacy": false,
+      "humanConfirmed": true
+    },
+    {
+      "id": "parasite",
+      "roomId": "product-wave4-web-parasite",
+      "stateHash": "90a6bbc887c9bcc05c90eba35ed9ca2fa709d21d741d3612b2052ee0c770cabf",
+      "originalSignedActions": 3,
+      "newActions": 0,
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "sourceOpenedReadOnly": true,
+      "oldPolicyControl": false,
+      "legacy": false,
+      "humanConfirmed": true
+    },
+    {
+      "id": "parasite-restoration",
+      "roomId": "product-wave4-web-parasite-restoration",
+      "stateHash": "f253b0c9ff60a680bb0771340247df04d97544ec9bad09677806a0fd7888cc67",
+      "originalSignedActions": 5,
+      "newActions": 0,
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "sourceOpenedReadOnly": true,
+      "oldPolicyControl": false,
+      "legacy": false,
+      "humanConfirmed": true
+    }
+  ],
+  "newActions": 0,
+  "sourceHeldDefinitions": 39,
+  "newCompleteAtoms": 0,
+  "implementedCumulativeAtoms": 7,
+  "fullMatchAdmission": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

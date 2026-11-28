@@ -1,0 +1,128 @@
+{
+  "schema": "starcraft_tmg_wave4_added_status_reaction_harness_v1",
+  "status": "passed_scoped",
+  "rootRuntimeVersions": [
+    "3.247.0",
+    "3.248.0"
+  ],
+  "sourceGrantedBurrowPolicyVersion": "1.0.0",
+  "nativeCases": 5,
+  "nativeFullRounds": 5,
+  "nativeSignedActions": 124,
+  "webRooms": 4,
+  "webSignedActions": 12,
+  "webScope": "actual reaction selection, nested Restoration and original activation successor from signed Native prefixes; not full Web rounds",
+  "independentColdCases": 12,
+  "independentColdOriginalActions": 172,
+  "newColdActions": 0,
+  "oldPolicyControlActions": 7,
+  "boundaryCases": 15,
+  "definitions": [
+    {
+      "definitionId": "card:hive/brutal-instinct-any@1",
+      "sourceFeatureHash": "c942d96cf09dd4e4ff8a4566c3e936d535b0024a4bc31b855723d9f02ce9ada1",
+      "classification": "existing_atoms_new_combination",
+      "newAtomIds": [],
+      "nativeSuccessorsVerified": true,
+      "webVerified": true,
+      "consumerBindingStatus": "named_consumers_verified_whole_release_pending"
+    },
+    {
+      "definitionId": "card:infested_command_center/parasitic-bio-toxins-any@1",
+      "sourceFeatureHash": "c0d2831ecb5b2f93c8c8cee6a6f2bb7edac8449b4bf16a90951776137db21af3",
+      "classification": "existing_atoms_new_combination",
+      "newAtomIds": [],
+      "nativeSuccessorsVerified": true,
+      "webVerified": true,
+      "consumerBindingStatus": "named_consumers_verified_whole_release_pending"
+    }
+  ],
+  "consumerRefs": [
+    {
+      "file": "packages/product-composition/official-reaction-family-adapter-v1.mjs",
+      "exportName": "createOfficialReactionFamilySourceBundleV2"
+    },
+    {
+      "file": "packages/product-composition/official-reaction-family-adapter-v1.mjs",
+      "exportName": "createOfficialReactionFamilyAdapterV1"
+    },
+    {
+      "file": "packages/product-composition/official-added-card-reaction-facts-v1.mjs",
+      "exportName": "resolveOfficialAddedCardReactionTargetsV1"
+    },
+    {
+      "file": "packages/product-composition/official-added-card-status-reaction-runtime-v1.mjs",
+      "exportName": "createOfficialAddedCardStatusReactionRuntimeV1"
+    },
+    {
+      "file": "packages/product-composition/official-characteristic-status-family-adapter-v1.mjs",
+      "exportName": "applyOfficialBurrowStatusV1"
+    },
+    {
+      "file": "packages/product-composition/official-characteristic-status-family-adapter-v1.mjs",
+      "exportName": "projectOfficialCharacteristicStatusFamilyModifiersV1"
+    },
+    {
+      "file": "packages/rule-atoms/official-source-granted-burrow-policy-v1.mjs",
+      "exportName": "readOfficialSourceGrantedBurrowRouteV1"
+    },
+    {
+      "file": "packages/product-composition/official-infestation-transfer-facts-v1.mjs",
+      "exportName": "applyOfficialInfestationDebuffV1"
+    },
+    {
+      "file": "packages/product-composition/official-release-roster-state-v2.mjs",
+      "exportName": "createOfficialReleaseRosterStateV2"
+    },
+    {
+      "file": "packages/product-composition/official-characteristic-status-component-runtime-v2.mjs",
+      "exportName": "createOfficialCharacteristicStatusComponentRuntimeV2"
+    },
+    {
+      "file": "packages/product-composition/official-current-product-match-runtime-v1.mjs",
+      "exportName": "createOfficialEngineeringScopedRoundRuntimeV1"
+    },
+    {
+      "file": "packages/product-composition/official-human-confirmed-runtime-v1.mjs",
+      "exportName": "createOfficialHumanConfirmedRuntimeV2"
+    },
+    {
+      "file": "packages/client-domain/native-action-form-v1.mjs",
+      "exportName": "describeNativeActionFormV1"
+    }
+  ],
+  "evidenceRefs": [
+    "docs/development/wave4/evidence/added-status-reactions-native.public.json",
+    "docs/development/wave4/evidence/added-status-reaction-boundaries.public.json",
+    "docs/development/wave4/evidence/added-status-reactions-web.public.json",
+    "docs/development/wave4/evidence/added-status-reactions-native-cold.public.json",
+    "docs/development/wave4/evidence/added-status-reactions-web-cold.public.json"
+  ],
+  "existingAtomsReused": [
+    "committed action and activation boundaries",
+    "FAQ reaction priority, payment and limits",
+    "model footprint range",
+    "BURROWED, HIDDEN and movement removal",
+    "INFESTATION status and DEBUFF Restoration",
+    "Infested target precision and actual ranged/casualty sequence",
+    "round/scoring/cleanup and signed recovery"
+  ],
+  "newCompleteAtoms": 0,
+  "implementedCumulativeAtoms": 7,
+  "mainBuilderRecordCount": 102,
+  "mainBuilderDenominator": 119,
+  "privateCandidateRecordCount": 108,
+  "sourceHeldDefinitions": 39,
+  "wholeRecordsEligibleByThisBatch": [
+    "tactical_cards:hive",
+    "tactical_cards:infested_command_center"
+  ],
+  "wholeRecordAdmissionChanged": false,
+  "pendingAddedCardReaction": "Terran Charge",
+  "reusedLocalWebBundleRef": "build/wave4-web/tal-darim/web-bundle-v2",
+  "fullAppTypecheckPassed": false,
+  "fullMatchAdmission": false,
+  "modelCalls": 0,
+  "trainingTruth": false,
+  "scope": "two added-card status reactions; complete release remains pending"
+}

@@ -1,3 +1,5 @@
+import {hasOfficialSourceGrantedBurrowPolicyV1} from '../rule-atoms/official-source-granted-burrow-policy-v1.mjs';
+import {createOfficialAddedCardStatusReactionRuntimeV1} from './official-added-card-status-reaction-runtime-v1.mjs';
 import {resumeOfficialConsumePaymentV1} from './official-consume-continuation-v1.mjs';
 import {assertOfficialTalDarimThresholdStateV1} from './official-tal-darim-threshold-v1.mjs';
 import {OFFICIAL_FRIENDLY_LOST_SUPPLY_ATOM_ID} from '../rule-atoms/official-friendly-lost-supply-threshold-v1.mjs';
@@ -533,6 +535,11 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
   if (reactionBundle && !isDeepStrictEqual(reactionBundle, spatialState.officialReactionFamilySourceBundle)) {
     throw Error('CHARACTERISTIC_REACTION_SOURCE_MISMATCH');
   }
+  const addedCardStatusReaction=reactionBundle?.routes.some(r=>r.addedCardStatusOwner)
+    ?createOfficialAddedCardStatusReactionRuntimeV1({reactionBundle,state:spatialState}):null;
+  const sourceGrantedBurrow=hasOfficialSourceGrantedBurrowPolicyV1(spatialState);
+  if(sourceGrantedBurrow&&(!addedCardStatusReaction||!spatialState.officialCharacteristicConsumerPolicy?.burrowedCoreActions
+    ||!hasOfficialCharacteristicConsumerPolicyV1(spatialState)))throw Error('SOURCE_GRANTED_BURROW_REACTION_CONSUMER_REQUIRED');
   const afterChargeRoll = reactionBundle?.routes.some(route => route.nativeChargeDie || route.nativeChargeDistance) === true;
   if (afterChargeRoll && (!includeMelee || !includeReleaseOverseerChargeReaction || !hasOfficialFaqReactionPolicyV13(spatialState))) {
     throw Error('AFTER_CHARGE_ROLL_CONSUMER_REQUIRED');
@@ -668,7 +675,8 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
   const ownsMeleeDamageContinuation = supportDamage || khassarMeleeDamageContinuation || Boolean(releaseZergTargets && instinctiveReaction && zagaraTransfusion);
   const ownsRangedDamageContinuation = supportDamage || khassarRangedDamageContinuation || inheritedRangedHitDebuff
     || Boolean(releaseZergTargets && darkSwarmReaction && zagaraTransfusion);
-  const hasIndependentReleaseOwner = route => hasOfficialDeclaredAttackBeforeCasualtyPolicyV1(spatialState)&&route.effectKind==='before_casualty_detonation' || releaseZergTargets && (
+  const hasIndependentReleaseOwner = route => Boolean(addedCardStatusReaction&&route.addedCardStatusOwner)
+    || hasOfficialDeclaredAttackBeforeCasualtyPolicyV1(spatialState)&&route.effectKind==='before_casualty_detonation' || releaseZergTargets && (
     route.definitionId === zagaraTransfusion?.definitionId
     || headShotSource && route.effectKind === 'ranged_declaration_keywords'
     || route.chargeDeclarationOwner === 'current_source_v1'
@@ -700,7 +708,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
   if (includeArmourReactions && (!reactionAdapter || !includeRanged && !includeMelee && !includeHits
     || includeRanged && (!includePrecisionChoices || !includeArmourChoices)
     || targetDamageCapSource && !includeTargetReactions)) throw Error('CHARACTERISTIC_NUMERIC_ARMOUR_REACTION_CONSUMERS_REQUIRED');
-  if (meleeArmourReactions && !includeRanged && reactionBundle.routes.some(route => route.triggerKind !== 'before_armour_roll'
+  if (meleeArmourReactions && !includeRanged && reactionBundle.routes.some(route => !hasIndependentReleaseOwner(route) && route.triggerKind !== 'before_armour_roll'
     && !(includeTargetReactions && route.triggerKind === 'attack_target_selected')
     && !(postPlaceSource && route.triggerKind === 'after_place')
     && !(friendlySupplyLossReaction && route.triggerKind === 'friendly_supply_reduced')
@@ -1155,7 +1163,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
     includeEvadeEligibility: Boolean(farsight) || includeBeforeHitsEvadeReaction,
     includeBeforeEvadeReaction: includeBeforeHitsEvadeReaction,
     consumeDefenceBeforeFollowUp: includeAutomaticHitsDefenceContinuation,
-    independentlyOwnedReactionTriggers: [...(beforeCasualty?['before_casualty_batch']:[]),...(photonEntry ? ['reserve_entered_non_entry'] : []), ...(afterChargeRoll ? ['after_charge_roll'] : []), ...(spatialState?.officialReleaseDroneAssaultTiming
+    independentlyOwnedReactionTriggers: [...(addedCardStatusReaction?['unit_action_ended','unit_activation_ended']:[]),...(beforeCasualty?['before_casualty_batch']:[]),...(photonEntry ? ['reserve_entered_non_entry'] : []), ...(afterChargeRoll ? ['after_charge_roll'] : []), ...(spatialState?.officialReleaseDroneAssaultTiming
       && reactionBundle?.routes.some(route => route.chargeDeclarationOwner === 'current_source_v1') ? ['charge_declared'] : []),
       ...((standRoute || rangedDeclaration && (headShotSource||hasOfficialDeclaredAttackBeforeCasualtyPolicyV1(spatialState)) || includeReleaseBileAssaultOrder && inheritedRangedHitDebuff && targetReactions) ? ['ranged_attack_declared'] : []),
       ...(overwatchSource && (multipleOverwatchSources||hasOfficialOverwatchBeforeCasualtyPolicyV1(spatialState)||spatialState.officialTurretActivationEndOwner === 'overwatch_v1'
@@ -1592,7 +1600,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
   }) : null;
   if(hasOfficialTemplateBeforeCasualtyPolicyV1(spatialState)&&((targetReactions||rangedDeclaration)&&!hasOfficialDeclaredAttackBeforeCasualtyPolicyV1(spatialState)||overwatch&&!hasOfficialOverwatchBeforeCasualtyPolicyV1(spatialState)||(khassarAttacks.length||khassarCharge)&&!hasOfficialKhassarBeforeCasualtyPolicyV1(spatialState)))
     throw Error('BEFORE_CASUALTY_DELEGATED_ATTACK_OWNER_NOT_ADMITTED');
-  const version = indicatorDetectionHiddenLoss?'3.246.0':wave4AddedActiveCards?'3.245.0':talDarimThresholds?'3.244.0':firebatStimpack?'3.243.0':hasOfficialConsumeBeforeCasualtyPolicyV1(spatialState)?'3.242.0':hasOfficialDirectRemovalBeforeCasualtyPolicyV1(spatialState)?'3.241.0':hasOfficialSourceOwnedArmourContextPolicyV1(spatialState)?'3.240.0':includeExternalBeaconEntryObservation?'3.239.0':hasOfficialStormPhotonBeforeCasualtyPolicyV1(spatialState)?'3.238.0':hasOfficialDelayedHitsBeforeCasualtyPolicyV1(spatialState)?'3.237.0':hasOfficialDeclaredAttackBeforeCasualtyPolicyV1(spatialState)?'3.236.0':hasOfficialKhassarBeforeCasualtyPolicyV1(spatialState)?'3.235.0':overwatch?.descriptor.runtimeVersion === '1.2.0' ? '3.234.0' : hasOfficialOverwatchBeforeCasualtyPolicyV1(spatialState) ? '3.233.0' : hasOfficialTemplateBeforeCasualtyPolicyV1(spatialState) ? '3.232.0' : includeCorrodeRoundCleanup ? '3.231.0' : corrodeArmour ? '3.230.0' : infestationDamage ? '3.229.0' : hasOfficialExtendedBeforeCasualtyPolicyV1(spatialState) ? '3.228.0' : beforeCasualty ? '3.227.0' : plaguedMunitions ? '3.226.0' : repeatedActivationIdentity ? '3.225.0' : infantryPrecision ? '3.224.0' : stukovInfestation ? '3.223.0' : universalCarrier ? '3.222.0' : includeReleaseMoundAssaultOrder ? '3.221.0' : includeBilePhysicalPlacement && bile ? '3.220.0' : psionicRoundEnd?.scheduledEffects ? '3.219.0' : includeReleaseBileAssaultOrder ? '3.218.0' : releaseZergTargets ? '3.217.0' : includePsionicStormAssaultSameName ? '3.216.0'
+  const version = sourceGrantedBurrow?'3.248.0':addedCardStatusReaction?'3.247.0':indicatorDetectionHiddenLoss?'3.246.0':wave4AddedActiveCards?'3.245.0':talDarimThresholds?'3.244.0':firebatStimpack?'3.243.0':hasOfficialConsumeBeforeCasualtyPolicyV1(spatialState)?'3.242.0':hasOfficialDirectRemovalBeforeCasualtyPolicyV1(spatialState)?'3.241.0':hasOfficialSourceOwnedArmourContextPolicyV1(spatialState)?'3.240.0':includeExternalBeaconEntryObservation?'3.239.0':hasOfficialStormPhotonBeforeCasualtyPolicyV1(spatialState)?'3.238.0':hasOfficialDelayedHitsBeforeCasualtyPolicyV1(spatialState)?'3.237.0':hasOfficialDeclaredAttackBeforeCasualtyPolicyV1(spatialState)?'3.236.0':hasOfficialKhassarBeforeCasualtyPolicyV1(spatialState)?'3.235.0':overwatch?.descriptor.runtimeVersion === '1.2.0' ? '3.234.0' : hasOfficialOverwatchBeforeCasualtyPolicyV1(spatialState) ? '3.233.0' : hasOfficialTemplateBeforeCasualtyPolicyV1(spatialState) ? '3.232.0' : includeCorrodeRoundCleanup ? '3.231.0' : corrodeArmour ? '3.230.0' : infestationDamage ? '3.229.0' : hasOfficialExtendedBeforeCasualtyPolicyV1(spatialState) ? '3.228.0' : beforeCasualty ? '3.227.0' : plaguedMunitions ? '3.226.0' : repeatedActivationIdentity ? '3.225.0' : infantryPrecision ? '3.224.0' : stukovInfestation ? '3.223.0' : universalCarrier ? '3.222.0' : includeReleaseMoundAssaultOrder ? '3.221.0' : includeBilePhysicalPlacement && bile ? '3.220.0' : psionicRoundEnd?.scheduledEffects ? '3.219.0' : includeReleaseBileAssaultOrder ? '3.218.0' : releaseZergTargets ? '3.217.0' : includePsionicStormAssaultSameName ? '3.216.0'
     : includePsionicStormTokenCleanup ? '3.215.0'
     : includePsionicStormNamedOverlapChoices ? '3.214.0'
     : stormCast ? '3.213.0'
@@ -1684,6 +1692,8 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
       meleeSidearmConsumerScope: 'source_bound_single_model_defiler_melee_batches' } : {}),
     ...(plagueCoverage ? { plagueCoverageQuery: plagueCoverage.descriptor } : {}),
     rulesVersion: 'official-release-characteristic-status-component-v2', catalogueHash: catalogue.catalogueHash,
+    ...(sourceGrantedBurrow?{sourceGrantedBurrowLifecycle:spatialState.officialSourceGrantedBurrowPolicy}:{}),
+    ...(addedCardStatusReaction?{addedCardStatusReaction:addedCardStatusReaction.descriptor}:{}),
     ...(wave4AddedActiveCards?{wave4AddedActiveCardDefinitionIds:wave4AddedCardDefinitionIds}:{}),
     ...(talDarimThresholds?{talDarimThresholdPolicy:structuredClone(spatialState.officialTalDarimThresholdPolicy)}:{}),
     ...(defilerMeleeFoundation ? { defilerMeleeDefinitionIds, defilerMeleeConsumerScope: 'native_charge_impact_and_claws' } : {}),
@@ -1945,6 +1955,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
     return null;
   }
   function enumerate(state, options = {}) {
+    if(addedCardStatusReaction?.pending(state))return {...meleeEnumeration(state,reactionAdapter.legalSpace(state,options),'reaction'),releasePhaseControl:'blocked'};
     if(corrodeRestoration?.pending(state))return {...meleeEnumeration(state,reactionAdapter.legalSpace(state,options),'reaction'),releasePhaseControl:'blocked'};
     if(beforeCasualty?.pending(state)?.stage==='reaction')return {...meleeEnumeration(state,reactionAdapter.legalSpace(state,options),'reaction'),releasePhaseControl:'blocked'};
     if(state.pendingOfficialPaidPlague)return {...meleeEnumeration(state,plague.legalSpace(state,options),'plague'),releasePhaseControl:'blocked'};
@@ -2611,6 +2622,12 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
         ...((spatial || poisonousEssence || seekerPhaseEnd || stormPhaseEnd) ? { sourceRuntimeKind } : {}) };
   }
   function applySource(state, action, options) {
+    if(addedCardStatusReaction?.pending(state)){
+      if(action.executorId!==runtimeId||action.executorVersion!==version||action.sourceActionHash!==hash(action.sourceAction)
+        ||action.sourceRuntimeKind!=='reaction')throw Error('ADDED_CARD_STATUS_REACTION_CHOICE_REQUIRED');
+      const result=router.dispatch({operation:'apply',adapterId:reactionAdapter.descriptor.adapterId,state,request:{action:action.sourceAction,options}});
+      return addedCardStatusReaction.complete(state,result,action.sourceAction);
+    }
     if (action.executorId !== runtimeId || action.executorVersion !== version
       || action.sourceActionHash !== hash(action.sourceAction)) throw Error('CHARACTERISTIC_COMPONENT_ACTION_INVALID');
     if(corrodeRestoration?.pending(state)){
@@ -3081,7 +3098,8 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
     const dash=artanisDash ? artanisDash.afterTransition(state,applied) : applied;
     const completed=photonEntry ? photonEntry.afterTransition(state,dash,action) : dash;
     const withMunitions=plaguedMunitions?plaguedMunitions.afterTransition(state,completed,action):completed;
-    return universalCarrier ? universalCarrier.afterTransition(state,withMunitions,action) : withMunitions;
+    const carried=universalCarrier ? universalCarrier.afterTransition(state,withMunitions,action) : withMunitions;
+    return addedCardStatusReaction?addedCardStatusReaction.afterTransition(state,carried,action):carried;
   }
   function applyNative(state, action, options) {
     assertRangedContinuationOwner(state, action);
@@ -3553,6 +3571,11 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
     if (infestationTransfer?.pending(state)) throw Error('INFESTATION_TRANSFER_REACTION_CHOICE_REQUIRED');
     if (universalCarrier?.pending(state)) throw Error('UNIVERSAL_CARRIER_CHOICE_REQUIRED');
     if (infestationDamageCleanup?.pending(state))throw Error('INFESTATION_DAMAGE_CLEANUP_REQUIRED');
+    const addedStatusParent=addedCardStatusReaction?.pending(state);
+    if(addedStatusParent&&!(request.eventKind==='activation_end'
+      &&addedStatusParent.stage==='primary'&&addedStatusParent.primaryInput.triggerKind==='unit_activation_ended'
+      &&addedStatusParent.primaryInput.context.addedCardTrigger.pieceId===request.pieceId))
+      throw Error('ADDED_CARD_STATUS_REACTION_CONTINUATION_REQUIRED');
     if (corrodeRestoration?.pending(state))throw Error('CORRODE_RESTORATION_CONTINUATION_REQUIRED');
     if (beforeCasualty?.pending(state)) throw Error('BEFORE_CASUALTY_CONTINUATION_REQUIRED');
     if (state.pendingOfficialPaidPlague||state.pendingOfficialConsumePayment)throw Error('CONSUME_PAID_EFFECT_CONTINUATION_REQUIRED');
@@ -3568,7 +3591,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
     if (rangedDeclaration?.pending(state)) throw Error('RANGED_DECLARATION_ATTACK_CONTINUATION_REQUIRED');
     if (hiddenLossReactions?.pending(state)) throw Error('HIDDEN_LOSS_REACTION_CONTINUATION_REQUIRED');
     if (closeRanksReactions && displacement.pending(state)) throw Error('PSIONIC_DISPLACEMENT_CLOSE_RANKS_CONTINUATION_REQUIRED');
-    if (!wave4AddedActiveCards && !talDarimThresholds && !firebatStimpack && !hasOfficialTemplateBeforeCasualtyPolicyV1(state) && !(corrodeArmour&&includeCorrodeRoundCleanup) && !infantryPrecision && !stukovInfestation && !battlefieldModifierBundle?.routes.some(route=>route.effectKind==='stukov_creep') && !guardianShield && !ourMindsAsOne && !khalasGift && !executorsWill && !forceWallTraversal && !feedback && !farsight && !scourgeQueen && !zagaraBroodmother && !poisonousEssence && !overwatch && !sabotageDronePhaseEnd && !holoRoundEnd && !unitLifecycleAdapter && !bileUpgrades && !psionicRoundEnd && !hiddenLossReactions && !targetedMeleeCritical && !markedTargetFirstWeapon && !vilelingFoundation && !defilerMeleeFoundation && !markerAreas && !coordinatedStrike && !stationaryFirstRanged && !plasmaArmourSource && !alloyArmourSource && !superStimpack && !commandoStimpack && !chargeDeclaration) throw Error('CHARACTERISTIC_UNIT_LIFECYCLE_CONSUMER_REQUIRED');
+    if (!addedCardStatusReaction && !wave4AddedActiveCards && !talDarimThresholds && !firebatStimpack && !hasOfficialTemplateBeforeCasualtyPolicyV1(state) && !(corrodeArmour&&includeCorrodeRoundCleanup) && !infantryPrecision && !stukovInfestation && !battlefieldModifierBundle?.routes.some(route=>route.effectKind==='stukov_creep') && !guardianShield && !ourMindsAsOne && !khalasGift && !executorsWill && !forceWallTraversal && !feedback && !farsight && !scourgeQueen && !zagaraBroodmother && !poisonousEssence && !overwatch && !sabotageDronePhaseEnd && !holoRoundEnd && !unitLifecycleAdapter && !bileUpgrades && !psionicRoundEnd && !hiddenLossReactions && !targetedMeleeCritical && !markedTargetFirstWeapon && !vilelingFoundation && !defilerMeleeFoundation && !markerAreas && !coordinatedStrike && !stationaryFirstRanged && !plasmaArmourSource && !alloyArmourSource && !superStimpack && !commandoStimpack && !chargeDeclaration) throw Error('CHARACTERISTIC_UNIT_LIFECYCLE_CONSUMER_REQUIRED');
     if (psionicRoundEnd && request.eventKind === 'round_end'
       && (psionicRoundEnd.pending(state) || psionicRoundEnd.hasOutstanding(state))) throw Error('PSIONIC_TRANSFER_ROUND_END_CHOICES_REQUIRED');
     const prepared = psionicRoundEnd && request.eventKind === 'cleanup_and_refresh' ? psionicRoundEnd.cleanup(state) : state;
@@ -3610,7 +3633,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
     ...(chargeDeclaration ? { chargeDeclaration } : {}),
     ...(cardRefresh ? { cardRefresh } : {}),
     ...(unitLifecycleAdapter ? { unitLifecycleBundle, unitLifecycleAdapter } : {}),
-    ...(wave4AddedActiveCards || talDarimThresholds || firebatStimpack || hasOfficialTemplateBeforeCasualtyPolicyV1(spatialState) || corrodeArmour&&includeCorrodeRoundCleanup || infantryPrecision || stukovInfestation || battlefieldModifierBundle?.routes.some(route=>route.effectKind==='stukov_creep') || releaseZergTargets && darkSwarmLifecycle || guardianShield || ourMindsAsOne || khalasGift || executorsWill || forceWallTraversal || feedback || farsight || scourgeQueen || zagaraBroodmother || poisonousEssence || overwatch || sabotageDronePhaseEnd || holoRoundEnd || unitLifecycleAdapter || bileUpgrades || psionicRoundEnd || hiddenLossReactions || targetedMeleeCritical || markedTargetFirstWeapon || vilelingFoundation || defilerMeleeFoundation || markerAreas || coordinatedStrike || stationaryFirstRanged || plasmaArmourSource || alloyArmourSource || superStimpack || commandoStimpack || chargeDeclaration ? { lifecycle } : {}),
+    ...(addedCardStatusReaction || wave4AddedActiveCards || talDarimThresholds || firebatStimpack || hasOfficialTemplateBeforeCasualtyPolicyV1(spatialState) || corrodeArmour&&includeCorrodeRoundCleanup || infantryPrecision || stukovInfestation || battlefieldModifierBundle?.routes.some(route=>route.effectKind==='stukov_creep') || releaseZergTargets && darkSwarmLifecycle || guardianShield || ourMindsAsOne || khalasGift || executorsWill || forceWallTraversal || feedback || farsight || scourgeQueen || zagaraBroodmother || poisonousEssence || overwatch || sabotageDronePhaseEnd || holoRoundEnd || unitLifecycleAdapter || bileUpgrades || psionicRoundEnd || hiddenLossReactions || targetedMeleeCritical || markedTargetFirstWeapon || vilelingFoundation || defilerMeleeFoundation || markerAreas || coordinatedStrike || stationaryFirstRanged || plasmaArmourSource || alloyArmourSource || superStimpack || commandoStimpack || chargeDeclaration ? { lifecycle } : {}),
     ...(relocationAdapter ? { relocationBundle, relocationAdapter, postPlaceReactions } : {}),
     ...(reactionAdapter ? { reactionBundle, reactionAdapter, router } : {}),
     ...(registeredStorm ? { router, registeredStorm } : {}),

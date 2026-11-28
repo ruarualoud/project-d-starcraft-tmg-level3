@@ -1,10 +1,11 @@
 import { allowsOfficialInfestationReactionV1 } from '../rule-atoms/official-infestation-restrictions-v1.mjs';
 import {OFFICIAL_CORRODE_ARMOUR_ID,OFFICIAL_CORRODE_ARMOUR_REACTION_COMPONENTS_V1} from '../source-data/official-corrode-armour-source-v1.mjs';
-import {applyOfficialCorrodeArmourDebuffV1} from './official-characteristic-status-family-adapter-v1.mjs';
+import {applyOfficialCorrodeArmourDebuffV1,applyOfficialBurrowStatusV1} from './official-characteristic-status-family-adapter-v1.mjs';
+import {OFFICIAL_ADDED_STATUS_REACTIONS_V1,resolveOfficialAddedCardReactionTargetsV1} from './official-added-card-reaction-facts-v1.mjs';
 import { allowsOfficialSpawnRoundSpecialAbilityV1 } from '../rule-atoms/official-spawn-round-ability-lock-v1.mjs';
 import { OFFICIAL_OCULAR_OVERWATCH_DEFINITION_ID } from '../rule-atoms/official-overwatch-attack-policy-v1.mjs';
 import { OFFICIAL_INFESTATION_TRANSFER_DEFINITION_ID, resolveOfficialInfestationTransferTargetsV1,
-  applyOfficialInfestationTransferStatusV1 } from './official-infestation-transfer-facts-v1.mjs';
+  applyOfficialInfestationTransferStatusV1,applyOfficialInfestationDebuffV1 } from './official-infestation-transfer-facts-v1.mjs';
 import { WAVE4_REACTION_REVISIONS } from '../../content/source-releases/wave4-20261127/ability-review-v1.mjs';
 import { projectOfficialRangedFamilyModifiersV1 } from './official-ranged-family-projection-v1.mjs';
 import { OFFICIAL_OPTICAL_FLARE_DEFINITION_ID } from './official-targeted-active-ability-policy-v1.mjs';
@@ -74,6 +75,7 @@ const TRIGGER_KINDS = new Set([
   "ranged_attack_declared",
   "reserve_entered_non_entry",
   "unit_activation_ended",
+  'unit_action_ended',
 ]);
 const EXPECTED_ARCHETYPE_COUNTS = Object.freeze({
   armour_dodge: 1,
@@ -675,6 +677,7 @@ const LEGACY_REVIEWED_REACTION_COMPONENTS_V2 = Object.freeze({
 // identity and exact source text remain independent from the frozen Wave3 rows.
 const REVIEWED_REACTION_COMPONENTS_V2 = Object.freeze({
   ...LEGACY_REVIEWED_REACTION_COMPONENTS_V2,
+  ...OFFICIAL_ADDED_STATUS_REACTIONS_V1,
   ...OFFICIAL_DETONATION_REACTION_COMPONENTS_V1,
   ...OFFICIAL_CORRODE_ARMOUR_REACTION_COMPONENTS_V1,
   ...Object.fromEntries(WAVE4_REACTION_REVISIONS.map(({ previousDefinitionId, definitionId, sourceText }) =>
@@ -865,6 +868,7 @@ const REACTION_RECIPIENT_ROLES = Object.freeze({
   infestation_transfer: "source_unit",
   before_casualty_detonation: "source_unit",
   after_ranged_armour_debuff: "trigger_unit",
+  selected_unit_burrow_toggle:'selected_unit', action_end_infestation_debuff:'selected_unit',
 });
 function reactionRecipient(state, window, route, instance) {
   const role = REACTION_RECIPIENT_ROLES[route.effectKind];
@@ -899,6 +903,7 @@ function routeEligible(state, window, route, instance) {
   const target = targetFor(window, state);
   const attacker = attackerFor(window, state);
   const source = instance.sourcePiece;
+  if(route.addedCardStatusOwner)return resolveOfficialAddedCardReactionTargetsV1(state,window,route,instance.sideKey).length>0;
   const { role: virusRecipientRole, recipient: virusRecipient } = reactionRecipient(state, window, route, instance);
   if (!allowsOfficialInfestationReactionV1(state, { sideKey: instance.sideKey, sourcePieceId: source?.id,
     recipientPieceId: virusRecipientRole === 'payment_reference' ? null : virusRecipient?.id, abilityName: route.abilityName })) return false;
@@ -1187,6 +1192,13 @@ function domainFor(state, window, route, instance, paymentCardInstanceIds,
     body.constraints.fallenUnitId = window.context.infestationWitness.fallenPiece.id;
     body.constraints.triggerWitnessHash = window.context.infestationWitness.witnessHash;
   }
+  if(route.addedCardStatusOwner){
+    body.parameterSchema.required.push('targetUnitId');
+    body.parameterSchema.targetUnitId={enum:resolveOfficialAddedCardReactionTargetsV1(state,window,route,instance.sideKey)};
+    body.constraints.triggerWitnessHash=window.context.addedCardTrigger.witnessHash;
+    body.constraints.effectRecipientRole='selected_unit';
+    delete body.constraints.effectRecipientPieceId;
+  }
   if (consumeChoice) body.parameterSchema.required.push('sacrificePieceId', 'sacrificeModelId');
   return seal(body, "domainId");
 }
@@ -1283,7 +1295,7 @@ function instantiate(bundle, state, domain, parameters = {}) {
   }
   const canonicalParameters = pass ? {} : { paymentCardInstanceIds,
     ...(followupTargetUnitId ? { followupTargetUnitId } : {}) };
-  if (!pass && route.effectKind === 'infestation_transfer') {
+  if (!pass && (route.effectKind === 'infestation_transfer'||route.addedCardStatusOwner)) {
     if (!domain.parameterSchema.targetUnitId.enum.includes(parameters.targetUnitId)
       || Object.keys(parameters).some(key => !domain.parameterSchema.required.includes(key))) fail('INFESTATION_TRANSFER_TARGET_INVALID');
     canonicalParameters.targetUnitId = parameters.targetUnitId;
@@ -1640,6 +1652,20 @@ function reactionEffect(route, state, window, action) {
     effect.statusEffectHash = status.statusEffectHash;
     effect.fallenUnitId = window.context.infestationWitness.fallenPiece.id;
     effect.triggerWitnessHash = window.context.infestationWitness.witnessHash;
+  } else if(route.addedCardStatusOwner){
+    const selected=piece(state,action.reactionPlan.canonicalParameters.targetUnitId),
+      actor=piece(state,window.context.addedCardTrigger.pieceId);
+    if(!resolveOfficialAddedCardReactionTargetsV1(state,window,route,action.sideKey).includes(selected?.id))fail('ADDED_CARD_REACTION_TARGET_INVALID');
+    effect.targetPieceId=selected.id;
+    effect.triggerWitnessHash=window.context.addedCardTrigger.witnessHash;
+    if(route.effectKind==='selected_unit_burrow_toggle'){
+      const burrowed=(selected.statuses||[]).some(s=>normalized(typeof s==='string'?s:s.statusName||s.name)==='burrowed'),events=[];
+      applyOfficialBurrowStatusV1(state,route,selected,selected,burrowed?'lose':'gain',events);
+      effect.burrowMode=burrowed?'lose':'gain';effect.statusEvents=events;
+    }else{
+      const status=applyOfficialInfestationDebuffV1(state,route,actor,selected,effect.triggerWitnessHash);
+      effect.statusEffectHash=status.statusEffectHash;effect.infestedActorPieceId=actor.id;
+    }
   }
   return seal(effect, "effectHash");
 }

@@ -1,3 +1,4 @@
+import {readOfficialSourceGrantedBurrowRouteV1} from '../rule-atoms/official-source-granted-burrow-policy-v1.mjs';
 import { compileOfficialUniversalCarrierSpecV1 } from '../source-data/official-universal-carrier-source-v1.mjs';
 import {OFFICIAL_CORRODE_ARMOUR_ID} from '../source-data/official-corrode-armour-source-v1.mjs';
 import {compileOfficialStukovInfestationSpecV1} from '../source-data/official-stukov-infestation-source-v1.mjs';
@@ -1124,6 +1125,9 @@ export function synchronizeOfficialEffectiveHitPointWoundsV1(state, piece, optio
     first = false;
   }
 }
+export function cannotGainOfficialBurrowedV1(state, piece) {
+  return cannotGainBurrowed(state.officialCharacteristicStatusFamilySourceBundle, state, piece);
+}
 function cannotGainBurrowed(bundle, state, piece) {
   return projectOfficialUnitRestrictionsV1(state, piece.id).cannotGainBurrowed
     || passiveRoutesForPiece(bundle, state, piece).some((route) => (
@@ -1933,7 +1937,7 @@ function applyHeal(state, route, actor, target, healValue, events) {
     effectiveHeal, trainingTruth: false });
   return resolution;
 }
-function applyBurrow(state, route, actor, target, mode, events) {
+export function applyOfficialBurrowStatusV1(state, route, actor, target, mode, events) {
   if (mode === "gain") {
     if (cannotGainBurrowed(state.officialCharacteristicStatusFamilySourceBundle, state, target)) {
       fail('UNIT_RESTRICTION_BURROWED_PROHIBITED', target.id);
@@ -1997,8 +2001,9 @@ export function consumeOfficialCharacteristicActivationStartV1(state, piece, eve
 export function consumeOfficialCharacteristicBurrowedMovementV1(state, piece, events) {
   if (!isOfficialBurrowedCoreActorV1(state, piece)) return;
   const route = state.officialCharacteristicStatusFamilySourceBundle.routes.find(entry =>
-    entry.effectKind === "burrow_toggle" && entry.recordKey === piece.officialUnitRecordKey);
-  if (route) applyBurrow(state, route, piece, piece, "lose", events);
+    entry.effectKind === "burrow_toggle" && entry.recordKey === piece.officialUnitRecordKey)
+      ||readOfficialSourceGrantedBurrowRouteV1(state,piece);
+  if (route) applyOfficialBurrowStatusV1(state, route, piece, piece, "lose", events);
 }
 
 function applyEffect(state, route, actor, action, events) {
@@ -2192,12 +2197,12 @@ function applyEffect(state, route, actor, action, events) {
     applyHeal(state, route, actor, target, modelCount
       + Number(rangedProjection?.medpackAdditionalModelsWithinRange || 0), events);
   } else if (route.effectKind === "burrow_toggle") {
-    applyBurrow(state, route, actor, target,
+    applyOfficialBurrowStatusV1(state, route, actor, target,
       hasStatus(target, "burrowed") ? "lose" : "gain", events);
   } else if (route.effectKind === "grant_burrowed") {
-    applyBurrow(state, route, actor, target, "gain", events);
+    applyOfficialBurrowStatusV1(state, route, actor, target, "gain", events);
   } else if (route.effectKind === "lose_burrowed") {
-    applyBurrow(state, route, actor, target, "lose", events);
+    applyOfficialBurrowStatusV1(state, route, actor, target, "lose", events);
   } else if (['hidden_until_action', 'hidden_until_round_end'].includes(route.effectKind)) {
     const value = status(route, state, actor, actor,
       { statusName: "hidden", statusKind: "status", expiresAt: route.expiresAt });

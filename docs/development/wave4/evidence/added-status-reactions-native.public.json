@@ -1,0 +1,1116 @@
+{
+  "schema": "starcraft_tmg_wave4_added_status_reactions_v1",
+  "status": "passed_scoped",
+  "results": [
+    {
+      "id": "brutal-gain",
+      "kind": "brutal-gain",
+      "roomId": "wave4-added-status-brutal-gain",
+      "directoryRef": "build/wave4-web/added-status-reactions/native-B9jomU/brutal-gain",
+      "definitionId": "card:hive/brutal-instinct-any@1",
+      "signedActions": 23,
+      "stateHash": "7a1e0cce70282ec75ad9e8d064d9d0478cc8215e431d1c10449530b2afd8d22a",
+      "abilityProof": {
+        "sourceCardExhausted": true,
+        "triggerKind": "unit_activation_ended",
+        "timing": "outside_activation",
+        "actorBurrowed": true,
+        "actorHidden": true,
+        "enemyInfestation": false,
+        "activationStage": null
+      },
+      "trace": [
+        {
+          "revision": 1,
+          "round": 1,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 2,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "choose_first_actor",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 3,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "move",
+          "definitionId": null,
+          "pieceId": "enemy"
+        },
+        {
+          "revision": 4,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "finish_activation",
+          "definitionId": null,
+          "pieceId": "enemy"
+        },
+        {
+          "revision": 5,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "card:hive/brutal-instinct-any@1",
+          "pieceId": null
+        },
+        {
+          "revision": 6,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 7,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "move",
+          "definitionId": null,
+          "pieceId": "actor"
+        },
+        {
+          "revision": 8,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "finish_activation",
+          "definitionId": null,
+          "pieceId": "actor"
+        },
+        {
+          "revision": 9,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 10,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 11,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "choose_first_actor",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 12,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 13,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 14,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "choose_first_actor",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 15,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 16,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 17,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "determine_current_product_mission_marker_control",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 18,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "score_mission",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 19,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "check_mission_end_game",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 20,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_end_of_round_effects",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 21,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_cleanup_refresh",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 22,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_next_round_initiative",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 23,
+          "round": 2,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "definitionId": null,
+          "pieceId": null
+        }
+      ],
+      "actualActorMove": true,
+      "actualEnemyMove": true,
+      "actualRangedAttack": false,
+      "nestedRestoration": false,
+      "fullNativeRound": true,
+      "coldReplay": true,
+      "idempotencyVerified": true,
+      "newCompleteAtoms": 0,
+      "fullMatchAdmission": false
+    },
+    {
+      "id": "brutal-lose",
+      "kind": "brutal-lose",
+      "roomId": "wave4-added-status-brutal-lose",
+      "directoryRef": "build/wave4-web/added-status-reactions/native-B9jomU/brutal-lose",
+      "definitionId": "card:hive/brutal-instinct-any@1",
+      "signedActions": 24,
+      "stateHash": "1adbafc1f534e7955c8c6f2714bce87de09fbedc553ac838a939808f4d06abe9",
+      "abilityProof": {
+        "sourceCardExhausted": true,
+        "triggerKind": "unit_activation_ended",
+        "timing": "outside_activation",
+        "actorBurrowed": false,
+        "actorHidden": false,
+        "enemyInfestation": false,
+        "activationStage": null
+      },
+      "trace": [
+        {
+          "revision": 1,
+          "round": 1,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 2,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "choose_first_actor",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 3,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "move",
+          "definitionId": null,
+          "pieceId": "enemy"
+        },
+        {
+          "revision": 4,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "finish_activation",
+          "definitionId": null,
+          "pieceId": "enemy"
+        },
+        {
+          "revision": 5,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "card:hive/brutal-instinct-any@1",
+          "pieceId": null
+        },
+        {
+          "revision": 6,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 7,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "move",
+          "definitionId": null,
+          "pieceId": "actor"
+        },
+        {
+          "revision": 8,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "finish_activation",
+          "definitionId": null,
+          "pieceId": "actor"
+        },
+        {
+          "revision": 9,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 10,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 11,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "choose_first_actor",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 12,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 13,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 14,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "choose_first_actor",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 15,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 16,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 17,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "determine_current_product_mission_marker_control",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 18,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "score_mission",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 19,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "check_mission_end_game",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 20,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_end_of_round_effects",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 21,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_cleanup_refresh",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 22,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_next_round_initiative",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 23,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_next_round_initiative",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 24,
+          "round": 2,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "definitionId": null,
+          "pieceId": null
+        }
+      ],
+      "actualActorMove": true,
+      "actualEnemyMove": true,
+      "actualRangedAttack": false,
+      "nestedRestoration": false,
+      "fullNativeRound": true,
+      "coldReplay": true,
+      "idempotencyVerified": true,
+      "newCompleteAtoms": 0,
+      "fullMatchAdmission": false
+    },
+    {
+      "id": "parasite",
+      "kind": "parasite",
+      "roomId": "wave4-added-status-parasite",
+      "directoryRef": "build/wave4-web/added-status-reactions/native-B9jomU/parasite",
+      "definitionId": "card:infested_command_center/parasitic-bio-toxins-any@1",
+      "signedActions": 25,
+      "stateHash": "35f0662f6a76ac699bd61f886afd2e4306bc4fca2d05db7c416fceadc623fbf7",
+      "abilityProof": {
+        "sourceCardExhausted": true,
+        "triggerKind": "unit_action_ended",
+        "timing": "inside_activation",
+        "actorBurrowed": false,
+        "actorHidden": false,
+        "enemyInfestation": true,
+        "activationStage": "after_action",
+        "actualInfestedPrecision": 2
+      },
+      "trace": [
+        {
+          "revision": 1,
+          "round": 1,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 2,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "choose_first_actor",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 3,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "move",
+          "definitionId": null,
+          "pieceId": "actor"
+        },
+        {
+          "revision": 4,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "card:infested_command_center/parasitic-bio-toxins-any@1",
+          "pieceId": null
+        },
+        {
+          "revision": 5,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 6,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "finish_activation",
+          "definitionId": null,
+          "pieceId": "actor"
+        },
+        {
+          "revision": 7,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 8,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 9,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "choose_first_actor",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 10,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "ranged_attack",
+          "definitionId": null,
+          "pieceId": "actor"
+        },
+        {
+          "revision": 11,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "choose_ranged_precision_hits",
+          "definitionId": null,
+          "pieceId": "actor"
+        },
+        {
+          "revision": 12,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "resolve_ranged_attack_defence_pool",
+          "definitionId": null,
+          "pieceId": "actor"
+        },
+        {
+          "revision": 13,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "finish_activation",
+          "definitionId": null,
+          "pieceId": "actor"
+        },
+        {
+          "revision": 14,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 15,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 16,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "choose_first_actor",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 17,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 18,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 19,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "determine_current_product_mission_marker_control",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 20,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "score_mission",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 21,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "check_mission_end_game",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 22,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_end_of_round_effects",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 23,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_cleanup_refresh",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 24,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_next_round_initiative",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 25,
+          "round": 2,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "definitionId": null,
+          "pieceId": null
+        }
+      ],
+      "actualActorMove": true,
+      "actualEnemyMove": false,
+      "actualRangedAttack": true,
+      "nestedRestoration": false,
+      "fullNativeRound": true,
+      "coldReplay": true,
+      "idempotencyVerified": true,
+      "newCompleteAtoms": 0,
+      "fullMatchAdmission": false
+    },
+    {
+      "id": "parasite-extra-move",
+      "kind": "parasite-extra-move",
+      "roomId": "wave4-added-status-parasite-extra-move",
+      "directoryRef": "build/wave4-web/added-status-reactions/native-B9jomU/parasite-extra-move",
+      "definitionId": "card:infested_command_center/parasitic-bio-toxins-any@1",
+      "signedActions": 26,
+      "stateHash": "761db3e5a1da1cd6e99ddc42ef4fa50eb633070cf9eb7cf69428451e872274fd",
+      "abilityProof": {
+        "sourceCardExhausted": true,
+        "triggerKind": "unit_action_ended",
+        "timing": "inside_activation",
+        "actorBurrowed": false,
+        "actorHidden": false,
+        "enemyInfestation": true,
+        "activationStage": "before_action",
+        "actualInfestedPrecision": 2
+      },
+      "trace": [
+        {
+          "revision": 1,
+          "round": 1,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 2,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "choose_first_actor",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 3,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "resolve_relocation_ability",
+          "definitionId": "card:infested_barracks/for-the-swarm-any@1",
+          "pieceId": "actor"
+        },
+        {
+          "revision": 4,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "card:infested_command_center/parasitic-bio-toxins-any@1",
+          "pieceId": null
+        },
+        {
+          "revision": 5,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 6,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "move",
+          "definitionId": null,
+          "pieceId": "actor"
+        },
+        {
+          "revision": 7,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "finish_activation",
+          "definitionId": null,
+          "pieceId": "actor"
+        },
+        {
+          "revision": 8,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 9,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 10,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "choose_first_actor",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 11,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "ranged_attack",
+          "definitionId": null,
+          "pieceId": "actor"
+        },
+        {
+          "revision": 12,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "choose_ranged_precision_hits",
+          "definitionId": null,
+          "pieceId": "actor"
+        },
+        {
+          "revision": 13,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "resolve_ranged_attack_defence_pool",
+          "definitionId": null,
+          "pieceId": "actor"
+        },
+        {
+          "revision": 14,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "finish_activation",
+          "definitionId": null,
+          "pieceId": "actor"
+        },
+        {
+          "revision": 15,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 16,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 17,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "choose_first_actor",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 18,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 19,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 20,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "determine_current_product_mission_marker_control",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 21,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "score_mission",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 22,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "check_mission_end_game",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 23,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_end_of_round_effects",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 24,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_cleanup_refresh",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 25,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_next_round_initiative",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 26,
+          "round": 2,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "definitionId": null,
+          "pieceId": null
+        }
+      ],
+      "actualActorMove": true,
+      "actualEnemyMove": false,
+      "actualRangedAttack": true,
+      "nestedRestoration": false,
+      "fullNativeRound": true,
+      "coldReplay": true,
+      "idempotencyVerified": true,
+      "newCompleteAtoms": 0,
+      "fullMatchAdmission": false
+    },
+    {
+      "id": "parasite-restoration",
+      "kind": "parasite-restoration",
+      "roomId": "wave4-added-status-parasite-restoration",
+      "directoryRef": "build/wave4-web/added-status-reactions/native-B9jomU/parasite-restoration",
+      "definitionId": "card:infested_command_center/parasitic-bio-toxins-any@1",
+      "signedActions": 26,
+      "stateHash": "8d39023d03f289e640750a642c6e47925b41a826cff22312a9c8ed6fd0c47009",
+      "abilityProof": {
+        "sourceCardExhausted": true,
+        "triggerKind": "unit_action_ended",
+        "timing": "inside_activation",
+        "actorBurrowed": false,
+        "actorHidden": false,
+        "enemyInfestation": true,
+        "activationStage": "after_action",
+        "actualInfestedPrecision": 2
+      },
+      "trace": [
+        {
+          "revision": 1,
+          "actionType": "resolve_mission_start_of_round",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 2,
+          "actionType": "choose_first_actor",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 3,
+          "actionType": "move",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 4,
+          "actionType": "resolve_reaction_family_ability",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 5,
+          "actionType": "pass_reaction_family_window",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 6,
+          "actionType": "resolve_reaction_family_ability",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 7,
+          "actionType": "pass_reaction_family_window",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 8,
+          "actionType": "finish_activation",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 9,
+          "actionType": "pass",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 10,
+          "actionType": "pass",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 11,
+          "actionType": "choose_first_actor",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 12,
+          "actionType": "ranged_attack",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 13,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "ranged_attack",
+          "definitionId": null,
+          "pieceId": "enemy"
+        },
+        {
+          "revision": 14,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "finish_activation",
+          "definitionId": null,
+          "pieceId": "actor"
+        },
+        {
+          "revision": 15,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 16,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 17,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "choose_first_actor",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 18,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 19,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 20,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "determine_current_product_mission_marker_control",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 21,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "score_mission",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 22,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "check_mission_end_game",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 23,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_end_of_round_effects",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 24,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_cleanup_refresh",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 25,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_next_round_initiative",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 26,
+          "round": 2,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "definitionId": null,
+          "pieceId": null
+        }
+      ],
+      "actualActorMove": true,
+      "actualEnemyMove": false,
+      "actualRangedAttack": true,
+      "nestedRestoration": true,
+      "fullNativeRound": true,
+      "coldReplay": true,
+      "idempotencyVerified": true,
+      "newCompleteAtoms": 0,
+      "fullMatchAdmission": false
+    }
+  ],
+  "newCompleteAtoms": 0,
+  "implementedCumulativeAtoms": 7,
+  "sourceHeldDefinitions": 39,
+  "fullMatchAdmission": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}
