@@ -1,0 +1,912 @@
+{
+  "schema": "starcraft_tmg_wave4_firebat_foundation_v1",
+  "status": "passed_scoped",
+  "directoryRef": "build/wave4-web/firebat/foundation-fEZkjg",
+  "results": [
+    {
+      "id": "ranged-stimpack",
+      "kind": "ranged",
+      "stimpack": true,
+      "roomId": "wave4-firebat-ranged-stimpack",
+      "directoryRef": "build/wave4-web/firebat/foundation-fEZkjg/ranged-stimpack",
+      "signedActions": 24,
+      "stateHash": "13acebf34a6d842917b76ebb6d222b71297ccd234d971687a8039e959c81d026",
+      "precision": 3,
+      "speedModifier": 3,
+      "nonLethalDamage": 2,
+      "trace": [
+        {
+          "revision": 1,
+          "actionType": "resolve_mission_start_of_round",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 2,
+          "actionType": "choose_first_actor",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 3,
+          "actionType": "resolve_characteristic_status_ability",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 4,
+          "actionType": "finish_activation",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 5,
+          "actionType": "pass",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 6,
+          "actionType": "pass",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 7,
+          "actionType": "choose_first_actor",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 8,
+          "actionType": "roll_ranged_attack_hit_pool",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 9,
+          "actionType": "choose_ranged_precision_hits",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 10,
+          "actionType": "resolve_ranged_attack_defence_pool",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 11,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "ranged_attack",
+          "definitionId": null
+        },
+        {
+          "revision": 12,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "finish_activation",
+          "definitionId": null
+        },
+        {
+          "revision": 13,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "definitionId": null
+        },
+        {
+          "revision": 14,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "definitionId": null
+        },
+        {
+          "revision": 15,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "choose_first_actor",
+          "definitionId": null
+        },
+        {
+          "revision": 16,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "definitionId": null
+        },
+        {
+          "revision": 17,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "definitionId": null
+        },
+        {
+          "revision": 18,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "determine_current_product_mission_marker_control",
+          "definitionId": null
+        },
+        {
+          "revision": 19,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "score_mission",
+          "definitionId": null
+        },
+        {
+          "revision": 20,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "check_mission_end_game",
+          "definitionId": null
+        },
+        {
+          "revision": 21,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_end_of_round_effects",
+          "definitionId": null
+        },
+        {
+          "revision": 22,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_cleanup_refresh",
+          "definitionId": null
+        },
+        {
+          "revision": 23,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_next_round_initiative",
+          "definitionId": null
+        },
+        {
+          "revision": 24,
+          "round": 2,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "definitionId": null
+        }
+      ],
+      "fullNativeRound": true,
+      "coldReplay": true,
+      "idempotencyVerified": true,
+      "fullMatchAdmission": false
+    },
+    {
+      "id": "ranged-no-stimpack",
+      "kind": "ranged",
+      "stimpack": false,
+      "roomId": "wave4-firebat-ranged-no-stimpack",
+      "directoryRef": "build/wave4-web/firebat/foundation-fEZkjg/ranged-no-stimpack",
+      "signedActions": 20,
+      "stateHash": "a2dc6ec68028df3382ff6ec234bc4e68e9989cce1d329d6703daa1262bdc1259",
+      "precision": 0,
+      "speedModifier": null,
+      "nonLethalDamage": null,
+      "trace": [
+        {
+          "revision": 1,
+          "round": 1,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "definitionId": null
+        },
+        {
+          "revision": 2,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "choose_first_actor",
+          "definitionId": null
+        },
+        {
+          "revision": 3,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "definitionId": null
+        },
+        {
+          "revision": 4,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "definitionId": null
+        },
+        {
+          "revision": 5,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "choose_first_actor",
+          "definitionId": null
+        },
+        {
+          "revision": 6,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "ranged_attack",
+          "definitionId": null
+        },
+        {
+          "revision": 7,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "ranged_attack",
+          "definitionId": null
+        },
+        {
+          "revision": 8,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "finish_activation",
+          "definitionId": null
+        },
+        {
+          "revision": 9,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "definitionId": null
+        },
+        {
+          "revision": 10,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "definitionId": null
+        },
+        {
+          "revision": 11,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "choose_first_actor",
+          "definitionId": null
+        },
+        {
+          "revision": 12,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "definitionId": null
+        },
+        {
+          "revision": 13,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "definitionId": null
+        },
+        {
+          "revision": 14,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "determine_current_product_mission_marker_control",
+          "definitionId": null
+        },
+        {
+          "revision": 15,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "score_mission",
+          "definitionId": null
+        },
+        {
+          "revision": 16,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "check_mission_end_game",
+          "definitionId": null
+        },
+        {
+          "revision": 17,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_end_of_round_effects",
+          "definitionId": null
+        },
+        {
+          "revision": 18,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_cleanup_refresh",
+          "definitionId": null
+        },
+        {
+          "revision": 19,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_next_round_initiative",
+          "definitionId": null
+        },
+        {
+          "revision": 20,
+          "round": 2,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "definitionId": null
+        }
+      ],
+      "fullNativeRound": true,
+      "coldReplay": true,
+      "idempotencyVerified": true,
+      "fullMatchAdmission": false
+    },
+    {
+      "id": "melee-stimpack",
+      "kind": "melee",
+      "stimpack": true,
+      "movement": false,
+      "movedInches": null,
+      "roomId": "wave4-firebat-melee-stimpack",
+      "directoryRef": "build/wave4-web/firebat/foundation-fEZkjg/melee-stimpack",
+      "signedActions": 29,
+      "stateHash": "47fcac2d7e874c5a702e403b06edaa8b5fcdf1b5934aed759df501907cc19a0c",
+      "precision": 3,
+      "speedModifier": 3,
+      "nonLethalDamage": 2,
+      "trace": [
+        {
+          "revision": 1,
+          "actionType": "resolve_mission_start_of_round",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 2,
+          "actionType": "choose_first_actor",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 3,
+          "actionType": "resolve_characteristic_status_ability",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 4,
+          "actionType": "finish_activation",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 5,
+          "actionType": "pass",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 6,
+          "actionType": "pass",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 7,
+          "actionType": "choose_first_actor",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 8,
+          "actionType": "pass",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 9,
+          "actionType": "pass",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 10,
+          "actionType": "choose_first_actor",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 11,
+          "actionType": "roll_melee_attack_hit_pool",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 12,
+          "actionType": "roll_melee_attack_armour_pool",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 13,
+          "actionType": "resolve_melee_attack_evade_pool",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 14,
+          "actionType": "fight",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 15,
+          "actionType": "finish_activation",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 16,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "fight",
+          "definitionId": null
+        },
+        {
+          "revision": 17,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "roll_melee_attack_armour_pool",
+          "definitionId": null
+        },
+        {
+          "revision": 18,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "resolve_melee_attack_evade_pool",
+          "definitionId": null
+        },
+        {
+          "revision": 19,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "fight",
+          "definitionId": null
+        },
+        {
+          "revision": 20,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "finish_activation",
+          "definitionId": null
+        },
+        {
+          "revision": 21,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "definitionId": null
+        },
+        {
+          "revision": 22,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "definitionId": null
+        },
+        {
+          "revision": 23,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "determine_current_product_mission_marker_control",
+          "definitionId": null
+        },
+        {
+          "revision": 24,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "score_mission",
+          "definitionId": null
+        },
+        {
+          "revision": 25,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "check_mission_end_game",
+          "definitionId": null
+        },
+        {
+          "revision": 26,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_end_of_round_effects",
+          "definitionId": null
+        },
+        {
+          "revision": 27,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_cleanup_refresh",
+          "definitionId": null
+        },
+        {
+          "revision": 28,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_next_round_initiative",
+          "definitionId": null
+        },
+        {
+          "revision": 29,
+          "round": 2,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "definitionId": null
+        }
+      ],
+      "fullNativeRound": true,
+      "coldReplay": true,
+      "idempotencyVerified": true,
+      "fullMatchAdmission": false
+    },
+    {
+      "id": "melee-no-stimpack",
+      "kind": "melee",
+      "stimpack": false,
+      "movement": false,
+      "movedInches": null,
+      "roomId": "wave4-firebat-melee-no-stimpack",
+      "directoryRef": "build/wave4-web/firebat/foundation-fEZkjg/melee-no-stimpack",
+      "signedActions": 27,
+      "stateHash": "fd0576a26ceae28cc90733a198ab4c8c4085e4c2ae339d6e56bbfc69272fdcce",
+      "precision": 0,
+      "speedModifier": null,
+      "nonLethalDamage": null,
+      "trace": [
+        {
+          "revision": 1,
+          "round": 1,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "definitionId": null
+        },
+        {
+          "revision": 2,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "choose_first_actor",
+          "definitionId": null
+        },
+        {
+          "revision": 3,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "definitionId": null
+        },
+        {
+          "revision": 4,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "definitionId": null
+        },
+        {
+          "revision": 5,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "choose_first_actor",
+          "definitionId": null
+        },
+        {
+          "revision": 6,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "definitionId": null
+        },
+        {
+          "revision": 7,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "definitionId": null
+        },
+        {
+          "revision": 8,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "choose_first_actor",
+          "definitionId": null
+        },
+        {
+          "revision": 9,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "fight",
+          "definitionId": null
+        },
+        {
+          "revision": 10,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "roll_melee_attack_armour_pool",
+          "definitionId": null
+        },
+        {
+          "revision": 11,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "resolve_melee_attack_evade_pool",
+          "definitionId": null
+        },
+        {
+          "revision": 12,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "finish_activation",
+          "definitionId": null
+        },
+        {
+          "revision": 13,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "fight",
+          "definitionId": null
+        },
+        {
+          "revision": 14,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "roll_melee_attack_armour_pool",
+          "definitionId": null
+        },
+        {
+          "revision": 15,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "resolve_melee_attack_evade_pool",
+          "definitionId": null
+        },
+        {
+          "revision": 16,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "finish_activation",
+          "definitionId": null
+        },
+        {
+          "revision": 17,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "definitionId": null
+        },
+        {
+          "revision": 18,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "definitionId": null
+        },
+        {
+          "revision": 19,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "determine_current_product_mission_marker_control",
+          "definitionId": null
+        },
+        {
+          "revision": 20,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "score_mission",
+          "definitionId": null
+        },
+        {
+          "revision": 21,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "check_mission_end_game",
+          "definitionId": null
+        },
+        {
+          "revision": 22,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_end_of_round_effects",
+          "definitionId": null
+        },
+        {
+          "revision": 23,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_cleanup_refresh",
+          "definitionId": null
+        },
+        {
+          "revision": 24,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_next_round_initiative",
+          "definitionId": null
+        },
+        {
+          "revision": 25,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_next_round_initiative",
+          "definitionId": null
+        },
+        {
+          "revision": 26,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_next_round_initiative",
+          "definitionId": null
+        },
+        {
+          "revision": 27,
+          "round": 2,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "definitionId": null
+        }
+      ],
+      "fullNativeRound": true,
+      "coldReplay": true,
+      "idempotencyVerified": true,
+      "fullMatchAdmission": false
+    },
+    {
+      "id": "movement-stimpack",
+      "kind": "ranged",
+      "stimpack": true,
+      "movement": true,
+      "movedInches": 6.5,
+      "roomId": "wave4-firebat-movement-stimpack",
+      "directoryRef": "build/wave4-web/firebat/foundation-fEZkjg/movement-stimpack",
+      "signedActions": 22,
+      "stateHash": "826f76055c005abc68689b68b4ea108cb6e5d6e1ab7ae6b3beb48da64c8315ba",
+      "precision": null,
+      "speedModifier": 3,
+      "nonLethalDamage": 2,
+      "trace": [
+        {
+          "revision": 1,
+          "round": 1,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "definitionId": null
+        },
+        {
+          "revision": 2,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "choose_first_actor",
+          "definitionId": null
+        },
+        {
+          "revision": 3,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "resolve_characteristic_status_ability",
+          "definitionId": "unit:firebat/stimpack-movement-phase@1"
+        },
+        {
+          "revision": 4,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "move",
+          "definitionId": null
+        },
+        {
+          "revision": 5,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "finish_activation",
+          "definitionId": null
+        },
+        {
+          "revision": 6,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "definitionId": null
+        },
+        {
+          "revision": 7,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "definitionId": null
+        },
+        {
+          "revision": 8,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "choose_first_actor",
+          "definitionId": null
+        },
+        {
+          "revision": 9,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "definitionId": null
+        },
+        {
+          "revision": 10,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "definitionId": null
+        },
+        {
+          "revision": 11,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "choose_first_actor",
+          "definitionId": null
+        },
+        {
+          "revision": 12,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "definitionId": null
+        },
+        {
+          "revision": 13,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "definitionId": null
+        },
+        {
+          "revision": 14,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "determine_current_product_mission_marker_control",
+          "definitionId": null
+        },
+        {
+          "revision": 15,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "score_mission",
+          "definitionId": null
+        },
+        {
+          "revision": 16,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "check_mission_end_game",
+          "definitionId": null
+        },
+        {
+          "revision": 17,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_end_of_round_effects",
+          "definitionId": null
+        },
+        {
+          "revision": 18,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_cleanup_refresh",
+          "definitionId": null
+        },
+        {
+          "revision": 19,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_next_round_initiative",
+          "definitionId": null
+        },
+        {
+          "revision": 20,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_next_round_initiative",
+          "definitionId": null
+        },
+        {
+          "revision": 21,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_next_round_initiative",
+          "definitionId": null
+        },
+        {
+          "revision": 22,
+          "round": 2,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "definitionId": null
+        }
+      ],
+      "fullNativeRound": true,
+      "coldReplay": true,
+      "idempotencyVerified": true,
+      "fullMatchAdmission": false
+    }
+  ],
+  "newCompleteAtoms": 0,
+  "sourceHeldDefinitions": 39,
+  "fullFirebatAdmission": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

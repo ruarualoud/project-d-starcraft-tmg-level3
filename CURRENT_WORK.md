@@ -4,9 +4,9 @@
 
 当前执行 T28-W4-02。
 Ticket 23 / Slice 249；整体 33/36；剩余 248、249、250。
-状态日期：2026-11-28T05:58:29.899Z。本页由 coordination/current-development.json 生成，不追加历史。
+状态日期：2026-11-28T06:30:23.830Z。本页由 coordination/current-development.json 生成，不追加历史。
 
-Wave4人人长任务继续。Consume政策1.9/Root3.242具名验收通过：9完整原生回合215动作、Web2房17确认、独立19房311原动作冷验。完整原子仍6/18；下一步新单位与整版产品。
+Wave4人人长任务继续。Consume c91c2e3已推送；Firebat基础5完整原生回合122动作及独立5房122原动作冷验通过，FT选择仅组件、Fire Wall未接。完整原子仍6/18、主Builder102/119；接Tal’darim与余下新卡/新单位。
 
 运行限制：本分支仅推进Wave4人人对战，按Wave3模式补齐数据、规则、建军、房间、媒体和Web双席；使用5484及build/wave4-web，按可验证成果提交推送。其他同步开发线不在本分支展开；付费模型、K3、AI对局、复盘与生产发布继续暂停。
 
@@ -23,11 +23,12 @@ Wave4人人长任务继续。Consume政策1.9/Root3.242具名验收通过：9完
 | T27/S272 军表与 Plan／Teach，P0–P6 验收 3/7 | 部分完成 | 部分完成 | 部分完成 | 未测效果 |
 
 下一步：
-1. 接Firebat、Reaver/Scarabs、Slayer及余下势力，完整原子仍6/18。
-2. 完整发布／Builder／大厅／媒体与500／2000分Web继续；付款卡名列W4-03。
+1. 接Tal’darim累计Supply损失、余下卡牌与新单位；完整原子仍6/18。
+2. Firebat FT形状／尺寸问题待答；模板替换与Fire Wall继续，整版发布／Builder／大厅／媒体及500/2000分Web继续。
 
 ## Navigation
 
+- 查看Firebat官方底座、Stimpack/两武器实际原生消费者与模板待办：[Firebat基础接线](docs/development/wave4/firebat-foundation.zh-CN.md)
 - 查看Consume付款、原来源死亡、Dark Swarm及实际Web发起：[Detonation Consume接线](docs/development/wave4/detonation-consume-wiring.zh-CN.md)
 - 查看Disengage证明、末模型销毁与Web实际发起：[Detonation直接移除接线](docs/development/wave4/detonation-disengage-wiring.zh-CN.md)
 - 查看390px伤亡顺序、原哈希提交及双席回归：[Web伤亡方案摘要](docs/development/wave4/casualty-summary-web.zh-CN.md)

@@ -1,0 +1,56 @@
+{
+  "schema": "starcraft_tmg_wave4_firebat_current_cold_v1",
+  "status": "passed_read_only",
+  "results": [
+    {
+      "id": "ranged-stimpack",
+      "roomId": "wave4-firebat-ranged-stimpack",
+      "originalSignedActions": 24,
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "stimpackRoundCleanupVerified": true,
+      "newActions": 0
+    },
+    {
+      "id": "ranged-no-stimpack",
+      "roomId": "wave4-firebat-ranged-no-stimpack",
+      "originalSignedActions": 20,
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "stimpackRoundCleanupVerified": true,
+      "newActions": 0
+    },
+    {
+      "id": "melee-stimpack",
+      "roomId": "wave4-firebat-melee-stimpack",
+      "originalSignedActions": 29,
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "stimpackRoundCleanupVerified": true,
+      "newActions": 0
+    },
+    {
+      "id": "melee-no-stimpack",
+      "roomId": "wave4-firebat-melee-no-stimpack",
+      "originalSignedActions": 27,
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "stimpackRoundCleanupVerified": true,
+      "newActions": 0
+    },
+    {
+      "id": "movement-stimpack",
+      "roomId": "wave4-firebat-movement-stimpack",
+      "originalSignedActions": 22,
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "stimpackRoundCleanupVerified": true,
+      "newActions": 0
+    }
+  ],
+  "newActions": 0,
+  "sourceHeldDefinitions": 39,
+  "fullFirebatAdmission": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

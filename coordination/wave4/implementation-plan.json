@@ -33,7 +33,13 @@
         "docs/development/wave4/evidence/consume-latest-bundle-reentry.public.json",
         "docs/development/wave4/evidence/consume-typecheck.public.json",
         "docs/development/wave4/evidence/consume-consumers.public.json",
-        "docs/development/wave4/evidence/consume-harness.public.json"
+        "docs/development/wave4/evidence/consume-harness.public.json",
+        "docs/development/wave4/firebat-foundation.zh-CN.md",
+        "docs/development/wave4/evidence/firebat-foundation.public.json",
+        "docs/development/wave4/evidence/firebat-source.public.json",
+        "docs/development/wave4/evidence/firebat-model-selection.public.json",
+        "docs/development/wave4/evidence/firebat-current-cold.public.json",
+        "docs/development/wave4/evidence/firebat-foundation-consumers.public.json"
       ],
       "exit": "Every admitted changed definition has source binding, actual consumer and Native successor/recovery evidence; source holds remain explicit."
     },
@@ -102,6 +108,6 @@
     "postgameReview": false,
     "productionPublish": false
   },
-  "next": "接 Firebat、Reaver/Scarabs、Slayer及剩余势力；Detonation仍部分消费者，整版发布/Builder/大厅/媒体与500/2000分Web继续。",
-  "updatedAt": "2026-11-28T05:58:29.899Z"
+  "next": "继续Tal’darim累积Supply与剩余新卡消费者；FT几何待确认，Firebat模板／Fire Wall、新单位与整版产品继续。",
+  "updatedAt": "2026-11-28T06:30:23.830Z"
 }

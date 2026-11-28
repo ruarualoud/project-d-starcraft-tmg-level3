@@ -1,0 +1,125 @@
+{
+  "schema": "starcraft_tmg_wave4_firebat_foundation_consumers_v1",
+  "status": "passed_scoped",
+  "rootRuntimeVersion": "3.243.0",
+  "nativeCases": 5,
+  "nativeSignedActions": 122,
+  "nativeFullRounds": 5,
+  "independentColdCases": 5,
+  "independentColdOriginalActions": 122,
+  "legacyColdCases": 4,
+  "legacyColdOriginalActions": 14,
+  "newColdActions": 0,
+  "sourceComponentCases": 7,
+  "modelSelectionComponentCases": 4,
+  "definitions": [
+    {
+      "definitionId": "unit:firebat/stimpack-movement-phase@1",
+      "classification": "existing_atoms_new_combination",
+      "actualConsumers": [
+        "CP payment and NON-LETHAL DAMAGE (2)",
+        "6.5 inch Native move with +3 Speed",
+        "numeric ranged and melee PRECISION (3)",
+        "round cleanup"
+      ],
+      "allConsumersVerified": false,
+      "pendingConsumers": [
+        "FT attack integration"
+      ]
+    },
+    {
+      "definitionId": "unit:firebat/perdition-flamethrower-assault-phase@1",
+      "classification": "data_change",
+      "actualConsumers": [
+        "numeric ranged attack",
+        "native defence/casualties and activation completion"
+      ],
+      "allConsumersVerified": false,
+      "pendingConsumers": [
+        "per-model FT combination"
+      ]
+    },
+    {
+      "definitionId": "unit:firebat/flame-strike-combat-phase@1",
+      "classification": "data_change",
+      "actualConsumers": [
+        "numeric melee attack",
+        "native defence/casualties and activation completion"
+      ],
+      "allConsumersVerified": false,
+      "pendingConsumers": [
+        "per-model FT combination"
+      ]
+    }
+  ],
+  "componentOnlyDefinitions": [
+    "unit:firebat/fire-it-up-assault-phase@1",
+    "unit:firebat/need-a-light-combat-phase@1"
+  ],
+  "sourceCompiledOnlyDefinitions": [
+    "unit:firebat/incinerator-gauntlets-movement-phase@1"
+  ],
+  "actualConsumerRefs": [
+    {
+      "file": "packages/product-composition/official-characteristic-status-family-adapter-v1.mjs",
+      "exportName": "createOfficialCharacteristicStatusFamilySourceBundleV2"
+    },
+    {
+      "file": "packages/product-composition/official-characteristic-status-family-adapter-v1.mjs",
+      "exportName": "createOfficialCharacteristicStatusFamilyAdapterV1"
+    },
+    {
+      "file": "packages/product-composition/official-characteristic-status-family-adapter-v1.mjs",
+      "exportName": "projectOfficialCharacteristicStatusFamilyModifiersV1"
+    },
+    {
+      "file": "packages/product-composition/official-characteristic-status-family-adapter-v1.mjs",
+      "exportName": "resolveOfficialMovementSpeedV1"
+    },
+    {
+      "file": "packages/product-composition/official-selected-roster-ranged-action-runtime-v1.mjs",
+      "exportName": "instantiateOfficialSelectedRosterRangedActionV1"
+    },
+    {
+      "file": "packages/product-composition/official-selected-roster-melee-action-runtime-v1.mjs",
+      "exportName": "instantiateOfficialSelectedRosterMeleeActionV1"
+    },
+    {
+      "file": "packages/product-composition/official-characteristic-status-component-runtime-v2.mjs",
+      "exportName": "createOfficialCharacteristicStatusComponentRuntimeV2"
+    },
+    {
+      "file": "packages/product-composition/official-current-product-match-runtime-v1.mjs",
+      "exportName": "createOfficialEngineeringScopedRoundRuntimeV1"
+    },
+    {
+      "file": "packages/source-data/official-model-base-geometry-data-bundle-v1.mjs",
+      "exportName": "createOfficialReviewedProductModelGeometryV1"
+    }
+  ],
+  "componentOnlyConsumerRefs": [
+    {
+      "file": "packages/rule-atoms/official-firebat-model-substitution-v1.mjs",
+      "exportName": "prepareOfficialFirebatModelSubstitutionV1",
+      "actualAttackConsumerVerified": false
+    }
+  ],
+  "evidenceRefs": [
+    "docs/development/wave4/evidence/firebat-foundation.public.json",
+    "docs/development/wave4/evidence/firebat-source.public.json",
+    "docs/development/wave4/evidence/firebat-model-selection.public.json",
+    "docs/development/wave4/evidence/firebat-current-cold.public.json",
+    "docs/development/wave4/evidence/consume-legacy-cold.public.json"
+  ],
+  "newCompleteAtoms": 0,
+  "implementedCumulativeAtoms": 6,
+  "mainBuilderRecordCount": 102,
+  "mainBuilderDenominator": 119,
+  "sourceHeldDefinitions": 39,
+  "flamerDimensionsVerified": false,
+  "webVerified": false,
+  "fullFirebatAdmission": false,
+  "fullMatchAdmission": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

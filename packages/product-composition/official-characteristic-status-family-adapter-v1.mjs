@@ -2,6 +2,7 @@ import { compileOfficialUniversalCarrierSpecV1 } from '../source-data/official-u
 import {OFFICIAL_CORRODE_ARMOUR_ID} from '../source-data/official-corrode-armour-source-v1.mjs';
 import {compileOfficialStukovInfestationSpecV1} from '../source-data/official-stukov-infestation-source-v1.mjs';
 import {compileOfficialInfestedInfantrySpecV1} from '../source-data/official-infested-infantry-source-v1.mjs';
+import {compileOfficialFirebatSpecV1,OFFICIAL_FIREBAT_STIMPACK_ID} from '../source-data/official-firebat-source-v1.mjs';
 import {inspectOfficialUnitCreepProximityV1} from './official-current-product-state-facts-v1.mjs';
 import {resolveOfficialInfestationActivationExchangeV1} from '../rule-atoms/official-infestation-activation-exchange-v1.mjs';
 import { compileOfficialInfestationRestrictionSpecV1 } from '../rule-atoms/official-infestation-restrictions-v1.mjs';
@@ -604,6 +605,8 @@ function compileRoute(definition, { explicitRelease = false } = {}) {
       nonLethalDamage: 0, speedModifier: 2, precision: 2,
       rangedWeaponScope: 'all', closeCombatWeaponScope: 'all',
       expiresAt: 'cleanup_and_refresh' };
+  } else if (definition.definitionId === OFFICIAL_FIREBAT_STIMPACK_ID) {
+    spec = compileOfficialFirebatSpecV1(definition);
   } else if (name === "Stimpack"
     && /NON-LETHAL DAMAGE \(2\).+BUFF Speed \(3\).+PRECISION \((2|3)\)/iu.test(text)) {
     const precision = Number(text.match(/PRECISION \((2|3)\)/iu)[1]);

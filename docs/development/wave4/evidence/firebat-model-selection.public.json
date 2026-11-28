@@ -1,0 +1,50 @@
+{
+  "schema": "starcraft_tmg_wave4_firebat_model_selection_v1",
+  "status": "passed_component",
+  "cases": [
+    {
+      "compositionKind": "small",
+      "currentSupply": 1,
+      "modelCount": 4,
+      "templateCount": 1,
+      "numericCount": 3,
+      "zeroChoiceRetainsAllNumeric": true,
+      "overLimitRejected": true,
+      "duplicateRejected": true,
+      "readOnly": true
+    },
+    {
+      "compositionKind": "large",
+      "currentSupply": 2,
+      "modelCount": 6,
+      "templateCount": 2,
+      "numericCount": 4,
+      "zeroChoiceRetainsAllNumeric": true,
+      "overLimitRejected": true,
+      "duplicateRejected": true,
+      "readOnly": true
+    },
+    {
+      "attackKind": "close_combat",
+      "purchaseAuditedByBuilder": true,
+      "purchased": false,
+      "selectionAllowed": false
+    },
+    {
+      "attackKind": "close_combat",
+      "purchaseAuditedByBuilder": true,
+      "purchased": true,
+      "selectionAllowed": true
+    }
+  ],
+  "sourceBundleHash": "b11c276100bee3753d92514701a10136a28847b76e5597cbaf7cde05b21ed3ea",
+  "newSignedActions": 0,
+  "parameterSelectionOnly": true,
+  "coverageVerified": false,
+  "actualAttackConsumersVerified": false,
+  "newCompleteAtoms": 0,
+  "fullFirebatAdmission": false,
+  "sourceHeldDefinitions": 39,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

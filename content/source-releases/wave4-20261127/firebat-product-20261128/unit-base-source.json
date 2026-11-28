@@ -1,0 +1,28 @@
+{
+  "schema": "starcraft_tmg_official_product_base_source_v1",
+  "recordKey": "army_units:firebat",
+  "sourceRecordHash": "0ae5e57a1407cd4a4a3b3933a114a4848fd58caa459bce57a99bbe496d4027a0",
+  "payloadHash": "9a58c4c89751a70e54d44cf7123b8e3a61ccc337a5784face072e6f06036537e",
+  "productCode": "SCMG0051",
+  "productPage": {
+    "url": "https://archon-studio.com/shop/products/starcraft-tabletop-miniatures-game/starcraft-firebat-terran-expansion-set",
+    "ref": "content/source-releases/wave4-20261127/firebat-product-20261128/official-product.html",
+    "byteHash": "4c03ba2d0324d9142ac525ac4280c37ef9154ac6d066ee6e427afb5abe433ab7",
+    "byteLength": 194993
+  },
+  "productImage": {
+    "url": "https://archon-studio.com/files/thumbs/Products/Starcraft/StarCraft%20(R)%20Firebat/Firebat%204.jpg/732_732_crop.png?ts=1794213850&pn=product-slider",
+    "ref": "content/source-releases/wave4-20261127/firebat-product-20261128/official-product-4.png",
+    "byteHash": "c45edc69203f5895fdd816358d1bf6cd3f961194b2ba2b7d8c527c7911ca75e2",
+    "byteLength": 380212
+  },
+  "shape": "round",
+  "widthMillimetres": 40,
+  "depthMillimetres": 40,
+  "visuallyReviewed": true,
+  "association": "six_round_miniature_bases_and_one_long_fire_wall",
+  "dimensionAuthority": "official_product_contents",
+  "templateDimensionsVerified": false,
+  "trainingTruth": false,
+  "sourceHash": "7fe49d3b72532a7567139be1d0047c3babbfcea43f31b9c03e3a37f05c859cf0"
+}

@@ -1,0 +1,31 @@
+{
+  "schema": "starcraft_tmg_wave4_firebat_source_v1",
+  "status": "passed_component",
+  "sourceBundleHash": "6154ff742451bf96a1b7072b42217fa63cb4467a50989a0a62103f4fb0cf7c01",
+  "sourceDefinitionIds": [
+    "unit:firebat/stimpack-movement-phase@1",
+    "unit:firebat/incinerator-gauntlets-movement-phase@1",
+    "unit:firebat/fire-it-up-assault-phase@1",
+    "unit:firebat/need-a-light-combat-phase@1"
+  ],
+  "unitBaseSourceHash": "7fe49d3b72532a7567139be1d0047c3babbfcea43f31b9c03e3a37f05c859cf0",
+  "unitBaseMillimetres": 40,
+  "sourceProductUrl": "https://archon-studio.com/shop/products/starcraft-tabletop-miniatures-game/starcraft-firebat-terran-expansion-set",
+  "productImageRef": "content/source-releases/wave4-20261127/firebat-product-20261128/official-product-4.png",
+  "cases": [
+    "four exact feature definitions compile",
+    "Stimpack binds actual Firebat weapon and CP",
+    "changed weapon source rejected",
+    "official product base is not mislabelled P2P or estimate",
+    "changed physical size rejected",
+    "new product source forbidden in old geometry version",
+    "main release does not admit unfinished Firebat"
+  ],
+  "newActions": 0,
+  "newCompleteAtoms": 0,
+  "flamerDimensionsVerified": false,
+  "fullFirebatAdmission": false,
+  "sourceHeldDefinitions": 39,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

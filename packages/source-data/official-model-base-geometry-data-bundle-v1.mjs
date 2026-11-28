@@ -1,4 +1,5 @@
 import { verifyOfficialEngineeringImageBaseEstimateV1 } from './official-engineering-image-base-estimate-v1.mjs';
+import {verifyOfficialProductBaseSourceV1} from './official-product-base-source-v1.mjs';
 import { createHash } from 'node:crypto';
 import { isDeepStrictEqual, types } from 'node:util';
 import { hashStarcraftTmgContract } from
@@ -233,6 +234,7 @@ export const OFFICIAL_RAVEN_CONTOUR_GEOMETRY_BUNDLE_VERSION = '2.2.0';
 const ravenShapeByVersion = {
   [OFFICIAL_RAVEN_GEOMETRY_BUNDLE_VERSION]: 'orthogonal_cross',
   [OFFICIAL_RAVEN_CONTOUR_GEOMETRY_BUNDLE_VERSION]: 'measured_contour',
+  '2.3.0': 'measured_contour',
 };
 const ravenExtentDocument = 'projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/system_changelogs/uCBa37ipCfRcBLkdfyId';
 const ravenExtentSourceHash = 'c5fe1cf4b776d445a392c0a9b09f81c137f018913dcf87c9609f18741044a5cb';
@@ -451,6 +453,14 @@ export function verifyOfficialModelBaseGeometryDataBundleV2(bundle) {
   for (const profile of bundle.profiles) {
     const ravenOutline = profile.baseShape === ravenShape && ravenShape !== undefined;
     const estimate = profile.engineeringImageEstimate;
+    const product = profile.officialProductBaseSource;
+    if(product){
+      verifyOfficialProductBaseSourceV1(product);
+      if(bundle.version!=='2.3.0'||estimate||profile.recordKey!==product.recordKey
+        ||profile.sourceRecordHash!==product.sourceRecordHash||profile.payloadHash!==product.payloadHash
+        ||profile.baseShape!==product.shape||profile.baseWidthMillimetres!==product.widthMillimetres
+        ||profile.baseDepthMillimetres!==product.depthMillimetres)fail('OFFICIAL_PRODUCT_GEOMETRY_PROFILE_INVALID');
+    }
     if (estimate) {
       verifyOfficialEngineeringImageBaseEstimateV1(estimate);
       if (bundle.sourcePolicy.engineeringOnly !== true || profile.recordKey !== estimate.recordKey
@@ -468,7 +478,7 @@ export function verifyOfficialModelBaseGeometryDataBundleV2(bundle) {
       || profile.baseWidthMilliInches !== milliInches(profile.baseWidthMillimetres)
       || profile.baseDepthMilliInches !== milliInches(profile.baseDepthMillimetres)
       || (profile.baseShape === 'round' && profile.baseWidthMilliInches !== profile.baseDepthMilliInches)
-      || (estimate ? false : ravenOutline ? !(ravenShape === 'measured_contour'
+      || (estimate || product ? false : ravenOutline ? !(ravenShape === 'measured_contour'
         ? validRavenContourProfile(profile) : validRavenCrossProfile(profile))
         : !Number.isSafeInteger(p2p?.pdfPage) || p2p.pdfPage < 1 || !hashPattern.test(p2p.sourceContentHash)
           || p2p.sourceContentHash !== bundle.p2pSourceHashes[p2p.sourceId]
@@ -554,6 +564,26 @@ export function createOfficialEngineeringImageGeometryV1({ context, baseGeometry
   const bundle = freezeDeep({ ...body, bundleHash: hashStarcraftTmgContract(body) });
   verifyOfficialModelBaseGeometryDataBundleV2(bundle);
   return bundle;
+}
+
+export function createOfficialReviewedProductModelGeometryV1({context,baseGeometry,source}){
+  assertOfficialReleaseSourceV2(context,context||{});
+  verifyOfficialModelBaseGeometryDataBundleV2(baseGeometry);verifyOfficialProductBaseSourceV1(source);
+  const record=context.dataset.recordsByKey[source.recordKey];
+  if(baseGeometry.version!=='2.2.0'||record?.sourceRecordHash!==source.sourceRecordHash
+    ||record.payloadHash!==source.payloadHash||baseGeometry.normalizedDatasetHash!==context.dataset.datasetHash
+    ||!baseGeometry.missingProfiles.some(p=>p.recordKey===source.recordKey))fail('OFFICIAL_PRODUCT_GEOMETRY_SOURCE_INVALID');
+  const profile={recordKey:record.recordKey,unitName:record.payload.name,sourceRecordHash:record.sourceRecordHash,
+    payloadHash:record.payloadHash,baseShape:source.shape,baseWidthMillimetres:source.widthMillimetres,
+    baseDepthMillimetres:source.depthMillimetres,baseWidthMilliInches:milliInches(source.widthMillimetres),
+    baseDepthMilliInches:milliInches(source.depthMillimetres),printedBase:'40mm (official product contents)',
+    officialProductBaseSource:structuredClone(source)};
+  const missingProfiles=baseGeometry.missingProfiles.filter(p=>p.recordKey!==record.recordKey);
+  const body={...without(baseGeometry,['bundleHash']),version:'2.3.0',
+    profiles:[...baseGeometry.profiles,profile].sort((a,b)=>a.recordKey.localeCompare(b.recordKey)),
+    missingProfiles,profileDenominatorComplete:missingProfiles.length===0};
+  const bundle=freezeDeep({...body,bundleHash:hashStarcraftTmgContract(body)});
+  verifyOfficialModelBaseGeometryDataBundleV2(bundle);return bundle;
 }
 
 export function getOfficialReleaseModelBaseGeometryBundleV2(context) {

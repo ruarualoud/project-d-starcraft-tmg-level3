@@ -253,6 +253,8 @@ function compileProfiles(dataset, baseBundle, options = {}) {
           localVerticesMilliInches: base.localVerticesMilliInches,
           ravenOutlineSource: base.ravenOutlineSource,
         } : base.engineeringImageEstimate ? { engineeringImageEstimate: base.engineeringImageEstimate }
+          : base.officialProductBaseSource ? { officialProductBaseSourceHash: base.officialProductBaseSource.sourceHash,
+            dimensionAuthority: base.officialProductBaseSource.dimensionAuthority }
           : { p2pSourceId: base.p2pSource.sourceId, p2pSourceContentHash: base.p2pSource.sourceContentHash }) } : null,
       ...(options.releaseBound === true ? { geometryStatus: missingGeometry
         ? { status: "source_missing", reason: missingGeometry.reason,
