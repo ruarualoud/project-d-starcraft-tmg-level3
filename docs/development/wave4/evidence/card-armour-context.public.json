@@ -1,0 +1,20 @@
+{
+  "schema": "starcraft_tmg_wave4_card_armour_context_component_v1",
+  "status": "passed_component",
+  "inputRef": "build/wave4-web/stukov-units/detonation-photon-ptpLlW/photon-use-0",
+  "sourceRoomRevision": 23,
+  "sourceStateHash": "89ed510488c57a7ea7bc83506b620f52ab894592cbc3b20824e1337388c9774d",
+  "sourceOpenedReadOnly": true,
+  "scope": "actual failing checkpoint reproduced; copied diagnostic state only, no Native action accepted",
+  "legacyFailureReproduced": "ARMOUR_ROLL_ACTIVATION_REQUIRED",
+  "policyVersion": "1.1.0",
+  "outsideActivationPreserved": true,
+  "activationOrdinalNotFabricated": true,
+  "roundOrdinalCountsActualPool": true,
+  "duplicateRecordIdempotent": true,
+  "tamperedContextRejected": true,
+  "newActions": 0,
+  "modelCalls": 0,
+  "fullMatchAdmission": false,
+  "trainingTruth": false
+}

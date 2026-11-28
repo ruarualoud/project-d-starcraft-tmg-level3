@@ -4,7 +4,7 @@ import {OFFICIAL_CORRODE_ARMOUR_ID} from '../source-data/official-corrode-armour
 import {createOfficialCorrodeRestorationRuntimeV1} from './official-corrode-restoration-runtime-v1.mjs';
 import {createOfficialPlaguedMunitionsRuntimeV1} from './official-plagued-munitions-runtime-v1.mjs';
 import {createOfficialBeforeCasualtyRuntimeV1} from './official-before-casualty-runtime-v1.mjs';
-import {hasOfficialBeforeCasualtyBatchPolicyV1,hasOfficialExtendedBeforeCasualtyPolicyV1,hasOfficialTemplateBeforeCasualtyPolicyV1,hasOfficialOverwatchBeforeCasualtyPolicyV1,hasOfficialKhassarBeforeCasualtyPolicyV1,hasOfficialDeclaredAttackBeforeCasualtyPolicyV1,hasOfficialDelayedHitsBeforeCasualtyPolicyV1} from '../rule-atoms/official-before-casualty-batch-v1.mjs';
+import {hasOfficialBeforeCasualtyBatchPolicyV1,hasOfficialExtendedBeforeCasualtyPolicyV1,hasOfficialTemplateBeforeCasualtyPolicyV1,hasOfficialOverwatchBeforeCasualtyPolicyV1,hasOfficialKhassarBeforeCasualtyPolicyV1,hasOfficialDeclaredAttackBeforeCasualtyPolicyV1,hasOfficialDelayedHitsBeforeCasualtyPolicyV1,hasOfficialStormPhotonBeforeCasualtyPolicyV1} from '../rule-atoms/official-before-casualty-batch-v1.mjs';
 import {resumeOfficialSelectedRosterRangedBeforeCasualtyV1} from './official-selected-roster-ranged-action-runtime-v1.mjs';
 import {resumeOfficialSelectedRosterMeleeBeforeCasualtyV1} from './official-selected-roster-melee-action-runtime-v1.mjs';
 import {createOfficialStukovContextualSupplyRoutesV1} from '../source-data/official-stukov-infestation-source-v1.mjs';
@@ -105,7 +105,7 @@ import { createOfficialReactionFamilySourceBundleV2, createOfficialReactionFamil
   consumeOfficialReactionFamilyResolutionV1 } from './official-reaction-family-adapter-v1.mjs';
 import { createOfficialBattlefieldAssetFamilySourceBundleV2, createOfficialBattlefieldModifierComponentAdapterV1,
   createOfficialCreepCardComponentAdapterV2 } from "./official-battlefield-asset-family-adapter-v1.mjs";
-import { hasOfficialArmourRollOrdinalPolicyV1, OFFICIAL_ARMOUR_ROLL_ORDINAL_POLICY_V1 } from "../rule-atoms/official-armour-roll-ordinal-v1.mjs";
+import { hasOfficialArmourRollOrdinalPolicyV1,hasOfficialSourceOwnedArmourContextPolicyV1, OFFICIAL_ARMOUR_ROLL_ORDINAL_POLICY_V1 } from "../rule-atoms/official-armour-roll-ordinal-v1.mjs";
 import { createOfficialBlastTemplateAttackRuntimeV1 } from './official-blast-template-attack-runtime-v1.mjs';
 import { createOfficialRangedPrecisionChoiceRuntimeV1 } from './official-ranged-precision-choice-runtime-v1.mjs';
 import { createOfficialPointDefenseChoiceRuntimeV1 } from './official-point-defense-choice-runtime-v1.mjs';
@@ -207,7 +207,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
   includePsionicStormGeometryEvidence = false, includePsionicStormPhaseEnd = false,
   includePsionicStormPhaseEndDefence = false, includePsionicStormAssaultDamage = false, includePsionicStormAssaultOrder = false, includeSharedAssaultEffectOrder = false, includeAdditionalAssaultEffectOrder = false, includePsionicStormMovementPass = false, includePsionicStormEquivalentNameOverlap = false, includePsionicStormNamedOverlapChoices = false, includePsionicStormCast = false, includePsionicStormTokenCleanup = false, includePsionicStormAssaultSameName = false, includeRavenSeekerMissileRules = false,
   includeRavenSeekerPaidImpact = false, includeRavenSeekerPhaseEnd = false, includeReleaseRosterActions = false, includeStandaloneFreedomFighters = false,
-   includeReleaseOpticalFlareRestoration = false, includeReleaseSentryGuardianShield = false, includeReleasePhaseControl = false, includeReleaseZergTargetReactions = false, includeReleaseBileAssaultOrder = false, includeReleaseMoundAssaultOrder = false, includeReleaseReactiveCreep = false, includeReleaseMalignantCreep = false, includeReleaseInheritedHitsReactions = false, includeMixedRosterReactions = false, includeIndependentSupportReactions = false, includeCorrodeRoundCleanup = false, includeBilePhysicalPlacement = false, includeReleaseBeaconLifecycle = false, includeReleaseQueenPsionicLink = false,
+   includeReleaseOpticalFlareRestoration = false, includeReleaseSentryGuardianShield = false, includeReleasePhaseControl = false, includeReleaseZergTargetReactions = false, includeReleaseBileAssaultOrder = false, includeReleaseMoundAssaultOrder = false, includeReleaseReactiveCreep = false, includeReleaseMalignantCreep = false, includeReleaseInheritedHitsReactions = false, includeMixedRosterReactions = false, includeIndependentSupportReactions = false, includeCorrodeRoundCleanup = false, includeBilePhysicalPlacement = false, includeReleaseBeaconLifecycle = false, includeExternalBeaconEntryObservation = false, includeReleaseQueenPsionicLink = false,
    includeReleaseQueenDomineering = false, includeReleaseLairPredation = false, includeReleaseOverseerChargeReaction = false, includeBeforeRangedEvadeReaction = false,
      includeBeforeMeleeEvadeReaction = false, includeBeforeHitsEvadeReaction = false,
      includeAutomaticHitsDefenceContinuation = false, includeBeforeTemplateEvadeReaction = false,
@@ -589,7 +589,9 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
   const zagaraTransfusion = reactionBundle?.routes.find(
     route => route.definitionId === 'unit:zagara/transfusion-any-phase@1');
   const photonRoute = reactionBundle?.routes.find(r=>r.definitionId===PHOTON_OVERCHARGE_ID);
-  const photonEntry = photonRoute ? createPhotonOverchargeEntryV1(reactionBundle,photonRoute,reactionAdapter) : null;
+  const photonEntry = photonRoute ? createPhotonOverchargeEntryV1(reactionBundle,photonRoute,reactionAdapter,{includeSealedCompletion:hasOfficialStormPhotonBeforeCasualtyPolicyV1(spatialState),faqSourceByteHash:context.manifest.source.references.faq?.byteHash,includeSourceArmourContext:hasOfficialStormPhotonBeforeCasualtyPolicyV1(spatialState)&&hasOfficialSourceOwnedArmourContextPolicyV1(spatialState)}) : null;
+  if(photonEntry&&hasOfficialStormPhotonBeforeCasualtyPolicyV1(spatialState)&&!hasOfficialFaqReactionPolicyV13(spatialState))
+    throw Error('PHOTON_ENTRY_FAQ_POLICY_REQUIRED');
   const zealousRound = reactionBundle?.routes.find(route=>route.definitionId==='unit:zealot/zealous-round-assault-phase@1');
   const hallucination = reactionBundle?.routes.some(route=>route.rangedDeclarationOnly) === true;
   const medicLifeSupport = includeMixedRosterReactions && reactionBundle?.routes.find(
@@ -977,6 +979,9 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
   if (Boolean(battlefieldModifierBundle) !== (spatialState ? hasOfficialArmourThresholdPolicyV1(spatialState) : false)) {
     throw Error('CHARACTERISTIC_ARMOUR_THRESHOLD_POLICY_REQUIRED');
   }
+  if(includeExternalBeaconEntryObservation&&(!hasOfficialStormPhotonBeforeCasualtyPolicyV1(spatialState)||!photonEntry
+    ||!includeReleaseBeaconLifecycle||!battlefieldModifierBundle?.routes.some(route=>route.ventralSacsLanding||route.reserveBeaconLanding)))
+    throw Error('PHOTON_EXTERNAL_BEACON_SOURCE_REQUIRED');
   const activeBattlefieldAssets = battlefieldModifierBundle?.routes.some(route => route.actionKind === 'active_ability') === true;
   const battlefieldModifierAdapter = battlefieldModifierBundle && (activeBattlefieldAssets || battlefieldModifierBundle.routes.some(route=>route.effectKind==='stukov_creep')
     ? createOfficialCreepCardComponentAdapterV2(battlefieldModifierBundle)
@@ -1105,7 +1110,8 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
   const hitOwners = [beforeCasualty?.sourceAuthority,photonEntry?.sourceAuthority, bileResolution?.sourceAuthority, sabotageDronePhaseEnd?.sourceAuthority,
     seekerPhaseEnd?.sourceAuthority, stormPhaseEnd?.sourceAuthority].filter(Boolean);
   if(hasOfficialTemplateBeforeCasualtyPolicyV1(spatialState)&&hitOwners.some(owner=>owner!==beforeCasualty?.sourceAuthority&&owner!==seekerPhaseEnd?.sourceAuthority
-    &&!(hasOfficialDelayedHitsBeforeCasualtyPolicyV1(spatialState)&&[bileResolution?.sourceAuthority,sabotageDronePhaseEnd?.sourceAuthority].includes(owner))))
+    &&!(hasOfficialDelayedHitsBeforeCasualtyPolicyV1(spatialState)&&[bileResolution?.sourceAuthority,sabotageDronePhaseEnd?.sourceAuthority].includes(owner))
+    &&!(hasOfficialStormPhotonBeforeCasualtyPolicyV1(spatialState)&&[stormPhaseEnd?.sourceAuthority,photonEntry?.sourceAuthority].includes(owner))))
     throw Error('BEFORE_CASUALTY_EXTERNAL_HITS_OWNER_NOT_ADMITTED');
   const evadeGrantOwners = hitOwners.filter(owner => owner.evadeGrant);
   const hitsAuthority = hitOwners.length > 1 ? {
@@ -1572,7 +1578,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
   }) : null;
   if(hasOfficialTemplateBeforeCasualtyPolicyV1(spatialState)&&((targetReactions||rangedDeclaration)&&!hasOfficialDeclaredAttackBeforeCasualtyPolicyV1(spatialState)||overwatch&&!hasOfficialOverwatchBeforeCasualtyPolicyV1(spatialState)||(khassarAttacks.length||khassarCharge)&&!hasOfficialKhassarBeforeCasualtyPolicyV1(spatialState)))
     throw Error('BEFORE_CASUALTY_DELEGATED_ATTACK_OWNER_NOT_ADMITTED');
-  const version = hasOfficialDelayedHitsBeforeCasualtyPolicyV1(spatialState)?'3.237.0':hasOfficialDeclaredAttackBeforeCasualtyPolicyV1(spatialState)?'3.236.0':hasOfficialKhassarBeforeCasualtyPolicyV1(spatialState)?'3.235.0':overwatch?.descriptor.runtimeVersion === '1.2.0' ? '3.234.0' : hasOfficialOverwatchBeforeCasualtyPolicyV1(spatialState) ? '3.233.0' : hasOfficialTemplateBeforeCasualtyPolicyV1(spatialState) ? '3.232.0' : includeCorrodeRoundCleanup ? '3.231.0' : corrodeArmour ? '3.230.0' : infestationDamage ? '3.229.0' : hasOfficialExtendedBeforeCasualtyPolicyV1(spatialState) ? '3.228.0' : beforeCasualty ? '3.227.0' : plaguedMunitions ? '3.226.0' : repeatedActivationIdentity ? '3.225.0' : infantryPrecision ? '3.224.0' : stukovInfestation ? '3.223.0' : universalCarrier ? '3.222.0' : includeReleaseMoundAssaultOrder ? '3.221.0' : includeBilePhysicalPlacement && bile ? '3.220.0' : psionicRoundEnd?.scheduledEffects ? '3.219.0' : includeReleaseBileAssaultOrder ? '3.218.0' : releaseZergTargets ? '3.217.0' : includePsionicStormAssaultSameName ? '3.216.0'
+  const version = hasOfficialSourceOwnedArmourContextPolicyV1(spatialState)?'3.240.0':includeExternalBeaconEntryObservation?'3.239.0':hasOfficialStormPhotonBeforeCasualtyPolicyV1(spatialState)?'3.238.0':hasOfficialDelayedHitsBeforeCasualtyPolicyV1(spatialState)?'3.237.0':hasOfficialDeclaredAttackBeforeCasualtyPolicyV1(spatialState)?'3.236.0':hasOfficialKhassarBeforeCasualtyPolicyV1(spatialState)?'3.235.0':overwatch?.descriptor.runtimeVersion === '1.2.0' ? '3.234.0' : hasOfficialOverwatchBeforeCasualtyPolicyV1(spatialState) ? '3.233.0' : hasOfficialTemplateBeforeCasualtyPolicyV1(spatialState) ? '3.232.0' : includeCorrodeRoundCleanup ? '3.231.0' : corrodeArmour ? '3.230.0' : infestationDamage ? '3.229.0' : hasOfficialExtendedBeforeCasualtyPolicyV1(spatialState) ? '3.228.0' : beforeCasualty ? '3.227.0' : plaguedMunitions ? '3.226.0' : repeatedActivationIdentity ? '3.225.0' : infantryPrecision ? '3.224.0' : stukovInfestation ? '3.223.0' : universalCarrier ? '3.222.0' : includeReleaseMoundAssaultOrder ? '3.221.0' : includeBilePhysicalPlacement && bile ? '3.220.0' : psionicRoundEnd?.scheduledEffects ? '3.219.0' : includeReleaseBileAssaultOrder ? '3.218.0' : releaseZergTargets ? '3.217.0' : includePsionicStormAssaultSameName ? '3.216.0'
     : includePsionicStormTokenCleanup ? '3.215.0'
     : includePsionicStormNamedOverlapChoices ? '3.214.0'
     : stormCast ? '3.213.0'
@@ -1828,6 +1834,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
     ...(stormPhaseEnd ? { stormPhaseEnd: stormPhaseEnd.descriptor } : {}),
     ...(stormCast ? { stormCast: stormCast.descriptor } : {}),
     ...(includePsionicStormTokenCleanup ? { stormTokenCleanup: 'official_8_9_5_token_and_center' } : {}),
+    ...(includeExternalBeaconEntryObservation?{externalBeaconEntryObservation:'source_bound_native_beacon_transition_v1'}:{}),
     ...(khassarEligibility ? { khassarEligibilityQuery: khassarEligibility.descriptor } : {}),
     ...(registeredKhassar ? { khassarRegisteredExecution: registeredKhassar.descriptor } : {}),
     ...(khassarSupplyLoss ? { khassarFriendlySupplyLoss: khassarSupplyLoss.descriptor.sourceRouteHash } : {}),
@@ -1857,7 +1864,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
       armourThresholdPolicy: OFFICIAL_ARMOUR_THRESHOLD_POLICY_V1, abilityRouterHash: router.descriptor.runtimeHash } : {}),
     ...(khalaiAdapter ? { khalaiActivationSourceBundleHash: khalaiBundle.bundleHash,
       abilityRouterHash: router.descriptor.runtimeHash } : {}),
-    ...(includeArmourOrdinals ? { armourRollOrdinalPolicy: OFFICIAL_ARMOUR_ROLL_ORDINAL_POLICY_V1 } : {}),
+    ...(includeArmourOrdinals ? { armourRollOrdinalPolicy: spatialState.officialArmourRollOrdinalPolicy } : {}),
     ...(hits ? { automaticHitsRuntimeHash: hits.descriptor.runtimeHash,
       ...(hitsChoices ? { hitsChoiceRuntimeHash: hitsChoices.descriptor.runtimeHash } : {}),
       automaticHitsAdditionalReactionsPending: !includeArmourReactions } : {}),
@@ -3029,7 +3036,9 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
     const settled=hasOfficialTemplateBeforeCasualtyPolicyV1(targetCompleted.state)?completeAutomaticHitsOwners(targetCompleted):targetCompleted;
     const sealedAttack=hasOfficialKhassarBeforeCasualtyPolicyV1(resumed.state)?khassarAttacks.map(owner=>({owner,parent:owner.sealedCompletionParent(resumed.state,resumed.frame)})).find(row=>row.parent):null;
     const sealedCharge=hasOfficialKhassarBeforeCasualtyPolicyV1(resumed.state)?khassarCharge?.sealedCompletionParent(resumed.state,resumed.frame):null;
-    const native=completeNativeOutcome(resumed.before,settled,resumed.frame.rootAction,options,
+    const savedPhoton=hasOfficialStormPhotonBeforeCasualtyPolicyV1(resumed.state)?resumed.frame.suspendedHostSlots?.pendingOfficialPhotonOvercharge:null;
+    const photonCompleted=savedPhoton?photonEntry.afterSealedHits(settled,savedPhoton):settled;
+    const native=completeNativeOutcome(resumed.before,photonCompleted,resumed.frame.rootAction,options,
       {attack:sealedAttack||khassarAttackContinuation(resumed.before),chargeParent:sealedCharge||khassarCharge?.pending(resumed.before),resumeSealedDamage:true,sealedFrame:resumed.frame});
     const completed=completeCompositionTail(resumed.before,native,resumed.frame.rootAction);
     const merged={...result,state:completed.state,events:[...(result.events||[]),...completed.events]};
@@ -3551,7 +3560,17 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
     if(cleaned!==next)for(const piece of cleaned.pieces)delete piece.officialActivationInstanceRenewal;
     return { ...observed, state: refreshOfficialReleaseRosterDerivedStateV2({ context, state: cleaned }) };
   }
+  function hasExternalBeaconEntryContinuation(current){
+    return Boolean(current.pendingOfficialPhotonOvercharge||current.officialBeforeCasualtyContinuations?.some(frame=>frame.suspendedHostSlots?.pendingOfficialPhotonOvercharge));
+  }
+  function afterExternalBeaconEntry(before,result,action){
+    const route=battlefieldModifierBundle.routes.find(row=>row.definitionId===action.definitionId&&(row.ventralSacsLanding||row.reserveBeaconLanding));
+    if(action.actionType!=='resolve_unit_lifecycle_consumer'||!route)return result;
+    if(!isDeepStrictEqual(result.action,action))throw Error('PHOTON_EXTERNAL_BEACON_ACTION_MISMATCH');
+    return completeCompositionTail(before,result,action);
+  }
   return Object.freeze({ descriptor, bundle, catalogue, adapter, spatial, ranged, templateCoverage, templateAttack,
+    ...(includeExternalBeaconEntryObservation?{afterExternalBeaconEntry,hasExternalBeaconEntryContinuation}:{}),
     ...(poisonousEssence ? { poisonousEssence } : {}),
     ...(overwatch ? { overwatch } : {}),
     ...(holoRoundEndSource?.version === '1.1.0' ? { unitRoundEnd: holoRoundEnd, unitRoundEndSource: holoRoundEndSource }

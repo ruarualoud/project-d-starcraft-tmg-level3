@@ -33,7 +33,7 @@ import { OFFICIAL_COORDINATED_STRIKE_POLICY_V2 } from '../rule-atoms/official-co
 import { OFFICIAL_LARGE_TERRAIN_REMOVAL_POLICY_V1 } from '../rule-atoms/official-movement-clearance-contract-v13.mjs';
 import { createOfficialSiegeModeDataBundleV2 } from '../source-data/official-status-stay-in-play-data-bundle-v1.mjs';
 import { createOfficialBattlefieldAssetFamilySourceBundleV2 } from "./official-battlefield-asset-family-adapter-v1.mjs";
-import { OFFICIAL_ARMOUR_ROLL_ORDINAL_POLICY_V1 } from "../rule-atoms/official-armour-roll-ordinal-v1.mjs";
+import { OFFICIAL_ARMOUR_ROLL_ORDINAL_POLICY_V1,OFFICIAL_ARMOUR_ROLL_ORDINAL_POLICY_V2 } from "../rule-atoms/official-armour-roll-ordinal-v1.mjs";
 import { verifyOfficialBlastTemplateGeometryAssetV1 } from './official-blast-template-coverage-runtime-v1.mjs';
 import { hashStarcraftTmgContract as hash } from '../authoritative-engine/referee-crypto-v1.mjs';
 import { assertOfficialReleaseSourceV2 } from '../source-data/official-release-context-v2.mjs';
@@ -108,7 +108,7 @@ import { OFFICIAL_FEEDBACK_REACTION_TIMING_POLICY_V1 } from './official-feedback
 export function createOfficialReleaseRosterStateV2({ context, candidatesBySide, legacyDisclosurePolicy, blastTemplateGeometryAsset,
   sourceDefinitionIds,includeRepeatedActivationIdentity=false,includeBeforeCasualtyBatch=false,beforeCasualtyPolicyVersion='1.0.0',
   attackProfileRecordKeys,
-  includeMelee = false, includeArmourOrdinals = false, meleeModifierDefinitionIds, battlefieldModifierDefinitionIds,
+  includeMelee = false, includeArmourOrdinals = false, armourRollOrdinalPolicyVersion='1.0.0', meleeModifierDefinitionIds, battlefieldModifierDefinitionIds,
   reactionDefinitionIds, characteristicDefinitionIds, canonicalResourceTypes = false, meleeWeaponDefinitionIds,
   rangedWeaponDefinitionIds,
   includeTemplateBatchOrder = false, templateBatchOrderPolicy, unitLifecycleDefinitionIds,
@@ -222,9 +222,14 @@ export function createOfficialReleaseRosterStateV2({ context, candidatesBySide, 
   if(includeBeforeCasualtyBatch){
     if(!reactionDefinitionIds?.some(id=>OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V1.sourceDefinitionIds.includes(id)))
       throw Error('RELEASE_ROSTER_DETONATION_SOURCE_REQUIRED');
-    if(!['1.0.0','1.1.0','1.2.0','1.3.0','1.4.0','1.5.0','1.6.0'].includes(beforeCasualtyPolicyVersion))throw Error('RELEASE_ROSTER_BEFORE_CASUALTY_POLICY_VERSION_INVALID');
-    state.officialBeforeCasualtyBatchPolicy=structuredClone(beforeCasualtyPolicyVersion==='1.6.0'?OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V7:beforeCasualtyPolicyVersion==='1.5.0'?OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V6:beforeCasualtyPolicyVersion==='1.4.0'?OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V5:beforeCasualtyPolicyVersion==='1.3.0'?OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V4:beforeCasualtyPolicyVersion==='1.2.0'?OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V3:beforeCasualtyPolicyVersion==='1.1.0'
+    if(!['1.0.0','1.1.0','1.2.0','1.3.0','1.4.0','1.5.0','1.6.0','1.7.0'].includes(beforeCasualtyPolicyVersion))throw Error('RELEASE_ROSTER_BEFORE_CASUALTY_POLICY_VERSION_INVALID');
+    state.officialBeforeCasualtyBatchPolicy=structuredClone(beforeCasualtyPolicyVersion==='1.7.0'?OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V8:beforeCasualtyPolicyVersion==='1.6.0'?OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V7:beforeCasualtyPolicyVersion==='1.5.0'?OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V6:beforeCasualtyPolicyVersion==='1.4.0'?OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V5:beforeCasualtyPolicyVersion==='1.3.0'?OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V4:beforeCasualtyPolicyVersion==='1.2.0'?OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V3:beforeCasualtyPolicyVersion==='1.1.0'
       ?OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V2:OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V1);
+    if(beforeCasualtyPolicyVersion==='1.7.0'){
+      if(context.manifest.source.references.faq?.byteHash!==OFFICIAL_FAQ_REACTION_POLICY_V13.sourceByteHash)
+        throw Error('RELEASE_ROSTER_BEFORE_CASUALTY_FAQ_SOURCE_REQUIRED');
+      state.officialFaqReactionPolicy=structuredClone(OFFICIAL_FAQ_REACTION_POLICY_V13);
+    }
   }
   if (otherGeneratedRecordKeys.length) {
     state.officialGeneratedUnitDataBundle = createOfficialGeneratedUnitDataBundleV2({ context, recordKeys: otherGeneratedRecordKeys });
@@ -242,7 +247,10 @@ export function createOfficialReleaseRosterStateV2({ context, candidatesBySide, 
     if (!includeMelee || !state.officialSummonDataBundle) throw Error('RELEASE_ROSTER_SUMMONED_COMBAT_CONSUMERS_REQUIRED');
     state.officialSummonedCombatEligibilityPolicy = createOfficialSummonedCombatEligibilityPolicyV1({ context });
   }
-  if (includeArmourOrdinals) state.officialArmourRollOrdinalPolicy = structuredClone(OFFICIAL_ARMOUR_ROLL_ORDINAL_POLICY_V1);
+  if (includeArmourOrdinals){
+    if(!['1.0.0','1.1.0'].includes(armourRollOrdinalPolicyVersion))throw Error('RELEASE_ROSTER_ARMOUR_CONTEXT_POLICY_INVALID');
+    state.officialArmourRollOrdinalPolicy=structuredClone(armourRollOrdinalPolicyVersion==='1.1.0'?OFFICIAL_ARMOUR_ROLL_ORDINAL_POLICY_V2:OFFICIAL_ARMOUR_ROLL_ORDINAL_POLICY_V1);
+  }
   if (attackProfileRecordKeys !== undefined && (!Array.isArray(attackProfileRecordKeys)
     || new Set(attackProfileRecordKeys).size !== attackProfileRecordKeys.length
     || attackProfileRecordKeys.some(key => !recordKeys.includes(key))
@@ -638,4 +646,4 @@ export function refreshOfficialReleaseRosterDerivedStateV2({ context, state }) {
   next.officialSelectedRosterAbilityRuntimeDescriptor = createOfficialSelectedRosterAbilityRuntimeV1(next).descriptor;
   return next;
 }
-import {OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V1,OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V2,OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V3,OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V4,OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V5,OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V6,OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V7} from '../rule-atoms/official-before-casualty-batch-v1.mjs';
+import {OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V1,OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V2,OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V3,OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V4,OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V5,OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V6,OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V7,OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V8} from '../rule-atoms/official-before-casualty-batch-v1.mjs';

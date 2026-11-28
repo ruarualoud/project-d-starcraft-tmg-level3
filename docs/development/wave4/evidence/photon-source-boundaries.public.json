@@ -1,0 +1,51 @@
+{
+  "schema": "starcraft_tmg_wave4_photon_source_boundaries_v1",
+  "status": "passed_component",
+  "scope": "source qualification and entry observer; no Native Room admission",
+  "officialFaq": {
+    "version": "1.3",
+    "date": "2026-11-11",
+    "url": "https://starcraft-tmg.com/files/downloads/StarCraft-TMG-FAQ_EN.pdf",
+    "frozenRef": "build/ticket-28-wave3-assessment-20261112/faq-v1.3.pdf",
+    "sha256": "65cb2399c44e29b45d65faddbade7c72a46726e7b9c812e2c4af57c1704cc213",
+    "actualFrozenBytesVerified": true
+  },
+  "cases": [
+    {
+      "case": "unit:omega_worm/omega-network-any-phase@1",
+      "scope": "entry-observer component only",
+      "legacyDefaultPreserved": true,
+      "ownEntryEdgeImmune": true
+    },
+    {
+      "case": "unit:pylon/warp-conduit-movement-phase@1",
+      "scope": "entry-observer component only",
+      "legacyDefaultPreserved": true,
+      "ownEntryEdgeImmune": true
+    },
+    {
+      "case": "unit:zagara/infested-drop-movement-phase@1",
+      "scope": "entry-observer component only",
+      "legacyDefaultPreserved": true,
+      "ownEntryEdgeImmune": true
+    },
+    {
+      "case": "ventral_sacs_reserve_landing",
+      "scope": "entry-observer component only",
+      "temporaryTransportRecognized": true
+    },
+    {
+      "case": "reserve_beacon_landing",
+      "scope": "entry-observer component only",
+      "temporaryTransportRecognized": true
+    }
+  ],
+  "ownTableEdgeAndBurrowAmbushExcluded": true,
+  "wrongFaqHashRejected": true,
+  "legacyDefaultPreserved": true,
+  "nativeActions": 0,
+  "modelCalls": 0,
+  "sourceHeldDefinitions": 39,
+  "fullMatchAdmission": false,
+  "trainingTruth": false
+}

@@ -498,12 +498,25 @@ export function createOfficialEngineeringScopedRoundRuntimeV1({ context, state, 
       ||!nativeActions.descriptor.sabotageDronePhaseEndRuntime)fail('ENGINEERING_ROUND_DRONE_CONSUMER_REQUIRED');
     Object.assign(coverage,{contractVersion:'1.2.0',droneAssaultTimingPolicyHash:state.officialReleaseDroneAssaultTiming});
   }
+  const beaconRoundEnd=state.officialEngineeringBeaconRoundEnd;
+  if(beaconRoundEnd){
+    if(beaconRoundEnd!==state.officialBattlefieldAssetFamilySourceBundle?.bundleHash
+      ||nativeActions.descriptor.externalBeaconEntryObservation!=='source_bound_native_beacon_transition_v1'
+      ||!nativeActions.router?.descriptor?.adapterIds.includes('official-battlefield-asset-family-adapter-v1'))
+      fail('ENGINEERING_ROUND_BEACON_CONSUMER_REQUIRED');
+    Object.assign(coverage,{contractVersion:'1.3.0',beaconRoundEndSourceBundleHash:beaconRoundEnd});
+  }
   return createCurrentProductMatchRuntime({ state, dataset: context.dataset, wave3MissionSourceContext: context,
     releaseMatchVersion: '2.2.0', engineeringRoundScope: coverage, engineeringSourceDefinitionCount: sourceDefinitionCount },
   { scaleId: 'Standard', widthInches: 54, heightInches: 36 },
   { nativeActions, openingRosterCoverage: coverage, pendingNativeDefinitionIds: [], abilityRuntime: {
-    dispatch({ operation, state, request }) {
-      if (operation !== 'lifecycle') fail('ENGINEERING_ROUND_LIFECYCLE_DISPATCH_ONLY');
+    ...(beaconRoundEnd?{descriptor:nativeActions.router.descriptor}:{}),
+    dispatch(args) {
+      const {operation,state,request}=args;
+      if (operation !== 'lifecycle') {
+        if(!beaconRoundEnd)fail('ENGINEERING_ROUND_LIFECYCLE_DISPATCH_ONLY');
+        return nativeActions.router.dispatch(args);
+      }
       // Notify families of the activation that opened this reaction. Advancing
       // the reaction remains owned by the native continuation and its choices.
       const watched = nativeActions.overwatch?.pending(state);
@@ -845,6 +858,8 @@ function createCurrentProductMatchRuntime(input, scale, releaseOpening) {
       || rosterIncrement.includeBombardCreatorLoss && currentState.pendingOfficialBombardReplacement?.removalCause === 'source_destroyed')
       && currentState.pendingOfficialBombardReplacement?.stage === 'ready')) {
       addEnumeration(output, runtimeEnumeration(native, 'release_native', currentState, sideKey, includeDisabled));
+    } else if (native?.hasExternalBeaconEntryContinuation?.(currentState)) {
+      addEnumeration(output,runtimeEnumeration(native,'release_native',currentState,sideKey,includeDisabled));
     } else if (hasOfficialFaqReactionPolicyV13(currentState) && currentState.pendingOfficialReactionWindow
       && !(releasePhaseControl && ACTIVATION_PHASES.has(currentState.phase))) {
       const reactions = abilityEnumerations(runtimes.ability, currentState, sideKey, includeDisabled);
@@ -1318,7 +1333,9 @@ function createCurrentProductMatchRuntime(input, scale, releaseOpening) {
     } else if (action.sourceRuntimeKind === "melee") {
       transition = runtimes.melee.apply(currentState, source, options);
     } else if (action.sourceRuntimeKind === "ability") {
-      const usesBeaconPlan = (descriptor.releaseInheritedVentralSacs
+      const usesBeaconPlan = (descriptor.engineeringRoundScope?.beaconRoundEndSourceBundleHash
+        && source.executorId==='official-battlefield-asset-family-adapter-v1' && source.battlefieldAssetPlan)
+        || (descriptor.releaseInheritedVentralSacs
         && source.definitionId === OFFICIAL_VENTRAL_SACS_DEFINITION_ID)
         || (descriptor.releaseSpecialDeploymentLifecycle
           && source.definitionId === OFFICIAL_WARP_PRISM_WARP_CONDUIT_DEFINITION_ID)
@@ -1350,6 +1367,9 @@ function createCurrentProductMatchRuntime(input, scale, releaseOpening) {
     } else {
       fail("CURRENT_PRODUCT_MATCH_ACTION_RUNTIME_INVALID",
         String(action.sourceRuntimeKind || ""));
+    }
+    if(action.sourceRuntimeKind==='ability'&&native?.afterExternalBeaconEntry){
+      transition=native.afterExternalBeaconEntry(currentState,transition,source);
     }
     let stateAfter = clone(transition.state);
     let events = clone(transition.events || []);
@@ -1403,7 +1423,8 @@ function createCurrentProductMatchRuntime(input, scale, releaseOpening) {
       events.push(...completed.events);
       appendLog(stateAfter, {actionType:'complete_deferred_drone_assault'}, completed.events);
     }
-    const hasSpecialDeploymentLifecycle = descriptor.releaseSpecialDeploymentLifecycle
+    const hasSpecialDeploymentLifecycle = descriptor.engineeringRoundScope?.beaconRoundEndSourceBundleHash
+      || descriptor.releaseSpecialDeploymentLifecycle
       || (descriptor.releaseVentralSacsCreepLifecycle && source.definitionId === OFFICIAL_VENTRAL_SACS_DEFINITION_ID);
     if (hasSpecialDeploymentLifecycle && action.sourceRuntimeKind === "ability"
       && events.some(event => event.type === "reserve_deployed_via_special_entry" && event.pieceId === source.pieceId)) {
@@ -1419,8 +1440,10 @@ function createCurrentProductMatchRuntime(input, scale, releaseOpening) {
       openOfficialSelectedRosterAfterActionWindowV1(stateAfter, source.sideKey, source.payload.pieceId, "assault");
     }
     if ((action.sourceRuntimeKind === 'ability' || action.sourceRuntimeKind === 'holo_round_end'
+      || native?.hasExternalBeaconEntryContinuation?.(currentState)
       || (tokenRoundEnd && action.sourceRuntimeKind === 'release_native' && source.actionType === 'complete_psionic_transfer_round_end'))
-      && lifecycleState(currentState)?.step === 'round_end_choices' && !stateAfter.pendingPsionicTransferRoundEnd) {
+      && lifecycleState(currentState)?.step === 'round_end_choices' && !stateAfter.pendingPsionicTransferRoundEnd
+      && !native?.hasExternalBeaconEntryContinuation?.(stateAfter)) {
       if (action.sourceRuntimeKind === 'holo_round_end') appendLog(stateAfter, source, events);
       advanceRoundEndChoices(stateAfter, timedLife, tokenRoundEnd);
     }

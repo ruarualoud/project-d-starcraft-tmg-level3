@@ -1,0 +1,68 @@
+{
+  "schema": "starcraft_tmg_wave4_virus_web_verification_v1",
+  "status": "passed_scoped",
+  "runRef": "build/wave4-web/stukov-units/detonation-photon-web-v1",
+  "results": [
+    {
+      "kind": "photon-use",
+      "definitionId": "unit:infested_trooper/detonation-any-phase@1",
+      "sourceRoomId": "wave4-detonation-photon-use-0",
+      "sourceStateHash": "7ae4244a0c00944869f58f444710889e2812f3d11ebc7e9a74f7be27d9390ae2",
+      "sourcePrefixReceipts": 26,
+      "originalSourceDeathVerified": true,
+      "trace": [
+        {
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:infested_trooper/detonation-any-phase@1",
+          "sideKey": "player1",
+          "stateRevision": 1,
+          "stateHash": "76392dc2132c560eb87b015ab581587ad8f39e4738f659279ac41070250590b7"
+        },
+        {
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null,
+          "sideKey": "player2",
+          "stateRevision": 2,
+          "stateHash": "98b8caa2c796b8c3eaaf4c208db9165763e6e06f1e7368527433f95d46c14660"
+        },
+        {
+          "actionType": "roll_automatic_hits_armour_pool",
+          "definitionId": null,
+          "sideKey": "player1",
+          "stateRevision": 3,
+          "stateHash": "ee0dc7d4f56caf4e8af3c427ed6500f7153afbb9b1e58365fb5d910a1c40cd82"
+        },
+        {
+          "actionType": "resolve_automatic_hits_evade_pool",
+          "definitionId": null,
+          "sideKey": "player1",
+          "stateRevision": 4,
+          "stateHash": "a614f43418e88b5e3f96f82a594e4e360210fe34147117a1976545e9d1a2090e"
+        },
+        {
+          "actionType": "choose_automatic_hits_casualties",
+          "definitionId": null,
+          "sideKey": "player2",
+          "stateRevision": 5,
+          "stateHash": "6f8230e2f6ec328993983f23a32524b31b0e6c77649e2d3b9b3c65dbc2ebfda3"
+        }
+      ],
+      "signedActions": 5,
+      "twoSeatsVerified": true,
+      "explicitHumanConfirmation": true,
+      "previewReadOnly": true,
+      "replayMatchesCurrent": true,
+      "seatRecoveryReentryVerified": true,
+      "pageErrors": []
+    }
+  ],
+  "signedActions": 5,
+  "conditionalTurretGeometryInRestorationCaseOnly": false,
+  "sourceHeldDefinitions": 39,
+  "engineeringEstimatedUnitGeometry": true,
+  "fullWave4LobbyBuilderAdmission": false,
+  "fullMatchAdmission": false,
+  "wave3PlayerRoomsTouched": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

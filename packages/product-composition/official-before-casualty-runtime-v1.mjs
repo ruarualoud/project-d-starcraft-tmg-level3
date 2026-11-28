@@ -1,7 +1,7 @@
 import {isDeepStrictEqual} from 'node:util';
 import {hashStarcraftTmgContract as hash} from '../authoritative-engine/referee-crypto-v1.mjs';
-import {resolveOfficialArmourRollActivationIdV1} from '../rule-atoms/official-armour-roll-ordinal-v1.mjs';
-import {hasOfficialBeforeCasualtyBatchPolicyV1,hasOfficialExtendedBeforeCasualtyPolicyV1,hasOfficialTemplateBeforeCasualtyPolicyV1,hasOfficialOverwatchBeforeCasualtyPolicyV1,hasOfficialKhassarBeforeCasualtyPolicyV1,hasOfficialDeclaredAttackBeforeCasualtyPolicyV1,hasOfficialDelayedHitsBeforeCasualtyPolicyV1,reserveOfficialBeforeCasualtyBatchV1,
+import {resolveOfficialArmourRollActivationIdV1,hasOfficialSourceOwnedArmourContextPolicyV1} from '../rule-atoms/official-armour-roll-ordinal-v1.mjs';
+import {hasOfficialBeforeCasualtyBatchPolicyV1,hasOfficialExtendedBeforeCasualtyPolicyV1,hasOfficialTemplateBeforeCasualtyPolicyV1,hasOfficialOverwatchBeforeCasualtyPolicyV1,hasOfficialKhassarBeforeCasualtyPolicyV1,hasOfficialDeclaredAttackBeforeCasualtyPolicyV1,hasOfficialDelayedHitsBeforeCasualtyPolicyV1,hasOfficialStormPhotonBeforeCasualtyPolicyV1,reserveOfficialBeforeCasualtyBatchV1,
  consumeOfficialBeforeCasualtyReservationV1} from '../rule-atoms/official-before-casualty-batch-v1.mjs';
 import {createOfficialReactionFamilyAdapterV1,openOfficialReactionFamilyWindowV1,
  consumeOfficialReactionFamilyResolutionV1} from './official-reaction-family-adapter-v1.mjs';
@@ -64,7 +64,8 @@ export function stageOfficialBeforeCasualtyContinuationV1({state:input,action,ho
     ...(hasOfficialOverwatchBeforeCasualtyPolicyV1(input)?['pendingOfficialAutoTurretOverwatch','pendingCurrentProductRangedSequence']:[]),
     ...(hasOfficialKhassarBeforeCasualtyPolicyV1(input)?['pendingOfficialKhassarShot','pendingOfficialKhassarFight','pendingOfficialKhassarCharge','pendingOfficialMeleeSidearmSequence']:[]),
     ...(hasOfficialDeclaredAttackBeforeCasualtyPolicyV1(input)?['pendingOfficialAttackTargetReaction','pendingOfficialRangedAttackDeclaration']:[]),
-    ...(hasOfficialDelayedHitsBeforeCasualtyPolicyV1(input)?['pendingCorrosiveBileResolution','pendingSabotageDronePhaseEnd']:[])])
+    ...(hasOfficialDelayedHitsBeforeCasualtyPolicyV1(input)?['pendingCorrosiveBileResolution','pendingSabotageDronePhaseEnd']:[]),
+    ...(hasOfficialStormPhotonBeforeCasualtyPolicyV1(input)?['pendingOfficialPsionicStormAssaultOrder','pendingOfficialPsionicStormMovementEnd','pendingOfficialPhotonOvercharge']:[])])
     if(next[slot]){frame.suspendedHostSlots[slot]=clone(next[slot]);delete next[slot];}
  }
  next[key]=[...(next[key]||[]),seal(frame,'frameHash')];next.activeSideKey=first;
@@ -75,7 +76,7 @@ export function stageOfficialBeforeCasualtyContinuationV1({state:input,action,ho
  return{ok:true,state:next,action:clone(action),events:[event],trainingTruth:false};
 }
 export function createOfficialBeforeCasualtyRuntimeV1({reactionBundle,policy}){
- const delayed=policy?.version==='1.6.0',declared=delayed||policy?.version==='1.5.0',khassar=declared||policy?.version==='1.4.0',overwatch=khassar||policy?.version==='1.3.0',template=overwatch||policy?.version==='1.2.0',extended=template||policy?.version==='1.1.0';
+ const stormPhoton=policy?.version==='1.7.0',delayed=stormPhoton||policy?.version==='1.6.0',declared=delayed||policy?.version==='1.5.0',khassar=declared||policy?.version==='1.4.0',overwatch=khassar||policy?.version==='1.3.0',template=overwatch||policy?.version==='1.2.0',extended=template||policy?.version==='1.1.0';
  const routes=reactionBundle.routes.filter(r=>r.effectKind==='before_casualty_detonation');
  if(!routes.length)throw Error('BEFORE_CASUALTY_DETONATION_SOURCE_REQUIRED');
  const pending=readOfficialBeforeCasualtyContinuationV1;
@@ -118,6 +119,7 @@ export function createOfficialBeforeCasualtyRuntimeV1({reactionBundle,policy}){
    sideKey:effect.sideKey,pieceId:effect.sourceInstanceId,definitionId:route.definitionId,abilityName:route.abilityName,
    sourceFeatureHash:route.sourceFeatureHash,sourceRouteHash:route.routeHash,sourcePlanHash:frame.triggerHash,
    ...(template?{reactionTiming:frame.activationContext.activationId===null?'outside_activation':'inside_activation'}:{}),
+   ...(hasOfficialSourceOwnedArmourContextPolicyV1(state)?{reactionActivationContext:clone(frame.activationContext)}:{}),
    detonationContinuationId:frame.continuationId,stage:'ready',automaticHits:{hits:effect.automaticHits,damagePerHit:effect.damagePerHit,targetUnitIds:facts.targetUnitIds},trainingTruth:false},'parentHash');
   return{...result,state};
  }
@@ -140,9 +142,10 @@ export function createOfficialBeforeCasualtyRuntimeV1({reactionBundle,policy}){
    return Boolean(frame?.stage==='hits'&&effect&&route&&p.sourcePlanHash===frame.triggerHash&&p.pieceId===effect.sourceInstanceId
     &&p.sideKey===effect.sideKey&&p.sourceFeatureHash===route.sourceFeatureHash&&p.sourceRouteHash===route.routeHash
     &&(!template||p.reactionTiming===(frame.activationContext.activationId===null?'outside_activation':'inside_activation'))
+    &&(!hasOfficialSourceOwnedArmourContextPolicyV1(state)||isDeepStrictEqual(p.reactionActivationContext,frame.activationContext))
     &&isDeepStrictEqual(p.automaticHits,{hits:effect.automaticHits,damagePerHit:effect.damagePerHit,targetUnitIds:effect.detonationFacts.targetUnitIds}));},
   timingFor:p=>template?p.reactionTiming:'inside_activation',
   reactionContextFor:(state,p)=>(state[key]||[]).find(f=>f.continuationId===p.detonationContinuationId)?.activationContext};
- return{pending,bindRootAction,afterReaction,takeResume,startNextEffect,sourceAuthority,descriptor:{runtimeId:'official-before-casualty-runtime-v1',runtimeVersion:delayed?'1.6.0':declared?'1.5.0':khassar?'1.4.0':overwatch?'1.3.0':template?'1.2.0':extended?'1.1.0':'1.0.0',
+ return{pending,bindRootAction,afterReaction,takeResume,startNextEffect,sourceAuthority,descriptor:{runtimeId:'official-before-casualty-runtime-v1',runtimeVersion:stormPhoton?'1.7.0':delayed?'1.6.0':declared?'1.5.0':khassar?'1.4.0':overwatch?'1.3.0':template?'1.2.0':extended?'1.1.0':'1.0.0',
   sourceBundleHash:reactionBundle.bundleHash,hostKinds:template?policy.damageHosts:extended?['ranged','melee','automatic_hits']:['ranged'],multiTargetHostAdmission:extended,trainingTruth:false}};
 }

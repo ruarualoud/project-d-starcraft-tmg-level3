@@ -1,0 +1,773 @@
+{
+  "schema": "starcraft_tmg_wave4_detonation_photon_v1",
+  "status": "passed_scoped",
+  "runRef": "build/wave4-web/stukov-units/detonation-photon-jyZuak",
+  "results": [
+    {
+      "id": "photon-use",
+      "kind": "photon",
+      "use": true,
+      "attempt": 0,
+      "roomId": "wave4-detonation-photon-use-0",
+      "originalSourcePlanHash": "41c0f04675c652fa5bf9823c0bde3da6077ce9f1ab48ace3ed200cc518b38925",
+      "directoryRef": "build/wave4-web/stukov-units/detonation-photon-jyZuak/photon-use-0",
+      "signedActions": 34,
+      "stateHash": "5954f2bddc88c95747fc20e0d728281c9009e51c4b7c938d155c7f6af1ac5238",
+      "coverageSatisfied": true,
+      "trace": [
+        {
+          "revision": 1,
+          "round": 1,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 2,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "choose_first_actor",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 3,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "resolve_battlefield_asset_ability",
+          "definitionId": "card:overlord/ventral-sacs-any@1",
+          "stackDepth": 0
+        },
+        {
+          "revision": 4,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "finish_activation",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 5,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "move",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 6,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "finish_activation",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 7,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 8,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 9,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "choose_first_actor",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 10,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 11,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "run",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 12,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "finish_activation",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 13,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 14,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "choose_first_actor",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 15,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 16,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 17,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "determine_current_product_mission_marker_control",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 18,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "score_mission",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 19,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "check_mission_end_game",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 20,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_end_of_round_effects",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 21,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_unit_lifecycle_consumer",
+          "definitionId": "card:overlord/ventral-sacs-any@1",
+          "stackDepth": 0
+        },
+        {
+          "revision": 22,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 23,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "card:overcharged_nexus/photon-overcharge-any@1",
+          "stackDepth": 0
+        },
+        {
+          "revision": 24,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "roll_automatic_hits_armour_pool",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 25,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_automatic_hits_evade_pool",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 26,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "choose_automatic_hits_casualties",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 27,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:infested_trooper/detonation-any-phase@1",
+          "stackDepth": 1
+        },
+        {
+          "revision": 28,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null,
+          "stackDepth": 1
+        },
+        {
+          "revision": 29,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "roll_automatic_hits_armour_pool",
+          "definitionId": null,
+          "stackDepth": 1
+        },
+        {
+          "revision": 30,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_automatic_hits_evade_pool",
+          "definitionId": null,
+          "stackDepth": 1
+        },
+        {
+          "revision": 31,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "choose_automatic_hits_casualties",
+          "definitionId": null,
+          "stackDepth": 1
+        },
+        {
+          "revision": 32,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_cleanup_refresh",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 33,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_next_round_initiative",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 34,
+          "round": 2,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "definitionId": null,
+          "stackDepth": 0
+        }
+      ],
+      "frames": [
+        {
+          "hostKind": "automatic_hits",
+          "rows": [
+            {
+              "targetPieceId": "actor",
+              "targetProfile": {
+                "recordKey": "army_units:infested_trooper",
+                "sourceRecordHash": "ace8c6852b08d71076a2933b5a5835d6805fc0830f60854f904d8a5ffe21631e",
+                "payloadHash": "454bde3489f4a9c9eff6521cf881d1a526ae33318dfdda7b252c1ca5be28821d",
+                "unitId": "infested_trooper",
+                "unitName": "Infested Trooper",
+                "faction": "Zerg",
+                "combatTags": [
+                  "biological",
+                  "ground",
+                  "infested",
+                  "light"
+                ],
+                "armourThreshold": 4,
+                "evadeThreshold": 6,
+                "hitPoints": 4,
+                "shield": 0,
+                "squadProfile": [
+                  {
+                    "tier": 1,
+                    "minimumModels": 1,
+                    "maximumModels": 1,
+                    "supply": 0
+                  },
+                  {
+                    "tier": 2,
+                    "minimumModels": 2,
+                    "maximumModels": 3,
+                    "supply": 1
+                  },
+                  {
+                    "tier": 3,
+                    "minimumModels": null,
+                    "maximumModels": null,
+                    "supply": 0
+                  }
+                ],
+                "combatWeapons": [
+                  {
+                    "weaponName": "Bayonet",
+                    "linkedTo": "-",
+                    "costSmall": 0,
+                    "costLarge": 0,
+                    "range": "engagement",
+                    "targetTags": [
+                      "ground"
+                    ],
+                    "rateOfAttack": 2,
+                    "hitThreshold": 5,
+                    "damage": 1,
+                    "surge": null,
+                    "behaviorText": "",
+                    "sourceTextHash": "9b0f85969b11da20c6d837f23a06335f8572bfd798460de3083ed124cef9205a"
+                  }
+                ],
+                "weaponlessCombatProfileAllowed": false
+              },
+              "attackResolutionHash": "5aeb71ad0523a87aad263be1d2aa5fca5516125618d4c9920dbd5235ed8c2246",
+              "casualty": {
+                "schema": "starcraft_tmg_official_current_product_casualty_resolution_v1",
+                "domainHash": "f1e1642e939db0e88d6f62ad379fe49f48dd1bf9ad46a08ef4a35c1e83eff645",
+                "selectionHash": "597358afb3a5a3519de7f49ee7fd6cc11fef3aaca2be01712be320e5693d4a53",
+                "targetPieceId": "actor",
+                "casualtyModelIds": [
+                  "actor-model-1",
+                  "actor-model-2"
+                ],
+                "remainingModelIds": [
+                  "actor-model-3"
+                ],
+                "remainingEngagedEnemyUnitIds": [],
+                "postDamageMarker": 3,
+                "targetDestroyed": false,
+                "discardedOverflowDamage": 0,
+                "shieldedBefore": false,
+                "shieldedAfter": false,
+                "trainingTruth": false,
+                "resolutionHash": "7973a94b903d56b7b2af5f24136ad5c5b0599a337f9fc74199e0ffd944e1bc92"
+              },
+              "reservationHash": "7899c8b0c196c4fc38c6000d5db701897b9f6d830d2fa4d053bf3af95e5b9e53"
+            }
+          ],
+          "activationContext": {
+            "activeSideKey": "player1",
+            "activationId": null
+          }
+        }
+      ],
+      "sourceKilledByDetonation": false,
+      "counterTargetKilledByDetonation": true,
+      "actualMovementProducer": true,
+      "fullNativeRound": true,
+      "originalDiceAndCasualtyOrderPreserved": true,
+      "supplyExactlyOnce": true,
+      "idempotencyVerified": true,
+      "coldReplay": true
+    },
+    {
+      "id": "photon-decline",
+      "kind": "photon",
+      "use": false,
+      "attempt": 0,
+      "roomId": "wave4-detonation-photon-decline-0",
+      "originalSourcePlanHash": "41c0f04675c652fa5bf9823c0bde3da6077ce9f1ab48ace3ed200cc518b38925",
+      "directoryRef": "build/wave4-web/stukov-units/detonation-photon-jyZuak/photon-decline-0",
+      "signedActions": 32,
+      "stateHash": "46182ee56eab17946815ecb8ed2b0e67f05edaeb2afe4c097d74db3dec7f52e4",
+      "coverageSatisfied": true,
+      "trace": [
+        {
+          "revision": 1,
+          "round": 1,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 2,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "choose_first_actor",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 3,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "resolve_battlefield_asset_ability",
+          "definitionId": "card:overlord/ventral-sacs-any@1",
+          "stackDepth": 0
+        },
+        {
+          "revision": 4,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "finish_activation",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 5,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "move",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 6,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "finish_activation",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 7,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 8,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 9,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "choose_first_actor",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 10,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 11,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "run",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 12,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "finish_activation",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 13,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 14,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "choose_first_actor",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 15,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 16,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 17,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "determine_current_product_mission_marker_control",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 18,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "score_mission",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 19,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "check_mission_end_game",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 20,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_end_of_round_effects",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 21,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_unit_lifecycle_consumer",
+          "definitionId": "card:overlord/ventral-sacs-any@1",
+          "stackDepth": 0
+        },
+        {
+          "revision": 22,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 23,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "card:overcharged_nexus/photon-overcharge-any@1",
+          "stackDepth": 0
+        },
+        {
+          "revision": 24,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "roll_automatic_hits_armour_pool",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 25,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_automatic_hits_evade_pool",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 26,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "choose_automatic_hits_casualties",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 27,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null,
+          "stackDepth": 1
+        },
+        {
+          "revision": 28,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null,
+          "stackDepth": 1
+        },
+        {
+          "revision": 29,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_cleanup_refresh",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 30,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_next_round_initiative",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 31,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_next_round_initiative",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 32,
+          "round": 2,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "definitionId": null,
+          "stackDepth": 0
+        }
+      ],
+      "frames": [
+        {
+          "hostKind": "automatic_hits",
+          "rows": [
+            {
+              "targetPieceId": "actor",
+              "targetProfile": {
+                "recordKey": "army_units:infested_trooper",
+                "sourceRecordHash": "ace8c6852b08d71076a2933b5a5835d6805fc0830f60854f904d8a5ffe21631e",
+                "payloadHash": "454bde3489f4a9c9eff6521cf881d1a526ae33318dfdda7b252c1ca5be28821d",
+                "unitId": "infested_trooper",
+                "unitName": "Infested Trooper",
+                "faction": "Zerg",
+                "combatTags": [
+                  "biological",
+                  "ground",
+                  "infested",
+                  "light"
+                ],
+                "armourThreshold": 4,
+                "evadeThreshold": 6,
+                "hitPoints": 4,
+                "shield": 0,
+                "squadProfile": [
+                  {
+                    "tier": 1,
+                    "minimumModels": 1,
+                    "maximumModels": 1,
+                    "supply": 0
+                  },
+                  {
+                    "tier": 2,
+                    "minimumModels": 2,
+                    "maximumModels": 3,
+                    "supply": 1
+                  },
+                  {
+                    "tier": 3,
+                    "minimumModels": null,
+                    "maximumModels": null,
+                    "supply": 0
+                  }
+                ],
+                "combatWeapons": [
+                  {
+                    "weaponName": "Bayonet",
+                    "linkedTo": "-",
+                    "costSmall": 0,
+                    "costLarge": 0,
+                    "range": "engagement",
+                    "targetTags": [
+                      "ground"
+                    ],
+                    "rateOfAttack": 2,
+                    "hitThreshold": 5,
+                    "damage": 1,
+                    "surge": null,
+                    "behaviorText": "",
+                    "sourceTextHash": "9b0f85969b11da20c6d837f23a06335f8572bfd798460de3083ed124cef9205a"
+                  }
+                ],
+                "weaponlessCombatProfileAllowed": false
+              },
+              "attackResolutionHash": "8d25502f72c3ff0698a6d16db082928d61414d82d1b612185210120b0ed4f775",
+              "casualty": {
+                "schema": "starcraft_tmg_official_current_product_casualty_resolution_v1",
+                "domainHash": "d37254a8110f270ff31d0005498fb67c490639efbe71591bec44245fdda063d8",
+                "selectionHash": "6062e12deaa18380126c2f65c072db1304da027ff3ca32bc30edf229bcb41e49",
+                "targetPieceId": "actor",
+                "casualtyModelIds": [
+                  "actor-model-1",
+                  "actor-model-2",
+                  "actor-model-3"
+                ],
+                "remainingModelIds": [],
+                "remainingEngagedEnemyUnitIds": [],
+                "postDamageMarker": 0,
+                "targetDestroyed": true,
+                "discardedOverflowDamage": 1,
+                "shieldedBefore": false,
+                "shieldedAfter": false,
+                "trainingTruth": false,
+                "resolutionHash": "6d051a394f3fda0b9f911ad4cecbd4e944f69f1fdc903357ad179c7949700d19"
+              },
+              "reservationHash": "f0ad0a83135052218b8b6eac71db6a6e0cd6ce3fdc61157228aa23f05707010b"
+            }
+          ],
+          "activationContext": {
+            "activeSideKey": "player1",
+            "activationId": null
+          }
+        }
+      ],
+      "sourceKilledByDetonation": false,
+      "counterTargetKilledByDetonation": false,
+      "actualMovementProducer": true,
+      "fullNativeRound": true,
+      "originalDiceAndCasualtyOrderPreserved": true,
+      "supplyExactlyOnce": true,
+      "idempotencyVerified": true,
+      "coldReplay": true
+    }
+  ],
+  "controls": [],
+  "newGameAtomsImplemented": 0,
+  "implementedCumulativeAtoms": 6,
+  "sourceHeldDefinitions": 39,
+  "fullMatchAdmission": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

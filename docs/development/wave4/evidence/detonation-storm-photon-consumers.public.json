@@ -1,0 +1,119 @@
+{
+  "schema": "starcraft_tmg_wave4_detonation_storm_photon_consumers_v1",
+  "status": "passed_scoped",
+  "policyVersion": "1.7.0",
+  "rootRuntimeVersions": [
+    "3.238.0",
+    "3.240.0"
+  ],
+  "armourPolicyVersions": [
+    "1.0.0",
+    "1.1.0"
+  ],
+  "nativeCases": 4,
+  "nativeSignedActions": 119,
+  "nativeFullRounds": 4,
+  "webRooms": 2,
+  "webSignedActions": 10,
+  "currentAndPriorColdCases": 6,
+  "currentAndPriorColdOriginalActions": 177,
+  "readOnlyRoundBoundaryCases": 2,
+  "componentCasesDoNotCountAsNative": true,
+  "evidenceRefs": [
+    "docs/development/wave4/evidence/detonation-storm.public.json",
+    "docs/development/wave4/evidence/detonation-photon.public.json",
+    "docs/development/wave4/evidence/detonation-storm-web.public.json",
+    "docs/development/wave4/evidence/detonation-photon-web.public.json",
+    "docs/development/wave4/evidence/detonation-storm-photon-current-cold.public.json",
+    "docs/development/wave4/evidence/photon-round-boundary.public.json",
+    "docs/development/wave4/evidence/photon-source-boundaries.public.json",
+    "docs/development/wave4/evidence/card-armour-context.public.json"
+  ],
+  "newGameAtomsImplemented": 0,
+  "implementedCumulativeAtoms": 6,
+  "sourceHeldDefinitions": 39,
+  "fullMatchAdmission": false,
+  "modelCalls": 0,
+  "trainingTruth": false,
+  "definitions": [
+    {
+      "definitionId": "unit:infested_marine/detonation-any-phase@1",
+      "classification": "new_semantics_partial",
+      "nativeCases": [
+        "storm-use",
+        "storm-decline"
+      ],
+      "webCase": "storm-use",
+      "allConsumersVerified": false,
+      "fullAtomAdmission": false
+    },
+    {
+      "definitionId": "unit:infested_trooper/detonation-any-phase@1",
+      "classification": "new_semantics_partial",
+      "nativeCases": [
+        "photon-use",
+        "photon-decline"
+      ],
+      "webCase": "photon-use",
+      "allConsumersVerified": false,
+      "fullAtomAdmission": false
+    },
+    {
+      "definitionId": "unit:high_templar/psionic-storm-movement-phase@1",
+      "classification": "existing_atoms_new_combination",
+      "actualConsumers": [
+        "purchased Storm and PE payment",
+        "Movement nonlethal batch",
+        "Assault HITS restored after actual caster death",
+        "token cleanup and R2"
+      ]
+    },
+    {
+      "definitionId": "card:overcharged_nexus/photon-overcharge-any@1",
+      "classification": "existing_atoms_new_combination",
+      "actualConsumers": [
+        "actual non Entry Edge reserve deployment",
+        "outside-activation card HITS and armour",
+        "original HITS completes after child Detonation",
+        "end-round queue and R2"
+      ],
+      "webOriginalSourceDeathFieldMeaning": "legacy Web field verifies the Detonation target dies; Photon source is a card"
+    },
+    {
+      "definitionId": "card:overlord/ventral-sacs-any@1",
+      "classification": "existing_atoms_reused",
+      "actualConsumers": [
+        "actual Movement marker",
+        "Builder-purchased reserve manifest",
+        "actual end-round deployment through native Router",
+        "Photon observer"
+      ]
+    }
+  ],
+  "consumerRefs": [
+    {
+      "file": "packages/product-composition/official-before-casualty-runtime-v1.mjs",
+      "exportName": "stageOfficialBeforeCasualtyContinuationV1"
+    },
+    {
+      "file": "packages/product-composition/official-psionic-storm-phase-end-v1.mjs",
+      "exportName": "createOfficialPsionicStormPhaseEndV1"
+    },
+    {
+      "file": "packages/product-composition/official-photon-overcharge-entry-v1.mjs",
+      "exportName": "createPhotonOverchargeEntryV1"
+    },
+    {
+      "file": "packages/product-composition/official-characteristic-status-component-runtime-v2.mjs",
+      "exportName": "createOfficialCharacteristicStatusComponentRuntimeV2"
+    },
+    {
+      "file": "packages/product-composition/official-current-product-match-runtime-v1.mjs",
+      "exportName": "createOfficialEngineeringScopedRoundRuntimeV1"
+    },
+    {
+      "file": "packages/rule-atoms/official-armour-roll-ordinal-v1.mjs",
+      "exportName": "inspectOfficialArmourRollOrdinalsV1"
+    }
+  ]
+}

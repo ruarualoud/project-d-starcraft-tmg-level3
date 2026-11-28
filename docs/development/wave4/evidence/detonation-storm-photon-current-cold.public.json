@@ -1,0 +1,68 @@
+{
+  "schema": "starcraft_tmg_wave4_detonation_v3_compat_v1",
+  "status": "passed_scoped",
+  "results": [
+    {
+      "id": "storm-use",
+      "roomId": "wave4-detonation-storm-use-0",
+      "originalSignedActions": 28,
+      "runtimeVersion": "2.2.0",
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "stateHash": "cd1410795678a7258e5ad556609fd637558b77a630d554bed0c328a8cda11af0",
+      "newActions": 0
+    },
+    {
+      "id": "storm-decline",
+      "roomId": "wave4-detonation-storm-decline-0",
+      "originalSignedActions": 25,
+      "runtimeVersion": "2.2.0",
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "stateHash": "d5a9ba51763340f42e4867c2e3b3a3e7bd2fbc568295d960dac7635544213d16",
+      "newActions": 0
+    },
+    {
+      "id": "photon-use",
+      "roomId": "wave4-detonation-photon-use-0",
+      "originalSignedActions": 34,
+      "runtimeVersion": "2.2.0",
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "stateHash": "5954f2bddc88c95747fc20e0d728281c9009e51c4b7c938d155c7f6af1ac5238",
+      "newActions": 0
+    },
+    {
+      "id": "photon-decline",
+      "roomId": "wave4-detonation-photon-decline-0",
+      "originalSignedActions": 32,
+      "runtimeVersion": "2.2.0",
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "stateHash": "46182ee56eab17946815ecb8ed2b0e67f05edaeb2afe4c097d74db3dec7f52e4",
+      "newActions": 0
+    },
+    {
+      "id": "bile-use",
+      "roomId": "wave4-detonation-delayed-bile-use-0",
+      "originalSignedActions": 27,
+      "runtimeVersion": "2.2.0",
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "stateHash": "27a2f0ce9b1caf56672e15f42a2c9c1b83152ea42dcdf50646d0b664468f8edf",
+      "newActions": 0
+    },
+    {
+      "id": "drone-use",
+      "roomId": "wave4-detonation-delayed-drone-use-12",
+      "originalSignedActions": 31,
+      "runtimeVersion": "2.2.0",
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "stateHash": "1493e8f9cfac0d5595777afc6522c8a778bafd30a516e2f7e6208604d5adc157",
+      "newActions": 0
+    }
+  ],
+  "modelCalls": 0,
+  "trainingTruth": false
+}

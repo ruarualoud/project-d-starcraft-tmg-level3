@@ -1,0 +1,48 @@
+{
+  "schema": "starcraft_tmg_wave4_detonation_storm_photon_harness_v1",
+  "status": "passed_scoped",
+  "policyVersion": "1.7.0",
+  "rootRuntimeVersions": [
+    "3.238.0",
+    "3.240.0"
+  ],
+  "armourPolicyVersions": [
+    "1.0.0",
+    "1.1.0"
+  ],
+  "nativeCases": 4,
+  "nativeSignedActions": 119,
+  "nativeFullRounds": 4,
+  "webRooms": 2,
+  "webSignedActions": 10,
+  "currentAndPriorColdCases": 6,
+  "currentAndPriorColdOriginalActions": 177,
+  "readOnlyRoundBoundaryCases": 2,
+  "componentCasesDoNotCountAsNative": true,
+  "evidenceRefs": [
+    "docs/development/wave4/evidence/detonation-storm.public.json",
+    "docs/development/wave4/evidence/detonation-photon.public.json",
+    "docs/development/wave4/evidence/detonation-storm-web.public.json",
+    "docs/development/wave4/evidence/detonation-photon-web.public.json",
+    "docs/development/wave4/evidence/detonation-storm-photon-current-cold.public.json",
+    "docs/development/wave4/evidence/photon-round-boundary.public.json",
+    "docs/development/wave4/evidence/photon-source-boundaries.public.json",
+    "docs/development/wave4/evidence/card-armour-context.public.json"
+  ],
+  "newGameAtomsImplemented": 0,
+  "implementedCumulativeAtoms": 6,
+  "sourceHeldDefinitions": 39,
+  "fullMatchAdmission": false,
+  "modelCalls": 0,
+  "trainingTruth": false,
+  "tools": [
+    "actual Movement producers",
+    "native HITS parents",
+    "sealed before-casualty child chain",
+    "source-owned armour context",
+    "mission scoring/end-round effects/cleanup/R2",
+    "explicit two-seat Web confirmation/recovery",
+    "current and prior signed cold replay"
+  ],
+  "scope": "scoped consumers; Disengage/Consume/new units and full Wave4 product admission pending"
+}

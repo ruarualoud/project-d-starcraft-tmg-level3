@@ -165,8 +165,9 @@ try {
            &&!state.pendingOfficialHitsPoolChoice&&!state.officialBeforeCasualtyContinuations?.length
            &&!state.pendingOfficialBlastTemplateAttack&&!state.pendingOfficialRavenSeekerPhaseEnd
           &&!state.pendingCorrosiveBileResolution&&!state.pendingSabotageDronePhaseEnd
+          &&!state.pendingOfficialPsionicStormAssaultOrder&&!state.pendingOfficialPsionicStormMovementEnd&&!state.pendingOfficialPhotonOvercharge
           &&!state.pendingOfficialAttackTargetReaction&&!state.pendingOfficialRangedAttackDeclaration
-          &&(!['detonation-khassar','detonation-declaration','detonation-target','detonation-delayed'].includes(item.flow)&&!item.declarationDefinitionId||!state.selectedRosterActivationWindow))break;
+          &&(!['detonation-khassar','detonation-declaration','detonation-target','detonation-delayed','detonation-storm-photon'].includes(item.flow)&&!item.declarationDefinitionId||!state.selectedRosterActivationWindow))break;
         const owner=state.activeSideKey;assert.ok(pages[owner]);
         const menu=await legal(pages[owner]);
         if(!primaryUsed&&item.id==='infected-ordinary-move'){assert.ok(!menu.parameterDomains.some(row=>['unit:stalker/blink-movement-phase@1','card:nexus/strategic-recall-any@1'].includes(row.definitionId)));}
@@ -179,7 +180,7 @@ try {
         }
         let choice;
         if(!primaryUsed)choice=menu.parameterDomains.find(row=>item.id==='infected-ordinary-move'?row.actionType==='move'&&row.pieceId==='enemy':item.id==='clean-blink'?row.definitionId==='unit:stalker/blink-movement-phase@1':item.id==='clean-recall'?row.definitionId==='card:nexus/strategic-recall-any@1':row.definitionId===item.definitionId);
-        else if(['detonation-nested','bio-kill-switch','detonation-template','detonation-outside','detonation-overwatch','detonation-khassar','detonation-declaration','detonation-target','detonation-delayed'].includes(item.flow))choice=menu.parameterDomains.find(row=>row.effectKind==='before_casualty_detonation');
+        else if(['detonation-nested','bio-kill-switch','detonation-template','detonation-outside','detonation-overwatch','detonation-khassar','detonation-declaration','detonation-target','detonation-delayed','detonation-storm-photon'].includes(item.flow))choice=menu.parameterDomains.find(row=>row.effectKind==='before_casualty_detonation');
         else if(item.flow==='corrode-restoration'&&!restorationUsed)choice=menu.parameterDomains.find(row=>row.definitionId==='unit:medic/restoration-any-phase@1');
         else if((item.kind==='ocular-use'||item.flow==='coexisting-ocular')&&!shotUsed)choice=menu.parameterDomains.find(row=>row.weaponName==='Firefly Missiles');
         else if((item.kind==='growing-restoration-exception'||item.flow==='carrier-restoration'||item.flow==='trooper-restoration')&&!restorationUsed)choice=menu.parameterDomains.find(row=>row.definitionId==='unit:medic/restoration-any-phase@1'||item.flow==='carrier-restoration'&&row.effectKind==='infestation_transfer');
@@ -220,6 +221,14 @@ try {
         assert.equal(state.activeAbilityUseHistory.filter(h=>h.pieceId==='actor'&&h.routeId==='card:templar_caste/khassar-de-templari-any@1').length,1);
         const original=events.filter(e=>['ranged_attack','close_combat_attack'].includes(e.type)&&(e.attackResolutionHash||e.resolutionHash)===item.expectedOriginalResolutionHash);assert.equal(original.length,1);
         assert.equal(completed[0].damage.reason==='recipient_destroyed',state.pieces.find(p=>p.id==='recipient').isDestroyed);
+      } else if(item.flow==='detonation-storm-photon'){
+        const state=final.envelope.state,events=await signedEvents(item);
+        assert.ok(!state.pendingOfficialPsionicStormAssaultOrder&&!state.pendingOfficialPsionicStormMovementEnd&&!state.pendingOfficialPhotonOvercharge&&!state.pendingOfficialAutomaticHits&&!state.officialBeforeCasualtyContinuations?.length);
+        assert.equal(events.filter(e=>['ability_direct_damage','automatic_hits_damage'].includes(e.type)&&e.stages.resolutionHash===item.expectedOriginalResolutionHash).length,1);
+        const victim=item.continuationKind==='storm'?item.originalSourceId:item.counterTargetId;
+        originalSourceDeathVerified=events.some(e=>e.type==='automatic_hits_damage'&&e.targetId===victim&&e.sourceDefinitionId===item.definitionId&&e.casualtyModelIds.length>0);
+        assert.equal(originalSourceDeathVerified,true);
+        if(item.continuationKind==='photon')assert.equal(events.filter(e=>e.type==='automatic_hits_complete'&&e.sourcePlanHash===item.expectedOriginalSourcePlanHash).length,1);
       } else if(item.flow==='detonation-delayed'){
         const state=final.envelope.state,events=await signedEvents(item);
         originalSourceDeathVerified=events.some(e=>e.type==='automatic_hits_damage'&&e.targetId===item.originalSourceId&&e.sourceDefinitionId===item.definitionId&&e.casualtyModelIds.length>0);
@@ -307,7 +316,7 @@ try {
       }
       assert.equal((await current(item)).envelope.stateHash,final.envelope.stateHash);
       results.push({kind:item.kind,definitionId:item.definitionId,sourceRoomId:item.sourceRoomId,sourceStateHash:item.sourceStateHash,
-        sourcePrefixReceipts:item.sourcePrefixReceipts,...(item.flow==='detonation-delayed'?{originalSourceDeathVerified}:{}),trace,signedActions:trace.length,twoSeatsVerified:true,
+        sourcePrefixReceipts:item.sourcePrefixReceipts,...(['detonation-delayed','detonation-storm-photon'].includes(item.flow)?{originalSourceDeathVerified}:{}),trace,signedActions:trace.length,twoSeatsVerified:true,
         explicitHumanConfirmation:true,previewReadOnly:true,replayMatchesCurrent:true,seatRecoveryReentryVerified:true,pageErrors:errors});
       await atomicWrite(completedRef,JSON.stringify(results.at(-1),null,2));
       console.log(JSON.stringify({case:item.kind,status:'passed',signedActions:trace.length}));
@@ -317,7 +326,7 @@ try {
 const result={schema:'starcraft_tmg_wave4_virus_web_verification_v1',status:'passed_scoped',
   runRef:path.relative(root,directory),results,signedActions:results.reduce((sum,row)=>sum+row.signedActions,0),
   conditionalTurretGeometryInRestorationCaseOnly:service.rooms.some(item=>item.id==='growing-restoration-exception'||item.flow==='carrier-restoration'),sourceHeldDefinitions:39,
-   engineeringEstimatedUnitGeometry:service.rooms.some(item=>['admiral-exchange','trooper-restoration','stukov-spread','munitions-support','infantry-burrow','detonation-ranged','detonation-nested','bio-kill-switch','corrode-armour','corrode-restoration','detonation-template','detonation-outside','detonation-overwatch','coexisting-ocular','detonation-khassar','detonation-declaration','detonation-target','detonation-delayed'].includes(item.flow)),
+   engineeringEstimatedUnitGeometry:service.rooms.some(item=>['admiral-exchange','trooper-restoration','stukov-spread','munitions-support','infantry-burrow','detonation-ranged','detonation-nested','bio-kill-switch','corrode-armour','corrode-restoration','detonation-template','detonation-outside','detonation-overwatch','coexisting-ocular','detonation-khassar','detonation-declaration','detonation-target','detonation-delayed','detonation-storm-photon'].includes(item.flow)),
   fullWave4LobbyBuilderAdmission:false,fullMatchAdmission:false,wave3PlayerRoomsTouched:false,modelCalls:0,trainingTruth:false};
 await atomicWrite(path.join(directory,'web-result.public.json'),JSON.stringify(result,null,2)+'\n');
 await atomicWrite(path.join(root,'docs/development/wave4/evidence/'+(process.argv[3]||'virus-web.public.json')),JSON.stringify(result,null,2)+'\n');

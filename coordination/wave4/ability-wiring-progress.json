@@ -275,7 +275,7 @@
     }
   ],
   "next": [
-    "Psionic Storm／Photon Overcharge外部HITS；Disengage／Consume直接移除。",
+    "Disengage／Consume直接移除和新增单位组合；完整原子仍6/18。",
     "剩余13个已审核记录和整版发布／Builder／大厅／媒体、500／2000分Web双席。"
   ],
   "modelCalls": 0,
@@ -2128,7 +2128,7 @@
       "fullMatchAdmission": false
     }
   ],
-  "executionStatus": "Detonation_template_and_Seeker_outside_scoped_verified_delegated_and_direct_removal_in_progress",
+  "executionStatus": "Detonation_storm_photon_scoped_verified_direct_removal_and_new_units_in_progress",
   "creepBuilderGate": {
     "verifiedDefinitions": 3,
     "legalCreepChoices": 5,
@@ -2677,12 +2677,12 @@
     "sourceHeldDefinitions": 39
   },
   "detonationWorkInProgress": {
-    "status": "delayed_hits_verified_area_hits_and_removal_pending",
+    "status": "storm_photon_verified_direct_removal_and_new_units_pending",
     "sourceDefinitionsCompiled": 2,
-    "nativeCases": 37,
-    "nativeSignedActions": 482,
-    "webRooms": 18,
-    "webSignedActions": 75,
+    "nativeCases": 41,
+    "nativeSignedActions": 601,
+    "webRooms": 20,
+    "webSignedActions": 85,
     "legacyColdReplayCases": 3,
     "legacyOriginalActions": 30,
     "newGameAtomsImplemented": 0,
@@ -2752,7 +2752,17 @@
       "docs/development/wave4/evidence/drone-structure-armour-control.public.json",
       "docs/development/wave4/evidence/detonation-delayed-control-web.public.json",
       "docs/development/wave4/evidence/detonation-delayed-consumers.public.json",
-      "docs/development/wave4/evidence/detonation-delayed-harness.public.json"
+      "docs/development/wave4/evidence/detonation-delayed-harness.public.json",
+      "docs/development/wave4/evidence/detonation-storm.public.json",
+      "docs/development/wave4/evidence/detonation-photon.public.json",
+      "docs/development/wave4/evidence/detonation-storm-web.public.json",
+      "docs/development/wave4/evidence/detonation-photon-web.public.json",
+      "docs/development/wave4/evidence/detonation-storm-photon-current-cold.public.json",
+      "docs/development/wave4/evidence/photon-round-boundary.public.json",
+      "docs/development/wave4/evidence/photon-source-boundaries.public.json",
+      "docs/development/wave4/evidence/card-armour-context.public.json",
+      "docs/development/wave4/evidence/detonation-storm-photon-consumers.public.json",
+      "docs/development/wave4/evidence/detonation-storm-photon-harness.public.json"
     ],
     "workbenchRef": "docs/development/wave4/detonation-continuation-workbench.zh-CN.md",
     "multiTargetParentAndNestedPending": false,
@@ -2761,34 +2771,33 @@
     "delegatedAndOutsideActivationHostsPending": true,
     "latestMilestone": {
       "status": "passed_scoped",
-      "policyVersion": "1.6.0",
-      "rootRuntimeVersion": "3.237.0",
+      "policyVersion": "1.7.0",
+      "rootRuntimeVersions": [
+        "3.238.0",
+        "3.240.0"
+      ],
+      "armourPolicyVersions": [
+        "1.0.0",
+        "1.1.0"
+      ],
       "nativeCases": 4,
-      "nativeSignedActions": 112,
+      "nativeSignedActions": 119,
       "nativeFullRounds": 4,
       "webRooms": 2,
-      "webSignedActions": 9,
+      "webSignedActions": 10,
       "currentAndPriorColdCases": 6,
-      "currentAndPriorColdOriginalActions": 148,
-      "legacyColdCases": 1,
-      "legacyOriginalActions": 5,
-      "controlCases": 12,
-      "controlSignedActions": 374,
-      "controlWebRooms": 1,
-      "controlWebSignedActions": 5,
+      "currentAndPriorColdOriginalActions": 177,
       "evidenceRefs": [
-        "docs/development/wave4/evidence/detonation-delayed.public.json",
-        "docs/development/wave4/evidence/detonation-delayed-web.public.json",
-        "docs/development/wave4/evidence/detonation-delayed-current-cold.public.json",
-        "docs/development/wave4/evidence/bile-legacy-cold.public.json",
-        "docs/development/wave4/evidence/engineering-release-v3.public.json",
-        "docs/development/wave4/evidence/engineering-v3-boundaries.public.json",
-        "docs/development/wave4/evidence/generated-prefix.public.json",
-        "docs/development/wave4/evidence/drone-reservation-control.public.json",
-        "docs/development/wave4/evidence/drone-structure-armour-control.public.json",
-        "docs/development/wave4/evidence/detonation-delayed-control-web.public.json",
-        "docs/development/wave4/evidence/detonation-delayed-consumers.public.json",
-        "docs/development/wave4/evidence/detonation-delayed-harness.public.json"
+        "docs/development/wave4/evidence/detonation-storm.public.json",
+        "docs/development/wave4/evidence/detonation-photon.public.json",
+        "docs/development/wave4/evidence/detonation-storm-web.public.json",
+        "docs/development/wave4/evidence/detonation-photon-web.public.json",
+        "docs/development/wave4/evidence/detonation-storm-photon-current-cold.public.json",
+        "docs/development/wave4/evidence/photon-round-boundary.public.json",
+        "docs/development/wave4/evidence/photon-source-boundaries.public.json",
+        "docs/development/wave4/evidence/card-armour-context.public.json",
+        "docs/development/wave4/evidence/detonation-storm-photon-consumers.public.json",
+        "docs/development/wave4/evidence/detonation-storm-photon-harness.public.json"
       ],
       "fullMatchAdmission": false,
       "newGameAtomsImplemented": 0,
@@ -2805,7 +2814,10 @@
     "multipleOverwatchSourcesVerified": true,
     "khassarDelegatedAttacksVerified": true,
     "targetAndDeclarationHostsVerified": true,
-    "bileAndDroneHostsVerified": true
+    "bileAndDroneHostsVerified": true,
+    "stormAndPhotonHostsVerified": true,
+    "directRemovalHostsPending": true,
+    "newUnitCombinationsPending": true
   },
   "partialRuntimeVerificationByDefinition": [
     {
@@ -2877,6 +2889,18 @@
         {
           "file": "packages/product-composition/official-sabotage-drone-phase-end-v1.mjs",
           "exportName": "createOfficialSabotageDronePhaseEndRuntimeV1"
+        },
+        {
+          "file": "packages/product-composition/official-psionic-storm-phase-end-v1.mjs",
+          "exportName": "createOfficialPsionicStormPhaseEndV1"
+        },
+        {
+          "file": "packages/product-composition/official-photon-overcharge-entry-v1.mjs",
+          "exportName": "createPhotonOverchargeEntryV1"
+        },
+        {
+          "file": "packages/rule-atoms/official-armour-roll-ordinal-v1.mjs",
+          "exportName": "inspectOfficialArmourRollOrdinalsV1"
         }
       ],
       "evidenceRefs": [
@@ -2942,7 +2966,17 @@
         "docs/development/wave4/evidence/drone-structure-armour-control.public.json",
         "docs/development/wave4/evidence/detonation-delayed-control-web.public.json",
         "docs/development/wave4/evidence/detonation-delayed-consumers.public.json",
-        "docs/development/wave4/evidence/detonation-delayed-harness.public.json"
+        "docs/development/wave4/evidence/detonation-delayed-harness.public.json",
+        "docs/development/wave4/evidence/detonation-storm.public.json",
+        "docs/development/wave4/evidence/detonation-photon.public.json",
+        "docs/development/wave4/evidence/detonation-storm-web.public.json",
+        "docs/development/wave4/evidence/detonation-photon-web.public.json",
+        "docs/development/wave4/evidence/detonation-storm-photon-current-cold.public.json",
+        "docs/development/wave4/evidence/photon-round-boundary.public.json",
+        "docs/development/wave4/evidence/photon-source-boundaries.public.json",
+        "docs/development/wave4/evidence/card-armour-context.public.json",
+        "docs/development/wave4/evidence/detonation-storm-photon-consumers.public.json",
+        "docs/development/wave4/evidence/detonation-storm-photon-harness.public.json"
       ],
       "meleeHostVerified": true,
       "automaticHitsHostVerified": true,
@@ -2971,7 +3005,11 @@
       "webDeclaredTargetSuccessorVerified": true,
       "bileNativeVerified": true,
       "droneNativeVerified": false,
-      "webDelayedSuccessorVerified": true
+      "webDelayedSuccessorVerified": true,
+      "stormNativeVerified": true,
+      "photonNativeVerified": false,
+      "webStormSuccessorVerified": true,
+      "webPhotonSuccessorVerified": false
     },
     {
       "definitionId": "unit:infested_trooper/detonation-any-phase@1",
@@ -3042,6 +3080,18 @@
         {
           "file": "packages/product-composition/official-current-product-match-runtime-v1.mjs",
           "exportName": "createOfficialEngineeringScopedRoundRuntimeV1"
+        },
+        {
+          "file": "packages/product-composition/official-psionic-storm-phase-end-v1.mjs",
+          "exportName": "createOfficialPsionicStormPhaseEndV1"
+        },
+        {
+          "file": "packages/product-composition/official-photon-overcharge-entry-v1.mjs",
+          "exportName": "createPhotonOverchargeEntryV1"
+        },
+        {
+          "file": "packages/rule-atoms/official-armour-roll-ordinal-v1.mjs",
+          "exportName": "inspectOfficialArmourRollOrdinalsV1"
         }
       ],
       "evidenceRefs": [
@@ -3102,7 +3152,17 @@
         "docs/development/wave4/evidence/drone-structure-armour-control.public.json",
         "docs/development/wave4/evidence/detonation-delayed-control-web.public.json",
         "docs/development/wave4/evidence/detonation-delayed-consumers.public.json",
-        "docs/development/wave4/evidence/detonation-delayed-harness.public.json"
+        "docs/development/wave4/evidence/detonation-delayed-harness.public.json",
+        "docs/development/wave4/evidence/detonation-storm.public.json",
+        "docs/development/wave4/evidence/detonation-photon.public.json",
+        "docs/development/wave4/evidence/detonation-storm-web.public.json",
+        "docs/development/wave4/evidence/detonation-photon-web.public.json",
+        "docs/development/wave4/evidence/detonation-storm-photon-current-cold.public.json",
+        "docs/development/wave4/evidence/photon-round-boundary.public.json",
+        "docs/development/wave4/evidence/photon-source-boundaries.public.json",
+        "docs/development/wave4/evidence/card-armour-context.public.json",
+        "docs/development/wave4/evidence/detonation-storm-photon-consumers.public.json",
+        "docs/development/wave4/evidence/detonation-storm-photon-harness.public.json"
       ],
       "meleeHostVerified": true,
       "automaticHitsHostVerified": true,
@@ -3129,7 +3189,11 @@
       "webDeclaredTargetSuccessorVerified": false,
       "bileNativeVerified": false,
       "droneNativeVerified": true,
-      "webDelayedSuccessorVerified": true
+      "webDelayedSuccessorVerified": true,
+      "stormNativeVerified": false,
+      "photonNativeVerified": true,
+      "webStormSuccessorVerified": false,
+      "webPhotonSuccessorVerified": true
     }
   ],
   "stukovCombatGate": {
@@ -3291,6 +3355,39 @@
       "docs/development/wave4/evidence/detonation-delayed-control-web.public.json",
       "docs/development/wave4/evidence/detonation-delayed-consumers.public.json",
       "docs/development/wave4/evidence/detonation-delayed-harness.public.json"
+    ],
+    "fullMatchAdmission": false,
+    "newGameAtomsImplemented": 0
+  },
+  "stormPhotonGate": {
+    "status": "passed_scoped",
+    "policyVersion": "1.7.0",
+    "rootRuntimeVersions": [
+      "3.238.0",
+      "3.240.0"
+    ],
+    "armourPolicyVersions": [
+      "1.0.0",
+      "1.1.0"
+    ],
+    "nativeCases": 4,
+    "nativeSignedActions": 119,
+    "nativeFullRounds": 4,
+    "webRooms": 2,
+    "webSignedActions": 10,
+    "currentAndPriorColdCases": 6,
+    "currentAndPriorColdOriginalActions": 177,
+    "evidenceRefs": [
+      "docs/development/wave4/evidence/detonation-storm.public.json",
+      "docs/development/wave4/evidence/detonation-photon.public.json",
+      "docs/development/wave4/evidence/detonation-storm-web.public.json",
+      "docs/development/wave4/evidence/detonation-photon-web.public.json",
+      "docs/development/wave4/evidence/detonation-storm-photon-current-cold.public.json",
+      "docs/development/wave4/evidence/photon-round-boundary.public.json",
+      "docs/development/wave4/evidence/photon-source-boundaries.public.json",
+      "docs/development/wave4/evidence/card-armour-context.public.json",
+      "docs/development/wave4/evidence/detonation-storm-photon-consumers.public.json",
+      "docs/development/wave4/evidence/detonation-storm-photon-harness.public.json"
     ],
     "fullMatchAdmission": false,
     "newGameAtomsImplemented": 0

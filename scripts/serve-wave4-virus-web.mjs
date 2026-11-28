@@ -21,7 +21,8 @@ assert.ok(directory.startsWith(path.join(root,'build/wave4-web')+path.sep));
 const webRoot=process.argv[4]?path.resolve(process.argv[4]):path.join(root,'apps/starcraft-tmg-expo/dist-product');
 if(process.argv[4])assert.ok(webRoot.startsWith(path.join(root,'build/wave4-web')+path.sep));
 const delayedSource=['starcraft_tmg_wave4_detonation_delayed_v1','starcraft_tmg_wave4_detonation_delayed_control_web_source_v1'].includes(sourceResult.schema);
-const baseInputs=sourceResult.schema==='starcraft_tmg_wave4_detonation_target_v1'||delayedSource?await loadWave4StukovUnitInputsV2(root):['starcraft_tmg_wave4_stukov_infestation_native_v1','starcraft_tmg_wave4_plagued_munitions_v1',
+const stormPhotonSource=['starcraft_tmg_wave4_detonation_storm_v1','starcraft_tmg_wave4_detonation_photon_v1'].includes(sourceResult.schema);
+const baseInputs=stormPhotonSource?await loadWave4StukovUnitInputsV3(root):sourceResult.schema==='starcraft_tmg_wave4_detonation_target_v1'||delayedSource?await loadWave4StukovUnitInputsV2(root):['starcraft_tmg_wave4_stukov_infestation_native_v1','starcraft_tmg_wave4_plagued_munitions_v1',
    'starcraft_tmg_wave4_infested_infantry_base_wiring_v1','starcraft_tmg_wave4_detonation_ranged_host_v1','starcraft_tmg_wave4_detonation_nested_host_v1',
    'starcraft_tmg_wave4_bio_kill_switch_v1','starcraft_tmg_wave4_corrode_web_source_v1','starcraft_tmg_wave4_detonation_template_v1','starcraft_tmg_wave4_detonation_outside_v1','starcraft_tmg_wave4_detonation_overwatch_v1','starcraft_tmg_wave4_overwatch_coexistence_v1','starcraft_tmg_wave4_detonation_khassar_web_source_v1','starcraft_tmg_wave4_detonation_declaration_v1'].includes(sourceResult.schema)?await loadWave4StukovUnitInputs(root)
   :sourceResult.schema==='starcraft_tmg_wave4_virus_creep_native_v1'?await loadWave4VirusEffectsInputs(root):await loadWave4TurretInputs(root);
@@ -79,9 +80,10 @@ for(const spec of specs) {  const proof=sourceResult.results.find(row=>row.id===
     const issued=await native.room.issueSeatRecovery({roomId,seatToken:credentials[side].seatToken});
     assert.equal(issued.ok,true);links[side]='/room/'+roomId+'#recovery='+encodeURIComponent(issued.recovery.recoveryToken);
   }
-  const originalResolutionHash=proof.originalResolutionHash||(['detonation-overwatch','detonation-khassar','detonation-declaration','detonation-template','detonation-target','detonation-delayed'].includes(spec.flow)?proof.frames?.[0]?.rows?.[0]?.attackResolutionHash:null);
+  const originalResolutionHash=proof.originalResolutionHash||(['detonation-overwatch','detonation-khassar','detonation-declaration','detonation-template','detonation-target','detonation-delayed','detonation-storm-photon'].includes(spec.flow)?proof.frames?.[0]?.rows?.[0]?.attackResolutionHash:null);
   service.rooms.push({...spec,kind:spec.id,roomId,links,sourcePrefixReceipts:prefixReceipts,
     ...(spec.flow==='detonation-delayed'?{delayedKind:proof.kind,originalSourceId:proof.sourceId}:{}),
+    ...(spec.flow==='detonation-storm-photon'?{continuationKind:proof.kind,originalSourceId:proof.kind==='storm'?'actor':null,counterTargetId:'defender',expectedOriginalSourcePlanHash:proof.originalSourcePlanHash}:{}),
     ...(originalResolutionHash?{expectedOriginalResolutionHash:originalResolutionHash}:{}),
     sourceRoomId:proof.roomId,sourceStateHash:prefix.stateHash,sourceBindingHash:prefix.matchBindingHash});
 }

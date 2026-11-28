@@ -30,3 +30,6 @@
 政策1.6／Root3.237本批[Bile与Drone](detonation-delayed-wiring.zh-CN.md)已通过：4原生分支112签名动作、4完整回合、Web2房9确认、当前/前批6房148及旧Bile5原动作冷验。两个使用分支均实际由Detonation移除原来源。12个自然结果对照房共374动作单列；Structure不可用Vehicle Plating的拒绝边界保持。严格Drone使用分支在持久建房前固定开发夹具身份，11个无骰设置动作、6个身份候选、实际签名骰核对和冷重放均有记录，不改变产品随机性。
 
 工程V3冻结FAQ1.3实际字节，进口Goliath/Tank各实付1BM；V2不改。Web生成Drone前缀按原购买初态恢复运行时，签名前缀/五数据包/军表审计/原运行时哈希均核对，三类反例拒绝。另1对照Web房5确认与只读冷验单列。完整原子仍6/18；Storm/Photon、Disengage/Consume、后续新单位组合与整版人人产品继续。
+
+
+政策1.7／Root3.238–3.240本批[Storm／Photon](detonation-storm-photon-wiring.zh-CN.md)通过：4完整原生回合119动作、Web2房10确认及当前／前批6房177原动作冷读一致。Storm使用实际炸死原High Templar；Photon由合法Stukov+Overlord真实Ventral Sacs入场，原卡牌HITS完成。护甲政策1.1保留阶段外null激活身份和回合池计数；旧1.0默认不变。己方Omega／Pylon／Zagara边线免Photon，Burrow Ambush非正例。原生晚发生Supply损失不插入第二次计分。完整原子仍6/18；继续Disengage／Consume、新单位组合和整版人人出口。

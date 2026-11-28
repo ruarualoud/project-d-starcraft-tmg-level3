@@ -1,0 +1,43 @@
+{
+  "schema": "starcraft_tmg_wave4_photon_round_boundary_v1",
+  "status": "passed_read_only",
+  "results": [
+    {
+      "id": "photon-use",
+      "roomId": "wave4-detonation-photon-use-0",
+      "originalSignedActions": 34,
+      "stateHash": "5954f2bddc88c95747fc20e0d728281c9009e51c4b7c938d155c7f6af1ac5238",
+      "scoringRevision": 18,
+      "lateLossRevisions": [
+        31
+      ],
+      "armourPools": 2,
+      "outsideActivationPreserved": true,
+      "scoreBeforeRoundEndEffects": true,
+      "noImplicitRescoreOrVictoryAward": true,
+      "readOnly": true,
+      "newActions": 0
+    },
+    {
+      "id": "photon-decline",
+      "roomId": "wave4-detonation-photon-decline-0",
+      "originalSignedActions": 32,
+      "stateHash": "46182ee56eab17946815ecb8ed2b0e67f05edaeb2afe4c097d74db3dec7f52e4",
+      "scoringRevision": 18,
+      "lateLossRevisions": [
+        28
+      ],
+      "armourPools": 1,
+      "outsideActivationPreserved": true,
+      "scoreBeforeRoundEndEffects": true,
+      "noImplicitRescoreOrVictoryAward": true,
+      "readOnly": true,
+      "newActions": 0
+    }
+  ],
+  "ruleSequence": "8.9: score VP, end game check, end-round effects, cleanup, initiative",
+  "scope": "existing Photon journals only; late Supply losses remain ledger facts and do not insert an extra scoring step",
+  "modelCalls": 0,
+  "trainingTruth": false,
+  "fullMatchAdmission": false
+}

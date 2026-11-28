@@ -12,16 +12,35 @@ export const OFFICIAL_ARMOUR_ROLL_ORDINAL_POLICY_V1 = Object.freeze({
   duplicateRollPolicy: 'same_source_action_and_target_is_idempotent',
   trainingTruth: false,
 });
+export const OFFICIAL_ARMOUR_ROLL_ORDINAL_POLICY_V2=Object.freeze({...OFFICIAL_ARMOUR_ROLL_ORDINAL_POLICY_V1,
+  version:'1.1.0',sourceOwnedNumericContext:true,outsideActivationId:null,outsideActivationOrdinal:null});
 
 const fail = code => { throw Error(code); };
 const withoutHash = value => Object.fromEntries(Object.entries(value).filter(([key]) => key !== 'historyHash'));
 
 export function hasOfficialArmourRollOrdinalPolicyV1(state) {
   if (state.officialArmourRollOrdinalPolicy === undefined) return false;
-  if (!isDeepStrictEqual(state.officialArmourRollOrdinalPolicy, OFFICIAL_ARMOUR_ROLL_ORDINAL_POLICY_V1)) {
+  if (!isDeepStrictEqual(state.officialArmourRollOrdinalPolicy, OFFICIAL_ARMOUR_ROLL_ORDINAL_POLICY_V1)
+    && !isDeepStrictEqual(state.officialArmourRollOrdinalPolicy, OFFICIAL_ARMOUR_ROLL_ORDINAL_POLICY_V2)) {
     fail('ARMOUR_ROLL_POLICY_INVALID');
   }
   return true;
+}
+export function hasOfficialSourceOwnedArmourContextPolicyV1(state){
+  return hasOfficialArmourRollOrdinalPolicyV1(state)
+    &&isDeepStrictEqual(state.officialArmourRollOrdinalPolicy,OFFICIAL_ARMOUR_ROLL_ORDINAL_POLICY_V2);
+}
+function sourceOwnedContext(state,attackerPieceId){
+  if(!hasOfficialSourceOwnedArmourContextPolicyV1(state))return null;
+  const parent=state.pendingOfficialAutomaticHits,context=parent?.reactionActivationContext;
+  if(parent?.pieceId!==attackerPieceId||!context)return null;
+  const {parentHash,...body}=parent;
+  if(parent.schema!=='starcraft_tmg_automatic_hits_source_checkpoint_v1'||parentHash!==hash(body)
+    ||parent.round!==Number(state.round)||parent.phase!==state.phase||!/^[a-f0-9]{64}$/.test(parent.sourcePlanHash||'')
+    ||!['player1','player2'].includes(context.activeSideKey)
+    ||context.activationId!==null&&(typeof context.activationId!=='string'||!context.activationId.trim()))
+    fail('ARMOUR_ROLL_SOURCE_CONTEXT_INVALID');
+  return{...context,sourcePlanHash:parent.sourcePlanHash};
 }
 
 function historyFor(state) {
@@ -33,7 +52,10 @@ function historyFor(state) {
   }
   const ids = new Set();
   for (const row of history.rolls) {
-    if (!row.rollId || ids.has(row.rollId) || !row.targetPieceId || !row.activationId
+    const outside=row.activationContextKind==='outside_activation';
+    if (!row.rollId || ids.has(row.rollId) || !row.targetPieceId || (!outside&&!row.activationId)
+      ||outside&&(!hasOfficialSourceOwnedArmourContextPolicyV1(state)||row.activationId!==null
+        ||row.armourRollOrdinalInActivation!==null||!/^[a-f0-9]{64}$/.test(row.sourcePlanHash||''))
       || !Number.isSafeInteger(row.round) || row.round < 1
       || !Number.isSafeInteger(row.poolDice) || row.poolDice < 1) fail('ARMOUR_ROLL_HISTORY_ENTRY_INVALID');
     ids.add(row.rollId);
@@ -42,6 +64,8 @@ function historyFor(state) {
 }
 
 export function resolveOfficialArmourRollActivationIdV1(state, attackerPieceId) {
+  const context=sourceOwnedContext(state,attackerPieceId);
+  if(context)return context.activationId;
   const round = Number(state.round);
   const actor = state.pieces.find(piece => piece.id === attackerPieceId);
   if (!actor || !Number.isSafeInteger(round) || round < 1 || !state.phase) fail('ARMOUR_ROLL_ACTIVATION_REQUIRED');
@@ -63,7 +87,7 @@ export function inspectOfficialArmourRollOrdinalsV1(state, { targetPieceId, atta
   const rolls = historyFor(state).filter(row => row.round === Number(state.round) && row.targetPieceId === targetPieceId);
   return Object.freeze({ activationId, targetPieceId,
     armourRollOrdinalInRound: rolls.length + 1,
-    armourRollOrdinalInActivation: rolls.filter(row => row.activationId === activationId).length + 1 });
+    armourRollOrdinalInActivation: activationId===null?null:rolls.filter(row => row.activationId === activationId).length + 1 });
 }
 
 // Querying never consumes an ordinal. The native damage consumer calls this
@@ -83,9 +107,10 @@ export function recordOfficialArmourRollV1(state, { action, targetPieceId, poolD
     return;
   }
   const ordinals = inspectOfficialArmourRollOrdinalsV1(state, { targetPieceId, attackerPieceId: action.pieceId });
+  const context=sourceOwnedContext(state,action.pieceId);
   const body = { schema: 'starcraft_tmg_armour_roll_history_v1', rolls: [...prior, {
     rollId, sourceActionHash, round: Number(state.round), phase: state.phase,
-    ...ordinals, poolDice, trainingTruth: false,
+    ...ordinals,...(context?.activationId===null?{activationContextKind:'outside_activation',sourcePlanHash:context.sourcePlanHash}:{}),poolDice, trainingTruth: false,
   }], trainingTruth: false };
   state.officialArmourRollHistory = { ...body, historyHash: hash(body) };
 }
