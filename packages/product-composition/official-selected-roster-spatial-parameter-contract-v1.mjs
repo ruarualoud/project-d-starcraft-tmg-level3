@@ -57,15 +57,20 @@ export function remainingOfficialSelectedRosterSpatialModelIdsV1(domain,leadingM
 export function describeOfficialSelectedRosterSpatialParameterFieldsV1(domain){
   if(domain?.parameterKind!==KIND)return null;
   const ids=domain.constraints.modelProfiles.map(row=>row.modelId),count=ids.length-1;
+  const removal=domain.actionType==='disengage'&&domain.parameterSchema.casualtyRequiresNativeEndpointAbsenceProof===true;
   const point={type:'object',required:['xMilliInches','yMilliInches'],additionalProperties:true,
     properties:{xMilliInches:{type:'integer'},yMilliInches:{type:'integer'}}};
   return {
     leadingModelId:{type:'string',enum:ids},
+    ...(removal?{leadingOutcome:{type:'string',enum:['placed','casualty'],title:'领队结果'}}:{}),
     path:{type:'array',minItems:1,maxItems:domain.parameterSchema.maxRawPathPoints,
       items:point,coordinateUnit:'milli-inch',description:'Only the leading model follows this path. Its final position is the path endpoint.'},
     placements:{type:'array',minItems:count,maxItems:count,excludesLeadingModel:true,
       description:'Exactly every OTHER live model once; exclude leadingModelId. Native validates bases, coherency and terrain; valid shape is not legal geometry.',
-      items:{...point,required:['modelId',...point.required],properties:{...point.properties,modelId:{type:'string',enum:ids}}}},
+      items:{...point,required:removal?['modelId','outcome']:['modelId',...point.required],
+        ...(removal?{conditionalRequiredFields:[{when:{field:'outcome',value:'placed'},required:point.required}]}:{}),
+        properties:{...point.properties,modelId:{type:'string',enum:ids},
+          ...(removal?{outcome:{type:'string',enum:['placed','casualty'],title:'摆位结果'}}:{})}}},
     ...(domain.actionType==='deploy'?{entrySegmentId:{type:'string',enum:domain.constraints.entrySegments.map(segment=>segment.segmentId)},
       entryAlongEdgeMilliInches:{type:'integer'}}:{}),
   };

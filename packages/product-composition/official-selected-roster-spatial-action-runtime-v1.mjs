@@ -1,3 +1,4 @@
+import {supportsOfficialDisengageRemovalV1,instantiateOfficialDisengageRemovalV1,applyOfficialDisengageRemovalV1} from './official-disengage-removal-v1.mjs';
 import { officialSpatialRuleErrorV1 } from '../rule-atoms/official-spatial-proposal-error-v1.mjs';
 import { OFFICIAL_BURROWED_ENGAGEMENT_RANGE_MILLI_INCHES_V1 } from "../source-data/official-hidden-burrowed-data-bundle-v1.mjs";
 import { normalizeOfficialElevationV1 } from "../rule-atoms/official-elevation-contract-v1.mjs";
@@ -799,6 +800,8 @@ function domainFor(state, sideKey, piece, actionType, context) {
       required: actionType === "deploy"
         ? ["leadingModelId", "entrySegmentId", "entryAlongEdgeMilliInches", "path", "placements"]
         : ["leadingModelId", "path", "placements"],
+      ...(actionType==="disengage"&&supportsOfficialDisengageRemovalV1(state,piece)?{leadingOutcome:["placed","casualty"],placementOutcome:["placed","casualty"],
+        casualtyRequiresNativeEndpointAbsenceProof:true}:{}),
       coordinateUnit: "milli-inch", maxRawPathPoints: MAX_RAW_PATH_POINTS,
       maxCanonicalPathPoints: MAX_CANONICAL_PATH_POINTS,
       exactRemainingPlacementCount: profiles.length - 1,
@@ -1852,7 +1855,16 @@ export function instantiateOfficialSelectedRosterSpatialActionV1(
   return instantiateSpatialGeometry(state, domain, parameters);
 }
 
-function instantiateSpatialGeometry(state, domain, parameters, preserveWaypoints = false) {
+function instantiateSpatialGeometry(state, domain, parameters, preserveWaypoints = false, skipRemoval = false, declarationRestriction = null) {
+  const removalActor=state.pieces.find(p=>p.id===domain.pieceId);
+  if(!skipRemoval&&domain.actionType==="disengage"&&supportsOfficialDisengageRemovalV1(state,removalActor)){
+    if(parameters?.leadingOutcome==="casualty"||parameters?.placements?.some(p=>p.outcome==="casualty")){
+      const restriction=postDisengageRestriction(state,removalActor,actionContext(state,domain.sideKey,removalActor,domain.actionType).engagement);
+      return instantiateOfficialDisengageRemovalV1({state,domain,parameters,restriction,
+        instantiatePlaced:(view,subset,p)=>instantiateSpatialGeometry(view,subset,p,preserveWaypoints,true,restriction)});
+    }
+    if(parameters?.leadingOutcome==="placed"){parameters={...parameters};delete parameters.leadingOutcome;}
+  }
   if (!parametersAllowed(domain.actionType, parameters)) {
     fail("SELECTED_SPATIAL_PARAMETERS_INVALID");
   }
@@ -1904,7 +1916,7 @@ function instantiateSpatialGeometry(state, domain, parameters, preserveWaypoints
       path, placements, parameters, modelGaps);
   const terrainFacts = tableEntry ? terrainResult : terrainResult.result;
   const restriction = domain.actionType === "disengage"
-    ? postDisengageRestriction(state, piece,
+    ? declarationRestriction || postDisengageRestriction(state, piece,
       actionContext(state, domain.sideKey, piece, domain.actionType).engagement)
     : null;
   const canonicalParameters = {
@@ -2939,7 +2951,8 @@ export function applyOfficialSelectedRosterSpatialActionV1(
   if (!isDeepStrictEqual(current.action, actionInput)) {
     fail("SELECTED_SPATIAL_ACTION_STALE");
   }
-  return commitSpatialMovement(stateInput, actionInput, options);
+  return actionInput.spatialPlan.removal?.leadingFailure
+    ?applyOfficialDisengageRemovalV1(stateInput,actionInput,options):commitSpatialMovement(stateInput, actionInput, options);
 }
 
 function commitSpatialMovement(stateInput, actionInput, options, lungeAuthorization = null) {
@@ -3021,6 +3034,7 @@ function commitSpatialMovement(stateInput, actionInput, options, lungeAuthorizat
     || entryDefinitionId === OFFICIAL_OMEGA_WORM_NETWORK_DEFINITION_ID)) {
     state.officialRoundSupplyState = refreshOfficialRoundSupplyOccupancyV1({ state });
   }
+  if(actionInput.spatialPlan.removal)return applyOfficialDisengageRemovalV1(state,actionInput,options,{preparedEvents:events});
   const event = {
     type: `unit_${actionInput.actionType}_resolved`,
     sideKey: piece.sideKey, pieceId: piece.id,

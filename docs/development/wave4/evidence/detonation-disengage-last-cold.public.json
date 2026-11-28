@@ -1,0 +1,48 @@
+{
+  "schema": "starcraft_tmg_wave4_detonation_v3_compat_v1",
+  "status": "passed_scoped",
+  "results": [
+    {
+      "id": "infested_trooper-last-use",
+      "roomId": "wave4-disengage-infested_trooper-last-use",
+      "originalSignedActions": 23,
+      "runtimeVersion": "2.2.0",
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "stateHash": "a4f24892c518c8ec1e87990e2adf188e42c737118fe40be87c901f5378feacb2",
+      "newActions": 0
+    },
+    {
+      "id": "infested_trooper-last-decline",
+      "roomId": "wave4-disengage-infested_trooper-last-decline",
+      "originalSignedActions": 21,
+      "runtimeVersion": "2.2.0",
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "stateHash": "611b43b61bf072bed8295301aff3232a9a541d61b77a58bddc9bba85b61b3e83",
+      "newActions": 0
+    },
+    {
+      "id": "infested_marine-last-use",
+      "roomId": "wave4-disengage-infested_marine-last-use",
+      "originalSignedActions": 23,
+      "runtimeVersion": "2.2.0",
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "stateHash": "4621dac0761f31fc855e8d2cf216e356270368ef5a95cbc741bdc3c7546fda43",
+      "newActions": 0
+    },
+    {
+      "id": "infested_marine-last-decline",
+      "roomId": "wave4-disengage-infested_marine-last-decline",
+      "originalSignedActions": 20,
+      "runtimeVersion": "2.2.0",
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "stateHash": "8ed957965dd70f5c788271696f225ee40e6f2f99fc9bb55cba9236755126768a",
+      "newActions": 0
+    }
+  ],
+  "modelCalls": 0,
+  "trainingTruth": false
+}

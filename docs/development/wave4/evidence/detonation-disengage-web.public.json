@@ -1,0 +1,263 @@
+{
+  "schema": "starcraft_tmg_wave4_virus_web_verification_v1",
+  "status": "passed_scoped",
+  "runRef": "build/wave4-web/stukov-units/detonation-disengage-web-v1",
+  "results": [
+    {
+      "kind": "infested_trooper-leading-use",
+      "definitionId": "unit:infested_trooper/detonation-any-phase@1",
+      "sourceRoomId": "wave4-disengage-infested_trooper-leading-use",
+      "sourceStateHash": "91ab2922fe35f4687eafc21fd682040fe8c8b94e359e8ee365dbac4efe41a884",
+      "sourcePrefixReceipts": 2,
+      "originalRemovalVerified": true,
+      "disengageKind": "leading",
+      "trace": [
+        {
+          "actionType": "disengage",
+          "definitionId": null,
+          "sideKey": "player1",
+          "stateRevision": 1,
+          "stateHash": "f50a3b1e13d06e0c9950ea343bf8839ae3483f37ed4a188732a7d577f5fc3a2d"
+        },
+        {
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:infested_trooper/detonation-any-phase@1",
+          "sideKey": "player1",
+          "stateRevision": 2,
+          "stateHash": "eafbfb2fa6a2c82951b7cf247741edae002b68fa61044888f59228a4c5c467b6"
+        },
+        {
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null,
+          "sideKey": "player2",
+          "stateRevision": 3,
+          "stateHash": "1a5725e3ee6c5ee1de3b9aa0a28ce837fd0b1df9786e410caef7321d8ed28868"
+        },
+        {
+          "actionType": "roll_automatic_hits_armour_pool",
+          "definitionId": null,
+          "sideKey": "player1",
+          "stateRevision": 4,
+          "stateHash": "3a19362deb7e45436061132625308ce949f0ec1137f9ec90b60c90898f72bfcb"
+        },
+        {
+          "actionType": "resolve_automatic_hits_evade_pool",
+          "definitionId": null,
+          "sideKey": "player1",
+          "stateRevision": 5,
+          "stateHash": "dab5982e36337007c37d8da09d424d51231129be408b5f859ebd2ff957296e09"
+        },
+        {
+          "actionType": "roll_automatic_hits_armour_pool",
+          "definitionId": null,
+          "sideKey": "player1",
+          "stateRevision": 6,
+          "stateHash": "29f0b9230fe9ee51504f306988ffef56a059eaaed946c8c22f5887ccb6637cc8"
+        },
+        {
+          "actionType": "resolve_automatic_hits_evade_pool",
+          "definitionId": null,
+          "sideKey": "player1",
+          "stateRevision": 7,
+          "stateHash": "dd53cd559371110e9aa3b5a917ecabe5c362d0cdfec8faf0321b5c87509731cb"
+        },
+        {
+          "actionType": "choose_automatic_hits_casualties",
+          "definitionId": null,
+          "sideKey": "player2",
+          "stateRevision": 8,
+          "stateHash": "11492682b16961aa63e959e1b1f8dd43f553ba665c144c12d6c86827691d702f"
+        },
+        {
+          "actionType": "choose_automatic_hits_casualties",
+          "definitionId": null,
+          "sideKey": "player2",
+          "stateRevision": 9,
+          "stateHash": "59738f785d12f6cb91fcdd23dc89c07a64bcaed7e47a9bedc2e1b675fe58e5c2"
+        }
+      ],
+      "signedActions": 9,
+      "twoSeatsVerified": true,
+      "explicitHumanConfirmation": true,
+      "previewReadOnly": true,
+      "replayMatchesCurrent": true,
+      "seatRecoveryReentryVerified": true,
+      "pageErrors": [],
+      "readableCasualtyChecks": [
+        {
+          "kind": "infested_trooper-leading-use",
+          "revision": 7,
+          "selectionHash": "b33fb277d83d0611c5cb64e546adda3bebf53bd9033d6f23641ced7a21a9db11",
+          "label": "方案 1 · 移除顺序：Zealot 1 → Zealot 2 · 剩余 1 模型",
+          "viewportWidth": 390,
+          "clientWidth": 298,
+          "scrollWidth": 298
+        },
+        {
+          "kind": "infested_trooper-leading-use",
+          "revision": 8,
+          "selectionHash": "72c3ea2ae711af30708780ea7005450432bc3d32349ff564a7cda575c620c0ad",
+          "label": "方案 1 · 移除顺序：Zealot 1 → Zealot 3 · 剩余 1 模型",
+          "viewportWidth": 390,
+          "clientWidth": 298,
+          "scrollWidth": 298
+        }
+      ]
+    },
+    {
+      "kind": "infested_marine-other-use",
+      "definitionId": "unit:infested_marine/detonation-any-phase@1",
+      "sourceRoomId": "wave4-disengage-infested_marine-other-use",
+      "sourceStateHash": "7a6859308fbbf114c5e6198b45b52716eec80542deb9c50064fe9c07eafa41e6",
+      "sourcePrefixReceipts": 2,
+      "originalRemovalVerified": true,
+      "disengageKind": "other",
+      "trace": [
+        {
+          "actionType": "disengage",
+          "definitionId": null,
+          "sideKey": "player1",
+          "stateRevision": 1,
+          "stateHash": "64bec5ecbac07c3c1e4b0d9dd12ec2c64d5fdc465098466941a54a6245a882e9"
+        },
+        {
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:infested_marine/detonation-any-phase@1",
+          "sideKey": "player1",
+          "stateRevision": 2,
+          "stateHash": "27022b7397f9233b5a4370e7b3621f3bf5094d84fb7354f3974c5ef1f91ed849"
+        },
+        {
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null,
+          "sideKey": "player2",
+          "stateRevision": 3,
+          "stateHash": "b9e771fdaee880fa523b67a11d3ea3cc6e5622ba455ccf192a20ed2da7220d26"
+        },
+        {
+          "actionType": "roll_automatic_hits_armour_pool",
+          "definitionId": null,
+          "sideKey": "player1",
+          "stateRevision": 4,
+          "stateHash": "b154e765aacefad6110b850da9a766303a5e3fee132b69d11c2fad24e8a36cf8"
+        },
+        {
+          "actionType": "resolve_automatic_hits_evade_pool",
+          "definitionId": null,
+          "sideKey": "player1",
+          "stateRevision": 5,
+          "stateHash": "62c7b2560879c8ebf630d3b0769f41c388fcdebd4cc92ff1a71e0e344a33c01b"
+        },
+        {
+          "actionType": "roll_automatic_hits_armour_pool",
+          "definitionId": null,
+          "sideKey": "player1",
+          "stateRevision": 6,
+          "stateHash": "a5c584424bb837deeff04383dd40a09674c1b186348eaacaaeb665c2b4ff688e"
+        },
+        {
+          "actionType": "resolve_automatic_hits_evade_pool",
+          "definitionId": null,
+          "sideKey": "player1",
+          "stateRevision": 7,
+          "stateHash": "3e0fce2cd2447039a319d1051597dc5fe44a7df5037275e070910ee731a3eb8f"
+        },
+        {
+          "actionType": "choose_automatic_hits_casualties",
+          "definitionId": null,
+          "sideKey": "player2",
+          "stateRevision": 8,
+          "stateHash": "c85b04f083cb8229ebf8635d3897aaf88688159b09e57eb03fd03197758faaa9"
+        },
+        {
+          "actionType": "choose_automatic_hits_casualties",
+          "definitionId": null,
+          "sideKey": "player2",
+          "stateRevision": 9,
+          "stateHash": "efc14e92a9843588ac101f180ff43f5f637bc7416d14a2ca8246efe34b331a2e"
+        },
+        {
+          "actionType": "finish_activation",
+          "definitionId": null,
+          "sideKey": "player1",
+          "stateRevision": 10,
+          "stateHash": "8f5b70785dd96c6e0e77196909a5f1914d6df3e94cc405e376bad57019c03631"
+        }
+      ],
+      "signedActions": 10,
+      "twoSeatsVerified": true,
+      "explicitHumanConfirmation": true,
+      "previewReadOnly": true,
+      "replayMatchesCurrent": true,
+      "seatRecoveryReentryVerified": true,
+      "pageErrors": [],
+      "readableCasualtyChecks": [
+        {
+          "kind": "infested_marine-other-use",
+          "revision": 7,
+          "selectionHash": "10e704e02404525cd47c53d0cf76ec0fbbfaa2e90b20590109d60ff92943c11f",
+          "label": "方案 1 · 移除顺序：Zealot 1 → Zealot 2 · 剩余 1 模型",
+          "viewportWidth": 1500,
+          "clientWidth": 334,
+          "scrollWidth": 334
+        },
+        {
+          "kind": "infested_marine-other-use",
+          "revision": 8,
+          "selectionHash": "4f47d0f6d459b6323ff88d5c8d8e6f46fc6ac61287b030f1012d3d851b86c4ea",
+          "label": "方案 1 · 移除顺序：Zealot 1 → Zealot 2 · 剩余 1 模型",
+          "viewportWidth": 1500,
+          "clientWidth": 334,
+          "scrollWidth": 334
+        }
+      ]
+    }
+  ],
+  "readableCasualtyChecks": [
+    {
+      "kind": "infested_trooper-leading-use",
+      "revision": 7,
+      "selectionHash": "b33fb277d83d0611c5cb64e546adda3bebf53bd9033d6f23641ced7a21a9db11",
+      "label": "方案 1 · 移除顺序：Zealot 1 → Zealot 2 · 剩余 1 模型",
+      "viewportWidth": 390,
+      "clientWidth": 298,
+      "scrollWidth": 298
+    },
+    {
+      "kind": "infested_trooper-leading-use",
+      "revision": 8,
+      "selectionHash": "72c3ea2ae711af30708780ea7005450432bc3d32349ff564a7cda575c620c0ad",
+      "label": "方案 1 · 移除顺序：Zealot 1 → Zealot 3 · 剩余 1 模型",
+      "viewportWidth": 390,
+      "clientWidth": 298,
+      "scrollWidth": 298
+    },
+    {
+      "kind": "infested_marine-other-use",
+      "revision": 7,
+      "selectionHash": "10e704e02404525cd47c53d0cf76ec0fbbfaa2e90b20590109d60ff92943c11f",
+      "label": "方案 1 · 移除顺序：Zealot 1 → Zealot 2 · 剩余 1 模型",
+      "viewportWidth": 1500,
+      "clientWidth": 334,
+      "scrollWidth": 334
+    },
+    {
+      "kind": "infested_marine-other-use",
+      "revision": 8,
+      "selectionHash": "4f47d0f6d459b6323ff88d5c8d8e6f46fc6ac61287b030f1012d3d851b86c4ea",
+      "label": "方案 1 · 移除顺序：Zealot 1 → Zealot 2 · 剩余 1 模型",
+      "viewportWidth": 1500,
+      "clientWidth": 334,
+      "scrollWidth": 334
+    }
+  ],
+  "signedActions": 19,
+  "conditionalTurretGeometryInRestorationCaseOnly": false,
+  "sourceHeldDefinitions": 39,
+  "engineeringEstimatedUnitGeometry": true,
+  "fullWave4LobbyBuilderAdmission": false,
+  "fullMatchAdmission": false,
+  "wave3PlayerRoomsTouched": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

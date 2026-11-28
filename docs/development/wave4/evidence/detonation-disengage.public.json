@@ -1,0 +1,3550 @@
+{
+  "schema": "starcraft_tmg_wave4_detonation_disengage_v1",
+  "status": "passed_scoped",
+  "runRef": "build/wave4-web/stukov-units/detonation-disengage-r335RR",
+  "results": [
+    {
+      "id": "infested_trooper-leading-use",
+      "unitKey": "infested_trooper",
+      "kind": "leading",
+      "use": true,
+      "roomId": "wave4-disengage-infested_trooper-leading-use",
+      "directoryRef": "build/wave4-web/stukov-units/detonation-disengage-r335RR/infested_trooper-leading-use",
+      "signedActions": 38,
+      "stateHash": "de6de90fc3c1637af1b21b63169d0d55d5db0a1e87075e6e92695586f5421f08",
+      "trace": [
+        {
+          "revision": 1,
+          "actionType": "resolve_mission_start_of_round",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 2,
+          "actionType": "choose_first_actor",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 3,
+          "actionType": "disengage",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 4,
+          "actionType": "resolve_reaction_family_ability",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 5,
+          "actionType": "pass_reaction_family_window",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 6,
+          "actionType": "roll_automatic_hits_armour_pool",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 7,
+          "actionType": "resolve_automatic_hits_evade_pool",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 8,
+          "actionType": "roll_automatic_hits_armour_pool",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 9,
+          "actionType": "resolve_automatic_hits_evade_pool",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 10,
+          "actionType": "choose_automatic_hits_casualties",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 11,
+          "actionType": "choose_automatic_hits_casualties",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 12,
+          "actionType": "pass",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 13,
+          "actionType": "pass",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 14,
+          "actionType": "choose_first_actor",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 15,
+          "actionType": "pass",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 16,
+          "actionType": "pass",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 17,
+          "actionType": "choose_first_actor",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 18,
+          "actionType": "roll_melee_attack_hit_pool",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 19,
+          "actionType": "roll_melee_attack_armour_pool",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 20,
+          "actionType": "resolve_melee_attack_evade_pool",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 21,
+          "actionType": "finish_activation",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 22,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "fight",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 23,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "roll_melee_attack_armour_pool",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 24,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "resolve_melee_attack_evade_pool",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 25,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "finish_activation",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 26,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 27,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "fight",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 28,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "roll_melee_attack_armour_pool",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 29,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "resolve_melee_attack_evade_pool",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 30,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "finish_activation",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 31,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 32,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "determine_current_product_mission_marker_control",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 33,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "score_mission",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 34,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "check_mission_end_game",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 35,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_end_of_round_effects",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 36,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_cleanup_refresh",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 37,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_next_round_initiative",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 38,
+          "round": 2,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "definitionId": null,
+          "stackDepth": 0
+        }
+      ],
+      "frames": [
+        {
+          "hostKind": "direct_removal",
+          "rows": [
+            {
+              "targetPieceId": "actor",
+              "attackResolutionHash": "efd3dbe6605f48758b4c5dedaab0a58a3dc7686aee266bbc4c97002222da055b",
+              "casualty": {
+                "casualtyModelIds": [
+                  "actor-model-1"
+                ],
+                "remainingModelIds": [
+                  "actor-model-2",
+                  "actor-model-3"
+                ],
+                "targetDestroyed": false,
+                "postDamageMarker": 0,
+                "shieldedBefore": false,
+                "shieldedAfter": false,
+                "resolutionHash": "b4597fbac1e922ccc64786c4a8ed1c2936a65a1ac4a894bab969bac246dde24d"
+              },
+              "reservationHash": "d36e419f417d5d201a09b925ad77350156dea4dafeb430b2b58c27a86afc760c"
+            }
+          ],
+          "activationContext": {
+            "activeSideKey": "player1",
+            "activationId": "1:movement:player1:actor"
+          }
+        }
+      ],
+      "originalPlanHash": "efd3dbe6605f48758b4c5dedaab0a58a3dc7686aee266bbc4c97002222da055b",
+      "endpointProofs": [
+        {
+          "schema": "starcraft_tmg_disengage_endpoint_absence_v1",
+          "kind": "leading_failure",
+          "coordinateUnit": "milli-inch",
+          "stateHash": "91ab2922fe35f4687eafc21fd682040fe8c8b94e359e8ee365dbac4efe41a884",
+          "domainId": "2efd26443042e18d3037f91f5110b6806a648bfe564406a37725bbad3dbe703b",
+          "modelId": "actor-model-1",
+          "center": {
+            "xMilliInches": 640,
+            "yMilliInches": 640,
+            "elevation": "ground_level",
+            "supportTerrainIds": [],
+            "rotationDegrees": 0
+          },
+          "regionRadiusMilliInches": 3064,
+          "movingFootprintHash": "e713fdf95bb28f3f81d1371d18e4a3fc92809bfdee6d81dd7b30463f2595ffba",
+          "blockerHash": "b05efa2ea9eea296483cbb89f6e7292240a1823151a26c38277e10cefcaa4dea",
+          "columnsVisited": 3077,
+          "endpointSupersetEmpty": true,
+          "firstUnexcludedEndpoint": null,
+          "terrainAndPathRestrictionsIgnored": true,
+          "roundingBoundaryBroadened": true,
+          "trainingTruth": false,
+          "proofHash": "c3b2e49bfcc09140b6ef3028635ea1859876d18f334c59df0d20c8e3c1016e79"
+        }
+      ],
+      "declaredInitialPriorAttrition": false,
+      "originalRemovalOrderPreserved": true,
+      "fullNativeRound": true,
+      "supplyExactlyOnce": true,
+      "idempotencyVerified": true,
+      "coldReplay": true
+    },
+    {
+      "id": "infested_trooper-leading-decline",
+      "unitKey": "infested_trooper",
+      "kind": "leading",
+      "use": false,
+      "roomId": "wave4-disengage-infested_trooper-leading-decline",
+      "directoryRef": "build/wave4-web/stukov-units/detonation-disengage-r335RR/infested_trooper-leading-decline",
+      "signedActions": 36,
+      "stateHash": "98c08f738ffe8ccb4fe5eb2d373aa1772b8f3068fdc7734028dfb66b61ef4ef1",
+      "trace": [
+        {
+          "revision": 1,
+          "actionType": "resolve_mission_start_of_round",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 2,
+          "actionType": "choose_first_actor",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 3,
+          "actionType": "disengage",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 4,
+          "actionType": "pass_reaction_family_window",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 5,
+          "actionType": "pass_reaction_family_window",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 6,
+          "actionType": "pass",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 7,
+          "actionType": "pass",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 8,
+          "actionType": "choose_first_actor",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 9,
+          "actionType": "pass",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 10,
+          "actionType": "pass",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 11,
+          "actionType": "choose_first_actor",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 12,
+          "actionType": "roll_melee_attack_hit_pool",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 13,
+          "actionType": "roll_melee_attack_armour_pool",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 14,
+          "actionType": "resolve_melee_attack_evade_pool",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 15,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "fight",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 16,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "finish_activation",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 17,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "fight",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 18,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "roll_melee_attack_armour_pool",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 19,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "resolve_melee_attack_evade_pool",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 20,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "finish_activation",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 21,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 22,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "fight",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 23,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "roll_melee_attack_armour_pool",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 24,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "resolve_melee_attack_evade_pool",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 25,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "fight",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 26,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null,
+          "stackDepth": 1
+        },
+        {
+          "revision": 27,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null,
+          "stackDepth": 1
+        },
+        {
+          "revision": 28,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "finish_activation",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 29,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 30,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "determine_current_product_mission_marker_control",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 31,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "score_mission",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 32,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "check_mission_end_game",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 33,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_end_of_round_effects",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 34,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_cleanup_refresh",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 35,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_next_round_initiative",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 36,
+          "round": 2,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "definitionId": null,
+          "stackDepth": 0
+        }
+      ],
+      "frames": [
+        {
+          "hostKind": "direct_removal",
+          "rows": [
+            {
+              "targetPieceId": "actor",
+              "attackResolutionHash": "efd3dbe6605f48758b4c5dedaab0a58a3dc7686aee266bbc4c97002222da055b",
+              "casualty": {
+                "casualtyModelIds": [
+                  "actor-model-1"
+                ],
+                "remainingModelIds": [
+                  "actor-model-2",
+                  "actor-model-3"
+                ],
+                "targetDestroyed": false,
+                "postDamageMarker": 0,
+                "shieldedBefore": false,
+                "shieldedAfter": false,
+                "resolutionHash": "b4597fbac1e922ccc64786c4a8ed1c2936a65a1ac4a894bab969bac246dde24d"
+              },
+              "reservationHash": "d36e419f417d5d201a09b925ad77350156dea4dafeb430b2b58c27a86afc760c"
+            }
+          ],
+          "activationContext": {
+            "activeSideKey": "player1",
+            "activationId": "1:movement:player1:actor"
+          }
+        }
+      ],
+      "originalPlanHash": "efd3dbe6605f48758b4c5dedaab0a58a3dc7686aee266bbc4c97002222da055b",
+      "endpointProofs": [
+        {
+          "schema": "starcraft_tmg_disengage_endpoint_absence_v1",
+          "kind": "leading_failure",
+          "coordinateUnit": "milli-inch",
+          "stateHash": "91ab2922fe35f4687eafc21fd682040fe8c8b94e359e8ee365dbac4efe41a884",
+          "domainId": "2efd26443042e18d3037f91f5110b6806a648bfe564406a37725bbad3dbe703b",
+          "modelId": "actor-model-1",
+          "center": {
+            "xMilliInches": 640,
+            "yMilliInches": 640,
+            "elevation": "ground_level",
+            "supportTerrainIds": [],
+            "rotationDegrees": 0
+          },
+          "regionRadiusMilliInches": 3064,
+          "movingFootprintHash": "e713fdf95bb28f3f81d1371d18e4a3fc92809bfdee6d81dd7b30463f2595ffba",
+          "blockerHash": "b05efa2ea9eea296483cbb89f6e7292240a1823151a26c38277e10cefcaa4dea",
+          "columnsVisited": 3077,
+          "endpointSupersetEmpty": true,
+          "firstUnexcludedEndpoint": null,
+          "terrainAndPathRestrictionsIgnored": true,
+          "roundingBoundaryBroadened": true,
+          "trainingTruth": false,
+          "proofHash": "c3b2e49bfcc09140b6ef3028635ea1859876d18f334c59df0d20c8e3c1016e79"
+        }
+      ],
+      "declaredInitialPriorAttrition": false,
+      "originalRemovalOrderPreserved": true,
+      "fullNativeRound": true,
+      "supplyExactlyOnce": true,
+      "idempotencyVerified": true,
+      "coldReplay": true
+    },
+    {
+      "id": "infested_trooper-other-use",
+      "unitKey": "infested_trooper",
+      "kind": "other",
+      "use": true,
+      "roomId": "wave4-disengage-infested_trooper-other-use",
+      "directoryRef": "build/wave4-web/stukov-units/detonation-disengage-r335RR/infested_trooper-other-use",
+      "signedActions": 27,
+      "stateHash": "d4d5121ae6e2b9bb216c49620e4ab71e19625ef52817af9bf5c7c9b525105a60",
+      "trace": [
+        {
+          "revision": 1,
+          "actionType": "resolve_mission_start_of_round",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 2,
+          "actionType": "choose_first_actor",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 3,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "disengage",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 4,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:infested_trooper/detonation-any-phase@1",
+          "stackDepth": 1
+        },
+        {
+          "revision": 5,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null,
+          "stackDepth": 1
+        },
+        {
+          "revision": 6,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "roll_automatic_hits_armour_pool",
+          "definitionId": null,
+          "stackDepth": 1
+        },
+        {
+          "revision": 7,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "resolve_automatic_hits_evade_pool",
+          "definitionId": null,
+          "stackDepth": 1
+        },
+        {
+          "revision": 8,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "roll_automatic_hits_armour_pool",
+          "definitionId": null,
+          "stackDepth": 1
+        },
+        {
+          "revision": 9,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "resolve_automatic_hits_evade_pool",
+          "definitionId": null,
+          "stackDepth": 1
+        },
+        {
+          "revision": 10,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "choose_automatic_hits_casualties",
+          "definitionId": null,
+          "stackDepth": 1
+        },
+        {
+          "revision": 11,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "choose_automatic_hits_casualties",
+          "definitionId": null,
+          "stackDepth": 1
+        },
+        {
+          "revision": 12,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "finish_activation",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 13,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 14,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 15,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "choose_first_actor",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 16,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 17,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 18,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "choose_first_actor",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 19,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 20,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 21,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "determine_current_product_mission_marker_control",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 22,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "score_mission",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 23,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "check_mission_end_game",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 24,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_end_of_round_effects",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 25,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_cleanup_refresh",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 26,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_next_round_initiative",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 27,
+          "round": 2,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "definitionId": null,
+          "stackDepth": 0
+        }
+      ],
+      "frames": [
+        {
+          "hostKind": "direct_removal",
+          "rows": [
+            {
+              "targetPieceId": "actor",
+              "attackResolutionHash": "f62047e1825c547b059b633a3cf5d04b74df8465a8cf0a5e22c925672b39e4e8",
+              "casualty": {
+                "casualtyModelIds": [
+                  "actor-model-2",
+                  "actor-model-3"
+                ],
+                "remainingModelIds": [
+                  "actor-model-1"
+                ],
+                "targetDestroyed": false,
+                "postDamageMarker": 0,
+                "shieldedBefore": false,
+                "shieldedAfter": false,
+                "resolutionHash": "4f845e3e5c6e8af03fcc9e7c7262ac71e222beec08c043a04cdbd14f3d1782e0"
+              },
+              "reservationHash": "479f0655fb9b1c94ee96b66cd0f68505832e010c02e689326af8193c83ff42d0"
+            }
+          ],
+          "activationContext": {
+            "activeSideKey": "player1",
+            "activationId": "1:movement:player1:actor"
+          }
+        }
+      ],
+      "originalPlanHash": "f62047e1825c547b059b633a3cf5d04b74df8465a8cf0a5e22c925672b39e4e8",
+      "endpointProofs": [
+        {
+          "schema": "starcraft_tmg_disengage_endpoint_absence_v1",
+          "kind": "other_model_failure",
+          "coordinateUnit": "milli-inch",
+          "stateHash": "09c690699f8de93f5f66e96acb25b3f44b61c36830b5a2ff70dc8a701f7b8dc9",
+          "domainId": "8aa4097a6d30eb9c63a78f03812db142fe8150444ff10a1d99f492c489044ff6",
+          "modelId": "actor-model-2",
+          "center": {
+            "xMilliInches": 7010,
+            "yMilliInches": 7000
+          },
+          "regionRadiusMilliInches": 3893,
+          "movingFootprintHash": "02737c2cecbadd946632bfbdc62906aa5bd7561b4b27e2cf3b4a3d14e0580dc9",
+          "blockerHash": "b1afd43750cf01d05aa299f27a87c4629b06261cd6e36b6b06c76819124658a6",
+          "columnsVisited": 7787,
+          "endpointSupersetEmpty": true,
+          "firstUnexcludedEndpoint": null,
+          "terrainAndPathRestrictionsIgnored": true,
+          "roundingBoundaryBroadened": true,
+          "trainingTruth": false,
+          "proofHash": "5eafc9641a785b4bc3b3ce3d89c801e3df8d725a13b9c1fb30e1f61cb10ec137"
+        },
+        {
+          "schema": "starcraft_tmg_disengage_endpoint_absence_v1",
+          "kind": "other_model_failure",
+          "coordinateUnit": "milli-inch",
+          "stateHash": "09c690699f8de93f5f66e96acb25b3f44b61c36830b5a2ff70dc8a701f7b8dc9",
+          "domainId": "8aa4097a6d30eb9c63a78f03812db142fe8150444ff10a1d99f492c489044ff6",
+          "modelId": "actor-model-3",
+          "center": {
+            "xMilliInches": 7010,
+            "yMilliInches": 7000
+          },
+          "regionRadiusMilliInches": 3893,
+          "movingFootprintHash": "1b0ab918790354f7f87c23ae115e176879ca375747f35e5bba1b02056a93f76f",
+          "blockerHash": "b1afd43750cf01d05aa299f27a87c4629b06261cd6e36b6b06c76819124658a6",
+          "columnsVisited": 7787,
+          "endpointSupersetEmpty": true,
+          "firstUnexcludedEndpoint": null,
+          "terrainAndPathRestrictionsIgnored": true,
+          "roundingBoundaryBroadened": true,
+          "trainingTruth": false,
+          "proofHash": "fb0e0a795c14194b5538bc5c3c5a131d162d6515b2df995be9ffdbe875cdedea"
+        }
+      ],
+      "declaredInitialPriorAttrition": false,
+      "originalRemovalOrderPreserved": true,
+      "fullNativeRound": true,
+      "supplyExactlyOnce": true,
+      "idempotencyVerified": true,
+      "coldReplay": true
+    },
+    {
+      "id": "infested_trooper-other-decline",
+      "unitKey": "infested_trooper",
+      "kind": "other",
+      "use": false,
+      "roomId": "wave4-disengage-infested_trooper-other-decline",
+      "directoryRef": "build/wave4-web/stukov-units/detonation-disengage-r335RR/infested_trooper-other-decline",
+      "signedActions": 21,
+      "stateHash": "7c2c9aebdf9527b2a37b88183d6b3a10ec2454f61703e035aa58303c86236acf",
+      "trace": [
+        {
+          "revision": 1,
+          "round": 1,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 2,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "choose_first_actor",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 3,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "disengage",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 4,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null,
+          "stackDepth": 1
+        },
+        {
+          "revision": 5,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null,
+          "stackDepth": 1
+        },
+        {
+          "revision": 6,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "finish_activation",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 7,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 8,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 9,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "choose_first_actor",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 10,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 11,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 12,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "choose_first_actor",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 13,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 14,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 15,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "determine_current_product_mission_marker_control",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 16,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "score_mission",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 17,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "check_mission_end_game",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 18,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_end_of_round_effects",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 19,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_cleanup_refresh",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 20,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_next_round_initiative",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 21,
+          "round": 2,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "definitionId": null,
+          "stackDepth": 0
+        }
+      ],
+      "frames": [
+        {
+          "hostKind": "direct_removal",
+          "rows": [
+            {
+              "targetPieceId": "actor",
+              "attackResolutionHash": "f62047e1825c547b059b633a3cf5d04b74df8465a8cf0a5e22c925672b39e4e8",
+              "casualty": {
+                "casualtyModelIds": [
+                  "actor-model-2",
+                  "actor-model-3"
+                ],
+                "remainingModelIds": [
+                  "actor-model-1"
+                ],
+                "targetDestroyed": false,
+                "postDamageMarker": 0,
+                "shieldedBefore": false,
+                "shieldedAfter": false,
+                "resolutionHash": "4f845e3e5c6e8af03fcc9e7c7262ac71e222beec08c043a04cdbd14f3d1782e0"
+              },
+              "reservationHash": "479f0655fb9b1c94ee96b66cd0f68505832e010c02e689326af8193c83ff42d0"
+            }
+          ],
+          "activationContext": {
+            "activeSideKey": "player1",
+            "activationId": "1:movement:player1:actor"
+          }
+        }
+      ],
+      "originalPlanHash": "f62047e1825c547b059b633a3cf5d04b74df8465a8cf0a5e22c925672b39e4e8",
+      "endpointProofs": [
+        {
+          "schema": "starcraft_tmg_disengage_endpoint_absence_v1",
+          "kind": "other_model_failure",
+          "coordinateUnit": "milli-inch",
+          "stateHash": "09c690699f8de93f5f66e96acb25b3f44b61c36830b5a2ff70dc8a701f7b8dc9",
+          "domainId": "8aa4097a6d30eb9c63a78f03812db142fe8150444ff10a1d99f492c489044ff6",
+          "modelId": "actor-model-2",
+          "center": {
+            "xMilliInches": 7010,
+            "yMilliInches": 7000
+          },
+          "regionRadiusMilliInches": 3893,
+          "movingFootprintHash": "02737c2cecbadd946632bfbdc62906aa5bd7561b4b27e2cf3b4a3d14e0580dc9",
+          "blockerHash": "b1afd43750cf01d05aa299f27a87c4629b06261cd6e36b6b06c76819124658a6",
+          "columnsVisited": 7787,
+          "endpointSupersetEmpty": true,
+          "firstUnexcludedEndpoint": null,
+          "terrainAndPathRestrictionsIgnored": true,
+          "roundingBoundaryBroadened": true,
+          "trainingTruth": false,
+          "proofHash": "5eafc9641a785b4bc3b3ce3d89c801e3df8d725a13b9c1fb30e1f61cb10ec137"
+        },
+        {
+          "schema": "starcraft_tmg_disengage_endpoint_absence_v1",
+          "kind": "other_model_failure",
+          "coordinateUnit": "milli-inch",
+          "stateHash": "09c690699f8de93f5f66e96acb25b3f44b61c36830b5a2ff70dc8a701f7b8dc9",
+          "domainId": "8aa4097a6d30eb9c63a78f03812db142fe8150444ff10a1d99f492c489044ff6",
+          "modelId": "actor-model-3",
+          "center": {
+            "xMilliInches": 7010,
+            "yMilliInches": 7000
+          },
+          "regionRadiusMilliInches": 3893,
+          "movingFootprintHash": "1b0ab918790354f7f87c23ae115e176879ca375747f35e5bba1b02056a93f76f",
+          "blockerHash": "b1afd43750cf01d05aa299f27a87c4629b06261cd6e36b6b06c76819124658a6",
+          "columnsVisited": 7787,
+          "endpointSupersetEmpty": true,
+          "firstUnexcludedEndpoint": null,
+          "terrainAndPathRestrictionsIgnored": true,
+          "roundingBoundaryBroadened": true,
+          "trainingTruth": false,
+          "proofHash": "fb0e0a795c14194b5538bc5c3c5a131d162d6515b2df995be9ffdbe875cdedea"
+        }
+      ],
+      "declaredInitialPriorAttrition": false,
+      "originalRemovalOrderPreserved": true,
+      "fullNativeRound": true,
+      "supplyExactlyOnce": true,
+      "idempotencyVerified": true,
+      "coldReplay": true
+    },
+    {
+      "id": "infested_trooper-last-use",
+      "unitKey": "infested_trooper",
+      "kind": "last",
+      "use": true,
+      "roomId": "wave4-disengage-infested_trooper-last-use",
+      "directoryRef": "build/wave4-web/stukov-units/detonation-disengage-r335RR/infested_trooper-last-use",
+      "signedActions": 23,
+      "stateHash": "a4f24892c518c8ec1e87990e2adf188e42c737118fe40be87c901f5378feacb2",
+      "trace": [
+        {
+          "revision": 1,
+          "round": 1,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 2,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "choose_first_actor",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 3,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "disengage",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 4,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:infested_trooper/detonation-any-phase@1",
+          "stackDepth": 1
+        },
+        {
+          "revision": 5,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null,
+          "stackDepth": 1
+        },
+        {
+          "revision": 6,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "roll_automatic_hits_armour_pool",
+          "definitionId": null,
+          "stackDepth": 1
+        },
+        {
+          "revision": 7,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "resolve_automatic_hits_evade_pool",
+          "definitionId": null,
+          "stackDepth": 1
+        },
+        {
+          "revision": 8,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "choose_automatic_hits_casualties",
+          "definitionId": null,
+          "stackDepth": 1
+        },
+        {
+          "revision": 9,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 10,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 11,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "choose_first_actor",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 12,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 13,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 14,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "choose_first_actor",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 15,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 16,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 17,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "determine_current_product_mission_marker_control",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 18,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "score_mission",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 19,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "check_mission_end_game",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 20,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_end_of_round_effects",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 21,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_cleanup_refresh",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 22,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_next_round_initiative",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 23,
+          "round": 2,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "definitionId": null,
+          "stackDepth": 0
+        }
+      ],
+      "frames": [
+        {
+          "hostKind": "direct_removal",
+          "rows": [
+            {
+              "targetPieceId": "actor",
+              "attackResolutionHash": "adf2f21be1dc18205f01256d46d0d584b430c3c12649bd54a4d3a6b1241573fc",
+              "casualty": {
+                "casualtyModelIds": [
+                  "actor-model-1"
+                ],
+                "remainingModelIds": [],
+                "targetDestroyed": true,
+                "postDamageMarker": 0,
+                "shieldedBefore": false,
+                "shieldedAfter": false,
+                "resolutionHash": "3e8fa23a5e770cbd6caae4dfc735afd8c63c092c5740593bbf277937433acaf6"
+              },
+              "reservationHash": "fd1c592a90132dd931e710e061219e24d31b83f0e343ff05eddbe97a87f1f46e"
+            }
+          ],
+          "activationContext": {
+            "activeSideKey": "player1",
+            "activationId": "1:movement:player1:actor"
+          }
+        }
+      ],
+      "originalPlanHash": "adf2f21be1dc18205f01256d46d0d584b430c3c12649bd54a4d3a6b1241573fc",
+      "endpointProofs": [
+        {
+          "schema": "starcraft_tmg_disengage_endpoint_absence_v1",
+          "kind": "leading_failure",
+          "coordinateUnit": "milli-inch",
+          "stateHash": "eb35eb769bb162404e11c5a9e7e0012382ccab28c42890422b2e3343932238f3",
+          "domainId": "8736d7d606bfeea498a2550042dce7c741131437b97c27334d3baa3342ae96b5",
+          "modelId": "actor-model-1",
+          "center": {
+            "xMilliInches": 640,
+            "yMilliInches": 640,
+            "elevation": "ground_level",
+            "supportTerrainIds": [],
+            "rotationDegrees": 0
+          },
+          "regionRadiusMilliInches": 6064,
+          "movingFootprintHash": "e713fdf95bb28f3f81d1371d18e4a3fc92809bfdee6d81dd7b30463f2595ffba",
+          "blockerHash": "f83ce739cd7c634063af795be90924c588e414f3bd8826df88ed3a8ab78b197c",
+          "columnsVisited": 6077,
+          "endpointSupersetEmpty": true,
+          "firstUnexcludedEndpoint": null,
+          "terrainAndPathRestrictionsIgnored": true,
+          "roundingBoundaryBroadened": true,
+          "trainingTruth": false,
+          "proofHash": "580e344183dee0d53934753cde3ec3bb3a2b2bac4959c947534059667b742ffb"
+        }
+      ],
+      "declaredInitialPriorAttrition": true,
+      "originalRemovalOrderPreserved": true,
+      "fullNativeRound": true,
+      "supplyExactlyOnce": true,
+      "idempotencyVerified": true,
+      "coldReplay": true
+    },
+    {
+      "id": "infested_trooper-last-decline",
+      "unitKey": "infested_trooper",
+      "kind": "last",
+      "use": false,
+      "roomId": "wave4-disengage-infested_trooper-last-decline",
+      "directoryRef": "build/wave4-web/stukov-units/detonation-disengage-r335RR/infested_trooper-last-decline",
+      "signedActions": 21,
+      "stateHash": "611b43b61bf072bed8295301aff3232a9a541d61b77a58bddc9bba85b61b3e83",
+      "trace": [
+        {
+          "revision": 1,
+          "round": 1,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 2,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "choose_first_actor",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 3,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "disengage",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 4,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null,
+          "stackDepth": 1
+        },
+        {
+          "revision": 5,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null,
+          "stackDepth": 1
+        },
+        {
+          "revision": 6,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 7,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 8,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "choose_first_actor",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 9,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 10,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 11,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "choose_first_actor",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 12,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 13,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 14,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "determine_current_product_mission_marker_control",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 15,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "score_mission",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 16,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "check_mission_end_game",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 17,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_end_of_round_effects",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 18,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_cleanup_refresh",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 19,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_next_round_initiative",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 20,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_next_round_initiative",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 21,
+          "round": 2,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "definitionId": null,
+          "stackDepth": 0
+        }
+      ],
+      "frames": [
+        {
+          "hostKind": "direct_removal",
+          "rows": [
+            {
+              "targetPieceId": "actor",
+              "attackResolutionHash": "adf2f21be1dc18205f01256d46d0d584b430c3c12649bd54a4d3a6b1241573fc",
+              "casualty": {
+                "casualtyModelIds": [
+                  "actor-model-1"
+                ],
+                "remainingModelIds": [],
+                "targetDestroyed": true,
+                "postDamageMarker": 0,
+                "shieldedBefore": false,
+                "shieldedAfter": false,
+                "resolutionHash": "3e8fa23a5e770cbd6caae4dfc735afd8c63c092c5740593bbf277937433acaf6"
+              },
+              "reservationHash": "fd1c592a90132dd931e710e061219e24d31b83f0e343ff05eddbe97a87f1f46e"
+            }
+          ],
+          "activationContext": {
+            "activeSideKey": "player1",
+            "activationId": "1:movement:player1:actor"
+          }
+        }
+      ],
+      "originalPlanHash": "adf2f21be1dc18205f01256d46d0d584b430c3c12649bd54a4d3a6b1241573fc",
+      "endpointProofs": [
+        {
+          "schema": "starcraft_tmg_disengage_endpoint_absence_v1",
+          "kind": "leading_failure",
+          "coordinateUnit": "milli-inch",
+          "stateHash": "eb35eb769bb162404e11c5a9e7e0012382ccab28c42890422b2e3343932238f3",
+          "domainId": "8736d7d606bfeea498a2550042dce7c741131437b97c27334d3baa3342ae96b5",
+          "modelId": "actor-model-1",
+          "center": {
+            "xMilliInches": 640,
+            "yMilliInches": 640,
+            "elevation": "ground_level",
+            "supportTerrainIds": [],
+            "rotationDegrees": 0
+          },
+          "regionRadiusMilliInches": 6064,
+          "movingFootprintHash": "e713fdf95bb28f3f81d1371d18e4a3fc92809bfdee6d81dd7b30463f2595ffba",
+          "blockerHash": "f83ce739cd7c634063af795be90924c588e414f3bd8826df88ed3a8ab78b197c",
+          "columnsVisited": 6077,
+          "endpointSupersetEmpty": true,
+          "firstUnexcludedEndpoint": null,
+          "terrainAndPathRestrictionsIgnored": true,
+          "roundingBoundaryBroadened": true,
+          "trainingTruth": false,
+          "proofHash": "580e344183dee0d53934753cde3ec3bb3a2b2bac4959c947534059667b742ffb"
+        }
+      ],
+      "declaredInitialPriorAttrition": true,
+      "originalRemovalOrderPreserved": true,
+      "fullNativeRound": true,
+      "supplyExactlyOnce": true,
+      "idempotencyVerified": true,
+      "coldReplay": true
+    },
+    {
+      "id": "infested_marine-leading-use",
+      "unitKey": "infested_marine",
+      "kind": "leading",
+      "use": true,
+      "roomId": "wave4-disengage-infested_marine-leading-use",
+      "directoryRef": "build/wave4-web/stukov-units/detonation-disengage-r335RR/infested_marine-leading-use",
+      "signedActions": 39,
+      "stateHash": "89d0218b2826c17e1373f4f914215a4e8cf644729a07f0af65c6234ce12a7270",
+      "trace": [
+        {
+          "revision": 1,
+          "round": 1,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 2,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "choose_first_actor",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 3,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "disengage",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 4,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:infested_marine/detonation-any-phase@1",
+          "stackDepth": 1
+        },
+        {
+          "revision": 5,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null,
+          "stackDepth": 1
+        },
+        {
+          "revision": 6,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "roll_automatic_hits_armour_pool",
+          "definitionId": null,
+          "stackDepth": 1
+        },
+        {
+          "revision": 7,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "resolve_automatic_hits_evade_pool",
+          "definitionId": null,
+          "stackDepth": 1
+        },
+        {
+          "revision": 8,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "roll_automatic_hits_armour_pool",
+          "definitionId": null,
+          "stackDepth": 1
+        },
+        {
+          "revision": 9,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "resolve_automatic_hits_evade_pool",
+          "definitionId": null,
+          "stackDepth": 1
+        },
+        {
+          "revision": 10,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "choose_automatic_hits_casualties",
+          "definitionId": null,
+          "stackDepth": 1
+        },
+        {
+          "revision": 11,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "choose_automatic_hits_casualties",
+          "definitionId": null,
+          "stackDepth": 1
+        },
+        {
+          "revision": 12,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 13,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 14,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "choose_first_actor",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 15,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 16,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 17,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "choose_first_actor",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 18,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "fight",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 19,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "roll_melee_attack_armour_pool",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 20,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "resolve_melee_attack_evade_pool",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 21,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "finish_activation",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 22,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "fight",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 23,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "roll_melee_attack_armour_pool",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 24,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "resolve_melee_attack_evade_pool",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 25,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "fight",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 26,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "finish_activation",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 27,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 28,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "fight",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 29,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "roll_melee_attack_armour_pool",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 30,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "resolve_melee_attack_evade_pool",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 31,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "finish_activation",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 32,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 33,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "determine_current_product_mission_marker_control",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 34,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "score_mission",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 35,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "check_mission_end_game",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 36,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_end_of_round_effects",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 37,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_cleanup_refresh",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 38,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_next_round_initiative",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 39,
+          "round": 2,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "definitionId": null,
+          "stackDepth": 0
+        }
+      ],
+      "frames": [
+        {
+          "hostKind": "direct_removal",
+          "rows": [
+            {
+              "targetPieceId": "actor",
+              "attackResolutionHash": "e8cb7b28af1fe593e62b14b5243610ffd04442d3567e388308bedbadb42c2ba0",
+              "casualty": {
+                "casualtyModelIds": [
+                  "actor-model-1"
+                ],
+                "remainingModelIds": [
+                  "actor-model-2",
+                  "actor-model-3"
+                ],
+                "targetDestroyed": false,
+                "postDamageMarker": 0,
+                "shieldedBefore": false,
+                "shieldedAfter": false,
+                "resolutionHash": "b4597fbac1e922ccc64786c4a8ed1c2936a65a1ac4a894bab969bac246dde24d"
+              },
+              "reservationHash": "9d3c9ac8c2ee4daa1cecfe74c59a6d66d6a84bdb3480aefff3ea7b065c8e96e7"
+            }
+          ],
+          "activationContext": {
+            "activeSideKey": "player1",
+            "activationId": "1:movement:player1:actor"
+          }
+        }
+      ],
+      "originalPlanHash": "e8cb7b28af1fe593e62b14b5243610ffd04442d3567e388308bedbadb42c2ba0",
+      "endpointProofs": [
+        {
+          "schema": "starcraft_tmg_disengage_endpoint_absence_v1",
+          "kind": "leading_failure",
+          "coordinateUnit": "milli-inch",
+          "stateHash": "7acff25c8e8493d9e0e07d576077b022e14db24ce8717eaa81bc8b510d9a891b",
+          "domainId": "94cd784b42af69a3a89f8d320a257516d04a93b63abb0c87d83e1dd4959b41bd",
+          "modelId": "actor-model-1",
+          "center": {
+            "xMilliInches": 640,
+            "yMilliInches": 640,
+            "elevation": "ground_level",
+            "supportTerrainIds": [],
+            "rotationDegrees": 0
+          },
+          "regionRadiusMilliInches": 3064,
+          "movingFootprintHash": "e713fdf95bb28f3f81d1371d18e4a3fc92809bfdee6d81dd7b30463f2595ffba",
+          "blockerHash": "b05efa2ea9eea296483cbb89f6e7292240a1823151a26c38277e10cefcaa4dea",
+          "columnsVisited": 3077,
+          "endpointSupersetEmpty": true,
+          "firstUnexcludedEndpoint": null,
+          "terrainAndPathRestrictionsIgnored": true,
+          "roundingBoundaryBroadened": true,
+          "trainingTruth": false,
+          "proofHash": "8d79198a832ed8f55aa4ff14083f09d65fe6b6b551f55819ed12ed1d11af696c"
+        }
+      ],
+      "declaredInitialPriorAttrition": true,
+      "originalRemovalOrderPreserved": true,
+      "fullNativeRound": true,
+      "supplyExactlyOnce": true,
+      "idempotencyVerified": true,
+      "coldReplay": true
+    },
+    {
+      "id": "infested_marine-leading-decline",
+      "unitKey": "infested_marine",
+      "kind": "leading",
+      "use": false,
+      "roomId": "wave4-disengage-infested_marine-leading-decline",
+      "directoryRef": "build/wave4-web/stukov-units/detonation-disengage-r335RR/infested_marine-leading-decline",
+      "signedActions": 38,
+      "stateHash": "7cea878931e1476650492230b374024390630763978e472e8445854c31b08969",
+      "trace": [
+        {
+          "revision": 1,
+          "round": 1,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 2,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "choose_first_actor",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 3,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "disengage",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 4,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null,
+          "stackDepth": 1
+        },
+        {
+          "revision": 5,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null,
+          "stackDepth": 1
+        },
+        {
+          "revision": 6,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 7,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 8,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "choose_first_actor",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 9,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 10,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 11,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "choose_first_actor",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 12,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "fight",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 13,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "roll_melee_attack_armour_pool",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 14,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "resolve_melee_attack_evade_pool",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 15,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "fight",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 16,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "finish_activation",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 17,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "fight",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 18,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "roll_melee_attack_armour_pool",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 19,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "resolve_melee_attack_evade_pool",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 20,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "fight",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 21,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null,
+          "stackDepth": 1
+        },
+        {
+          "revision": 22,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null,
+          "stackDepth": 1
+        },
+        {
+          "revision": 23,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "finish_activation",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 24,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 25,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "fight",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 26,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "roll_melee_attack_armour_pool",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 27,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "resolve_melee_attack_evade_pool",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 28,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null,
+          "stackDepth": 1
+        },
+        {
+          "revision": 29,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null,
+          "stackDepth": 1
+        },
+        {
+          "revision": 30,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "finish_activation",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 31,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 32,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "determine_current_product_mission_marker_control",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 33,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "score_mission",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 34,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "check_mission_end_game",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 35,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_end_of_round_effects",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 36,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_cleanup_refresh",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 37,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_next_round_initiative",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 38,
+          "round": 2,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "definitionId": null,
+          "stackDepth": 0
+        }
+      ],
+      "frames": [
+        {
+          "hostKind": "direct_removal",
+          "rows": [
+            {
+              "targetPieceId": "actor",
+              "attackResolutionHash": "e8cb7b28af1fe593e62b14b5243610ffd04442d3567e388308bedbadb42c2ba0",
+              "casualty": {
+                "casualtyModelIds": [
+                  "actor-model-1"
+                ],
+                "remainingModelIds": [
+                  "actor-model-2",
+                  "actor-model-3"
+                ],
+                "targetDestroyed": false,
+                "postDamageMarker": 0,
+                "shieldedBefore": false,
+                "shieldedAfter": false,
+                "resolutionHash": "b4597fbac1e922ccc64786c4a8ed1c2936a65a1ac4a894bab969bac246dde24d"
+              },
+              "reservationHash": "9d3c9ac8c2ee4daa1cecfe74c59a6d66d6a84bdb3480aefff3ea7b065c8e96e7"
+            }
+          ],
+          "activationContext": {
+            "activeSideKey": "player1",
+            "activationId": "1:movement:player1:actor"
+          }
+        }
+      ],
+      "originalPlanHash": "e8cb7b28af1fe593e62b14b5243610ffd04442d3567e388308bedbadb42c2ba0",
+      "endpointProofs": [
+        {
+          "schema": "starcraft_tmg_disengage_endpoint_absence_v1",
+          "kind": "leading_failure",
+          "coordinateUnit": "milli-inch",
+          "stateHash": "7acff25c8e8493d9e0e07d576077b022e14db24ce8717eaa81bc8b510d9a891b",
+          "domainId": "94cd784b42af69a3a89f8d320a257516d04a93b63abb0c87d83e1dd4959b41bd",
+          "modelId": "actor-model-1",
+          "center": {
+            "xMilliInches": 640,
+            "yMilliInches": 640,
+            "elevation": "ground_level",
+            "supportTerrainIds": [],
+            "rotationDegrees": 0
+          },
+          "regionRadiusMilliInches": 3064,
+          "movingFootprintHash": "e713fdf95bb28f3f81d1371d18e4a3fc92809bfdee6d81dd7b30463f2595ffba",
+          "blockerHash": "b05efa2ea9eea296483cbb89f6e7292240a1823151a26c38277e10cefcaa4dea",
+          "columnsVisited": 3077,
+          "endpointSupersetEmpty": true,
+          "firstUnexcludedEndpoint": null,
+          "terrainAndPathRestrictionsIgnored": true,
+          "roundingBoundaryBroadened": true,
+          "trainingTruth": false,
+          "proofHash": "8d79198a832ed8f55aa4ff14083f09d65fe6b6b551f55819ed12ed1d11af696c"
+        }
+      ],
+      "declaredInitialPriorAttrition": true,
+      "originalRemovalOrderPreserved": true,
+      "fullNativeRound": true,
+      "supplyExactlyOnce": true,
+      "idempotencyVerified": true,
+      "coldReplay": true
+    },
+    {
+      "id": "infested_marine-other-use",
+      "unitKey": "infested_marine",
+      "kind": "other",
+      "use": true,
+      "roomId": "wave4-disengage-infested_marine-other-use",
+      "directoryRef": "build/wave4-web/stukov-units/detonation-disengage-r335RR/infested_marine-other-use",
+      "signedActions": 27,
+      "stateHash": "5e88ef71e0635f4fcf808d68c08d9557f129babf6091b4289e98d2328be80bac",
+      "trace": [
+        {
+          "revision": 1,
+          "round": 1,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 2,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "choose_first_actor",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 3,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "disengage",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 4,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:infested_marine/detonation-any-phase@1",
+          "stackDepth": 1
+        },
+        {
+          "revision": 5,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null,
+          "stackDepth": 1
+        },
+        {
+          "revision": 6,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "roll_automatic_hits_armour_pool",
+          "definitionId": null,
+          "stackDepth": 1
+        },
+        {
+          "revision": 7,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "resolve_automatic_hits_evade_pool",
+          "definitionId": null,
+          "stackDepth": 1
+        },
+        {
+          "revision": 8,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "roll_automatic_hits_armour_pool",
+          "definitionId": null,
+          "stackDepth": 1
+        },
+        {
+          "revision": 9,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "resolve_automatic_hits_evade_pool",
+          "definitionId": null,
+          "stackDepth": 1
+        },
+        {
+          "revision": 10,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "choose_automatic_hits_casualties",
+          "definitionId": null,
+          "stackDepth": 1
+        },
+        {
+          "revision": 11,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "choose_automatic_hits_casualties",
+          "definitionId": null,
+          "stackDepth": 1
+        },
+        {
+          "revision": 12,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "finish_activation",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 13,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 14,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 15,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "choose_first_actor",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 16,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 17,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 18,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "choose_first_actor",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 19,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 20,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 21,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "determine_current_product_mission_marker_control",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 22,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "score_mission",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 23,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "check_mission_end_game",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 24,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_end_of_round_effects",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 25,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_cleanup_refresh",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 26,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_next_round_initiative",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 27,
+          "round": 2,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "definitionId": null,
+          "stackDepth": 0
+        }
+      ],
+      "frames": [
+        {
+          "hostKind": "direct_removal",
+          "rows": [
+            {
+              "targetPieceId": "actor",
+              "attackResolutionHash": "7744b1b4d303eedcaee7e4a11047441d270360eaa1df33ccf72713152f7fd8d3",
+              "casualty": {
+                "casualtyModelIds": [
+                  "actor-model-2",
+                  "actor-model-3"
+                ],
+                "remainingModelIds": [
+                  "actor-model-1"
+                ],
+                "targetDestroyed": false,
+                "postDamageMarker": 0,
+                "shieldedBefore": false,
+                "shieldedAfter": false,
+                "resolutionHash": "4f845e3e5c6e8af03fcc9e7c7262ac71e222beec08c043a04cdbd14f3d1782e0"
+              },
+              "reservationHash": "6ff0948cc7297ba3f24b5dd300461998508ab95d0af92fdf6f4b545b0c67b197"
+            }
+          ],
+          "activationContext": {
+            "activeSideKey": "player1",
+            "activationId": "1:movement:player1:actor"
+          }
+        }
+      ],
+      "originalPlanHash": "7744b1b4d303eedcaee7e4a11047441d270360eaa1df33ccf72713152f7fd8d3",
+      "endpointProofs": [
+        {
+          "schema": "starcraft_tmg_disengage_endpoint_absence_v1",
+          "kind": "other_model_failure",
+          "coordinateUnit": "milli-inch",
+          "stateHash": "cd45228fc76702c76df950ccb0a1f0c58b0efdd21397a8d51e0ebbe5bcdb7828",
+          "domainId": "67f6ec7abe736f37f806261a96ccaafef93afb3caa4a5901ab341786b4475b3e",
+          "modelId": "actor-model-2",
+          "center": {
+            "xMilliInches": 7010,
+            "yMilliInches": 7000
+          },
+          "regionRadiusMilliInches": 3893,
+          "movingFootprintHash": "02737c2cecbadd946632bfbdc62906aa5bd7561b4b27e2cf3b4a3d14e0580dc9",
+          "blockerHash": "b1afd43750cf01d05aa299f27a87c4629b06261cd6e36b6b06c76819124658a6",
+          "columnsVisited": 7787,
+          "endpointSupersetEmpty": true,
+          "firstUnexcludedEndpoint": null,
+          "terrainAndPathRestrictionsIgnored": true,
+          "roundingBoundaryBroadened": true,
+          "trainingTruth": false,
+          "proofHash": "e1cdde32fa0836002b613eba7fddb25fc5a20a3bfde9ba0596b4cfff51224fa2"
+        },
+        {
+          "schema": "starcraft_tmg_disengage_endpoint_absence_v1",
+          "kind": "other_model_failure",
+          "coordinateUnit": "milli-inch",
+          "stateHash": "cd45228fc76702c76df950ccb0a1f0c58b0efdd21397a8d51e0ebbe5bcdb7828",
+          "domainId": "67f6ec7abe736f37f806261a96ccaafef93afb3caa4a5901ab341786b4475b3e",
+          "modelId": "actor-model-3",
+          "center": {
+            "xMilliInches": 7010,
+            "yMilliInches": 7000
+          },
+          "regionRadiusMilliInches": 3893,
+          "movingFootprintHash": "1b0ab918790354f7f87c23ae115e176879ca375747f35e5bba1b02056a93f76f",
+          "blockerHash": "b1afd43750cf01d05aa299f27a87c4629b06261cd6e36b6b06c76819124658a6",
+          "columnsVisited": 7787,
+          "endpointSupersetEmpty": true,
+          "firstUnexcludedEndpoint": null,
+          "terrainAndPathRestrictionsIgnored": true,
+          "roundingBoundaryBroadened": true,
+          "trainingTruth": false,
+          "proofHash": "209ce3987384f69b009a97e4ed95fdf9b68b96a1f0d69545f01ec6b9ce78acb1"
+        }
+      ],
+      "declaredInitialPriorAttrition": true,
+      "originalRemovalOrderPreserved": true,
+      "fullNativeRound": true,
+      "supplyExactlyOnce": true,
+      "idempotencyVerified": true,
+      "coldReplay": true
+    },
+    {
+      "id": "infested_marine-other-decline",
+      "unitKey": "infested_marine",
+      "kind": "other",
+      "use": false,
+      "roomId": "wave4-disengage-infested_marine-other-decline",
+      "directoryRef": "build/wave4-web/stukov-units/detonation-disengage-r335RR/infested_marine-other-decline",
+      "signedActions": 21,
+      "stateHash": "448ccc67b8b878ab3eab6ec088586238fc0c5ad41a1079f2477dc72cfc46b66f",
+      "trace": [
+        {
+          "revision": 1,
+          "round": 1,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 2,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "choose_first_actor",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 3,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "disengage",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 4,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null,
+          "stackDepth": 1
+        },
+        {
+          "revision": 5,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null,
+          "stackDepth": 1
+        },
+        {
+          "revision": 6,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "finish_activation",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 7,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 8,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 9,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "choose_first_actor",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 10,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 11,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 12,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "choose_first_actor",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 13,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 14,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 15,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "determine_current_product_mission_marker_control",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 16,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "score_mission",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 17,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "check_mission_end_game",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 18,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_end_of_round_effects",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 19,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_cleanup_refresh",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 20,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_next_round_initiative",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 21,
+          "round": 2,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "definitionId": null,
+          "stackDepth": 0
+        }
+      ],
+      "frames": [
+        {
+          "hostKind": "direct_removal",
+          "rows": [
+            {
+              "targetPieceId": "actor",
+              "attackResolutionHash": "7744b1b4d303eedcaee7e4a11047441d270360eaa1df33ccf72713152f7fd8d3",
+              "casualty": {
+                "casualtyModelIds": [
+                  "actor-model-2",
+                  "actor-model-3"
+                ],
+                "remainingModelIds": [
+                  "actor-model-1"
+                ],
+                "targetDestroyed": false,
+                "postDamageMarker": 0,
+                "shieldedBefore": false,
+                "shieldedAfter": false,
+                "resolutionHash": "4f845e3e5c6e8af03fcc9e7c7262ac71e222beec08c043a04cdbd14f3d1782e0"
+              },
+              "reservationHash": "6ff0948cc7297ba3f24b5dd300461998508ab95d0af92fdf6f4b545b0c67b197"
+            }
+          ],
+          "activationContext": {
+            "activeSideKey": "player1",
+            "activationId": "1:movement:player1:actor"
+          }
+        }
+      ],
+      "originalPlanHash": "7744b1b4d303eedcaee7e4a11047441d270360eaa1df33ccf72713152f7fd8d3",
+      "endpointProofs": [
+        {
+          "schema": "starcraft_tmg_disengage_endpoint_absence_v1",
+          "kind": "other_model_failure",
+          "coordinateUnit": "milli-inch",
+          "stateHash": "cd45228fc76702c76df950ccb0a1f0c58b0efdd21397a8d51e0ebbe5bcdb7828",
+          "domainId": "67f6ec7abe736f37f806261a96ccaafef93afb3caa4a5901ab341786b4475b3e",
+          "modelId": "actor-model-2",
+          "center": {
+            "xMilliInches": 7010,
+            "yMilliInches": 7000
+          },
+          "regionRadiusMilliInches": 3893,
+          "movingFootprintHash": "02737c2cecbadd946632bfbdc62906aa5bd7561b4b27e2cf3b4a3d14e0580dc9",
+          "blockerHash": "b1afd43750cf01d05aa299f27a87c4629b06261cd6e36b6b06c76819124658a6",
+          "columnsVisited": 7787,
+          "endpointSupersetEmpty": true,
+          "firstUnexcludedEndpoint": null,
+          "terrainAndPathRestrictionsIgnored": true,
+          "roundingBoundaryBroadened": true,
+          "trainingTruth": false,
+          "proofHash": "e1cdde32fa0836002b613eba7fddb25fc5a20a3bfde9ba0596b4cfff51224fa2"
+        },
+        {
+          "schema": "starcraft_tmg_disengage_endpoint_absence_v1",
+          "kind": "other_model_failure",
+          "coordinateUnit": "milli-inch",
+          "stateHash": "cd45228fc76702c76df950ccb0a1f0c58b0efdd21397a8d51e0ebbe5bcdb7828",
+          "domainId": "67f6ec7abe736f37f806261a96ccaafef93afb3caa4a5901ab341786b4475b3e",
+          "modelId": "actor-model-3",
+          "center": {
+            "xMilliInches": 7010,
+            "yMilliInches": 7000
+          },
+          "regionRadiusMilliInches": 3893,
+          "movingFootprintHash": "1b0ab918790354f7f87c23ae115e176879ca375747f35e5bba1b02056a93f76f",
+          "blockerHash": "b1afd43750cf01d05aa299f27a87c4629b06261cd6e36b6b06c76819124658a6",
+          "columnsVisited": 7787,
+          "endpointSupersetEmpty": true,
+          "firstUnexcludedEndpoint": null,
+          "terrainAndPathRestrictionsIgnored": true,
+          "roundingBoundaryBroadened": true,
+          "trainingTruth": false,
+          "proofHash": "209ce3987384f69b009a97e4ed95fdf9b68b96a1f0d69545f01ec6b9ce78acb1"
+        }
+      ],
+      "declaredInitialPriorAttrition": true,
+      "originalRemovalOrderPreserved": true,
+      "fullNativeRound": true,
+      "supplyExactlyOnce": true,
+      "idempotencyVerified": true,
+      "coldReplay": true
+    },
+    {
+      "id": "infested_marine-last-use",
+      "unitKey": "infested_marine",
+      "kind": "last",
+      "use": true,
+      "roomId": "wave4-disengage-infested_marine-last-use",
+      "directoryRef": "build/wave4-web/stukov-units/detonation-disengage-r335RR/infested_marine-last-use",
+      "signedActions": 23,
+      "stateHash": "4621dac0761f31fc855e8d2cf216e356270368ef5a95cbc741bdc3c7546fda43",
+      "trace": [
+        {
+          "revision": 1,
+          "round": 1,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 2,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "choose_first_actor",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 3,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "disengage",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 4,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:infested_marine/detonation-any-phase@1",
+          "stackDepth": 1
+        },
+        {
+          "revision": 5,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null,
+          "stackDepth": 1
+        },
+        {
+          "revision": 6,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "roll_automatic_hits_armour_pool",
+          "definitionId": null,
+          "stackDepth": 1
+        },
+        {
+          "revision": 7,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "resolve_automatic_hits_evade_pool",
+          "definitionId": null,
+          "stackDepth": 1
+        },
+        {
+          "revision": 8,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "choose_automatic_hits_casualties",
+          "definitionId": null,
+          "stackDepth": 1
+        },
+        {
+          "revision": 9,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 10,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 11,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "choose_first_actor",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 12,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 13,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 14,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "choose_first_actor",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 15,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 16,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 17,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "determine_current_product_mission_marker_control",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 18,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "score_mission",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 19,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "check_mission_end_game",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 20,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_end_of_round_effects",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 21,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_cleanup_refresh",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 22,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_next_round_initiative",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 23,
+          "round": 2,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "definitionId": null,
+          "stackDepth": 0
+        }
+      ],
+      "frames": [
+        {
+          "hostKind": "direct_removal",
+          "rows": [
+            {
+              "targetPieceId": "actor",
+              "attackResolutionHash": "ed0471b66bc76010e79a83c77225ded06d35ce3d5d01756ab7febbd82b4ccd73",
+              "casualty": {
+                "casualtyModelIds": [
+                  "actor-model-1"
+                ],
+                "remainingModelIds": [],
+                "targetDestroyed": true,
+                "postDamageMarker": 0,
+                "shieldedBefore": false,
+                "shieldedAfter": false,
+                "resolutionHash": "3e8fa23a5e770cbd6caae4dfc735afd8c63c092c5740593bbf277937433acaf6"
+              },
+              "reservationHash": "ec0c58c4e69b7b05bd94fcb91126cef3b90e4e87f2d4373ef3ea411aa816ba50"
+            }
+          ],
+          "activationContext": {
+            "activeSideKey": "player1",
+            "activationId": "1:movement:player1:actor"
+          }
+        }
+      ],
+      "originalPlanHash": "ed0471b66bc76010e79a83c77225ded06d35ce3d5d01756ab7febbd82b4ccd73",
+      "endpointProofs": [
+        {
+          "schema": "starcraft_tmg_disengage_endpoint_absence_v1",
+          "kind": "leading_failure",
+          "coordinateUnit": "milli-inch",
+          "stateHash": "2ecfa2f467d79b828f198b0c07d055ea17db5f14f0343cf39805c46cf699ff57",
+          "domainId": "db8ffea2086a33344b378159dff44b609c36a58d2fc5d29ac83039f8612dceb8",
+          "modelId": "actor-model-1",
+          "center": {
+            "xMilliInches": 640,
+            "yMilliInches": 640,
+            "elevation": "ground_level",
+            "supportTerrainIds": [],
+            "rotationDegrees": 0
+          },
+          "regionRadiusMilliInches": 6064,
+          "movingFootprintHash": "e713fdf95bb28f3f81d1371d18e4a3fc92809bfdee6d81dd7b30463f2595ffba",
+          "blockerHash": "f83ce739cd7c634063af795be90924c588e414f3bd8826df88ed3a8ab78b197c",
+          "columnsVisited": 6077,
+          "endpointSupersetEmpty": true,
+          "firstUnexcludedEndpoint": null,
+          "terrainAndPathRestrictionsIgnored": true,
+          "roundingBoundaryBroadened": true,
+          "trainingTruth": false,
+          "proofHash": "d1b4a70770053df41a061fe2e1c92996668f55d4626cf6fe3695d3011755a646"
+        }
+      ],
+      "declaredInitialPriorAttrition": true,
+      "originalRemovalOrderPreserved": true,
+      "fullNativeRound": true,
+      "supplyExactlyOnce": true,
+      "idempotencyVerified": true,
+      "coldReplay": true
+    },
+    {
+      "id": "infested_marine-last-decline",
+      "unitKey": "infested_marine",
+      "kind": "last",
+      "use": false,
+      "roomId": "wave4-disengage-infested_marine-last-decline",
+      "directoryRef": "build/wave4-web/stukov-units/detonation-disengage-r335RR/infested_marine-last-decline",
+      "signedActions": 20,
+      "stateHash": "8ed957965dd70f5c788271696f225ee40e6f2f99fc9bb55cba9236755126768a",
+      "trace": [
+        {
+          "revision": 1,
+          "round": 1,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 2,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "choose_first_actor",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 3,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "disengage",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 4,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null,
+          "stackDepth": 1
+        },
+        {
+          "revision": 5,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null,
+          "stackDepth": 1
+        },
+        {
+          "revision": 6,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 7,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 8,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "choose_first_actor",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 9,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 10,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 11,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "choose_first_actor",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 12,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 13,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 14,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "determine_current_product_mission_marker_control",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 15,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "score_mission",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 16,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "check_mission_end_game",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 17,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_end_of_round_effects",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 18,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_cleanup_refresh",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 19,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_next_round_initiative",
+          "definitionId": null,
+          "stackDepth": 0
+        },
+        {
+          "revision": 20,
+          "round": 2,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "definitionId": null,
+          "stackDepth": 0
+        }
+      ],
+      "frames": [
+        {
+          "hostKind": "direct_removal",
+          "rows": [
+            {
+              "targetPieceId": "actor",
+              "attackResolutionHash": "ed0471b66bc76010e79a83c77225ded06d35ce3d5d01756ab7febbd82b4ccd73",
+              "casualty": {
+                "casualtyModelIds": [
+                  "actor-model-1"
+                ],
+                "remainingModelIds": [],
+                "targetDestroyed": true,
+                "postDamageMarker": 0,
+                "shieldedBefore": false,
+                "shieldedAfter": false,
+                "resolutionHash": "3e8fa23a5e770cbd6caae4dfc735afd8c63c092c5740593bbf277937433acaf6"
+              },
+              "reservationHash": "ec0c58c4e69b7b05bd94fcb91126cef3b90e4e87f2d4373ef3ea411aa816ba50"
+            }
+          ],
+          "activationContext": {
+            "activeSideKey": "player1",
+            "activationId": "1:movement:player1:actor"
+          }
+        }
+      ],
+      "originalPlanHash": "ed0471b66bc76010e79a83c77225ded06d35ce3d5d01756ab7febbd82b4ccd73",
+      "endpointProofs": [
+        {
+          "schema": "starcraft_tmg_disengage_endpoint_absence_v1",
+          "kind": "leading_failure",
+          "coordinateUnit": "milli-inch",
+          "stateHash": "2ecfa2f467d79b828f198b0c07d055ea17db5f14f0343cf39805c46cf699ff57",
+          "domainId": "db8ffea2086a33344b378159dff44b609c36a58d2fc5d29ac83039f8612dceb8",
+          "modelId": "actor-model-1",
+          "center": {
+            "xMilliInches": 640,
+            "yMilliInches": 640,
+            "elevation": "ground_level",
+            "supportTerrainIds": [],
+            "rotationDegrees": 0
+          },
+          "regionRadiusMilliInches": 6064,
+          "movingFootprintHash": "e713fdf95bb28f3f81d1371d18e4a3fc92809bfdee6d81dd7b30463f2595ffba",
+          "blockerHash": "f83ce739cd7c634063af795be90924c588e414f3bd8826df88ed3a8ab78b197c",
+          "columnsVisited": 6077,
+          "endpointSupersetEmpty": true,
+          "firstUnexcludedEndpoint": null,
+          "terrainAndPathRestrictionsIgnored": true,
+          "roundingBoundaryBroadened": true,
+          "trainingTruth": false,
+          "proofHash": "d1b4a70770053df41a061fe2e1c92996668f55d4626cf6fe3695d3011755a646"
+        }
+      ],
+      "declaredInitialPriorAttrition": true,
+      "originalRemovalOrderPreserved": true,
+      "fullNativeRound": true,
+      "supplyExactlyOnce": true,
+      "idempotencyVerified": true,
+      "coldReplay": true
+    }
+  ],
+  "newGameAtomsImplemented": 0,
+  "implementedCumulativeAtoms": 6,
+  "sourceHeldDefinitions": 39,
+  "fullMatchAdmission": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

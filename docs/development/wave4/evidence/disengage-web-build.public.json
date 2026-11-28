@@ -1,0 +1,42 @@
+{
+  "schema": "starcraft_tmg_wave4_disengage_web_build_v1",
+  "status": "passed",
+  "files": [
+    {
+      "ref": "build/wave4-web/stukov-units/web-bundle-v4/_expo/static/js/web/entry-58f6367313abde35fa81d2b6ee15fbd9.js",
+      "byteHash": "aa598ac68c9d6f1dd2d396166a446d3d7c4bc05375732905e15f7814e6552913",
+      "bytes": 3827934
+    },
+    {
+      "ref": "apps/starcraft-tmg-expo/components/battlefield/native-action-form.tsx",
+      "byteHash": "6294d4433b624b119090d3354551dd7d4d56b3975aa61c30c003d54ec3d1c450",
+      "bytes": 10310
+    },
+    {
+      "ref": "packages/client-domain/native-action-form-v1.mjs",
+      "byteHash": "1331667fce99cbaed72488a359022893bdd03d5a850c5bee24d5a07ac888b4ba",
+      "bytes": 8636
+    },
+    {
+      "ref": "packages/client-domain/battlefield-presentation-v1.mjs",
+      "byteHash": "fe37c5e30ce6f0fd86017129c163fa28c7f125771a4038c389ac4b8e4b3a7058",
+      "bytes": 40673
+    },
+    {
+      "ref": "packages/product-composition/official-selected-roster-spatial-parameter-contract-v1.mjs",
+      "byteHash": "7e3d102f300646e6040ae3b8794506e9ee34f928438a4685e009f934b72b03f4",
+      "bytes": 4437
+    }
+  ],
+  "offline": true,
+  "dependencyInstall": false,
+  "productionPublished": false,
+  "phoneProducerScreenshot": {
+    "ref": "docs/development/wave4/evidence/disengage-producer-web-390.png",
+    "width": 390,
+    "height": 844
+  },
+  "webEvidenceRef": "docs/development/wave4/evidence/detonation-disengage-web.public.json",
+  "modelCalls": 0,
+  "trainingTruth": false
+}

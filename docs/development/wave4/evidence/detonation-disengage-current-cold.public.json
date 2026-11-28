@@ -1,0 +1,108 @@
+{
+  "schema": "starcraft_tmg_wave4_detonation_v3_compat_v1",
+  "status": "passed_scoped",
+  "results": [
+    {
+      "id": "infested_trooper-leading-use",
+      "roomId": "wave4-disengage-infested_trooper-leading-use",
+      "originalSignedActions": 38,
+      "runtimeVersion": "2.2.0",
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "stateHash": "de6de90fc3c1637af1b21b63169d0d55d5db0a1e87075e6e92695586f5421f08",
+      "newActions": 0
+    },
+    {
+      "id": "infested_trooper-leading-decline",
+      "roomId": "wave4-disengage-infested_trooper-leading-decline",
+      "originalSignedActions": 36,
+      "runtimeVersion": "2.2.0",
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "stateHash": "98c08f738ffe8ccb4fe5eb2d373aa1772b8f3068fdc7734028dfb66b61ef4ef1",
+      "newActions": 0
+    },
+    {
+      "id": "infested_trooper-other-use",
+      "roomId": "wave4-disengage-infested_trooper-other-use",
+      "originalSignedActions": 27,
+      "runtimeVersion": "2.2.0",
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "stateHash": "d4d5121ae6e2b9bb216c49620e4ab71e19625ef52817af9bf5c7c9b525105a60",
+      "newActions": 0
+    },
+    {
+      "id": "infested_trooper-other-decline",
+      "roomId": "wave4-disengage-infested_trooper-other-decline",
+      "originalSignedActions": 21,
+      "runtimeVersion": "2.2.0",
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "stateHash": "7c2c9aebdf9527b2a37b88183d6b3a10ec2454f61703e035aa58303c86236acf",
+      "newActions": 0
+    },
+    {
+      "id": "infested_marine-leading-use",
+      "roomId": "wave4-disengage-infested_marine-leading-use",
+      "originalSignedActions": 39,
+      "runtimeVersion": "2.2.0",
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "stateHash": "89d0218b2826c17e1373f4f914215a4e8cf644729a07f0af65c6234ce12a7270",
+      "newActions": 0
+    },
+    {
+      "id": "infested_marine-leading-decline",
+      "roomId": "wave4-disengage-infested_marine-leading-decline",
+      "originalSignedActions": 38,
+      "runtimeVersion": "2.2.0",
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "stateHash": "7cea878931e1476650492230b374024390630763978e472e8445854c31b08969",
+      "newActions": 0
+    },
+    {
+      "id": "infested_marine-other-use",
+      "roomId": "wave4-disengage-infested_marine-other-use",
+      "originalSignedActions": 27,
+      "runtimeVersion": "2.2.0",
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "stateHash": "5e88ef71e0635f4fcf808d68c08d9557f129babf6091b4289e98d2328be80bac",
+      "newActions": 0
+    },
+    {
+      "id": "infested_marine-other-decline",
+      "roomId": "wave4-disengage-infested_marine-other-decline",
+      "originalSignedActions": 21,
+      "runtimeVersion": "2.2.0",
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "stateHash": "448ccc67b8b878ab3eab6ec088586238fc0c5ad41a1079f2477dc72cfc46b66f",
+      "newActions": 0
+    },
+    {
+      "id": "storm-use",
+      "roomId": "wave4-detonation-storm-use-0",
+      "originalSignedActions": 28,
+      "runtimeVersion": "2.2.0",
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "stateHash": "cd1410795678a7258e5ad556609fd637558b77a630d554bed0c328a8cda11af0",
+      "newActions": 0
+    },
+    {
+      "id": "photon-use",
+      "roomId": "wave4-detonation-photon-use-0",
+      "originalSignedActions": 34,
+      "runtimeVersion": "2.2.0",
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "stateHash": "5954f2bddc88c95747fc20e0d728281c9009e51c4b7c938d155c7f6af1ac5238",
+      "newActions": 0
+    }
+  ],
+  "modelCalls": 0,
+  "trainingTruth": false
+}

@@ -1,0 +1,33 @@
+{
+  "schema": "starcraft_tmg_wave4_disengage_form_v1",
+  "status": "passed_component",
+  "results": [
+    {
+      "id": "infested_trooper-leading-use",
+      "sourcePrefixRevision": 2,
+      "sourcePrefixStateHash": "91ab2922fe35f4687eafc21fd682040fe8c8b94e359e8ee365dbac4efe41a884",
+      "originalPlanHash": "efd3dbe6605f48758b4c5dedaab0a58a3dc7686aee266bbc4c97002222da055b",
+      "compiledPreviewExactlyMatchesSignedAction": true,
+      "staleHiddenCoordinatesRemoved": true,
+      "placedCoordinatesRequired": true,
+      "legacyOutcomeNotExposed": true,
+      "newActions": 0
+    },
+    {
+      "id": "infested_marine-other-use",
+      "sourcePrefixRevision": 2,
+      "sourcePrefixStateHash": "7a6859308fbbf114c5e6198b45b52716eec80542deb9c50064fe9c07eafa41e6",
+      "originalPlanHash": "7744b1b4d303eedcaee7e4a11047441d270360eaa1df33ccf72713152f7fd8d3",
+      "compiledPreviewExactlyMatchesSignedAction": true,
+      "staleHiddenCoordinatesRemoved": true,
+      "placedCoordinatesRequired": true,
+      "legacyOutcomeNotExposed": true,
+      "newActions": 0
+    }
+  ],
+  "scope": "real signed prefixes and UI transport projection; Native still proves endpoint absence",
+  "modelCalls": 0,
+  "sourceHeldDefinitions": 39,
+  "fullMatchAdmission": false,
+  "trainingTruth": false
+}

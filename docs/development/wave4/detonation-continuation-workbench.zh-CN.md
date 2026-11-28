@@ -33,3 +33,5 @@
 
 
 政策1.7／Root3.238–3.240本批[Storm／Photon](detonation-storm-photon-wiring.zh-CN.md)通过：4完整原生回合119动作、Web2房10确认及当前／前批6房177原动作冷读一致。Storm使用实际炸死原High Templar；Photon由合法Stukov+Overlord真实Ventral Sacs入场，原卡牌HITS完成。护甲政策1.1保留阶段外null激活身份和回合池计数；旧1.0默认不变。己方Omega／Pylon／Zagara边线免Photon，Burrow Ambush非正例。原生晚发生Supply损失不插入第二次计分。完整原子仍6/18；继续Disengage／Consume、新单位组合和整版人人出口。
+
+政策1.8／Root3.241本批[Disengage](detonation-disengage-wiring.zh-CN.md)通过：两种感染步兵各领队失败、其他模型失败、末模型销毁的使用／拒绝共12房334动作，全部到R2并冷重放；Web实际发起2房19确认（含390px行动席），独立14房396原动作冷读。原移除正Supply4分支共4、末模型4分支和旧归因计分已审计；组件7边界／2表单均0新动作。完整原子6/18，继续Consume、新单位和整版人人出口；39来源／估算／暂停保持。

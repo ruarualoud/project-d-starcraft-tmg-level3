@@ -30,9 +30,7 @@
         "T28-W4-02"
       ],
       "exit": "Same release selected by manual Builder/import/export, lobby/room factory, map/mission/player query; new IDs have reviewed media and clear unavailable-source labels.",
-      "usabilityPending": [
-        "Expose Native-certified Disengage leading/other-model removal outcomes in the Web initiation form"
-      ],
+      "usabilityPending": [],
       "usabilityVerified": [
         {
           "criterion": "Readable enumerated casualty choices with original hash submission and no 390px form overflow",
@@ -42,6 +40,14 @@
             "docs/development/wave4/evidence/casualty-summary-consumers.public.json",
             "docs/development/wave4/evidence/casualty-summary-harness.public.json",
             "docs/development/wave4/evidence/casualty-summary-web-390.png"
+          ]
+        },
+        {
+          "criterion": "Initiate Native-certified Disengage outcomes from desktop and 390px phone through explicit confirmation",
+          "evidenceRefs": [
+            "docs/development/wave4/evidence/detonation-disengage-web.public.json",
+            "docs/development/wave4/evidence/disengage-form.public.json",
+            "docs/development/wave4/evidence/disengage-web-build.public.json"
           ]
         }
       ]
@@ -69,10 +75,10 @@
     "productionPublish": false
   },
   "next": [
-    "Storm/Photon verified; continue Disengage/Consume and new unit combinations",
+    "Disengage verified; continue Consume and new Firebat/Scarab combinations",
     "Remaining 13 reviewed records; 39 source holds isolated",
-    "Complete release/Builder/lobby/media, including readable casualty options",
+    "Complete release/Builder/lobby/media",
     "500/2000 Web human seats"
   ],
-  "updatedAt": "2026-11-28T03:54:43.393Z"
+  "updatedAt": "2026-11-28T04:34:14.142Z"
 }

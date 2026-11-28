@@ -5,12 +5,13 @@ import { describeNativeActionFormV1, nativeActionFormDefaultsV1,
 
 type Descriptor = { type?: string; const?: unknown; enum?: unknown[];
   properties?: Record<string, Descriptor>; required?: string[]; items?: Descriptor;
-  minItems?: number; maxItems?: number; minimum?: number };
+  minItems?: number; maxItems?: number; minimum?: number; title?: string;
+  conditionalRequiredFields?: {when: {field: string; value: unknown}; required: string[]}[] };
 type Point = { xMilliInches: number; yMilliInches: number };
 const labels: Record<string, string> = {
   activeUnitId: '行动单位', targetUnitId: '目标单位', targetPieceId: '目标单位',
   friendlyUnitId: '友方单位（可跳过）',
-  leadingModelId: '领队模型', modelId: '模型', unitId: '单位',
+  leadingModelId: '领队模型', leadingOutcome: '领队结果', modelId: '模型', unitId: '单位',
   paymentCardInstanceIds: '支付卡牌', choice: '能力选项', edgeSide: '进入边',
   entrySegmentId: '进场区段', anchorPieceId: '锚点单位', anchorModelId: '锚点模型',
   placements: '模型最终站位', path: '领队路径', targets: '冲锋目标',
@@ -26,7 +27,7 @@ const labels: Record<string, string> = {
 const choices: Record<string, string> = { top: '上边', bottom: '下边', left: '左边', right: '右边',
   skip: '跳过',
   success: '成功', failure: '失败', distance_shortfall: '距离不足', declared_target_spread: '已声明目标相距过远',
-  decline: '不整队', move: '整队移动', true: '是', false: '否' };
+  decline: '不整队', move: '整队移动', placed: '摆位', casualty: '无法摆位（交规则验证）', true: '是', false: '否' };
 function Button({ text, onPress, active = false, disabled = false, testID }: {
   text: string; onPress: () => void; active?: boolean; disabled?: boolean; testID?: string;
 }) {
@@ -38,7 +39,7 @@ function Field({ name, descriptor: d, value, onChange, names, pickPoint }: {
   name: string; descriptor: Descriptor; value: any; onChange: (value: any) => void;
   names: Record<string, string>; pickPoint: (callback: (point: Point) => void) => void;
 }) {
-  const title = labels[name] || name;
+  const title = d.title || labels[name] || name;
   const renderValue = (v: any): string => Array.isArray(v)
     ? (v.length ? v.map(renderValue).join(' + ') : '无需支付 / 空选择')
     : name === 'convertedFailedArmourDieIndices' && Number.isSafeInteger(v) ? `第${v + 1}颗护甲骰`
@@ -65,12 +66,16 @@ function Field({ name, descriptor: d, value, onChange, names, pickPoint }: {
         {!d.minItems && <Button text="选择空列表" active={Array.isArray(value) && !rows.length} onPress={() => onChange([])} />}
       </View></View>;
   }
-  if (d.type === 'object') return <View style={styles.nested}>
-    {d.properties?.xMilliInches && d.properties?.yMilliInches &&
+  if (d.type === 'object') {
+    const visible=(key: string)=>!(d.conditionalRequiredFields || []).some(row=>
+      row.required.includes(key) && value?.[row.when.field] !== row.when.value);
+    return <View style={styles.nested}>
+    {d.properties?.xMilliInches && d.properties?.yMilliInches && visible('xMilliInches') && visible('yMilliInches') &&
       <Button text="在战桌上选位置" onPress={() => pickPoint(point => onChange({ ...value, ...point }))} />}
-    {Object.entries(d.properties || {}).map(([key, child]) => <Field key={key} name={key}
+    {Object.entries(d.properties || {}).filter(([key])=>visible(key)).map(([key, child]) => <Field key={key} name={key}
       descriptor={child} value={value?.[key]} names={names} pickPoint={pickPoint}
       onChange={next => onChange({ ...value, [key]: next })} />)}</View>;
+  }
   if (d.type === 'boolean') return <View style={styles.row}><Text style={styles.title}>{title}</Text>
     {[true, false].map(v => <Button key={String(v)} text={choices[String(v)]}
       active={v === value} onPress={() => onChange(v)} />)}</View>;
@@ -98,9 +103,11 @@ export function NativeActionForm({ domain, names, modelIds, tokenIds, disabled, 
   return <View style={styles.form} testID="native-action-form">
     <Text style={styles.title}>设置行动</Text>
     <Text style={styles.hint}>选择目标、支付和站位后预览。规则器会检查实际距离、底盘、地形和行动条件。</Text>
+    {form.disengageRemoval && <Text style={styles.hint}>选定领队和其他模型的结果。请求移除时，规则器会验证是否确实无法合法摆位。</Text>}
     {Object.entries(form.fields).map(([key, original]) => {
       const forOutcome = form.chargeFieldOutcomes?.[key];
       if (forOutcome && values.outcome !== forOutcome) return null;
+      if(form.disengageRemoval && values.leadingOutcome === 'casualty' && ['path','placements'].includes(key))return null;
       const d = key === 'paymentCardInstanceIds' && form.paymentsByChoice
         ? { enum: form.paymentsByChoice[values.choice ?? 'default'] || [] } : original as Descriptor;
       const enabled = required.includes(key) || Object.hasOwn(d, 'const') || optional.includes(key);

@@ -76,7 +76,7 @@ export function stageOfficialBeforeCasualtyContinuationV1({state:input,action,ho
  return{ok:true,state:next,action:clone(action),events:[event],trainingTruth:false};
 }
 export function createOfficialBeforeCasualtyRuntimeV1({reactionBundle,policy}){
- const stormPhoton=policy?.version==='1.7.0',delayed=stormPhoton||policy?.version==='1.6.0',declared=delayed||policy?.version==='1.5.0',khassar=declared||policy?.version==='1.4.0',overwatch=khassar||policy?.version==='1.3.0',template=overwatch||policy?.version==='1.2.0',extended=template||policy?.version==='1.1.0';
+ const directRemoval=policy?.version==='1.8.0',stormPhoton=directRemoval||policy?.version==='1.7.0',delayed=stormPhoton||policy?.version==='1.6.0',declared=delayed||policy?.version==='1.5.0',khassar=declared||policy?.version==='1.4.0',overwatch=khassar||policy?.version==='1.3.0',template=overwatch||policy?.version==='1.2.0',extended=template||policy?.version==='1.1.0';
  const routes=reactionBundle.routes.filter(r=>r.effectKind==='before_casualty_detonation');
  if(!routes.length)throw Error('BEFORE_CASUALTY_DETONATION_SOURCE_REQUIRED');
  const pending=readOfficialBeforeCasualtyContinuationV1;
@@ -146,6 +146,6 @@ export function createOfficialBeforeCasualtyRuntimeV1({reactionBundle,policy}){
     &&isDeepStrictEqual(p.automaticHits,{hits:effect.automaticHits,damagePerHit:effect.damagePerHit,targetUnitIds:effect.detonationFacts.targetUnitIds}));},
   timingFor:p=>template?p.reactionTiming:'inside_activation',
   reactionContextFor:(state,p)=>(state[key]||[]).find(f=>f.continuationId===p.detonationContinuationId)?.activationContext};
- return{pending,bindRootAction,afterReaction,takeResume,startNextEffect,sourceAuthority,descriptor:{runtimeId:'official-before-casualty-runtime-v1',runtimeVersion:stormPhoton?'1.7.0':delayed?'1.6.0':declared?'1.5.0':khassar?'1.4.0':overwatch?'1.3.0':template?'1.2.0':extended?'1.1.0':'1.0.0',
+ return{pending,bindRootAction,afterReaction,takeResume,startNextEffect,sourceAuthority,descriptor:{runtimeId:'official-before-casualty-runtime-v1',runtimeVersion:directRemoval?'1.8.0':stormPhoton?'1.7.0':delayed?'1.6.0':declared?'1.5.0':khassar?'1.4.0':overwatch?'1.3.0':template?'1.2.0':extended?'1.1.0':'1.0.0',
   sourceBundleHash:reactionBundle.bundleHash,hostKinds:template?policy.damageHosts:extended?['ranged','melee','automatic_hits']:['ranged'],multiTargetHostAdmission:extended,trainingTruth:false}};
 }

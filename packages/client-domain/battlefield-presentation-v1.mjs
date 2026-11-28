@@ -345,6 +345,10 @@ function parameterSupport(domain) {
     if (getOfficialDelegatedRosterSpatialDomainV1(domain)) return "official_standard_move";
     const kind = text(domain.parameterKind);
     if (kind === "official_selected_roster_spatial_path_v1") {
+        // The gesture editor places every model. NativeActionForm owns the
+        // explicit outcomes whose removal still requires a Native proof.
+        if (domain.actionType === "disengage"
+            && domain.parameterSchema?.casualtyRequiresNativeEndpointAbsenceProof === true) return "unsupported";
         if (domain.actionType === "deploy") return "official_standard_deploy";
         if (["move", "run", "disengage"].includes(domain.actionType)) {
             return "official_standard_move";

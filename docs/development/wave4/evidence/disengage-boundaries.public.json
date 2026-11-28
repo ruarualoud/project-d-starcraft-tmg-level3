@@ -1,0 +1,23 @@
+{
+  "schema": "starcraft_tmg_wave4_disengage_boundaries_v1",
+  "status": "passed_component",
+  "inputRef": "build/wave4-web/stukov-units/detonation-disengage-r335RR/infested_trooper-leading-use",
+  "sourcePrefixRevision": 2,
+  "sourcePrefixStateHash": "91ab2922fe35f4687eafc21fd682040fe8c8b94e359e8ee365dbac4efe41a884",
+  "sourceOpenedReadOnly": true,
+  "cases": [
+    "caller_proof_fields_rejected",
+    "tampered_plan_rejected",
+    "possible_endpoint_cannot_prove_removal",
+    "elevated_endpoints_fail_closed",
+    "nested_access_points_fail_closed",
+    "semantic_surface_endpoints_fail_closed",
+    "legacy_policy_keeps_successful_placement_contract"
+  ],
+  "scope": "actual signed prefix and copied diagnostic states; no Native mutation",
+  "newActions": 0,
+  "sourceHeldDefinitions": 39,
+  "fullMatchAdmission": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

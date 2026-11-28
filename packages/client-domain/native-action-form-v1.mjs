@@ -3,6 +3,7 @@
 import { describeOfficialSelectedRosterFightParameterFieldsV1 } from '../product-composition/official-selected-roster-attack-allocation-contract-v1.mjs';
 import { describeOfficialSelectedRosterChargeParameterFieldsV1, describeOfficialChargeResolutionFieldsV1 } from '../product-composition/official-selected-roster-charge-parameter-contract-v1.mjs';
 import { describeOfficialRelocationParameterFieldsV1 } from '../product-composition/official-relocation-parameter-contract-v1.mjs';
+import { describeOfficialSelectedRosterSpatialParameterFieldsV1 } from '../product-composition/official-selected-roster-spatial-parameter-contract-v1.mjs';
 
 const object = value => value && typeof value === 'object' && !Array.isArray(value);
 const point = { type: 'object', required: ['xMilliInches', 'yMilliInches'], properties: {
@@ -36,6 +37,7 @@ export function describeNativeActionFormV1(outer, {modelIds = [], tokenIds = []}
     ...describeOfficialSelectedRosterFightParameterFieldsV1(domain),
     ...describeOfficialSelectedRosterChargeParameterFieldsV1(domain),
     ...describeOfficialRelocationParameterFieldsV1(domain),
+    ...describeOfficialSelectedRosterSpatialParameterFieldsV1(domain),
     ...resolution,
   };
   const tokens = schema.tokenDisplacements;
@@ -47,7 +49,8 @@ export function describeNativeActionFormV1(outer, {modelIds = [], tokenIds = []}
   }
   const payments = schema.paymentCardInstanceIdsByChoice;
   if (payments) fields.paymentCardInstanceIds = { type: 'array', enum: [] };
-  const required = [...(schema.required || [])];
+  const disengageRemoval=domain.actionType==='disengage'&&schema.casualtyRequiresNativeEndpointAbsenceProof===true;
+  const required = [...new Set([...(schema.required || []),...(disengageRemoval?['leadingOutcome']:[])])];
   const normalized = Object.fromEntries(Object.entries(fields)
     .map(([key, value]) => [key, normalize(value)]).filter(([, value]) => value));
   const missing = required.filter(key => !normalized[key]);
@@ -61,6 +64,7 @@ export function describeNativeActionFormV1(outer, {modelIds = [], tokenIds = []}
   }
   return {
     domainId: outer?.domainId, required, fields: normalized, conditional, chargeFieldOutcomes,
+    disengageRemoval,
     casualtyOptions: Array.isArray(domain.constraints?.legalSelections)
       ? domain.constraints.legalSelections.map(row => ({selectionHash: row.selectionHash,
         casualtyModelIds: [...row.casualtyModelIds], remainingModelIds: [...row.remainingModelIds]})) : [],
@@ -98,6 +102,11 @@ export function compileNativeActionFormValuesV1(form, values) {
       parameters[key] = structuredClone(field.const);
     }
   }
+  if(form.disengageRemoval){
+    if(parameters.leadingOutcome==='casualty'){parameters.path=[];parameters.placements=[];}
+    else if(Array.isArray(parameters.placements))parameters.placements=parameters.placements.map(row=>
+      row?.outcome==='casualty'?Object.fromEntries(Object.entries(row).filter(([key])=>['modelId','outcome'].includes(key))):row);
+  }
   const missing = required.filter(key => !Object.hasOwn(parameters, key));
   const invalid = [];
   const inspect = (value, field, path) => {
@@ -109,6 +118,8 @@ export function compileNativeActionFormValuesV1(form, values) {
     if (field.type === 'object') {
       if (!object(value)) { invalid.push(path); return; }
       for (const key of field.required || []) if (value[key] === undefined) invalid.push(path + '.' + key);
+      for(const row of field.conditionalRequiredFields||[])if(value[row.when.field]===row.when.value)
+        for(const key of row.required)if(value[key]===undefined)invalid.push(path+'.'+key);
       for (const [key, child] of Object.entries(value)) {
         if (field.properties?.[key]) inspect(child, field.properties[key], path + '.' + key);
       }
@@ -120,7 +131,8 @@ export function compileNativeActionFormValuesV1(form, values) {
     }
   };
   for (const [key, value] of Object.entries(parameters)) {
-    const field = key === 'paymentCardInstanceIds' && form.paymentsByChoice
+    const field = form.disengageRemoval&&parameters.leadingOutcome==='casualty'&&['path','placements'].includes(key)?{const:[]}
+      :key === 'paymentCardInstanceIds' && form.paymentsByChoice
       ? { enum: form.paymentsByChoice[parameters.choice ?? 'default'] || [] } : form.fields[key];
     inspect(value, field, key);
   }

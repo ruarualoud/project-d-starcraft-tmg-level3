@@ -275,8 +275,8 @@
     }
   ],
   "next": [
-    "Disengage／Consume直接移除和新增单位组合；完整原子仍6/18。",
-    "剩余13个已审核记录和整版发布／Builder／大厅／媒体、500／2000分Web双席。"
+    "接Consume费用保留和原效果封存；新Firebat／Scarab组合继续，完整原子6/18。",
+    "其余13个已审核记录和完整发布／Builder／大厅／媒体、500／2000分Web双席。"
   ],
   "modelCalls": 0,
   "trainingTruth": false,
@@ -2128,7 +2128,7 @@
       "fullMatchAdmission": false
     }
   ],
-  "executionStatus": "Detonation_storm_photon_scoped_verified_direct_removal_and_new_units_in_progress",
+  "executionStatus": "Disengage_native_and_Web_initiation_verified_Consume_and_new_units_in_progress",
   "creepBuilderGate": {
     "verifiedDefinitions": 3,
     "legalCreepChoices": 5,
@@ -2677,12 +2677,12 @@
     "sourceHeldDefinitions": 39
   },
   "detonationWorkInProgress": {
-    "status": "storm_photon_verified_direct_removal_and_new_units_pending",
+    "status": "disengage_verified_consume_and_new_unit_combinations_pending",
     "sourceDefinitionsCompiled": 2,
-    "nativeCases": 41,
-    "nativeSignedActions": 601,
-    "webRooms": 20,
-    "webSignedActions": 85,
+    "nativeCases": 53,
+    "nativeSignedActions": 935,
+    "webRooms": 22,
+    "webSignedActions": 104,
     "legacyColdReplayCases": 3,
     "legacyOriginalActions": 30,
     "newGameAtomsImplemented": 0,
@@ -2762,7 +2762,18 @@
       "docs/development/wave4/evidence/photon-source-boundaries.public.json",
       "docs/development/wave4/evidence/card-armour-context.public.json",
       "docs/development/wave4/evidence/detonation-storm-photon-consumers.public.json",
-      "docs/development/wave4/evidence/detonation-storm-photon-harness.public.json"
+      "docs/development/wave4/evidence/detonation-storm-photon-harness.public.json",
+      "docs/development/wave4/evidence/detonation-disengage.public.json",
+      "docs/development/wave4/evidence/detonation-disengage-web.public.json",
+      "docs/development/wave4/evidence/detonation-disengage-current-cold.public.json",
+      "docs/development/wave4/evidence/detonation-disengage-last-cold.public.json",
+      "docs/development/wave4/evidence/disengage-boundaries.public.json",
+      "docs/development/wave4/evidence/disengage-form.public.json",
+      "docs/development/wave4/evidence/disengage-settlement.public.json",
+      "docs/development/wave4/evidence/disengage-web-build.public.json",
+      "docs/development/wave4/evidence/detonation-disengage-consumers.public.json",
+      "docs/development/wave4/evidence/detonation-disengage-harness.public.json",
+      "docs/development/wave4/evidence/disengage-producer-web-390.png"
     ],
     "workbenchRef": "docs/development/wave4/detonation-continuation-workbench.zh-CN.md",
     "multiTargetParentAndNestedPending": false,
@@ -2771,40 +2782,39 @@
     "delegatedAndOutsideActivationHostsPending": true,
     "latestMilestone": {
       "status": "passed_scoped",
-      "policyVersion": "1.7.0",
-      "rootRuntimeVersions": [
-        "3.238.0",
-        "3.240.0"
-      ],
-      "armourPolicyVersions": [
-        "1.0.0",
-        "1.1.0"
-      ],
-      "nativeCases": 4,
-      "nativeSignedActions": 119,
-      "nativeFullRounds": 4,
+      "policyVersion": "1.8.0",
+      "rootRuntimeVersion": "3.241.0",
+      "nativeCases": 12,
+      "nativeSignedActions": 334,
+      "nativeFullRounds": 12,
+      "lastModelDestructionCases": 4,
       "webRooms": 2,
-      "webSignedActions": 10,
-      "currentAndPriorColdCases": 6,
-      "currentAndPriorColdOriginalActions": 177,
+      "webSignedActions": 19,
+      "webActualProducerCases": 2,
+      "currentAndPriorColdCases": 14,
+      "currentAndPriorColdOriginalActions": 396,
+      "readOnlySettlementCases": 12,
+      "directSupplyLossCases": 4,
+      "directSupplyLost": 4,
       "evidenceRefs": [
-        "docs/development/wave4/evidence/detonation-storm.public.json",
-        "docs/development/wave4/evidence/detonation-photon.public.json",
-        "docs/development/wave4/evidence/detonation-storm-web.public.json",
-        "docs/development/wave4/evidence/detonation-photon-web.public.json",
-        "docs/development/wave4/evidence/detonation-storm-photon-current-cold.public.json",
-        "docs/development/wave4/evidence/photon-round-boundary.public.json",
-        "docs/development/wave4/evidence/photon-source-boundaries.public.json",
-        "docs/development/wave4/evidence/card-armour-context.public.json",
-        "docs/development/wave4/evidence/detonation-storm-photon-consumers.public.json",
-        "docs/development/wave4/evidence/detonation-storm-photon-harness.public.json"
+        "docs/development/wave4/evidence/detonation-disengage.public.json",
+        "docs/development/wave4/evidence/detonation-disengage-web.public.json",
+        "docs/development/wave4/evidence/detonation-disengage-current-cold.public.json",
+        "docs/development/wave4/evidence/detonation-disengage-last-cold.public.json",
+        "docs/development/wave4/evidence/disengage-boundaries.public.json",
+        "docs/development/wave4/evidence/disengage-form.public.json",
+        "docs/development/wave4/evidence/disengage-settlement.public.json",
+        "docs/development/wave4/evidence/disengage-web-build.public.json",
+        "docs/development/wave4/evidence/detonation-disengage-consumers.public.json",
+        "docs/development/wave4/evidence/detonation-disengage-harness.public.json",
+        "docs/development/wave4/evidence/disengage-producer-web-390.png"
       ],
-      "fullMatchAdmission": false,
       "newGameAtomsImplemented": 0,
+      "fullMatchAdmission": false,
       "allConsumersVerified": false
     },
     "directAbilityDamageHostVerified": true,
-    "nativeCountScope": "Dedicated ranged/nested proof groups plus this V3 milestone; earlier overlapping Stukov Bio group excluded",
+    "nativeCountScope": "Dedicated scoped Native cases through Disengage; duplicate UI regression and natural-result controls excluded",
     "templateHostVerified": true,
     "seekerOutsideHostVerified": true,
     "otherOutsideActivationHostsPending": true,
@@ -2817,7 +2827,8 @@
     "bileAndDroneHostsVerified": true,
     "stormAndPhotonHostsVerified": true,
     "directRemovalHostsPending": true,
-    "newUnitCombinationsPending": true
+    "newUnitCombinationsPending": true,
+    "disengageDirectRemovalVerified": true
   },
   "partialRuntimeVerificationByDefinition": [
     {
@@ -2901,6 +2912,38 @@
         {
           "file": "packages/rule-atoms/official-armour-roll-ordinal-v1.mjs",
           "exportName": "inspectOfficialArmourRollOrdinalsV1"
+        },
+        {
+          "file": "packages/rule-atoms/official-disengage-endpoint-proof-v1.mjs",
+          "exportName": "proveOfficialDisengageEndpointAbsenceV1"
+        },
+        {
+          "file": "packages/product-composition/official-disengage-removal-v1.mjs",
+          "exportName": "instantiateOfficialDisengageRemovalV1"
+        },
+        {
+          "file": "packages/product-composition/official-disengage-removal-v1.mjs",
+          "exportName": "applyOfficialDisengageRemovalV1"
+        },
+        {
+          "file": "packages/product-composition/official-disengage-removal-v1.mjs",
+          "exportName": "resumeOfficialDisengageRemovalV1"
+        },
+        {
+          "file": "packages/product-composition/official-selected-roster-spatial-parameter-contract-v1.mjs",
+          "exportName": "describeOfficialSelectedRosterSpatialParameterFieldsV1"
+        },
+        {
+          "file": "packages/client-domain/native-action-form-v1.mjs",
+          "exportName": "compileNativeActionFormValuesV1"
+        },
+        {
+          "file": "apps/starcraft-tmg-expo/components/battlefield/native-action-form.tsx",
+          "exportName": "NativeActionForm"
+        },
+        {
+          "file": "packages/product-composition/official-selected-roster-spatial-action-runtime-v1.mjs",
+          "exportName": "applyOfficialSelectedRosterSpatialActionV1"
         }
       ],
       "evidenceRefs": [
@@ -2976,7 +3019,18 @@
         "docs/development/wave4/evidence/photon-source-boundaries.public.json",
         "docs/development/wave4/evidence/card-armour-context.public.json",
         "docs/development/wave4/evidence/detonation-storm-photon-consumers.public.json",
-        "docs/development/wave4/evidence/detonation-storm-photon-harness.public.json"
+        "docs/development/wave4/evidence/detonation-storm-photon-harness.public.json",
+        "docs/development/wave4/evidence/detonation-disengage.public.json",
+        "docs/development/wave4/evidence/detonation-disengage-web.public.json",
+        "docs/development/wave4/evidence/detonation-disengage-current-cold.public.json",
+        "docs/development/wave4/evidence/detonation-disengage-last-cold.public.json",
+        "docs/development/wave4/evidence/disengage-boundaries.public.json",
+        "docs/development/wave4/evidence/disengage-form.public.json",
+        "docs/development/wave4/evidence/disengage-settlement.public.json",
+        "docs/development/wave4/evidence/disengage-web-build.public.json",
+        "docs/development/wave4/evidence/detonation-disengage-consumers.public.json",
+        "docs/development/wave4/evidence/detonation-disengage-harness.public.json",
+        "docs/development/wave4/evidence/disengage-producer-web-390.png"
       ],
       "meleeHostVerified": true,
       "automaticHitsHostVerified": true,
@@ -3009,7 +3063,15 @@
       "stormNativeVerified": true,
       "photonNativeVerified": false,
       "webStormSuccessorVerified": true,
-      "webPhotonSuccessorVerified": false
+      "webPhotonSuccessorVerified": false,
+      "disengageLeadingNativeVerified": true,
+      "disengageOtherModelsNativeVerified": true,
+      "disengageLastModelNativeVerified": true,
+      "webDisengageActualProducerVerified": true,
+      "webDisengageKinds": [
+        "other"
+      ],
+      "webDisengageLastModelVerified": false
     },
     {
       "definitionId": "unit:infested_trooper/detonation-any-phase@1",
@@ -3092,6 +3154,38 @@
         {
           "file": "packages/rule-atoms/official-armour-roll-ordinal-v1.mjs",
           "exportName": "inspectOfficialArmourRollOrdinalsV1"
+        },
+        {
+          "file": "packages/rule-atoms/official-disengage-endpoint-proof-v1.mjs",
+          "exportName": "proveOfficialDisengageEndpointAbsenceV1"
+        },
+        {
+          "file": "packages/product-composition/official-disengage-removal-v1.mjs",
+          "exportName": "instantiateOfficialDisengageRemovalV1"
+        },
+        {
+          "file": "packages/product-composition/official-disengage-removal-v1.mjs",
+          "exportName": "applyOfficialDisengageRemovalV1"
+        },
+        {
+          "file": "packages/product-composition/official-disengage-removal-v1.mjs",
+          "exportName": "resumeOfficialDisengageRemovalV1"
+        },
+        {
+          "file": "packages/product-composition/official-selected-roster-spatial-parameter-contract-v1.mjs",
+          "exportName": "describeOfficialSelectedRosterSpatialParameterFieldsV1"
+        },
+        {
+          "file": "packages/client-domain/native-action-form-v1.mjs",
+          "exportName": "compileNativeActionFormValuesV1"
+        },
+        {
+          "file": "apps/starcraft-tmg-expo/components/battlefield/native-action-form.tsx",
+          "exportName": "NativeActionForm"
+        },
+        {
+          "file": "packages/product-composition/official-selected-roster-spatial-action-runtime-v1.mjs",
+          "exportName": "applyOfficialSelectedRosterSpatialActionV1"
         }
       ],
       "evidenceRefs": [
@@ -3162,7 +3256,18 @@
         "docs/development/wave4/evidence/photon-source-boundaries.public.json",
         "docs/development/wave4/evidence/card-armour-context.public.json",
         "docs/development/wave4/evidence/detonation-storm-photon-consumers.public.json",
-        "docs/development/wave4/evidence/detonation-storm-photon-harness.public.json"
+        "docs/development/wave4/evidence/detonation-storm-photon-harness.public.json",
+        "docs/development/wave4/evidence/detonation-disengage.public.json",
+        "docs/development/wave4/evidence/detonation-disengage-web.public.json",
+        "docs/development/wave4/evidence/detonation-disengage-current-cold.public.json",
+        "docs/development/wave4/evidence/detonation-disengage-last-cold.public.json",
+        "docs/development/wave4/evidence/disengage-boundaries.public.json",
+        "docs/development/wave4/evidence/disengage-form.public.json",
+        "docs/development/wave4/evidence/disengage-settlement.public.json",
+        "docs/development/wave4/evidence/disengage-web-build.public.json",
+        "docs/development/wave4/evidence/detonation-disengage-consumers.public.json",
+        "docs/development/wave4/evidence/detonation-disengage-harness.public.json",
+        "docs/development/wave4/evidence/disengage-producer-web-390.png"
       ],
       "meleeHostVerified": true,
       "automaticHitsHostVerified": true,
@@ -3193,7 +3298,15 @@
       "stormNativeVerified": false,
       "photonNativeVerified": true,
       "webStormSuccessorVerified": false,
-      "webPhotonSuccessorVerified": true
+      "webPhotonSuccessorVerified": true,
+      "disengageLeadingNativeVerified": true,
+      "disengageOtherModelsNativeVerified": true,
+      "disengageLastModelNativeVerified": true,
+      "webDisengageActualProducerVerified": true,
+      "webDisengageKinds": [
+        "leading"
+      ],
+      "webDisengageLastModelVerified": false
     }
   ],
   "stukovCombatGate": {
@@ -3412,5 +3525,37 @@
       "docs/development/wave4/evidence/casualty-summary-harness.public.json",
       "docs/development/wave4/evidence/casualty-summary-web-390.png"
     ]
+  },
+  "disengageGate": {
+    "status": "passed_scoped",
+    "policyVersion": "1.8.0",
+    "rootRuntimeVersion": "3.241.0",
+    "nativeCases": 12,
+    "nativeSignedActions": 334,
+    "nativeFullRounds": 12,
+    "lastModelDestructionCases": 4,
+    "webRooms": 2,
+    "webSignedActions": 19,
+    "webActualProducerCases": 2,
+    "currentAndPriorColdCases": 14,
+    "currentAndPriorColdOriginalActions": 396,
+    "readOnlySettlementCases": 12,
+    "directSupplyLossCases": 4,
+    "directSupplyLost": 4,
+    "evidenceRefs": [
+      "docs/development/wave4/evidence/detonation-disengage.public.json",
+      "docs/development/wave4/evidence/detonation-disengage-web.public.json",
+      "docs/development/wave4/evidence/detonation-disengage-current-cold.public.json",
+      "docs/development/wave4/evidence/detonation-disengage-last-cold.public.json",
+      "docs/development/wave4/evidence/disengage-boundaries.public.json",
+      "docs/development/wave4/evidence/disengage-form.public.json",
+      "docs/development/wave4/evidence/disengage-settlement.public.json",
+      "docs/development/wave4/evidence/disengage-web-build.public.json",
+      "docs/development/wave4/evidence/detonation-disengage-consumers.public.json",
+      "docs/development/wave4/evidence/detonation-disengage-harness.public.json",
+      "docs/development/wave4/evidence/disengage-producer-web-390.png"
+    ],
+    "newGameAtomsImplemented": 0,
+    "fullMatchAdmission": false
   }
 }

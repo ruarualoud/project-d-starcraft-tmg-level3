@@ -1,0 +1,124 @@
+{
+  "schema": "starcraft_tmg_wave4_detonation_disengage_consumers_v1",
+  "status": "passed_scoped",
+  "policyVersion": "1.8.0",
+  "rootRuntimeVersion": "3.241.0",
+  "nativeCases": 12,
+  "nativeSignedActions": 334,
+  "nativeFullRounds": 12,
+  "lastModelDestructionCases": 4,
+  "webRooms": 2,
+  "webSignedActions": 19,
+  "webActualProducerCases": 2,
+  "currentAndPriorColdCases": 14,
+  "currentAndPriorColdOriginalActions": 396,
+  "readOnlySettlementCases": 12,
+  "directSupplyLossCases": 4,
+  "directSupplyLost": 4,
+  "evidenceRefs": [
+    "docs/development/wave4/evidence/detonation-disengage.public.json",
+    "docs/development/wave4/evidence/detonation-disengage-web.public.json",
+    "docs/development/wave4/evidence/detonation-disengage-current-cold.public.json",
+    "docs/development/wave4/evidence/detonation-disengage-last-cold.public.json",
+    "docs/development/wave4/evidence/disengage-boundaries.public.json",
+    "docs/development/wave4/evidence/disengage-form.public.json",
+    "docs/development/wave4/evidence/disengage-settlement.public.json",
+    "docs/development/wave4/evidence/disengage-web-build.public.json"
+  ],
+  "newGameAtomsImplemented": 0,
+  "implementedCumulativeAtoms": 6,
+  "sourceHeldDefinitions": 39,
+  "fullMatchAdmission": false,
+  "modelCalls": 0,
+  "trainingTruth": false,
+  "definitions": [
+    {
+      "definitionId": "unit:infested_marine/detonation-any-phase@1",
+      "classification": "new_semantics_partial",
+      "nativeCases": [
+        "infested_marine-leading-use",
+        "infested_marine-leading-decline",
+        "infested_marine-other-use",
+        "infested_marine-other-decline",
+        "infested_marine-last-use",
+        "infested_marine-last-decline"
+      ],
+      "actualConsumers": [
+        "proved leading failure",
+        "proved other-model placement absence",
+        "last-model destruction and Supply lifecycle"
+      ],
+      "webCase": "infested_marine-other-use",
+      "allConsumersVerified": false,
+      "fullAtomAdmission": false
+    },
+    {
+      "definitionId": "unit:infested_trooper/detonation-any-phase@1",
+      "classification": "new_semantics_partial",
+      "nativeCases": [
+        "infested_trooper-leading-use",
+        "infested_trooper-leading-decline",
+        "infested_trooper-other-use",
+        "infested_trooper-other-decline",
+        "infested_trooper-last-use",
+        "infested_trooper-last-decline"
+      ],
+      "actualConsumers": [
+        "proved leading failure",
+        "proved other-model placement absence",
+        "last-model destruction and Supply lifecycle"
+      ],
+      "webCase": "infested_trooper-leading-use",
+      "allConsumersVerified": false,
+      "fullAtomAdmission": false
+    }
+  ],
+  "consumerRefs": [
+    {
+      "file": "packages/rule-atoms/official-disengage-endpoint-proof-v1.mjs",
+      "exportName": "proveOfficialDisengageEndpointAbsenceV1"
+    },
+    {
+      "file": "packages/product-composition/official-disengage-removal-v1.mjs",
+      "exportName": "instantiateOfficialDisengageRemovalV1"
+    },
+    {
+      "file": "packages/product-composition/official-disengage-removal-v1.mjs",
+      "exportName": "applyOfficialDisengageRemovalV1"
+    },
+    {
+      "file": "packages/product-composition/official-disengage-removal-v1.mjs",
+      "exportName": "resumeOfficialDisengageRemovalV1"
+    },
+    {
+      "file": "packages/product-composition/official-selected-roster-spatial-action-runtime-v1.mjs",
+      "exportName": "applyOfficialSelectedRosterSpatialActionV1"
+    },
+    {
+      "file": "packages/product-composition/official-characteristic-status-component-runtime-v2.mjs",
+      "exportName": "createOfficialCharacteristicStatusComponentRuntimeV2"
+    },
+    {
+      "file": "packages/product-composition/official-before-casualty-runtime-v1.mjs",
+      "exportName": "stageOfficialBeforeCasualtyContinuationV1"
+    },
+    {
+      "file": "packages/product-composition/official-selected-roster-spatial-parameter-contract-v1.mjs",
+      "exportName": "describeOfficialSelectedRosterSpatialParameterFieldsV1"
+    },
+    {
+      "file": "packages/client-domain/native-action-form-v1.mjs",
+      "exportName": "compileNativeActionFormValuesV1"
+    },
+    {
+      "file": "apps/starcraft-tmg-expo/components/battlefield/native-action-form.tsx",
+      "exportName": "NativeActionForm"
+    }
+  ],
+  "reusedRule": "core 8.5.3/8.5.4 movement and existing failed-model removal atoms",
+  "newCombination": "certified direct removal with before-casualty Detonation",
+  "pendingConsumers": [
+    "Consume payment",
+    "new Firebat/Scarab combinations"
+  ]
+}
