@@ -1,0 +1,23 @@
+{
+  "schema": "starcraft_tmg_wave4_added_card_boundaries_v1",
+  "status": "passed_component",
+  "cases": [
+    "source-bound Mechanical Stalker offered Master of Robotics",
+    "real Builder Biological Zealot cannot use the Mechanical heal",
+    "source-bound Biological Ground Zergling offered For the Swarm!",
+    "counterfactual tag projection: Biological Flying fails the new Ground requirement",
+    "counterfactual tag projection: Mechanical Ground fails the Biological requirement",
+    "source-bound Marine offered Reactor Go! Go! Go!",
+    "counterfactual tag projection: Reactor does not inherit For the Swarm! Ground restriction",
+    "reserve unit cannot use the active extra Move",
+    "Movement card unavailable in Assault"
+  ],
+  "scope": "family adapter query boundaries; counterfactual tags are component inputs and never Native authority",
+  "newSignedActions": 0,
+  "newCompleteAtoms": 0,
+  "implementedCumulativeAtoms": 7,
+  "sourceHeldDefinitions": 39,
+  "fullMatchAdmission": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

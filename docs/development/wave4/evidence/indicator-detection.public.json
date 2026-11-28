@@ -1,0 +1,27 @@
+{
+  "schema": "starcraft_tmg_wave4_indicator_detection_v1",
+  "status": "passed_component",
+  "cases": [
+    "original signed Root3.245 prefix demonstrates missing indicator-to-characteristic consumer without rewriting it",
+    "Root3.246 actually removes HIDDEN, revokes its Evade and records the exact scanner marker source",
+    "indicator characteristic query is read-only",
+    "one status loss is not repeated after later transitions",
+    "friendly indicator does not reveal its own unit",
+    "old unit-only Detection policy does not silently acquire marker semantics",
+    "unknown detection policy rejected",
+    "marker with mismatched source feature cannot reveal a unit",
+    "actual enemy move beyond the aura does not restore HIDDEN; actual ranged attack completes"
+  ],
+  "oldControlRef": "build/wave4-web/added-cards/active-New9t1/scanner",
+  "newConsumerRef": "build/wave4-web/added-cards/active-New9t1/scanner-indicator",
+  "oldRootVersion": "3.245.0",
+  "newRootVersion": "3.246.0",
+  "policyVersion": "1.1.0",
+  "newSignedActions": 0,
+  "newCompleteAtoms": 0,
+  "implementedCumulativeAtoms": 7,
+  "sourceHeldDefinitions": 39,
+  "fullMatchAdmission": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

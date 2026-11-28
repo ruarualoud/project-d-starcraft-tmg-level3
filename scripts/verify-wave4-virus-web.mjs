@@ -7,6 +7,7 @@ import { openWave3EngineeringStoreV1 } from './support/wave3-room-boundary-fixtu
 import { atomicWrite } from './lib/development-context.mjs';
 import {inspectOfficialMultiModelCasualtySelectionV1} from '../packages/rule-atoms/official-multi-model-casualty-resolution-kernel-v1.mjs';
 import {resolveOfficialEffectiveCombatProfileV1} from '../packages/product-composition/official-characteristic-status-family-adapter-v1.mjs';
+import {fillWave4NativeFormUiV1} from './support/wave4-native-form-ui-v1.mjs';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const directory=path.resolve(process.argv[2]);
@@ -57,6 +58,12 @@ async function operate(page,item,choice,parameterized) {
     await card.getByRole('button',{name:'设置行动',exact:true}).click();
     const form=page.getByTestId('native-action-form');
     const parameterSchema=choice.sourceDomain?.parameterSchema||choice.parameterSchema;
+    if(item.flow==='added-card'&&choice.definitionId===item.definitionId){
+      const fields=await fillWave4NativeFormUiV1(form,choice,item.sourceParameters,before.envelope.state),
+        size=await form.evaluate(el=>({clientWidth:el.clientWidth,scrollWidth:el.scrollWidth}));
+      assert.ok(size.scrollWidth<=size.clientWidth+1,'ADDED_CARD_FORM_HORIZONTAL_OVERFLOW');
+      producerFormChecks.push({kind:item.kind,actionType:choice.actionType,viewportWidth:page.viewportSize().width,...size,...fields,nativeIntentOnly:true});
+    }
     if(['consume-plague-initiation','consume-dark-swarm-initiation'].includes(item.flow)
       &&choice.definitionId===item.definitionId){
       const params=item.expectedConsumeParameters;
@@ -147,6 +154,7 @@ async function operate(page,item,choice,parameterized) {
     }
     if(choice.effectKind==='infestation_transfer')await form.getByRole('button',{name:'recipient',exact:true}).click();
   }
+  if(item.flow==='added-card'&&choice.definitionId===item.definitionId)await page.getByTestId('native-action-form').getByText('设置行动',{exact:true}).scrollIntoViewIfNeeded();
   await page.screenshot({path:path.join(directory,item.kind+'-r'+before.stateRevision+'-form.png')});
   const [response]=await Promise.all([page.waitForResponse(r=>r.url().endsWith('/preview')&&r.request().method()==='POST'),
     standardMove?page.getByRole('button',{name:'提交权威 Preview',exact:true}).click():parameterized?page.getByTestId('native-action-form').getByRole('button',{name:'预览此行动',exact:true}).click()
@@ -155,6 +163,7 @@ async function operate(page,item,choice,parameterized) {
   assert.equal(value.result.preview.core.confirmationPolicy.requiresExplicitHuman,true);
   assert.equal((await current(item)).envelope.stateHash,before.envelope.stateHash);
   await page.getByText('密封 Preview，等待真人确认',{exact:true}).waitFor();
+  if(item.flow==='added-card')await page.getByText('密封 Preview，等待真人确认',{exact:true}).scrollIntoViewIfNeeded();
   await page.screenshot({path:path.join(directory,item.kind+'-r'+before.stateRevision+'-preview.png')});
   const [apply,replay]=await Promise.all([
     page.waitForResponse(r=>r.url().endsWith('/apply')&&r.request().method()==='POST'),
@@ -226,7 +235,7 @@ try {
           &&!state.pendingOfficialPsionicStormAssaultOrder&&!state.pendingOfficialPsionicStormMovementEnd&&!state.pendingOfficialPhotonOvercharge
           &&!state.pendingOfficialAttackTargetReaction&&!state.pendingOfficialRangedAttackDeclaration
           &&!state.pendingCurrentProductRangedSequence&&!state.pendingAction
-          &&(!['detonation-khassar','detonation-declaration','detonation-target','detonation-delayed','detonation-storm-photon','detonation-disengage','detonation-disengage-initiation','consume-plague-initiation','consume-dark-swarm-initiation'].includes(item.flow)&&!item.declarationDefinitionId||!state.selectedRosterActivationWindow))break;
+          &&(!['added-card','detonation-khassar','detonation-declaration','detonation-target','detonation-delayed','detonation-storm-photon','detonation-disengage','detonation-disengage-initiation','consume-plague-initiation','consume-dark-swarm-initiation'].includes(item.flow)&&!item.declarationDefinitionId||!state.selectedRosterActivationWindow))break;
         const owner=state.activeSideKey;assert.ok(pages[owner]);
         const menu=await legal(pages[owner]);
         if(!primaryUsed&&item.id==='infected-ordinary-move'){assert.ok(!menu.parameterDomains.some(row=>['unit:stalker/blink-movement-phase@1','card:nexus/strategic-recall-any@1'].includes(row.definitionId)));}
@@ -268,7 +277,19 @@ try {
       }
       const final=await current(item);assert.ok(primaryUsed);
       if(reenterCompleted)assert.equal(final.envelope.stateHash,head.envelope.stateHash);
-      if(item.kind==='growing-restoration-exception'||item.flow==='carrier-restoration') {
+      if(item.flow==='added-card'){
+        const state=final.envelope.state,actor=state.pieces.find(p=>p.id==='actor'),card=state.cardResources.player1.find(c=>c.officialCardRecordKey===item.sourceRecordKey);
+        assert.equal(card.readiness,'exhausted');assert.ok(!state.selectedRosterActivationWindow&&!state.pendingOfficialReactionWindow);
+        if(item.id==='heal')assert.equal(actor.damageMarker,0);
+        if(['reactor','swarm'].includes(item.id))for(const p of item.sourceParameters.placements){const m=actor.models.find(m=>m.id===p.modelId);
+          assert.equal(Math.round(m.xInches*1000),p.xMilliInches);assert.equal(Math.round(m.yInches*1000),p.yMilliInches);}
+        if(item.id==='creep'){const binding=state.officialBattlefieldAssetBindings.find(b=>b.sourceDefinitionId===item.definitionId);
+          assert.ok(state.board.tokens.some(t=>t.tokenId===binding?.assetId&&t.tokenKind==='creep_tumor'));}
+        if(item.id==='scanner'){
+          assert.ok(!state.pieces.find(p=>p.id==='enemy').statuses.some(s=>String(s.statusName||s).toLowerCase()==='hidden'));
+          assert.equal(state.officialDetectionHiddenLossHistory.filter(h=>h.detectingIndicatorSources.some(s=>s.definitionId===item.definitionId)).length,1);
+        }
+      }else if(item.kind==='growing-restoration-exception'||item.flow==='carrier-restoration') {
         if(item.flow==='carrier-restoration'){assert.equal(final.envelope.state.pieces.find(piece=>piece.id===item.healTarget).damageMarker,0);assert.equal(final.envelope.state.officialUniversalCarrierHistory.at(-1).healResolution.effectiveHeal,1);}
         const recipient=final.envelope.state.pieces.find(piece=>piece.id==='recipient');
         assert.equal(recipient.statuses.some(status=>String(status.statusName||status).toLowerCase()==='infestation'),false);
@@ -420,7 +441,7 @@ try {
       results.push({kind:item.kind,definitionId:item.definitionId,sourceRoomId:item.sourceRoomId,sourceStateHash:item.sourceStateHash,
         sourcePrefixReceipts:item.sourcePrefixReceipts,...(['detonation-disengage','detonation-disengage-initiation','consume-plague-initiation','consume-dark-swarm-initiation'].includes(item.flow)?{originalRemovalVerified,disengageKind:item.disengageKind}:{}),...(['detonation-delayed','detonation-storm-photon','consume-plague-initiation','consume-dark-swarm-initiation'].includes(item.flow)?{originalSourceDeathVerified}:{}),trace,signedActions:trace.length,twoSeatsVerified:true,
         explicitHumanConfirmation:true,previewReadOnly:true,replayMatchesCurrent:true,seatRecoveryReentryVerified:true,pageErrors:errors,
-        ...(['consume-plague-initiation','consume-dark-swarm-initiation'].includes(item.flow)?{producerFormChecks:producerFormChecks.filter(r=>r.kind===item.kind),fullWeaponSequenceAndActivationVerified:true}:{}),
+        ...(['added-card','consume-plague-initiation','consume-dark-swarm-initiation'].includes(item.flow)?{producerFormChecks:producerFormChecks.filter(r=>r.kind===item.kind),fullWeaponSequenceAndActivationVerified:true}:{}),
         ...(process.argv.includes('--readable-casualties')?{readableCasualtyChecks:readableCasualtyChecks.filter(r=>r.kind===item.kind)}:{})});
       await atomicWrite(completedRef,JSON.stringify(results.at(-1),null,2));
       console.log(JSON.stringify({case:item.kind,status:'passed',signedActions:trace.length}));

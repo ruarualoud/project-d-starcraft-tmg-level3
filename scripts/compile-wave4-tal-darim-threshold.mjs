@@ -9,13 +9,14 @@ import {createOfficialArmyBuilderCatalogueV2} from '../packages/source-data/offi
 import {createOfficialUnitCardSupplyDataBundleV2} from '../packages/source-data/official-unit-card-supply-data-bundle-v1.mjs';
 import {atomicWrite} from './lib/development-context.mjs';
 export const TAL_DARIM_THRESHOLD_DIRECTORY='build/wave4-web/tal-darim/threshold-candidate-v1';
-export async function compileWave4TalDarimThreshold(root){
+export async function compileWave4TalDarimThreshold(root,{
+  directory=TAL_DARIM_THRESHOLD_DIRECTORY,releaseId='wave4-u98-c88-r50-tal-darim-threshold-engineering-v1'}={}){
   const read=async ref=>JSON.parse(await fs.readFile(path.join(root,ref),'utf8')),
     old=await read('content/source-releases/wave3-20261116-deep-tunnel-geometry-release-v2.json'),faq=old.source.references.faq;
   if(faq?.version!=='1.3'||faq.byteHash!=='65cb2399c44e29b45d65faddbade7c72a46726e7b9c812e2c4af57c1704cc213')
     throw Error('TAL_DARIM_FROZEN_FAQ_REQUIRED');
-  const directory=TAL_DARIM_THRESHOLD_DIRECTORY,inputs=await compileWave4StukovUnitsV2(root,{
-    releaseId:'wave4-u98-c88-r50-tal-darim-threshold-engineering-v1',directory,additionalReferenceSources:{faq}}),
+  const inputs=await compileWave4StukovUnitsV2(root,{
+    releaseId,directory,additionalReferenceSources:{faq}}),
     registry=reviewOfficialTalDarimThresholdIdentityV1(inputs),
     historical=await read('content/source-releases/wave4-20261127/compatibility/wave3-dataset.json'),
     identities=compileOfficialAbilityIdentityCatalogueV2({dataset:inputs.dataset,registry,historicalDatasets:[historical]}),

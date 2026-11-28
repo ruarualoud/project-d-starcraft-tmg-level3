@@ -1,0 +1,190 @@
+{
+  "schema": "starcraft_tmg_wave4_added_card_harness_v1",
+  "status": "passed_scoped",
+  "rootRuntimeVersions": [
+    "3.245.0",
+    "3.246.0"
+  ],
+  "detectionHiddenLossPolicyVersion": "1.1.0",
+  "nativeCases": 6,
+  "nativeSignedActions": 130,
+  "nativeFullRounds": 6,
+  "oldPolicyControlCases": 1,
+  "oldPolicyControlActions": 20,
+  "webRooms": 5,
+  "webSignedActions": 9,
+  "webScope": "actual card initiation and activation successor from signed Native prefixes; not whole Web rounds",
+  "sourceComponentCases": 6,
+  "boundaryComponentCases": 9,
+  "indicatorComponentCases": 9,
+  "independentColdCases": 14,
+  "independentColdOriginalActions": 203,
+  "newColdActions": 0,
+  "definitions": [
+    {
+      "definitionId": "card:robotics_support_bay/master-of-robotics-any@1",
+      "classification": "existing_atoms_new_combination",
+      "newAtomIds": [],
+      "sourceCompiled": true,
+      "executionBound": true,
+      "nativeSuccessorsVerified": true,
+      "webVerified": true,
+      "allNamedConsumersVerified": true
+    },
+    {
+      "definitionId": "card:barracks__reactor_/go-go-go-any@1",
+      "classification": "existing_atom",
+      "newAtomIds": [],
+      "sourceCompiled": true,
+      "executionBound": true,
+      "nativeSuccessorsVerified": true,
+      "webVerified": true,
+      "allNamedConsumersVerified": true
+    },
+    {
+      "definitionId": "card:infested_barracks/for-the-swarm-any@1",
+      "classification": "existing_atoms_new_combination",
+      "newAtomIds": [],
+      "sourceCompiled": true,
+      "executionBound": true,
+      "nativeSuccessorsVerified": true,
+      "webVerified": true,
+      "allNamedConsumersVerified": true
+    },
+    {
+      "definitionId": "card:hive/creep-spread-any@1",
+      "classification": "existing_atom",
+      "newAtomIds": [],
+      "sourceCompiled": true,
+      "executionBound": true,
+      "nativeSuccessorsVerified": true,
+      "webVerified": true,
+      "allNamedConsumersVerified": true
+    },
+    {
+      "definitionId": "card:infested_command_center/scanner-sweep-any@1",
+      "classification": "existing_atoms_new_combination",
+      "newAtomIds": [],
+      "sourceCompiled": true,
+      "executionBound": true,
+      "nativeSuccessorsVerified": true,
+      "webVerified": true,
+      "allNamedConsumersVerified": true
+    }
+  ],
+  "unchangedReactionDefinitionIds": [
+    "card:nerazim/might-of-the-nerazim-any@1"
+  ],
+  "existingAtomsReused": [
+    "fixed HEAL and Mechanical qualification",
+    "extra Move and action-limit preservation",
+    "physical path/coherency validation",
+    "Creep token placement and lifecycle",
+    "detection indicator geometry",
+    "HIDDEN removal, ranged eligibility, Evade and hidden-loss reaction",
+    "round/card cleanup and recovery"
+  ],
+  "consumerRefs": [
+    {
+      "file": "packages/source-data/official-army-builder-catalogue-v2.mjs",
+      "exportName": "createOfficialArmyBuilderCatalogueV2"
+    },
+    {
+      "file": "packages/product-composition/official-release-roster-state-v2.mjs",
+      "exportName": "createOfficialReleaseRosterStateV2"
+    },
+    {
+      "file": "packages/product-composition/official-characteristic-status-family-adapter-v1.mjs",
+      "exportName": "createOfficialCharacteristicStatusFamilySourceBundleV2"
+    },
+    {
+      "file": "packages/product-composition/official-characteristic-status-family-adapter-v1.mjs",
+      "exportName": "createOfficialCharacteristicStatusFamilyAdapterV1"
+    },
+    {
+      "file": "packages/product-composition/official-relocation-family-adapter-v1.mjs",
+      "exportName": "createOfficialRelocationFamilySourceBundleV2"
+    },
+    {
+      "file": "packages/product-composition/official-relocation-family-adapter-v1.mjs",
+      "exportName": "createOfficialRelocationFamilyAdapterV1"
+    },
+    {
+      "file": "packages/product-composition/official-battlefield-asset-family-adapter-v1.mjs",
+      "exportName": "createOfficialBattlefieldAssetFamilySourceBundleV2"
+    },
+    {
+      "file": "packages/product-composition/official-battlefield-asset-family-adapter-v1.mjs",
+      "exportName": "createOfficialCreepCardComponentAdapterV2"
+    },
+    {
+      "file": "packages/product-composition/official-characteristic-status-family-adapter-v1.mjs",
+      "exportName": "projectOfficialCharacteristicStatusFamilyModifiersV1"
+    },
+    {
+      "file": "packages/product-composition/official-characteristic-status-family-adapter-v1.mjs",
+      "exportName": "consumeOfficialDetectionHiddenStatusesV1"
+    },
+    {
+      "file": "packages/product-composition/official-selected-roster-ranged-action-runtime-v1.mjs",
+      "exportName": "instantiateOfficialSelectedRosterRangedActionV1"
+    },
+    {
+      "file": "packages/product-composition/official-characteristic-status-component-runtime-v2.mjs",
+      "exportName": "createOfficialCharacteristicStatusComponentRuntimeV2"
+    },
+    {
+      "file": "packages/product-composition/official-current-product-match-runtime-v1.mjs",
+      "exportName": "createOfficialEngineeringScopedRoundRuntimeV1"
+    },
+    {
+      "file": "packages/client-domain/native-action-form-v1.mjs",
+      "exportName": "compileNativeActionFormValuesV1"
+    },
+    {
+      "file": "apps/starcraft-tmg-expo/components/battlefield/native-action-form.tsx",
+      "exportName": "NativeActionForm"
+    }
+  ],
+  "evidenceRefs": [
+    "docs/development/wave4/evidence/added-card-source.public.json",
+    "docs/development/wave4/evidence/added-card-active.public.json",
+    "docs/development/wave4/evidence/added-card-nerazim.public.json",
+    "docs/development/wave4/evidence/added-card-boundaries.public.json",
+    "docs/development/wave4/evidence/indicator-detection.public.json",
+    "docs/development/wave4/evidence/added-card-web.public.json",
+    "docs/development/wave4/evidence/added-card-native-cold.public.json",
+    "docs/development/wave4/evidence/added-card-web-cold.public.json",
+    "docs/development/wave4/evidence/added-card-nerazim-cold.public.json"
+  ],
+  "newCompleteAtoms": 0,
+  "implementedCumulativeAtoms": 7,
+  "mainBuilderRecordCount": 102,
+  "mainBuilderDenominator": 119,
+  "privateCandidateRecordCount": 108,
+  "sourceHeldDefinitions": 39,
+  "wholeRecordsEligibleByThisBatch": [
+    "tactical_cards:robotics_support_bay",
+    "tactical_cards:infested_barracks"
+  ],
+  "wholeRecordAdmissionChanged": false,
+  "pendingCardReactions": [
+    "Terran Charge",
+    "Brutal Instinct",
+    "Parasitic Bio-Toxins"
+  ],
+  "reusedLocalWebBundleRef": "build/wave4-web/tal-darim/web-bundle-v2",
+  "fullAppTypecheckPassed": false,
+  "fullMatchAdmission": false,
+  "modelCalls": 0,
+  "trainingTruth": false,
+  "tools": [
+    "exact source bindings",
+    "real Builder prerequisites",
+    "Native card/Move/HEAL/token/indicator successors",
+    "actual HIDDEN removal and Nerazim reaction",
+    "five two-seat Web producer forms",
+    "independent current, legacy and original-control reconstruction"
+  ],
+  "scope": "named added-card consumers; complete release remains pending"
+}

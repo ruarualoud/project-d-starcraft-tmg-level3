@@ -53,7 +53,21 @@
         "docs/development/wave4/evidence/tal-darim-threshold-consumers.public.json",
         "docs/development/wave4/evidence/tal-darim-threshold-harness.public.json",
         "docs/development/wave4/evidence/tal-darim-precision-choice-390.png",
-        "docs/development/wave4/evidence/tal-darim-precision-preview-390.png"
+        "docs/development/wave4/evidence/tal-darim-precision-preview-390.png",
+        "docs/development/wave4/added-card-active-wiring.zh-CN.md",
+        "docs/development/wave4/evidence/added-card-source.public.json",
+        "docs/development/wave4/evidence/added-card-active.public.json",
+        "docs/development/wave4/evidence/added-card-nerazim.public.json",
+        "docs/development/wave4/evidence/added-card-boundaries.public.json",
+        "docs/development/wave4/evidence/indicator-detection.public.json",
+        "docs/development/wave4/evidence/added-card-web.public.json",
+        "docs/development/wave4/evidence/added-card-native-cold.public.json",
+        "docs/development/wave4/evidence/added-card-web-cold.public.json",
+        "docs/development/wave4/evidence/added-card-nerazim-cold.public.json",
+        "docs/development/wave4/evidence/added-card-consumers.public.json",
+        "docs/development/wave4/evidence/added-card-harness.public.json",
+        "docs/development/wave4/evidence/added-card-swarm-form-390.png",
+        "docs/development/wave4/evidence/added-card-scanner-preview-390.png"
       ],
       "exit": "Every admitted changed definition has source binding, actual consumer and Native successor/recovery evidence; source holds remain explicit."
     },
@@ -97,6 +111,13 @@
             "docs/development/wave4/evidence/consume-web.public.json",
             "docs/development/wave4/evidence/consume-latest-bundle-reentry.public.json"
           ]
+        },
+        {
+          "criterion": "Five actual added-card producer forms, including 12-model extra Move at 390px with Native parameters and no horizontal form overflow",
+          "evidenceRefs": [
+            "docs/development/wave4/evidence/added-card-web.public.json",
+            "docs/development/wave4/evidence/added-card-swarm-form-390.png"
+          ]
         }
       ]
     },
@@ -122,6 +143,6 @@
     "postgameReview": false,
     "productionPublish": false
   },
-  "next": "继续新增卡牌的实际消费者，然后新增单位／势力、完整发布与500/2000分人人出口；FT尺寸待答，所有暂停保持。",
-  "updatedAt": "2026-11-28T07:23:22.819Z"
+  "next": "继续三条新增卡牌反应，再接新增单位／势力及整版人人出口；FT待答，所有暂停保持。",
+  "updatedAt": "2026-11-28T08:17:12.346Z"
 }

@@ -1,0 +1,269 @@
+{
+  "schema": "starcraft_tmg_wave4_added_card_nerazim_v1",
+  "status": "passed_scoped",
+  "results": [
+    {
+      "id": "scanner-nerazim",
+      "kind": "scanner",
+      "caseId": "scanner-nerazim",
+      "nerazimUsed": true,
+      "indicatorDetection": true,
+      "leftIndicatorProof": {
+        "actualEnemyMoveInches": 3,
+        "outsideIndicatorRange": true,
+        "hiddenDidNotReturn": true,
+        "hiddenEvadeEligibility": false
+      },
+      "definitionId": "card:infested_command_center/scanner-sweep-any@1",
+      "roomId": "wave4-added-card-scanner-nerazim",
+      "directoryRef": "build/wave4-web/added-cards/active-New9t1/scanner-nerazim",
+      "signedActions": 26,
+      "stateHash": "f717f19f5f5935534caeeae351e460cd781b9be467bd0a9874129fe56e947e36",
+      "abilityProof": {
+        "sourceCardExhausted": true,
+        "damageBefore": 0,
+        "damageAfter": 0,
+        "activationStageBefore": null,
+        "activationStageAfter": "before_action",
+        "physicalModelDeltaMilliInches": [
+          {
+            "id": "actor-model-1",
+            "dx": 0,
+            "dy": 0
+          },
+          {
+            "id": "actor-model-2",
+            "dx": 0,
+            "dy": 0
+          }
+        ],
+        "hiddenSuppressedByNativeIndicator": true,
+        "actualHiddenRemoved": true,
+        "detectionHiddenLossEvents": 1
+      },
+      "trace": [
+        {
+          "revision": 1,
+          "round": 1,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 2,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "choose_first_actor",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 3,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "resolve_battlefield_asset_ability",
+          "definitionId": "card:infested_command_center/scanner-sweep-any@1",
+          "pieceId": "actor"
+        },
+        {
+          "revision": 4,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 5,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "card:nerazim/might-of-the-nerazim-any@1",
+          "pieceId": null
+        },
+        {
+          "revision": 6,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "move",
+          "definitionId": null,
+          "pieceId": "actor"
+        },
+        {
+          "revision": 7,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "finish_activation",
+          "definitionId": null,
+          "pieceId": "actor"
+        },
+        {
+          "revision": 8,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "move",
+          "definitionId": null,
+          "pieceId": "enemy"
+        },
+        {
+          "revision": 9,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "finish_activation",
+          "definitionId": null,
+          "pieceId": "enemy"
+        },
+        {
+          "revision": 10,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 11,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 12,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "choose_first_actor",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 13,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "ranged_attack",
+          "definitionId": null,
+          "pieceId": "actor"
+        },
+        {
+          "revision": 14,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "finish_activation",
+          "definitionId": null,
+          "pieceId": "actor"
+        },
+        {
+          "revision": 15,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 16,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 17,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "choose_first_actor",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 18,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 19,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 20,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "determine_current_product_mission_marker_control",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 21,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "score_mission",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 22,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "check_mission_end_game",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 23,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_end_of_round_effects",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 24,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_cleanup_refresh",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 25,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_next_round_initiative",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 26,
+          "round": 2,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "definitionId": null,
+          "pieceId": null
+        }
+      ],
+      "usedActualCard": true,
+      "actualStandardMove": true,
+      "actualScannerRangedAttack": true,
+      "fullNativeRound": true,
+      "idempotencyVerified": true,
+      "coldReplay": true,
+      "fullMatchAdmission": false
+    }
+  ],
+  "newCompleteAtoms": 0,
+  "implementedCumulativeAtoms": 7,
+  "sourceHeldDefinitions": 39,
+  "fullMatchAdmission": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

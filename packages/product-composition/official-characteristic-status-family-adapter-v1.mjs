@@ -54,7 +54,7 @@ import { getOfficialUnitCardInspectionProfileV1 } from
   "../source-data/official-roster-disclosure-data-bundle-v1.mjs";
 import { verifyOfficialCurrentProductAbilityDenominatorV1 } from
   "./official-current-product-ability-denominator-v1.mjs";
-import { resolveOfficialBattlefieldAssetAbilityResourceCostV1 } from
+import { resolveOfficialBattlefieldAssetAbilityResourceCostV1,projectOfficialBattlefieldAssetFamilyModifiersV1 } from
   "./official-battlefield-asset-family-adapter-v1.mjs";
 import { quoteOfficialSelectedUnitPsionicLinkV1 } from "./official-match-lifecycle-family-adapter-v1.mjs";
 import { projectOfficialRangedFamilyModifiersV1 } from
@@ -110,9 +110,13 @@ export const OFFICIAL_DETECTION_HIDDEN_LOSS_POLICY_V1 = Object.freeze({
   removeActualStatusAfterTransition: true, restoreOnLeavingAura: false,
   trainingTruth: false,
 });
+export const OFFICIAL_DETECTION_HIDDEN_LOSS_POLICY_V2=Object.freeze({
+  ...OFFICIAL_DETECTION_HIDDEN_LOSS_POLICY_V1,version:'1.1.0',includeBattlefieldDetectionIndicators:true,
+});
 export function hasOfficialDetectionHiddenLossPolicyV1(state) {
   if (state?.officialDetectionHiddenLossPolicy === undefined) return false;
-  if (!isDeepStrictEqual(state.officialDetectionHiddenLossPolicy, OFFICIAL_DETECTION_HIDDEN_LOSS_POLICY_V1)) {
+  if (!isDeepStrictEqual(state.officialDetectionHiddenLossPolicy, OFFICIAL_DETECTION_HIDDEN_LOSS_POLICY_V1)
+    &&!isDeepStrictEqual(state.officialDetectionHiddenLossPolicy,OFFICIAL_DETECTION_HIDDEN_LOSS_POLICY_V2)) {
     fail('DETECTION_HIDDEN_LOSS_POLICY_INVALID');
   }
   return true;
@@ -520,6 +524,11 @@ function compileRoute(definition, { explicitRelease = false } = {}) {
     spec = weaponKeyword('first_weapon_keyword', 'ranged', 'precision', 2,
       { requiredActorTag: 'mechanical', requiresStationary: true,
         expiresAt: 'cleanup_and_refresh', remainingUses: 1 });
+  } else if (definition.definitionId==='card:robotics_support_bay/master-of-robotics-any@1'
+    &&definition.recordKey==='tactical_cards:robotics_support_bay'&&name==='Master of Robotics'
+    &&definition.sourceKind==='card_feature'&&definition.activationKind==='active'&&definition.phase==='movement'
+    &&text==='Master of Robotics <Active> <Movement Phase>: The active Mechanical Unit resolves the HEAL (2) effect.') {
+    spec={effectKind:'fixed_heal',actionKind:'active_ability',healValue:2,requiredActorTag:'mechanical',expiresAt:'immediate'};
   } else if (name === "Field Repair" && /Mechanical Unit resolves the HEAL \(2\)/iu.test(text)) {
     spec = { effectKind: "fixed_heal", actionKind: "active_ability",
       healValue: 2, requiredActorTag: "mechanical", expiresAt: "immediate" };
@@ -2729,6 +2738,17 @@ export function projectOfficialCharacteristicStatusFamilyModifiersV1(
     && passiveRoutesForPiece(bundle, state, source).some((entry) => (
       entry.effectKind === "detection_aura"
       && unitWithin(state, source, piece, entry.rangeMilliInches).within)));
+  const indicatorSources=hasOfficialDetectionHiddenLossPolicyV1(state)&&state.officialDetectionHiddenLossPolicy.includeBattlefieldDetectionIndicators
+    &&state.officialBattlefieldAssetFamilySourceBundle
+    ?projectOfficialBattlefieldAssetFamilyModifiersV1(state.officialBattlefieldAssetFamilySourceBundle,state,{pieceId:piece.id}).detectionMarkerIds.map(markerId=>{
+      const binding=state.officialBattlefieldAssetBindings.find(b=>b.assetId===markerId),
+        route=state.officialBattlefieldAssetFamilySourceBundle.routes.find(r=>r.definitionId===binding?.sourceDefinitionId);
+      if(!binding||binding.consumed||binding.assetKind!=='detection_aura'||route?.effectKind!=='detection_indicator'
+        ||binding.sourceFeatureHash!==route.sourceFeatureHash||binding.assetHash!==state.board.markers.find(m=>m.markerId===markerId)?.markerHash)
+        fail('DETECTION_INDICATOR_SOURCE_BINDING_INVALID');
+      return{markerId,definitionId:route.definitionId,sourceFeatureHash:route.sourceFeatureHash};
+    }):[];
+  const detectedByCurrentSource=detectionSources.length>0||indicatorSources.length>0;
   const tough = Math.max(0, ...passives.filter(entry => entry.effectKind === 'conditional_tough'
     && !hasStatus(piece, entry.excludedModeStatus)).map(entry => entry.tough),
     ...broodmotherEffects.map(entry => entry.tough || 0),
@@ -2816,15 +2836,16 @@ export function projectOfficialCharacteristicStatusFamilyModifiersV1(
     eligibleEvadeAgainstAllAttacks: passives.some((entry) => (
       entry.effectKind === "evade_eligibility"))
       || farsight
-      || hasOfficialHiddenRangedAndEvadePolicyV1(state) && hasStatus(piece, 'hidden') && detectionSources.length === 0,
+      || hasOfficialHiddenRangedAndEvadePolicyV1(state) && hasStatus(piece, 'hidden') && !detectedByCurrentSource,
     crossEngagementTargetingAllowed: passives.some((entry) => (
       entry.effectKind === "indomitable")),
     crossEngagementDefenderEvadeEligible: passives.some((entry) => (
       entry.effectKind === "indomitable")),
     cannotGainBurrowed: passives.some((entry) => (
       entry.effectKind === "cannot_gain_burrowed")),
-    hiddenSuppressedByDetection: detectionSources.length > 0,
+    hiddenSuppressedByDetection: detectedByCurrentSource,
     detectingSourcePieceIds: detectionSources.map((entry) => entry.id).sort(),
+    ...(state.officialDetectionHiddenLossPolicy?.includeBattlefieldDetectionIndicators?{detectingIndicatorSources:indicatorSources}:{}),
     chargeDistanceRoll: charge ? { diceCount: charge.diceCount,
       keepHighest: charge.keepHighest, addTo: "speed" } : null,
     attackPoolModifier: guardianSources.length > 0
@@ -2874,6 +2895,8 @@ export function consumeOfficialDetectionHiddenStatusesV1(bundle, stateInput) {
     });
     const event = seal({ type: 'detection_hidden_lost', targetPieceId: piece.id,
       detectingSources: sources, removedStatusEffectHashes: hashes,
+      ...(state.officialDetectionHiddenLossPolicy.includeBattlefieldDetectionIndicators
+        ?{detectingIndicatorSources:removal.detection.detectingIndicatorSources}:{}),
       round: Number(state.round), phase: state.phase, trainingTruth: false }, 'resolutionHash');
     state.officialDetectionHiddenLossHistory = [...(state.officialDetectionHiddenLossHistory || []), event];
     events.push(event);

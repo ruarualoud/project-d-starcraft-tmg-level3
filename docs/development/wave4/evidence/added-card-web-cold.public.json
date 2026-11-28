@@ -1,0 +1,78 @@
+{
+  "schema": "starcraft_tmg_wave4_added_card_cold_v1",
+  "status": "passed_read_only",
+  "results": [
+    {
+      "id": "heal",
+      "roomId": "product-wave4-web-heal",
+      "stateHash": "2d379f3ced136c57bffa2b7b659719586e1ab35fb0be118f404b9a73e08cabe1",
+      "originalSignedActions": 2,
+      "newActions": 0,
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "sourceOpenedReadOnly": true,
+      "oldPolicyControl": false,
+      "legacy": false,
+      "humanConfirmed": true
+    },
+    {
+      "id": "reactor",
+      "roomId": "product-wave4-web-reactor",
+      "stateHash": "fcfcdd6e831dfe08b2aa0d602c445d3ef607c725b3cb59244397c17e34e2254f",
+      "originalSignedActions": 2,
+      "newActions": 0,
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "sourceOpenedReadOnly": true,
+      "oldPolicyControl": false,
+      "legacy": false,
+      "humanConfirmed": true
+    },
+    {
+      "id": "swarm",
+      "roomId": "product-wave4-web-swarm",
+      "stateHash": "71a05d001944fa951f4bb227bcb63c92c2c88556786e24200542abdb272fa64b",
+      "originalSignedActions": 2,
+      "newActions": 0,
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "sourceOpenedReadOnly": true,
+      "oldPolicyControl": false,
+      "legacy": false,
+      "humanConfirmed": true
+    },
+    {
+      "id": "creep",
+      "roomId": "product-wave4-web-creep",
+      "stateHash": "b3213cdc8700b4a3bfcdf15251523f3630a0420f770afb861d7b95a377971a10",
+      "originalSignedActions": 1,
+      "newActions": 0,
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "sourceOpenedReadOnly": true,
+      "oldPolicyControl": false,
+      "legacy": false,
+      "humanConfirmed": true
+    },
+    {
+      "id": "scanner",
+      "roomId": "product-wave4-web-scanner",
+      "stateHash": "35584fc86516a4fe2c929f43e4404f9e92a623494b400462eafa0653f8352260",
+      "originalSignedActions": 2,
+      "newActions": 0,
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "sourceOpenedReadOnly": true,
+      "oldPolicyControl": false,
+      "legacy": false,
+      "humanConfirmed": true
+    }
+  ],
+  "newActions": 0,
+  "sourceHeldDefinitions": 39,
+  "newCompleteAtoms": 0,
+  "implementedCumulativeAtoms": 7,
+  "fullMatchAdmission": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

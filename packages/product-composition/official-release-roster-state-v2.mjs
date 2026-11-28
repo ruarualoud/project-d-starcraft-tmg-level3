@@ -18,7 +18,7 @@ import { OFFICIAL_RANGED_DECLARATION_POLICY_V1, OFFICIAL_RANGED_DECLARATION_POLI
   from '../rule-atoms/official-ranged-declaration-keywords-v1.mjs';
 import { OFFICIAL_CHARACTERISTIC_CONSUMER_POLICY_V1, OFFICIAL_CHARACTERISTIC_CONSUMER_POLICY_V2, OFFICIAL_CHARACTERISTIC_CONSUMER_POLICY_V3 }
   from './official-characteristic-status-family-adapter-v1.mjs';
-import { OFFICIAL_DETECTION_HIDDEN_LOSS_POLICY_V1 }
+import { OFFICIAL_DETECTION_HIDDEN_LOSS_POLICY_V1,OFFICIAL_DETECTION_HIDDEN_LOSS_POLICY_V2 }
   from './official-characteristic-status-family-adapter-v1.mjs';
 import { OFFICIAL_ARMOUR_THRESHOLD_POLICY_V1 } from "../rule-atoms/official-armour-threshold-policy-v1.mjs";
 import { OFFICIAL_ACTION_STATUS_LIFECYCLE_POLICY_V2, OFFICIAL_ACTION_STATUS_LIFECYCLE_POLICY_V3 }
@@ -125,7 +125,7 @@ export function createOfficialReleaseRosterStateV2({ context, candidatesBySide, 
   includePsionicTransferOutsideActivationReactions = false, includePsionicSourceDestructionCleanup = false,
   includeDeepTunnel = false, includePersonalTransport = false, includeCleanupReactionContinuation = false,
   includeForceWallTraversal = false, includePsionicStormAssaultDamage = false,
-  includeDetectionHiddenLoss = false, additionalGeneratedUnitRecordKeys = [], includeHoloDecoyRules = false,
+  includeDetectionHiddenLoss = false,includeIndicatorDetectionHiddenLoss=false, additionalGeneratedUnitRecordKeys = [], includeHoloDecoyRules = false,
   includeSummonedCombatEligibility = characteristicDefinitionIds?.includes('unit:holo_decoy/lethal-hologram-any-phase@1') === true,
   unitRoundEndDefinitionIds, structureDefinitionIds, includeAbilitySourcePhases = unitRoundEndDefinitionIds !== undefined,
   includeImpactAllocation = false, includePinpointEngagementOverride = false, includeBombardPlacement = false,
@@ -411,6 +411,12 @@ export function createOfficialReleaseRosterStateV2({ context, candidatesBySide, 
     state.officialBattlefieldAssetFamilySourceBundle = createOfficialBattlefieldAssetFamilySourceBundleV2({
       catalogue: abilityCatalogue(), definitionIds: battlefieldModifierDefinitionIds });
     state.officialArmourThresholdPolicy = structuredClone(OFFICIAL_ARMOUR_THRESHOLD_POLICY_V1);
+  }
+  if(includeIndicatorDetectionHiddenLoss){
+    if(!includeCharacteristicConsumers||!includeHiddenRangedAndEvade
+      ||!state.officialBattlefieldAssetFamilySourceBundle?.routes.some(r=>r.effectKind==='detection_indicator'))
+      throw Error('RELEASE_ROSTER_INDICATOR_DETECTION_CONSUMERS_REQUIRED');
+    state.officialDetectionHiddenLossPolicy=structuredClone(OFFICIAL_DETECTION_HIDDEN_LOSS_POLICY_V2);
   }
   if (blastTemplateGeometryAsset) {
     verifyOfficialBlastTemplateGeometryAssetV1(blastTemplateGeometryAsset, state.officialAttackProfileCatalogue);

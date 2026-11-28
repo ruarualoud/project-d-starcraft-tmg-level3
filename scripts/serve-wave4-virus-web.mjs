@@ -11,6 +11,7 @@ import { loadWave4StukovUnitInputs } from './compile-wave4-stukov-units.mjs';
 import { loadWave4StukovUnitInputsV2 } from './compile-wave4-stukov-units-v2.mjs';
 import { loadWave4StukovUnitInputsV3 } from './compile-wave4-stukov-units-v3.mjs';
 import { loadWave4TalDarimThresholdInputs } from './compile-wave4-tal-darim-threshold.mjs';
+import { loadWave4AddedCardInputs } from './compile-wave4-added-cards.mjs';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const read=async file=>JSON.parse(await fs.readFile(file,'utf8'));
@@ -26,7 +27,8 @@ const stormPhotonSource=['starcraft_tmg_wave4_detonation_storm_v1','starcraft_tm
 const disengageSource=sourceResult.schema==='starcraft_tmg_wave4_detonation_disengage_v1';
 const consumeSource=sourceResult.schema==='starcraft_tmg_wave4_consume_web_source_v1';
 const talDarimSource=sourceResult.schema==='starcraft_tmg_wave4_tal_darim_threshold_v1';
-const baseInputs=talDarimSource?await loadWave4TalDarimThresholdInputs(root):stormPhotonSource||disengageSource||consumeSource?await loadWave4StukovUnitInputsV3(root):sourceResult.schema==='starcraft_tmg_wave4_detonation_target_v1'||delayedSource?await loadWave4StukovUnitInputsV2(root):['starcraft_tmg_wave4_stukov_infestation_native_v1','starcraft_tmg_wave4_plagued_munitions_v1',
+const addedCardSource=sourceResult.schema==='starcraft_tmg_wave4_added_card_active_v1';
+const baseInputs=addedCardSource?await loadWave4AddedCardInputs(root):talDarimSource?await loadWave4TalDarimThresholdInputs(root):stormPhotonSource||disengageSource||consumeSource?await loadWave4StukovUnitInputsV3(root):sourceResult.schema==='starcraft_tmg_wave4_detonation_target_v1'||delayedSource?await loadWave4StukovUnitInputsV2(root):['starcraft_tmg_wave4_stukov_infestation_native_v1','starcraft_tmg_wave4_plagued_munitions_v1',
    'starcraft_tmg_wave4_infested_infantry_base_wiring_v1','starcraft_tmg_wave4_detonation_ranged_host_v1','starcraft_tmg_wave4_detonation_nested_host_v1',
    'starcraft_tmg_wave4_bio_kill_switch_v1','starcraft_tmg_wave4_corrode_web_source_v1','starcraft_tmg_wave4_detonation_template_v1','starcraft_tmg_wave4_detonation_outside_v1','starcraft_tmg_wave4_detonation_overwatch_v1','starcraft_tmg_wave4_overwatch_coexistence_v1','starcraft_tmg_wave4_detonation_khassar_web_source_v1','starcraft_tmg_wave4_detonation_declaration_v1'].includes(sourceResult.schema)?await loadWave4StukovUnitInputs(root)
   :sourceResult.schema==='starcraft_tmg_wave4_virus_creep_native_v1'?await loadWave4VirusEffectsInputs(root):await loadWave4TurretInputs(root);
@@ -51,11 +53,18 @@ for(const spec of specs) {  const proof=sourceResult.results.find(row=>row.id===
   const source=await bindWave4TurretRoom({inputs,state:sourceAuthority.state,...scope,
     directory:path.join(directory,'source-bindings',spec.id)});
   const nativeSource=source.open({readOnly:true,directory:sourceDirectory});
-  let prefix,prefixReceipts,sourceDisengagePlan,sourceConsumeParameters;
+  let prefix,prefixReceipts,sourceDisengagePlan,sourceConsumeParameters,sourceParameters,sourceStandardMoveParameters;
   try {
     await nativeSource.restoreDependencies(proof.roomId,sourceAuthority);
     const bundle=await nativeSource.store.loadReplayBundle(proof.roomId);
     const journal=bundle.privateJournal.filter(row=>row.payload.type==='accepted_transition').map(row=>row.payload.payload.receipt);
+    if(addedCardSource){
+      const unwrap=action=>{while(action.sourceAction||action.attackAction)action=action.sourceAction||action.attackAction;return action;},
+        actions=journal.map(r=>unwrap(r.action)),producer=actions.find(a=>a.definitionId===spec.definitionId);
+      sourceParameters=producer?.characteristicStatusPlan?.canonicalParameters||producer?.relocationPlan?.canonicalParameters||producer?.battlefieldAssetPlan?.canonicalParameters;
+      sourceStandardMoveParameters=actions.find(a=>a.actionType==='move'&&a.pieceId==='actor')?.spatialPlan?.canonicalParameters;
+      assert.ok(sourceParameters&&sourceStandardMoveParameters,'ADDED_CARD_SIGNED_INTENT_PARAMETERS_REQUIRED');
+    }
     if(spec.flow==='detonation-disengage-initiation'){let a=journal.find(r=>r.action.actionType==='disengage')?.action;while(a&&!a.spatialPlan)a=a.sourceAction;sourceDisengagePlan=a?.spatialPlan;assert.equal(sourceDisengagePlan?.spatialPlanHash,proof.originalPlanHash);}
     if(['consume-plague-initiation','consume-dark-swarm-initiation'].includes(spec.flow)){
       let a=journal.find(r=>r.action.actionType===(spec.flow==='consume-plague-initiation'?'cast_plague':'resolve_reaction_family_ability')
@@ -78,7 +87,7 @@ for(const spec of specs) {  const proof=sourceResult.results.find(row=>row.id===
   const roomDirectory=path.join(directory,'rooms',spec.id);
   const generatedPrefix=scope.roundControl&&prefix.state.pieces.some(p=>!sourceAuthority.state.pieces.some(prior=>prior.id===p.id));
   const bound=await bindWave4TurretRoom({inputs,state:prefix.state,...scope,directory:roomDirectory,humanConfirmed:true,
-    ...(consumeSource?{humanParameterConstraints:true}:{}),
+    ...(consumeSource||addedCardSource?{humanParameterConstraints:true}:{}),
     ...(generatedPrefix?{runtimeInitialState:sourceAuthority.state,expectedNativeRuntimeHash:source.runtime.descriptor.runtimeHash}:{}),
     scenario:{...scope.scenario,kind:'web_from_signed_native_virus_prefix',sourceRoomId:proof.roomId,
       sourceStateHash:prefix.stateHash,sourceBindingHash:prefix.matchBindingHash,sourcePrefixReceipts:prefixReceipts}});
@@ -94,6 +103,7 @@ for(const spec of specs) {  const proof=sourceResult.results.find(row=>row.id===
   }
   const originalResolutionHash=proof.originalResolutionHash||(['detonation-overwatch','detonation-khassar','detonation-declaration','detonation-template','detonation-target','detonation-delayed','detonation-storm-photon'].includes(spec.flow)?proof.frames?.[0]?.rows?.[0]?.attackResolutionHash:null);
   service.rooms.push({...spec,kind:spec.id,roomId,links,sourcePrefixReceipts:prefixReceipts,
+    ...(addedCardSource?{sourceParameters,sourceStandardMoveParameters}:{}),
     ...(sourceConsumeParameters?{expectedConsumeParameters:sourceConsumeParameters,expectedCasterId:'defiler',expectedAttackTargetId:'victim',
       expectedCastTargetId:spec.flow==='consume-plague-initiation'?'target':null}:{}),
     ...(spec.flow==='detonation-delayed'?{delayedKind:proof.kind,originalSourceId:proof.sourceId}:{}),

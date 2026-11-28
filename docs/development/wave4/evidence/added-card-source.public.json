@@ -1,0 +1,50 @@
+{
+  "schema": "starcraft_tmg_wave4_added_card_source_v1",
+  "status": "passed_component",
+  "cases": [
+    "Master of Robotics exact source binds existing HEAL(2) for Mechanical actor",
+    "Reactor Go! Go! Go! retains existing Biological extra Move without a Ground restriction",
+    "For the Swarm! binds both Biological and Ground, two inches and no action-limit consumption",
+    "Hive Creep Spread exact source reuses Creep token placement",
+    "Infested Scanner Sweep exact source accepts its explicit article without changing old source text",
+    "five records selected only in private candidate; four held records remain excluded"
+  ],
+  "definitions": [
+    {
+      "definitionId": "card:robotics_support_bay/master-of-robotics-any@1",
+      "classification": "existing_atoms_new_combination",
+      "newAtomIds": []
+    },
+    {
+      "definitionId": "card:barracks__reactor_/go-go-go-any@1",
+      "classification": "existing_atom",
+      "newAtomIds": []
+    },
+    {
+      "definitionId": "card:infested_barracks/for-the-swarm-any@1",
+      "classification": "existing_atoms_new_combination",
+      "newAtomIds": []
+    },
+    {
+      "definitionId": "card:hive/creep-spread-any@1",
+      "classification": "existing_atom",
+      "newAtomIds": []
+    },
+    {
+      "definitionId": "card:infested_command_center/scanner-sweep-any@1",
+      "classification": "existing_atoms_new_combination",
+      "newAtomIds": []
+    }
+  ],
+  "releaseId": "wave4-u98-c88-r50-added-cards-engineering-v1",
+  "privateSelectedRecords": 108,
+  "mainBuilderRecordCount": 102,
+  "newSignedActions": 0,
+  "newCompleteAtoms": 0,
+  "implementedCumulativeAtoms": 7,
+  "sourceHeldDefinitions": 39,
+  "actualRuntimeConsumersVerified": false,
+  "fullMatchAdmission": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

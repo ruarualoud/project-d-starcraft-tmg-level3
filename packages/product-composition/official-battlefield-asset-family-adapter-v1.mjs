@@ -272,7 +272,9 @@ function compileRoute(definition, { explicitSource = false } = {}) {
       rangeInches: 4, resourceTypeAffected: "PE", resourceCostReduction: 1,
       oncePerRound: true };
   } else if (["Oversight Mode", "Surveillance", "Scanner Sweep"].includes(name)
-    && /Set a Faction Indicator anywhere.+Within 6.+lose HIDDEN/iu.test(text)) {
+    && /Set a Faction Indicator anywhere.+Within 6.+lose HIDDEN/iu.test(text)
+    ||explicitSource&&definition.definitionId==='card:infested_command_center/scanner-sweep-any@1'
+      &&reviewedBattlefieldModifierSource({...definition,abilityName:name})==='detection_indicator') {
     spec = { effectKind: "detection_indicator", actionKind: "active_ability",
       markerRole: "detection_aura", rangeInches: 6, removesHidden: true };
   } else if (name === "Creep Spread" || name === "Excrete Creep") {
@@ -415,6 +417,7 @@ export function createOfficialBattlefieldAssetFamilySourceBundleV1(input = {}) {
 export const OFFICIAL_OVERSIGHT_MODE_ID = 'card:overseer/oversight-mode-any@1';
 
 const creepCardPlacementPhase = {
+  'card:hive/creep-spread-any@1': { name: 'Creep Spread', phase: 'movement', label: 'Movement' },
   'card:lair/creep-spread-any@1': { name: 'Creep Spread', phase: 'movement', label: 'Movement' },
   'card:hatchery/creep-spread-any@1': { name: 'Creep Spread', phase: 'movement', label: 'Movement' },
   'card:overlord/excrete-creep-any@1': { name: 'Excrete Creep', phase: 'assault', label: 'Assault' },
@@ -461,6 +464,9 @@ function reviewedBattlefieldModifierSource(row) {
     && row.sourceText === 'This Unit gains BUFF SPEED (1), or BUFF SPEED (2) if the Unit is ON CREEP.') {
     return 'on_creep_speed_active';
   }
+  if(row.definitionId==='card:infested_command_center/scanner-sweep-any@1'&&row.recordKey==='tactical_cards:infested_command_center'
+    &&row.sourceKind==='card_feature'&&row.abilityName==='Scanner Sweep'&&row.activationKind==='active'&&row.phase==='movement'
+    &&row.sourceText==='Scanner Sweep <Active> <Movement Phase>: Set a Faction Indicator anywhere on the battlefield. While Enemy Units are Within 6" of this Faction Indicator, they lose the HIDDEN Status.')return 'detection_indicator';
   if (row.definitionId === 'card:orbital_command/scanner-sweep-any@1' && row.recordKey === 'tactical_cards:orbital_command'
     && row.sourceKind === 'card_feature' && row.abilityName === 'Scanner Sweep' && row.activationKind === 'active' && row.phase === 'movement'
     && row.sourceText === "Scanner Sweep <Active> <Movement Phase>: Set a Faction Indicator anywhere on the battlefield. While Enemy Units are Within 6\" of this Faction Indicator, they lose HIDDEN Status.") return 'detection_indicator';
@@ -791,6 +797,7 @@ export function resolveOfficialBattlefieldAssetAbilityResourceCostV1(
 function ownsReviewedMovementActivation(state, route) {
   return state.officialBattlefieldAssetFamilySourceBundle?.scope === 'explicit_source_definition_set'
     && (route.sourceBoundForceField || isReserveBeaconRoute(route) || glialReconstitutionDefinitions.has(route.definitionId) || route.definitionId === OFFICIAL_OVERSIGHT_MODE_ID || route.definitionId === 'card:orbital_command/scanner-sweep-any@1' || route.definitionId === 'card:observer/surveillance-any@1'
+      || route.definitionId === 'card:infested_command_center/scanner-sweep-any@1'
       || route.definitionId === 'unit:jim_raynor/orders-movement-phase@1');
 }
 

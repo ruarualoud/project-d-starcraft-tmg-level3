@@ -1,0 +1,314 @@
+{
+  "schema": "starcraft_tmg_wave4_virus_web_verification_v1",
+  "status": "passed_scoped",
+  "runRef": "build/wave4-web/added-cards/web-v1",
+  "results": [
+    {
+      "kind": "heal",
+      "definitionId": "card:robotics_support_bay/master-of-robotics-any@1",
+      "sourceRoomId": "wave4-added-card-heal",
+      "sourceStateHash": "a39b69b4ece789e42fddc7fce5dc59303082c367ab3d30246069470899252f06",
+      "sourcePrefixReceipts": 2,
+      "trace": [
+        {
+          "actionType": "resolve_characteristic_status_ability",
+          "definitionId": "card:robotics_support_bay/master-of-robotics-any@1",
+          "sideKey": "player1",
+          "stateRevision": 1,
+          "stateHash": "adc887db4ec30dd39ec8278d81026650ab6dc357cfeb5067b57233adc2f0bcbd"
+        },
+        {
+          "actionType": "finish_activation",
+          "definitionId": null,
+          "sideKey": "player1",
+          "stateRevision": 2,
+          "stateHash": "2d379f3ced136c57bffa2b7b659719586e1ab35fb0be118f404b9a73e08cabe1"
+        }
+      ],
+      "signedActions": 2,
+      "twoSeatsVerified": true,
+      "explicitHumanConfirmation": true,
+      "previewReadOnly": true,
+      "replayMatchesCurrent": true,
+      "seatRecoveryReentryVerified": true,
+      "pageErrors": [],
+      "producerFormChecks": [
+        {
+          "kind": "heal",
+          "actionType": "resolve_characteristic_status_ability",
+          "viewportWidth": 390,
+          "clientWidth": 298,
+          "scrollWidth": 298,
+          "requiredFields": [
+            "activeUnitId",
+            "paymentCardInstanceIds"
+          ],
+          "modelCount": 1,
+          "nativeIntentOnly": true
+        }
+      ],
+      "fullWeaponSequenceAndActivationVerified": true
+    },
+    {
+      "kind": "reactor",
+      "definitionId": "card:barracks__reactor_/go-go-go-any@1",
+      "sourceRoomId": "wave4-added-card-reactor",
+      "sourceStateHash": "f80f34976e2eeb6c105a26a088c9901d2f9275e431138db05ad745aa8e74f692",
+      "sourcePrefixReceipts": 2,
+      "trace": [
+        {
+          "actionType": "resolve_relocation_ability",
+          "definitionId": "card:barracks__reactor_/go-go-go-any@1",
+          "sideKey": "player1",
+          "stateRevision": 1,
+          "stateHash": "d8916160063ea7f110059d17b75ffcd762f133e5d2b93f3f58b066e268a39bc4"
+        },
+        {
+          "actionType": "finish_activation",
+          "definitionId": null,
+          "sideKey": "player1",
+          "stateRevision": 2,
+          "stateHash": "fcfcdd6e831dfe08b2aa0d602c445d3ef607c725b3cb59244397c17e34e2254f"
+        }
+      ],
+      "signedActions": 2,
+      "twoSeatsVerified": true,
+      "explicitHumanConfirmation": true,
+      "previewReadOnly": true,
+      "replayMatchesCurrent": true,
+      "seatRecoveryReentryVerified": true,
+      "pageErrors": [],
+      "producerFormChecks": [
+        {
+          "kind": "reactor",
+          "actionType": "resolve_relocation_ability",
+          "viewportWidth": 1500,
+          "clientWidth": 334,
+          "scrollWidth": 334,
+          "requiredFields": [
+            "leadingModelId",
+            "placements",
+            "path"
+          ],
+          "modelCount": 6,
+          "nativeIntentOnly": true
+        }
+      ],
+      "fullWeaponSequenceAndActivationVerified": true
+    },
+    {
+      "kind": "swarm",
+      "definitionId": "card:infested_barracks/for-the-swarm-any@1",
+      "sourceRoomId": "wave4-added-card-swarm",
+      "sourceStateHash": "36e89cabb8c847c2eb405b4a0a330236b764d94be9b129ffe3609da0ed102eca",
+      "sourcePrefixReceipts": 2,
+      "trace": [
+        {
+          "actionType": "resolve_relocation_ability",
+          "definitionId": "card:infested_barracks/for-the-swarm-any@1",
+          "sideKey": "player1",
+          "stateRevision": 1,
+          "stateHash": "a21e76c8761341682a81c6f41a7b9ac00b5a27beb2e240f1444ca07c651c0793"
+        },
+        {
+          "actionType": "finish_activation",
+          "definitionId": null,
+          "sideKey": "player1",
+          "stateRevision": 2,
+          "stateHash": "71a05d001944fa951f4bb227bcb63c92c2c88556786e24200542abdb272fa64b"
+        }
+      ],
+      "signedActions": 2,
+      "twoSeatsVerified": true,
+      "explicitHumanConfirmation": true,
+      "previewReadOnly": true,
+      "replayMatchesCurrent": true,
+      "seatRecoveryReentryVerified": true,
+      "pageErrors": [],
+      "producerFormChecks": [
+        {
+          "kind": "swarm",
+          "actionType": "resolve_relocation_ability",
+          "viewportWidth": 390,
+          "clientWidth": 298,
+          "scrollWidth": 298,
+          "requiredFields": [
+            "leadingModelId",
+            "placements",
+            "path"
+          ],
+          "modelCount": 12,
+          "nativeIntentOnly": true
+        }
+      ],
+      "fullWeaponSequenceAndActivationVerified": true
+    },
+    {
+      "kind": "creep",
+      "definitionId": "card:hive/creep-spread-any@1",
+      "sourceRoomId": "wave4-added-card-creep",
+      "sourceStateHash": "688eef207ec2d348cb0a0ffc78e62645fec6c201ea26c1fa37f5ed96a5327d7e",
+      "sourcePrefixReceipts": 2,
+      "trace": [
+        {
+          "actionType": "resolve_battlefield_asset_ability",
+          "definitionId": "card:hive/creep-spread-any@1",
+          "sideKey": "player1",
+          "stateRevision": 1,
+          "stateHash": "b3213cdc8700b4a3bfcdf15251523f3630a0420f770afb861d7b95a377971a10"
+        }
+      ],
+      "signedActions": 1,
+      "twoSeatsVerified": true,
+      "explicitHumanConfirmation": true,
+      "previewReadOnly": true,
+      "replayMatchesCurrent": true,
+      "seatRecoveryReentryVerified": true,
+      "pageErrors": [],
+      "producerFormChecks": [
+        {
+          "kind": "creep",
+          "actionType": "resolve_battlefield_asset_ability",
+          "viewportWidth": 1500,
+          "clientWidth": 334,
+          "scrollWidth": 334,
+          "requiredFields": [
+            "activeUnitId",
+            "paymentCardInstanceIds",
+            "coordinate"
+          ],
+          "modelCount": 12,
+          "nativeIntentOnly": true
+        }
+      ],
+      "fullWeaponSequenceAndActivationVerified": true
+    },
+    {
+      "kind": "scanner",
+      "definitionId": "card:infested_command_center/scanner-sweep-any@1",
+      "sourceRoomId": "wave4-added-card-scanner-indicator",
+      "sourceStateHash": "0d3f335f588d917518f4f95cface687d930611434d92fa9cc7086ea008396b4b",
+      "sourcePrefixReceipts": 2,
+      "trace": [
+        {
+          "actionType": "resolve_battlefield_asset_ability",
+          "definitionId": "card:infested_command_center/scanner-sweep-any@1",
+          "sideKey": "player1",
+          "stateRevision": 1,
+          "stateHash": "62234d90fa24ec45fa8513524c33cd11d9ab312a060720988c957e6c036a1ca3"
+        },
+        {
+          "actionType": "finish_activation",
+          "definitionId": null,
+          "sideKey": "player1",
+          "stateRevision": 2,
+          "stateHash": "35584fc86516a4fe2c929f43e4404f9e92a623494b400462eafa0653f8352260"
+        }
+      ],
+      "signedActions": 2,
+      "twoSeatsVerified": true,
+      "explicitHumanConfirmation": true,
+      "previewReadOnly": true,
+      "replayMatchesCurrent": true,
+      "seatRecoveryReentryVerified": true,
+      "pageErrors": [],
+      "producerFormChecks": [
+        {
+          "kind": "scanner",
+          "actionType": "resolve_battlefield_asset_ability",
+          "viewportWidth": 390,
+          "clientWidth": 298,
+          "scrollWidth": 298,
+          "requiredFields": [
+            "activeUnitId",
+            "paymentCardInstanceIds",
+            "coordinate"
+          ],
+          "modelCount": 2,
+          "nativeIntentOnly": true
+        }
+      ],
+      "fullWeaponSequenceAndActivationVerified": true
+    }
+  ],
+  "producerFormChecks": [
+    {
+      "kind": "heal",
+      "actionType": "resolve_characteristic_status_ability",
+      "viewportWidth": 390,
+      "clientWidth": 298,
+      "scrollWidth": 298,
+      "requiredFields": [
+        "activeUnitId",
+        "paymentCardInstanceIds"
+      ],
+      "modelCount": 1,
+      "nativeIntentOnly": true
+    },
+    {
+      "kind": "reactor",
+      "actionType": "resolve_relocation_ability",
+      "viewportWidth": 1500,
+      "clientWidth": 334,
+      "scrollWidth": 334,
+      "requiredFields": [
+        "leadingModelId",
+        "placements",
+        "path"
+      ],
+      "modelCount": 6,
+      "nativeIntentOnly": true
+    },
+    {
+      "kind": "swarm",
+      "actionType": "resolve_relocation_ability",
+      "viewportWidth": 390,
+      "clientWidth": 298,
+      "scrollWidth": 298,
+      "requiredFields": [
+        "leadingModelId",
+        "placements",
+        "path"
+      ],
+      "modelCount": 12,
+      "nativeIntentOnly": true
+    },
+    {
+      "kind": "creep",
+      "actionType": "resolve_battlefield_asset_ability",
+      "viewportWidth": 1500,
+      "clientWidth": 334,
+      "scrollWidth": 334,
+      "requiredFields": [
+        "activeUnitId",
+        "paymentCardInstanceIds",
+        "coordinate"
+      ],
+      "modelCount": 12,
+      "nativeIntentOnly": true
+    },
+    {
+      "kind": "scanner",
+      "actionType": "resolve_battlefield_asset_ability",
+      "viewportWidth": 390,
+      "clientWidth": 298,
+      "scrollWidth": 298,
+      "requiredFields": [
+        "activeUnitId",
+        "paymentCardInstanceIds",
+        "coordinate"
+      ],
+      "modelCount": 2,
+      "nativeIntentOnly": true
+    }
+  ],
+  "signedActions": 9,
+  "conditionalTurretGeometryInRestorationCaseOnly": false,
+  "sourceHeldDefinitions": 39,
+  "engineeringEstimatedUnitGeometry": false,
+  "fullWave4LobbyBuilderAdmission": false,
+  "fullMatchAdmission": false,
+  "wave3PlayerRoomsTouched": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

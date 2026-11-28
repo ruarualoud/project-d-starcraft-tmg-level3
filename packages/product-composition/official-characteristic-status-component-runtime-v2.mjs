@@ -1341,6 +1341,10 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
     throw Error('CLEANUP_CONTINUATION_HIDDEN_CONSUMER_REQUIRED');
   }
   const talDarimThresholds = assertOfficialTalDarimThresholdStateV1(spatialState);
+  const addedCardIds=new Set(['card:robotics_support_bay/master-of-robotics-any@1','card:barracks__reactor_/go-go-go-any@1',
+    'card:infested_barracks/for-the-swarm-any@1','card:hive/creep-spread-any@1','card:infested_command_center/scanner-sweep-any@1']);
+  const wave4AddedCardDefinitionIds=[...new Set([...characteristicRoutes,...(relocationBundle?.routes||[]),...(battlefieldModifierBundle?.routes||[])]
+    .map(r=>r.definitionId).filter(id=>addedCardIds.has(id)))].sort(),wave4AddedActiveCards=wave4AddedCardDefinitionIds.length>0;
   const firebatStimpack = characteristicRoutes.some(route => route.definitionId === 'unit:firebat/stimpack-movement-phase@1');
   const superStimpack = characteristicRoutes.some(route => route.abilityName === 'Super Stimpack');
   const griffinSupport = unitLifecycleBundle?.definitionIds.includes('card:nova_covert_ops/griffin-support-any@1');
@@ -1402,9 +1406,11 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
   }
   const novaVision = characteristicRoutes.some(route => ['Ghost Visor', 'Tactical Stealth Suit'].includes(route.abilityName));
   const detectionHiddenLoss = hasOfficialDetectionHiddenLossPolicyV1(spatialState);
+  const indicatorDetectionHiddenLoss=detectionHiddenLoss&&spatialState.officialDetectionHiddenLossPolicy.includeBattlefieldDetectionIndicators===true;
   if (detectionHiddenLoss && (!currentCharacteristicConsumers
     || !spatialState.officialCharacteristicConsumerPolicy.hiddenRangedTargeting
-    || !characteristicRoutes.some(route => route.effectKind === 'detection_aura'))) {
+    || !characteristicRoutes.some(route => route.effectKind === 'detection_aura')
+      &&!(indicatorDetectionHiddenLoss&&battlefieldModifierBundle?.routes.some(r=>r.effectKind==='detection_indicator')))) {
     throw Error('DETECTION_HIDDEN_LOSS_CONSUMERS_REQUIRED');
   }
   if (novaVision && (!ranged || !currentCharacteristicConsumers
@@ -1586,7 +1592,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
   }) : null;
   if(hasOfficialTemplateBeforeCasualtyPolicyV1(spatialState)&&((targetReactions||rangedDeclaration)&&!hasOfficialDeclaredAttackBeforeCasualtyPolicyV1(spatialState)||overwatch&&!hasOfficialOverwatchBeforeCasualtyPolicyV1(spatialState)||(khassarAttacks.length||khassarCharge)&&!hasOfficialKhassarBeforeCasualtyPolicyV1(spatialState)))
     throw Error('BEFORE_CASUALTY_DELEGATED_ATTACK_OWNER_NOT_ADMITTED');
-  const version = talDarimThresholds?'3.244.0':firebatStimpack?'3.243.0':hasOfficialConsumeBeforeCasualtyPolicyV1(spatialState)?'3.242.0':hasOfficialDirectRemovalBeforeCasualtyPolicyV1(spatialState)?'3.241.0':hasOfficialSourceOwnedArmourContextPolicyV1(spatialState)?'3.240.0':includeExternalBeaconEntryObservation?'3.239.0':hasOfficialStormPhotonBeforeCasualtyPolicyV1(spatialState)?'3.238.0':hasOfficialDelayedHitsBeforeCasualtyPolicyV1(spatialState)?'3.237.0':hasOfficialDeclaredAttackBeforeCasualtyPolicyV1(spatialState)?'3.236.0':hasOfficialKhassarBeforeCasualtyPolicyV1(spatialState)?'3.235.0':overwatch?.descriptor.runtimeVersion === '1.2.0' ? '3.234.0' : hasOfficialOverwatchBeforeCasualtyPolicyV1(spatialState) ? '3.233.0' : hasOfficialTemplateBeforeCasualtyPolicyV1(spatialState) ? '3.232.0' : includeCorrodeRoundCleanup ? '3.231.0' : corrodeArmour ? '3.230.0' : infestationDamage ? '3.229.0' : hasOfficialExtendedBeforeCasualtyPolicyV1(spatialState) ? '3.228.0' : beforeCasualty ? '3.227.0' : plaguedMunitions ? '3.226.0' : repeatedActivationIdentity ? '3.225.0' : infantryPrecision ? '3.224.0' : stukovInfestation ? '3.223.0' : universalCarrier ? '3.222.0' : includeReleaseMoundAssaultOrder ? '3.221.0' : includeBilePhysicalPlacement && bile ? '3.220.0' : psionicRoundEnd?.scheduledEffects ? '3.219.0' : includeReleaseBileAssaultOrder ? '3.218.0' : releaseZergTargets ? '3.217.0' : includePsionicStormAssaultSameName ? '3.216.0'
+  const version = indicatorDetectionHiddenLoss?'3.246.0':wave4AddedActiveCards?'3.245.0':talDarimThresholds?'3.244.0':firebatStimpack?'3.243.0':hasOfficialConsumeBeforeCasualtyPolicyV1(spatialState)?'3.242.0':hasOfficialDirectRemovalBeforeCasualtyPolicyV1(spatialState)?'3.241.0':hasOfficialSourceOwnedArmourContextPolicyV1(spatialState)?'3.240.0':includeExternalBeaconEntryObservation?'3.239.0':hasOfficialStormPhotonBeforeCasualtyPolicyV1(spatialState)?'3.238.0':hasOfficialDelayedHitsBeforeCasualtyPolicyV1(spatialState)?'3.237.0':hasOfficialDeclaredAttackBeforeCasualtyPolicyV1(spatialState)?'3.236.0':hasOfficialKhassarBeforeCasualtyPolicyV1(spatialState)?'3.235.0':overwatch?.descriptor.runtimeVersion === '1.2.0' ? '3.234.0' : hasOfficialOverwatchBeforeCasualtyPolicyV1(spatialState) ? '3.233.0' : hasOfficialTemplateBeforeCasualtyPolicyV1(spatialState) ? '3.232.0' : includeCorrodeRoundCleanup ? '3.231.0' : corrodeArmour ? '3.230.0' : infestationDamage ? '3.229.0' : hasOfficialExtendedBeforeCasualtyPolicyV1(spatialState) ? '3.228.0' : beforeCasualty ? '3.227.0' : plaguedMunitions ? '3.226.0' : repeatedActivationIdentity ? '3.225.0' : infantryPrecision ? '3.224.0' : stukovInfestation ? '3.223.0' : universalCarrier ? '3.222.0' : includeReleaseMoundAssaultOrder ? '3.221.0' : includeBilePhysicalPlacement && bile ? '3.220.0' : psionicRoundEnd?.scheduledEffects ? '3.219.0' : includeReleaseBileAssaultOrder ? '3.218.0' : releaseZergTargets ? '3.217.0' : includePsionicStormAssaultSameName ? '3.216.0'
     : includePsionicStormTokenCleanup ? '3.215.0'
     : includePsionicStormNamedOverlapChoices ? '3.214.0'
     : stormCast ? '3.213.0'
@@ -1678,6 +1684,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
       meleeSidearmConsumerScope: 'source_bound_single_model_defiler_melee_batches' } : {}),
     ...(plagueCoverage ? { plagueCoverageQuery: plagueCoverage.descriptor } : {}),
     rulesVersion: 'official-release-characteristic-status-component-v2', catalogueHash: catalogue.catalogueHash,
+    ...(wave4AddedActiveCards?{wave4AddedActiveCardDefinitionIds:wave4AddedCardDefinitionIds}:{}),
     ...(talDarimThresholds?{talDarimThresholdPolicy:structuredClone(spatialState.officialTalDarimThresholdPolicy)}:{}),
     ...(defilerMeleeFoundation ? { defilerMeleeDefinitionIds, defilerMeleeConsumerScope: 'native_charge_impact_and_claws' } : {}),
     ...(consumePaymentSource ? { consumePaymentQuery: { sourceBundleHash: consumePaymentSource.bundleHash,
@@ -3561,7 +3568,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
     if (rangedDeclaration?.pending(state)) throw Error('RANGED_DECLARATION_ATTACK_CONTINUATION_REQUIRED');
     if (hiddenLossReactions?.pending(state)) throw Error('HIDDEN_LOSS_REACTION_CONTINUATION_REQUIRED');
     if (closeRanksReactions && displacement.pending(state)) throw Error('PSIONIC_DISPLACEMENT_CLOSE_RANKS_CONTINUATION_REQUIRED');
-    if (!talDarimThresholds && !firebatStimpack && !hasOfficialTemplateBeforeCasualtyPolicyV1(state) && !(corrodeArmour&&includeCorrodeRoundCleanup) && !infantryPrecision && !stukovInfestation && !battlefieldModifierBundle?.routes.some(route=>route.effectKind==='stukov_creep') && !guardianShield && !ourMindsAsOne && !khalasGift && !executorsWill && !forceWallTraversal && !feedback && !farsight && !scourgeQueen && !zagaraBroodmother && !poisonousEssence && !overwatch && !sabotageDronePhaseEnd && !holoRoundEnd && !unitLifecycleAdapter && !bileUpgrades && !psionicRoundEnd && !hiddenLossReactions && !targetedMeleeCritical && !markedTargetFirstWeapon && !vilelingFoundation && !defilerMeleeFoundation && !markerAreas && !coordinatedStrike && !stationaryFirstRanged && !plasmaArmourSource && !alloyArmourSource && !superStimpack && !commandoStimpack && !chargeDeclaration) throw Error('CHARACTERISTIC_UNIT_LIFECYCLE_CONSUMER_REQUIRED');
+    if (!wave4AddedActiveCards && !talDarimThresholds && !firebatStimpack && !hasOfficialTemplateBeforeCasualtyPolicyV1(state) && !(corrodeArmour&&includeCorrodeRoundCleanup) && !infantryPrecision && !stukovInfestation && !battlefieldModifierBundle?.routes.some(route=>route.effectKind==='stukov_creep') && !guardianShield && !ourMindsAsOne && !khalasGift && !executorsWill && !forceWallTraversal && !feedback && !farsight && !scourgeQueen && !zagaraBroodmother && !poisonousEssence && !overwatch && !sabotageDronePhaseEnd && !holoRoundEnd && !unitLifecycleAdapter && !bileUpgrades && !psionicRoundEnd && !hiddenLossReactions && !targetedMeleeCritical && !markedTargetFirstWeapon && !vilelingFoundation && !defilerMeleeFoundation && !markerAreas && !coordinatedStrike && !stationaryFirstRanged && !plasmaArmourSource && !alloyArmourSource && !superStimpack && !commandoStimpack && !chargeDeclaration) throw Error('CHARACTERISTIC_UNIT_LIFECYCLE_CONSUMER_REQUIRED');
     if (psionicRoundEnd && request.eventKind === 'round_end'
       && (psionicRoundEnd.pending(state) || psionicRoundEnd.hasOutstanding(state))) throw Error('PSIONIC_TRANSFER_ROUND_END_CHOICES_REQUIRED');
     const prepared = psionicRoundEnd && request.eventKind === 'cleanup_and_refresh' ? psionicRoundEnd.cleanup(state) : state;
@@ -3603,7 +3610,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
     ...(chargeDeclaration ? { chargeDeclaration } : {}),
     ...(cardRefresh ? { cardRefresh } : {}),
     ...(unitLifecycleAdapter ? { unitLifecycleBundle, unitLifecycleAdapter } : {}),
-    ...(talDarimThresholds || firebatStimpack || hasOfficialTemplateBeforeCasualtyPolicyV1(spatialState) || corrodeArmour&&includeCorrodeRoundCleanup || infantryPrecision || stukovInfestation || battlefieldModifierBundle?.routes.some(route=>route.effectKind==='stukov_creep') || releaseZergTargets && darkSwarmLifecycle || guardianShield || ourMindsAsOne || khalasGift || executorsWill || forceWallTraversal || feedback || farsight || scourgeQueen || zagaraBroodmother || poisonousEssence || overwatch || sabotageDronePhaseEnd || holoRoundEnd || unitLifecycleAdapter || bileUpgrades || psionicRoundEnd || hiddenLossReactions || targetedMeleeCritical || markedTargetFirstWeapon || vilelingFoundation || defilerMeleeFoundation || markerAreas || coordinatedStrike || stationaryFirstRanged || plasmaArmourSource || alloyArmourSource || superStimpack || commandoStimpack || chargeDeclaration ? { lifecycle } : {}),
+    ...(wave4AddedActiveCards || talDarimThresholds || firebatStimpack || hasOfficialTemplateBeforeCasualtyPolicyV1(spatialState) || corrodeArmour&&includeCorrodeRoundCleanup || infantryPrecision || stukovInfestation || battlefieldModifierBundle?.routes.some(route=>route.effectKind==='stukov_creep') || releaseZergTargets && darkSwarmLifecycle || guardianShield || ourMindsAsOne || khalasGift || executorsWill || forceWallTraversal || feedback || farsight || scourgeQueen || zagaraBroodmother || poisonousEssence || overwatch || sabotageDronePhaseEnd || holoRoundEnd || unitLifecycleAdapter || bileUpgrades || psionicRoundEnd || hiddenLossReactions || targetedMeleeCritical || markedTargetFirstWeapon || vilelingFoundation || defilerMeleeFoundation || markerAreas || coordinatedStrike || stationaryFirstRanged || plasmaArmourSource || alloyArmourSource || superStimpack || commandoStimpack || chargeDeclaration ? { lifecycle } : {}),
     ...(relocationAdapter ? { relocationBundle, relocationAdapter, postPlaceReactions } : {}),
     ...(reactionAdapter ? { reactionBundle, reactionAdapter, router } : {}),
     ...(registeredStorm ? { router, registeredStorm } : {}),

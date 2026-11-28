@@ -1,0 +1,1157 @@
+{
+  "schema": "starcraft_tmg_wave4_added_card_active_v1",
+  "status": "passed_scoped",
+  "results": [
+    {
+      "id": "heal",
+      "kind": "heal",
+      "definitionId": "card:robotics_support_bay/master-of-robotics-any@1",
+      "roomId": "wave4-added-card-heal",
+      "directoryRef": "build/wave4-web/added-cards/active-New9t1/heal",
+      "signedActions": 20,
+      "stateHash": "742479c5308f717047d078890423c2241e5d8f7c801bb6a5fd25f81be3a54ef8",
+      "abilityProof": {
+        "sourceCardExhausted": true,
+        "damageBefore": 2,
+        "damageAfter": 0,
+        "activationStageBefore": null,
+        "activationStageAfter": "before_action",
+        "physicalModelDeltaMilliInches": [
+          {
+            "id": "actor-model-1",
+            "dx": 0,
+            "dy": 0
+          }
+        ]
+      },
+      "trace": [
+        {
+          "revision": 1,
+          "round": 1,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 2,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "choose_first_actor",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 3,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "resolve_characteristic_status_ability",
+          "definitionId": "card:robotics_support_bay/master-of-robotics-any@1",
+          "pieceId": "actor"
+        },
+        {
+          "revision": 4,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "move",
+          "definitionId": null,
+          "pieceId": "actor"
+        },
+        {
+          "revision": 5,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "finish_activation",
+          "definitionId": null,
+          "pieceId": "actor"
+        },
+        {
+          "revision": 6,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 7,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 8,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "choose_first_actor",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 9,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 10,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 11,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "choose_first_actor",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 12,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 13,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 14,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "determine_current_product_mission_marker_control",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 15,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "score_mission",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 16,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "check_mission_end_game",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 17,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_end_of_round_effects",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 18,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_cleanup_refresh",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 19,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_next_round_initiative",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 20,
+          "round": 2,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "definitionId": null,
+          "pieceId": null
+        }
+      ],
+      "usedActualCard": true,
+      "actualStandardMove": true,
+      "actualScannerRangedAttack": false,
+      "fullNativeRound": true,
+      "idempotencyVerified": true,
+      "coldReplay": true,
+      "fullMatchAdmission": false
+    },
+    {
+      "id": "reactor",
+      "kind": "reactor",
+      "definitionId": "card:barracks__reactor_/go-go-go-any@1",
+      "roomId": "wave4-added-card-reactor",
+      "directoryRef": "build/wave4-web/added-cards/active-New9t1/reactor",
+      "signedActions": 20,
+      "stateHash": "9775076a7f47190ae4a654d19d705ca99bb8750f74ed05b9ab939ad3bb699385",
+      "abilityProof": {
+        "sourceCardExhausted": true,
+        "damageBefore": 0,
+        "damageAfter": 0,
+        "activationStageBefore": null,
+        "activationStageAfter": "before_action",
+        "physicalModelDeltaMilliInches": [
+          {
+            "id": "actor-model-1",
+            "dx": 0,
+            "dy": -2000
+          },
+          {
+            "id": "actor-model-2",
+            "dx": 0,
+            "dy": -2000
+          },
+          {
+            "id": "actor-model-3",
+            "dx": 0,
+            "dy": -2000
+          },
+          {
+            "id": "actor-model-4",
+            "dx": 0,
+            "dy": -2000
+          },
+          {
+            "id": "actor-model-5",
+            "dx": 0,
+            "dy": -2000
+          },
+          {
+            "id": "actor-model-6",
+            "dx": 0,
+            "dy": -2000
+          }
+        ]
+      },
+      "trace": [
+        {
+          "revision": 1,
+          "round": 1,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 2,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "choose_first_actor",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 3,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "resolve_relocation_ability",
+          "definitionId": "card:barracks__reactor_/go-go-go-any@1",
+          "pieceId": "actor"
+        },
+        {
+          "revision": 4,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "move",
+          "definitionId": null,
+          "pieceId": "actor"
+        },
+        {
+          "revision": 5,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "finish_activation",
+          "definitionId": null,
+          "pieceId": "actor"
+        },
+        {
+          "revision": 6,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 7,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 8,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "choose_first_actor",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 9,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 10,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 11,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "choose_first_actor",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 12,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 13,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 14,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "determine_current_product_mission_marker_control",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 15,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "score_mission",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 16,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "check_mission_end_game",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 17,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_end_of_round_effects",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 18,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_cleanup_refresh",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 19,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_next_round_initiative",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 20,
+          "round": 2,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "definitionId": null,
+          "pieceId": null
+        }
+      ],
+      "usedActualCard": true,
+      "actualStandardMove": true,
+      "actualScannerRangedAttack": false,
+      "fullNativeRound": true,
+      "idempotencyVerified": true,
+      "coldReplay": true,
+      "fullMatchAdmission": false
+    },
+    {
+      "id": "swarm",
+      "kind": "swarm",
+      "definitionId": "card:infested_barracks/for-the-swarm-any@1",
+      "roomId": "wave4-added-card-swarm",
+      "directoryRef": "build/wave4-web/added-cards/active-New9t1/swarm",
+      "signedActions": 20,
+      "stateHash": "acc1c33f67e27a55b66126f7bed50fd29c0c40b40a20a7adec83e00afa5485f3",
+      "abilityProof": {
+        "sourceCardExhausted": true,
+        "damageBefore": 0,
+        "damageAfter": 0,
+        "activationStageBefore": null,
+        "activationStageAfter": "before_action",
+        "physicalModelDeltaMilliInches": [
+          {
+            "id": "actor-model-1",
+            "dx": 0,
+            "dy": -2000
+          },
+          {
+            "id": "actor-model-10",
+            "dx": 0,
+            "dy": -2000
+          },
+          {
+            "id": "actor-model-11",
+            "dx": 0,
+            "dy": -2000
+          },
+          {
+            "id": "actor-model-12",
+            "dx": 0,
+            "dy": -2000
+          },
+          {
+            "id": "actor-model-2",
+            "dx": 0,
+            "dy": -2000
+          },
+          {
+            "id": "actor-model-3",
+            "dx": 0,
+            "dy": -2000
+          },
+          {
+            "id": "actor-model-4",
+            "dx": 0,
+            "dy": -2000
+          },
+          {
+            "id": "actor-model-5",
+            "dx": 0,
+            "dy": -2000
+          },
+          {
+            "id": "actor-model-6",
+            "dx": 0,
+            "dy": -2000
+          },
+          {
+            "id": "actor-model-7",
+            "dx": 0,
+            "dy": -2000
+          },
+          {
+            "id": "actor-model-8",
+            "dx": 0,
+            "dy": -2000
+          },
+          {
+            "id": "actor-model-9",
+            "dx": 0,
+            "dy": -2000
+          }
+        ]
+      },
+      "trace": [
+        {
+          "revision": 1,
+          "round": 1,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 2,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "choose_first_actor",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 3,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "resolve_relocation_ability",
+          "definitionId": "card:infested_barracks/for-the-swarm-any@1",
+          "pieceId": "actor"
+        },
+        {
+          "revision": 4,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "move",
+          "definitionId": null,
+          "pieceId": "actor"
+        },
+        {
+          "revision": 5,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "finish_activation",
+          "definitionId": null,
+          "pieceId": "actor"
+        },
+        {
+          "revision": 6,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 7,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 8,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "choose_first_actor",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 9,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 10,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 11,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "choose_first_actor",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 12,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 13,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 14,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "determine_current_product_mission_marker_control",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 15,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "score_mission",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 16,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "check_mission_end_game",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 17,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_end_of_round_effects",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 18,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_cleanup_refresh",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 19,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_next_round_initiative",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 20,
+          "round": 2,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "definitionId": null,
+          "pieceId": null
+        }
+      ],
+      "usedActualCard": true,
+      "actualStandardMove": true,
+      "actualScannerRangedAttack": false,
+      "fullNativeRound": true,
+      "idempotencyVerified": true,
+      "coldReplay": true,
+      "fullMatchAdmission": false
+    },
+    {
+      "id": "creep",
+      "kind": "creep",
+      "definitionId": "card:hive/creep-spread-any@1",
+      "roomId": "wave4-added-card-creep",
+      "directoryRef": "build/wave4-web/added-cards/active-New9t1/creep",
+      "signedActions": 20,
+      "stateHash": "d8dfc744de354e8f14830d9dbddc9a065ed508f1650f477058ec41de087adc4e",
+      "abilityProof": {
+        "sourceCardExhausted": true,
+        "damageBefore": 0,
+        "damageAfter": 0,
+        "activationStageBefore": null,
+        "activationStageAfter": null,
+        "physicalModelDeltaMilliInches": [
+          {
+            "id": "actor-model-1",
+            "dx": 0,
+            "dy": 0
+          },
+          {
+            "id": "actor-model-10",
+            "dx": 0,
+            "dy": 0
+          },
+          {
+            "id": "actor-model-11",
+            "dx": 0,
+            "dy": 0
+          },
+          {
+            "id": "actor-model-12",
+            "dx": 0,
+            "dy": 0
+          },
+          {
+            "id": "actor-model-2",
+            "dx": 0,
+            "dy": 0
+          },
+          {
+            "id": "actor-model-3",
+            "dx": 0,
+            "dy": 0
+          },
+          {
+            "id": "actor-model-4",
+            "dx": 0,
+            "dy": 0
+          },
+          {
+            "id": "actor-model-5",
+            "dx": 0,
+            "dy": 0
+          },
+          {
+            "id": "actor-model-6",
+            "dx": 0,
+            "dy": 0
+          },
+          {
+            "id": "actor-model-7",
+            "dx": 0,
+            "dy": 0
+          },
+          {
+            "id": "actor-model-8",
+            "dx": 0,
+            "dy": 0
+          },
+          {
+            "id": "actor-model-9",
+            "dx": 0,
+            "dy": 0
+          }
+        ],
+        "tokenId": "asset:1:creep_token_place:1",
+        "creationBindingHash": "f7dfae8d25994618c75dd241ca725f50e60603cab8b799a38c52b7fdeaca83d8"
+      },
+      "trace": [
+        {
+          "revision": 1,
+          "round": 1,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 2,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "choose_first_actor",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 3,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "resolve_battlefield_asset_ability",
+          "definitionId": "card:hive/creep-spread-any@1",
+          "pieceId": "actor"
+        },
+        {
+          "revision": 4,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "move",
+          "definitionId": null,
+          "pieceId": "actor"
+        },
+        {
+          "revision": 5,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "finish_activation",
+          "definitionId": null,
+          "pieceId": "actor"
+        },
+        {
+          "revision": 6,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 7,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 8,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "choose_first_actor",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 9,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 10,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 11,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "choose_first_actor",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 12,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 13,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 14,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "determine_current_product_mission_marker_control",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 15,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "score_mission",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 16,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "check_mission_end_game",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 17,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_end_of_round_effects",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 18,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_cleanup_refresh",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 19,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_next_round_initiative",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 20,
+          "round": 2,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "definitionId": null,
+          "pieceId": null
+        }
+      ],
+      "usedActualCard": true,
+      "actualStandardMove": true,
+      "actualScannerRangedAttack": false,
+      "fullNativeRound": true,
+      "idempotencyVerified": true,
+      "coldReplay": true,
+      "fullMatchAdmission": false
+    },
+    {
+      "id": "scanner",
+      "kind": "scanner",
+      "caseId": "scanner-indicator",
+      "indicatorDetection": true,
+      "leftIndicatorProof": {
+        "actualEnemyMoveInches": 3,
+        "outsideIndicatorRange": true,
+        "hiddenDidNotReturn": true,
+        "hiddenEvadeEligibility": false
+      },
+      "definitionId": "card:infested_command_center/scanner-sweep-any@1",
+      "roomId": "wave4-added-card-scanner-indicator",
+      "directoryRef": "build/wave4-web/added-cards/active-New9t1/scanner-indicator",
+      "signedActions": 24,
+      "stateHash": "1313c6a99117eb77a76202b7f75c91e3135139bf6b868fc5336194167d3b9142",
+      "abilityProof": {
+        "sourceCardExhausted": true,
+        "damageBefore": 0,
+        "damageAfter": 0,
+        "activationStageBefore": null,
+        "activationStageAfter": "before_action",
+        "physicalModelDeltaMilliInches": [
+          {
+            "id": "actor-model-1",
+            "dx": 0,
+            "dy": 0
+          },
+          {
+            "id": "actor-model-2",
+            "dx": 0,
+            "dy": 0
+          }
+        ],
+        "hiddenSuppressedByNativeIndicator": true,
+        "actualHiddenRemoved": true,
+        "detectionHiddenLossEvents": 1
+      },
+      "trace": [
+        {
+          "revision": 1,
+          "round": 1,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 2,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "choose_first_actor",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 3,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "resolve_battlefield_asset_ability",
+          "definitionId": "card:infested_command_center/scanner-sweep-any@1",
+          "pieceId": "actor"
+        },
+        {
+          "revision": 4,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "move",
+          "definitionId": null,
+          "pieceId": "actor"
+        },
+        {
+          "revision": 5,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "finish_activation",
+          "definitionId": null,
+          "pieceId": "actor"
+        },
+        {
+          "revision": 6,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "move",
+          "definitionId": null,
+          "pieceId": "enemy"
+        },
+        {
+          "revision": 7,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "finish_activation",
+          "definitionId": null,
+          "pieceId": "enemy"
+        },
+        {
+          "revision": 8,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 9,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 10,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "choose_first_actor",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 11,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "ranged_attack",
+          "definitionId": null,
+          "pieceId": "actor"
+        },
+        {
+          "revision": 12,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "finish_activation",
+          "definitionId": null,
+          "pieceId": "actor"
+        },
+        {
+          "revision": 13,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 14,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 15,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "choose_first_actor",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 16,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 17,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 18,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "determine_current_product_mission_marker_control",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 19,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "score_mission",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 20,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "check_mission_end_game",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 21,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_end_of_round_effects",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 22,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_cleanup_refresh",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 23,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_next_round_initiative",
+          "definitionId": null,
+          "pieceId": null
+        },
+        {
+          "revision": 24,
+          "round": 2,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "definitionId": null,
+          "pieceId": null
+        }
+      ],
+      "usedActualCard": true,
+      "actualStandardMove": true,
+      "actualScannerRangedAttack": true,
+      "fullNativeRound": true,
+      "idempotencyVerified": true,
+      "coldReplay": true,
+      "fullMatchAdmission": false
+    }
+  ],
+  "newCompleteAtoms": 0,
+  "implementedCumulativeAtoms": 7,
+  "sourceHeldDefinitions": 39,
+  "fullMatchAdmission": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

@@ -1,0 +1,26 @@
+{
+  "schema": "starcraft_tmg_wave4_added_card_cold_v1",
+  "status": "passed_read_only",
+  "results": [
+    {
+      "id": "scanner-nerazim",
+      "roomId": "wave4-added-card-scanner-nerazim",
+      "stateHash": "f717f19f5f5935534caeeae351e460cd781b9be467bd0a9874129fe56e947e36",
+      "originalSignedActions": 26,
+      "newActions": 0,
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "sourceOpenedReadOnly": true,
+      "oldPolicyControl": false,
+      "legacy": false,
+      "humanConfirmed": false
+    }
+  ],
+  "newActions": 0,
+  "sourceHeldDefinitions": 39,
+  "newCompleteAtoms": 0,
+  "implementedCumulativeAtoms": 7,
+  "fullMatchAdmission": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

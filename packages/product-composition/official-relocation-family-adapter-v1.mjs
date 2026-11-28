@@ -214,6 +214,12 @@ function compileRoute(definition) {
       maxDistanceMilliInches: 2000, actionLimitConsumed: false,
       requiredActorTag: "biological", opensAfterActionWindow: true,
       reserveExplicit: false };
+  } else if(definition.definitionId==='card:infested_barracks/for-the-swarm-any@1'
+    &&definition.recordKey==='tactical_cards:infested_barracks'&&name==='For the Swarm!'
+    &&definition.sourceKind==='card_feature'&&definition.activationKind==='active'&&definition.phase==='movement'
+    &&text==='For the Swarm! <Active> <Movement Phase>: The active Biological Ground Unit performs a 2" Move action. This does not count towards its action limit.') {
+    spec={effectKind:'extra_move',actionKind:'active_ability',maxDistanceMilliInches:2000,actionLimitConsumed:false,
+      requiredActorTag:'biological',requiredActorGround:true,opensAfterActionWindow:false,reserveExplicit:false};
   } else if (definition.definitionId === 'unit:twilight_templar__high_templar_/warp-in-movement-phase@1'
     && definition.recordKey === 'army_units:twilight_templar__high_templar_'
     && name === 'Warp-In' && text === 'Resolve the PLACE (6) effect.') {
@@ -404,13 +410,19 @@ const reviewedPlacements = Object.freeze({
     activationKind: 'active', activationText: '', resourceType: null, resourceCost: 0, effectKind: 'non_entry_edge_deploy', actionKind: 'special_deploy', minimumEnemyGapMilliInchesExclusive: 10000,
     requiredActorTag: 'biological', oneFriendlyBiologicalDeployPerRound: true, opensAfterActionWindow: true, reserveExplicit: true,
   },
-  ...Object.fromEntries(['barracks','barracks__tech_lab_','barracks__proxy_'].map(key => [
+  ...Object.fromEntries(['barracks','barracks__tech_lab_','barracks__proxy_','barracks__reactor_'].map(key => [
     'card:'+key+'/go-go-go-any@1', {
     recordKey: 'tactical_cards:'+key, abilityName: "Go! Go! Go!", phase: 'movement', sourceKind: 'card_feature',
     sourceText: "Go! Go! Go! <Active> <Movement Phase>: The active Biological Unit performs a 2\" Move action. This does not count towards its action limit.",
     activationKind: 'active', activationText: '', resourceType: null, resourceCost: 0, effectKind: 'extra_move', actionKind: 'active_ability', maxDistanceMilliInches: 2000,
     requiredActorTag: 'biological', opensAfterActionWindow: false, actionLimitConsumed: false, reserveExplicit: false,
   }])),
+  'card:infested_barracks/for-the-swarm-any@1':{
+    recordKey:'tactical_cards:infested_barracks',abilityName:'For the Swarm!',phase:'movement',sourceKind:'card_feature',
+    sourceText:'For the Swarm! <Active> <Movement Phase>: The active Biological Ground Unit performs a 2" Move action. This does not count towards its action limit.',
+    activationKind:'active',activationText:'',resourceType:null,resourceCost:0,effectKind:'extra_move',actionKind:'active_ability',
+    maxDistanceMilliInches:2000,requiredActorTag:'biological',requiredActorGround:true,opensAfterActionWindow:false,actionLimitConsumed:false,reserveExplicit:false,
+  },
   'card:orbital_command/comsat-station-any@1': {
     recordKey: 'tactical_cards:orbital_command', abilityName: 'ComSat Station', phase: 'movement', sourceKind: 'card_feature',
     sourceText: "ComSat Station <Active> <Movement Phase>: Select one table edge that is not a player’s Entry Edge. Until the End of the Round, Enemy Units cannot Deploy from that edge.",
@@ -554,7 +566,7 @@ export function verifyOfficialRelocationFamilySourceBundleV1(bundle) {
           || route.maxDistanceMilliInches !== reviewed.maxDistanceMilliInches
           || route.requiresUnengaged !== reviewed.requiresUnengaged
           || (reviewed.sourceKind === 'card_feature' && ['sourceKind', 'actionKind', 'requiredActorRecordKey',
-            'requiredActorTag', 'oneFriendlyBiologicalDeployPerRound', 'opensAfterActionWindow', 'actionLimitConsumed', 'reserveExplicit']
+            'requiredActorTag', 'requiredActorGround', 'oneFriendlyBiologicalDeployPerRound', 'opensAfterActionWindow', 'actionLimitConsumed', 'reserveExplicit']
             .some(field => route[field] !== reviewed[field]))
           || (reviewed.minimumEnemyGapMilliInchesExclusive !== undefined
             && route.minimumEnemyGapMilliInchesExclusive !== reviewed.minimumEnemyGapMilliInchesExclusive)
@@ -627,6 +639,7 @@ function actorMatches(route, piece) {
   if (!livePiece(piece)) return false;
   if (route.requiredActorTag && !(piece.combatTags || []).map(normalized)
     .includes(route.requiredActorTag)) return false;
+  if(route.requiredActorGround&&!(piece.combatTags||[]).map(normalized).includes('ground'))return false;
   if (route.requiredActorRecordKey
     && piece.officialUnitRecordKey !== route.requiredActorRecordKey) return false;
   return true;
