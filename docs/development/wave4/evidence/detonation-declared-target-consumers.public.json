@@ -1,0 +1,126 @@
+{
+  "schema": "starcraft_tmg_wave4_detonation_declared_target_consumers_v1",
+  "status": "passed_scoped",
+  "policyVersion": "1.5.0",
+  "rootRuntimeVersion": "3.236.0",
+  "definitions": [
+    {
+      "definitionId": "unit:infested_marine/detonation-any-phase@1",
+      "classification": "new_semantics_partial",
+      "nativeCases": [
+        "head-shot",
+        "shaped-blast",
+        "smart-shells",
+        "dark-swarm-use-blocks",
+        "dark-swarm-decline-detonates"
+      ],
+      "webCases": [
+        "head-shot",
+        "shaped-blast",
+        "dark-swarm-decline-detonates"
+      ],
+      "allConsumersVerified": false,
+      "fullAtomAdmission": false
+    },
+    {
+      "definitionId": "unit:infested_trooper/detonation-any-phase@1",
+      "classification": "new_semantics_partial",
+      "newCasesThisMilestone": [],
+      "allConsumersVerified": false,
+      "fullAtomAdmission": false
+    },
+    {
+      "definitionId": "unit:nova_stealth_mode/head-shot-assault-phase@1",
+      "classification": "existing_atoms_new_combination",
+      "actualConsumers": [
+        "CP1 once",
+        "Damage3 and CONCENTRATED FIRE(1)",
+        "sealed corpse-source numeric completion"
+      ]
+    },
+    {
+      "definitionId": "unit:siege_tank/shaped-blast-assault-phase@1",
+      "classification": "existing_atoms_new_combination",
+      "actualConsumers": [
+        "PINPOINT and LOCKED IN declaration",
+        "sealed corpse-source template batches"
+      ]
+    },
+    {
+      "definitionId": "unit:siege_tank/smart-shells-assault-phase@1",
+      "classification": "existing_atoms_new_combination",
+      "actualConsumers": [
+        "INDIRECT and LONG RANGE declaration",
+        "sealed corpse-source template batches"
+      ]
+    },
+    {
+      "definitionId": "unit:defiler/dark-swarm-assault-phase@1",
+      "classification": "existing_atoms_new_combination",
+      "actualConsumers": [
+        "actual numeric target reaction",
+        "shared activation reaction limit",
+        "original target parent consumed once"
+      ]
+    },
+    {
+      "definitionId": "unit:defiler/gestate-dark-swarm-movement-phase@1",
+      "classification": "existing_atoms_new_combination",
+      "actualConsumers": [
+        "actual Movement token placement",
+        "current-release setup and token registry",
+        "actual round cleanup"
+      ]
+    }
+  ],
+  "consumerRefs": [
+    {
+      "file": "packages/product-composition/official-before-casualty-runtime-v1.mjs",
+      "exportName": "stageOfficialBeforeCasualtyContinuationV1"
+    },
+    {
+      "file": "packages/product-composition/official-attack-target-reaction-runtime-v1.mjs",
+      "exportName": "createOfficialAttackTargetReactionRuntimeV1"
+    },
+    {
+      "file": "packages/product-composition/official-ranged-declaration-reaction-runtime-v1.mjs",
+      "exportName": "createOfficialRangedDeclarationReactionRuntimeV1"
+    },
+    {
+      "file": "packages/rule-atoms/official-ranged-declaration-keywords-v1.mjs",
+      "exportName": "readOfficialRangedDeclarationV1"
+    },
+    {
+      "file": "packages/product-composition/official-characteristic-status-component-runtime-v2.mjs",
+      "exportName": "createOfficialCharacteristicStatusComponentRuntimeV2"
+    }
+  ],
+  "nativeCases": 5,
+  "nativeSignedActions": 82,
+  "nativeFullRounds": 2,
+  "webRooms": 3,
+  "webSignedActions": 13,
+  "currentAndPriorColdCases": 7,
+  "currentAndPriorColdOriginalActions": 99,
+  "legacyColdCases": 2,
+  "legacyOriginalActions": 11,
+  "engineeringConversionCases": 2,
+  "engineeringConversionSignedActions": 2,
+  "evidenceRefs": [
+    "docs/development/wave4/evidence/detonation-declaration.public.json",
+    "docs/development/wave4/evidence/detonation-target.public.json",
+    "docs/development/wave4/evidence/detonation-declaration-web.public.json",
+    "docs/development/wave4/evidence/detonation-target-web.public.json",
+    "docs/development/wave4/evidence/detonation-declared-current-cold.public.json",
+    "docs/development/wave4/evidence/target-declaration-legacy-cold.public.json",
+    "docs/development/wave4/evidence/engineering-release-v2.public.json",
+    "docs/development/wave4/evidence/deployment-rebinding.public.json",
+    "docs/development/wave4/evidence/stukov-import-scope.public.json"
+  ],
+  "newGameAtomsImplemented": 0,
+  "implementedCumulativeAtoms": 6,
+  "sourceHeldDefinitions": 39,
+  "fullMatchAdmission": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

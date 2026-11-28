@@ -1,0 +1,60 @@
+{
+  "schema": "starcraft_tmg_wave4_virus_web_verification_v1",
+  "status": "passed_scoped",
+  "runRef": "build/wave4-web/stukov-units/detonation-target-web-v1",
+  "results": [
+    {
+      "kind": "dark-swarm-decline-detonates",
+      "definitionId": "unit:infested_marine/detonation-any-phase@1",
+      "sourceRoomId": "wave4-detonation-target-dark-swarm-decline-detonates-0",
+      "sourceStateHash": "d23e4c588905f93857c42442b777782266337d7581449d7be0d5caae1805f3e8",
+      "sourcePrefixReceipts": 13,
+      "trace": [
+        {
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:infested_marine/detonation-any-phase@1",
+          "sideKey": "player2",
+          "stateRevision": 1,
+          "stateHash": "6c7124a9aa7438af446a11a6764e9a84dd4410154525c1a505a66f267f68be9e"
+        },
+        {
+          "actionType": "prepare_automatic_hits_armour_pool",
+          "definitionId": null,
+          "sideKey": "player2",
+          "stateRevision": 2,
+          "stateHash": "8dd6b07f65f84e35473fed1e8f74387c888de03683613b6d06a2e6e1a297b887"
+        },
+        {
+          "actionType": "roll_automatic_hits_armour_pool",
+          "definitionId": null,
+          "sideKey": "player2",
+          "stateRevision": 3,
+          "stateHash": "1a6b62be737a8a7df67e8537be55621a599b0471236389688a28e80801219bc1"
+        },
+        {
+          "actionType": "resolve_automatic_hits_evade_pool",
+          "definitionId": null,
+          "sideKey": "player2",
+          "stateRevision": 4,
+          "stateHash": "f60219488e6da71086069b3164772a0459e1adca251f9262e223605716bb7ff6"
+        }
+      ],
+      "signedActions": 4,
+      "twoSeatsVerified": true,
+      "explicitHumanConfirmation": true,
+      "previewReadOnly": true,
+      "replayMatchesCurrent": true,
+      "seatRecoveryReentryVerified": true,
+      "pageErrors": []
+    }
+  ],
+  "signedActions": 4,
+  "conditionalTurretGeometryInRestorationCaseOnly": false,
+  "sourceHeldDefinitions": 39,
+  "engineeringEstimatedUnitGeometry": true,
+  "fullWave4LobbyBuilderAdmission": false,
+  "fullMatchAdmission": false,
+  "wave3PlayerRoomsTouched": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

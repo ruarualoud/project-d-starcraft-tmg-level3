@@ -1,6 +1,7 @@
 import { isDeepStrictEqual } from 'node:util';
 import { hashStarcraftTmgContract as hash } from '../authoritative-engine/referee-crypto-v1.mjs';
 import { verifyOfficialStatusStayInPlayDataBundleV1 } from '../source-data/official-status-stay-in-play-data-bundle-v1.mjs';
+import {hasOfficialDeclaredAttackBeforeCasualtyPolicyV1} from './official-before-casualty-batch-v1.mjs';
 
 export const OFFICIAL_RANGED_DECLARATION_POLICY_V1 = Object.freeze({
   schema: 'starcraft_tmg_ranged_declaration_policy_v1', version: '1.0.0',
@@ -63,9 +64,22 @@ export function hasOfficialRangedDeclarationPolicyV1(state) {
   return true;
 }
 
-export function readOfficialRangedDeclarationV1(state) {
+export function readOfficialRangedDeclarationV1(state,{sealedFrame,completedTemplateParent}={}) {
   const parent = state[key];
   if (!parent) return null;
+  const completionRecorded=state.log?.at(-1)?.events?.some(e=>e.type==='ranged_weapon_completed'&&e.pieceId===parent.pieceId);
+  const declaredCompletion=hasOfficialDeclaredAttackBeforeCasualtyPolicyV1(state),template=state.pendingOfficialBlastTemplateAttack||(completionRecorded&&completedTemplateParent);
+  if(completedTemplateParent&&!completionRecorded)throw Error('RANGED_DECLARATION_TEMPLATE_COMPLETION_INVALID');
+  const sealedTemplate=declaredCompletion&&template?.schema==='starcraft_tmg_blast_template_attack_checkpoint_v1'
+    &&template.parentHash===hash(withoutHash(template))&&template.round===Number(state.round)&&template.phase===state.phase
+    &&template.sideKey===parent.sideKey&&template.pieceId===parent.pieceId&&template.profileKey===parent.profileKey
+    &&template.sourceProfileHash===parent.sourceProfileHash&&template.geometryAssetHash===state.officialBlastTemplateGeometryAsset?.assetHash;
+  const sealedDamage=declaredCompletion&&sealedFrame&&sealedFrame.frameHash===hash(Object.fromEntries(Object.entries(sealedFrame).filter(([name])=>name!=='frameHash')))
+    &&sealedFrame.round===Number(state.round)&&sealedFrame.phase===state.phase&&['ranged','blast_template'].includes(sealedFrame.hostKind)
+    &&sealedFrame.sourceBundleHash===state.officialReactionFamilySourceBundle?.bundleHash
+    &&isDeepStrictEqual(parent,sealedFrame.suspendedHostSlots?.[key])&&sealedFrame.originalAction?.pieceId===parent.pieceId
+    &&sealedFrame.originalAction.sideKey===parent.sideKey&&sealedFrame.originalAction.rangedPlan?.profileKey===parent.profileKey;
+  if(sealedFrame&&!sealedDamage)throw Error('RANGED_DECLARATION_SEALED_COMPLETION_INVALID');
   const resolution = (state.officialReactionResolutionHistory || []).find(row => row.resolutionHash === parent.resolutionHash);
   if (!hasOfficialRangedDeclarationPolicyV1(state) || parent.schema !== 'starcraft_tmg_ranged_declaration_checkpoint_v1'
     || parent.parentHash !== hash(withoutHash(parent)) || parent.round !== Number(state.round)
@@ -74,7 +88,7 @@ export function readOfficialRangedDeclarationV1(state) {
     || resolution.round !== parent.round || resolution.phase !== parent.phase || resolution.activeSideKey !== parent.sideKey
     || !isDeepStrictEqual(resolution.effects, parent.keywordEffects)
     || !state.pieces.some(piece => piece.id === parent.pieceId && piece.sideKey === parent.sideKey
-      && piece.isOnField && !piece.isDestroyed)
+      && (piece.isOnField && !piece.isDestroyed || (sealedTemplate||sealedDamage)&&piece.isDestroyed&&piece.currentModels===0))
     || parent.keywordEffects.some(effect => {
       const { effectHash, ...body } = effect;
       return effectHash !== hash(body) || effect.effectKind !== 'ranged_declaration_keywords'

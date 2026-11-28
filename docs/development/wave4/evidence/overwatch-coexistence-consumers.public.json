@@ -54,9 +54,10 @@
     "docs/development/wave4/evidence/overwatch-coexistence-cold.public.json",
     "docs/development/wave4/evidence/overwatch-coexistence-web.public.json"
   ],
-  "scope": "Opposing-side Auto/Ocular in one engineering room; same-side imported Raven combination remains unverified",
+  "scope": "Opposing-side Auto/Ocular in one engineering room; Stukov imported Raven is ineligible (Flying, not Ground), excluded from pending legal consumers",
   "fullMatchAdmission": false,
   "sourceHeldDefinitions": 39,
   "modelCalls": 0,
-  "trainingTruth": false
+  "trainingTruth": false,
+  "scopeCorrectionEvidenceRef": "docs/development/wave4/evidence/stukov-import-scope.public.json"
 }

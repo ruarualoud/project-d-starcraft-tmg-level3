@@ -16,6 +16,6 @@ Root3.234、Overwatch1.2按每个实际来源绑定武器、选择效果与完�
 
 Web首房从原生head2完成Ocular与Firefly两确认；第二房从原生伤亡前前缀完成Detonation及后继三确认。独立1500/390浏览器，预览只读、页面错误0、席位刷新恢复与重放一致。首房驱动漏选目标而停在已确认head1；补显式目标选择后使用--resume-confirmed核对并接续原签名日志。5确认包含这1笔已落盘动作，未重复计算。截图已检查，5484已关闭；整版大厅/Builder和完整跨回合Web仍待。
 
-范围为双方各一类炮塔。Stukov进口Raven同时拥有两类炮塔的建军发布绑定仍待整版工厂修复，未声称该组合通过。Khassar/Target/声明、其他外部HITS及直接移除继续；39来源、80mm等工程估算、所有暂停项保持，模型调用0，trainingTruth:false。
+范围为双方各一类炮塔。此前把Stukov进口Raven列为待办有误：Raven带Flying而没有Ground，不符合Ashes of the UED准入；该假设不作为待实现消费者。实际Builder正反例见[进口范围核对](evidence/stukov-import-scope.public.json)。Khassar/Target/声明、其他外部HITS及直接移除继续；39来源、80mm等工程估算、所有暂停项保持，模型调用0，trainingTruth:false。
 
 复验入口：verify-wave4-overwatch-coexistence.mjs（签名恢复）、verify-wave4-overwatch-coexistence-cold.mjs、overwatch-coexistence-web-cases.json及共用serve/verify驱动。

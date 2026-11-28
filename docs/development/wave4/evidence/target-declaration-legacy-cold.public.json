@@ -1,0 +1,32 @@
+{
+  "schema": "starcraft_tmg_wave4_target_declaration_legacy_cold_v1",
+  "status": "passed_read_only",
+  "results": [
+    {
+      "id": "head-shot-use",
+      "roomId": "wave3-nova-head-shot-use",
+      "inputRef": "build/ticket-28-terran-wave3-20261117-v1/nova-head-shot/use",
+      "originalSignedActions": 5,
+      "runtimeVersion": "3.85.0",
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "stateHash": "928c5e2c2f661b14483a7579bdebb4dd3b194f05f64553532eb8dc7b32a02fa5",
+      "sourceOpenedReadOnly": true,
+      "newActions": 0
+    },
+    {
+      "id": "dark-swarm-use",
+      "roomId": "wave3-dark-swarm-reaction-size2-use-faq13",
+      "inputRef": "build/ticket-28-zerg-wave3-20261117-v1/dark-swarm-reaction/size2-use-faq13",
+      "originalSignedActions": 6,
+      "runtimeVersion": "3.114.0",
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "stateHash": "61ddb29b3d003f60fb3c5b66d3c0ab8cb988a8ca01b8cc2b44d41006699ea76a",
+      "sourceOpenedReadOnly": true,
+      "newActions": 0
+    }
+  ],
+  "modelCalls": 0,
+  "trainingTruth": false
+}

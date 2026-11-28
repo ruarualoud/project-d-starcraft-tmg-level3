@@ -1,0 +1,40 @@
+{
+  "schema": "starcraft_tmg_wave4_detonation_declared_target_harness_v1",
+  "status": "passed_scoped",
+  "tools": [
+    "actual ranged declaration and target reaction",
+    "source-bound sealed parent suspension",
+    "actual Detonation HITS",
+    "original corpse-source completion",
+    "Native mission start/scoring/cleanup/R2",
+    "explicit two-seat Web Preview/Apply/recovery",
+    "current and legacy cold replay",
+    "strict deployment evidence rebinding",
+    "actual imported unit BM payment"
+  ],
+  "nativeCases": 5,
+  "nativeSignedActions": 82,
+  "nativeFullRounds": 2,
+  "webRooms": 3,
+  "webSignedActions": 13,
+  "currentAndPriorColdCases": 7,
+  "currentAndPriorColdOriginalActions": 99,
+  "legacyColdCases": 2,
+  "legacyOriginalActions": 11,
+  "engineeringConversionCases": 2,
+  "engineeringConversionSignedActions": 2,
+  "evidenceRefs": [
+    "docs/development/wave4/evidence/detonation-declaration.public.json",
+    "docs/development/wave4/evidence/detonation-target.public.json",
+    "docs/development/wave4/evidence/detonation-declaration-web.public.json",
+    "docs/development/wave4/evidence/detonation-target-web.public.json",
+    "docs/development/wave4/evidence/detonation-declared-current-cold.public.json",
+    "docs/development/wave4/evidence/target-declaration-legacy-cold.public.json",
+    "docs/development/wave4/evidence/engineering-release-v2.public.json",
+    "docs/development/wave4/evidence/deployment-rebinding.public.json",
+    "docs/development/wave4/evidence/stukov-import-scope.public.json"
+  ],
+  "scope": "scoped continuation consumers; not complete Wave4 lobby/Builder/match acceptance",
+  "modelCalls": 0,
+  "trainingTruth": false
+}

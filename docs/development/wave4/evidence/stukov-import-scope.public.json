@@ -1,0 +1,30 @@
+{
+  "schema": "starcraft_tmg_wave4_stukov_import_scope_v1",
+  "status": "passed_scoped",
+  "releaseId": "wave4-u98-c88-r50-stukov-units-engineering-v2",
+  "importedRecords": [
+    "army_units:goliath",
+    "army_units:siege_tank"
+  ],
+  "ravenTags": "Light, Mechanical, Flying",
+  "results": [
+    {
+      "recordKey": "army_units:goliath",
+      "status": "legal",
+      "rulesErrorCode": null
+    },
+    {
+      "recordKey": "army_units:siege_tank",
+      "status": "legal",
+      "rulesErrorCode": null
+    },
+    {
+      "recordKey": "army_units:raven",
+      "status": "illegal",
+      "rulesErrorCode": "FACTION_TAG_MISMATCH"
+    }
+  ],
+  "correction": "Stukov imported Raven is not a legal roster consumer; do not list that hypothetical same-side dual turret combination as a pending implementation gate",
+  "modelCalls": 0,
+  "trainingTruth": false
+}

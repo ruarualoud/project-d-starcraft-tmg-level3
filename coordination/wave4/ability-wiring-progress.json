@@ -275,8 +275,8 @@
     }
   ],
   "next": [
-    "接Target/射击声明父节点，再接其他外部HITS、Disengage/Consume直接移除；完整原子仍6/18。",
-    "其余13个已审核记录、整版发布/Builder/大厅/媒体与500/2000分Web继续。"
+    "其他外部HITS所有者：Corrosive Bile、Sabotage Drone、Psionic Storm、Photon Overcharge；直接移除Disengage/Consume。",
+    "剩余13个已审核记录和整版发布/Builder/大厅/媒体、500/2000分Web双席。"
   ],
   "modelCalls": 0,
   "trainingTruth": false,
@@ -2677,12 +2677,12 @@
     "sourceHeldDefinitions": 39
   },
   "detonationWorkInProgress": {
-    "status": "khassar_attacks_verified_target_declaration_and_removal_hosts_pending",
+    "status": "declared_target_attacks_verified_external_hits_and_removal_pending",
     "sourceDefinitionsCompiled": 2,
-    "nativeCases": 28,
-    "nativeSignedActions": 288,
-    "webRooms": 13,
-    "webSignedActions": 53,
+    "nativeCases": 33,
+    "nativeSignedActions": 370,
+    "webRooms": 16,
+    "webSignedActions": 66,
     "legacyColdReplayCases": 3,
     "legacyOriginalActions": 30,
     "newGameAtomsImplemented": 0,
@@ -2729,7 +2729,18 @@
       "docs/development/wave4/evidence/detonation-khassar-current-cold.public.json",
       "docs/development/wave4/evidence/detonation-khassar-web.public.json",
       "docs/development/wave4/evidence/detonation-khassar-consumers.public.json",
-      "docs/development/wave4/evidence/detonation-khassar-harness.public.json"
+      "docs/development/wave4/evidence/detonation-khassar-harness.public.json",
+      "docs/development/wave4/evidence/detonation-declaration.public.json",
+      "docs/development/wave4/evidence/detonation-target.public.json",
+      "docs/development/wave4/evidence/detonation-declaration-web.public.json",
+      "docs/development/wave4/evidence/detonation-target-web.public.json",
+      "docs/development/wave4/evidence/detonation-declared-current-cold.public.json",
+      "docs/development/wave4/evidence/target-declaration-legacy-cold.public.json",
+      "docs/development/wave4/evidence/engineering-release-v2.public.json",
+      "docs/development/wave4/evidence/deployment-rebinding.public.json",
+      "docs/development/wave4/evidence/stukov-import-scope.public.json",
+      "docs/development/wave4/evidence/detonation-declared-target-consumers.public.json",
+      "docs/development/wave4/evidence/detonation-declared-target-harness.public.json"
     ],
     "workbenchRef": "docs/development/wave4/detonation-continuation-workbench.zh-CN.md",
     "multiTargetParentAndNestedPending": false,
@@ -2737,15 +2748,17 @@
     "fullMatchAdmission": false,
     "delegatedAndOutsideActivationHostsPending": true,
     "latestMilestone": {
-      "nativeCases": 6,
-      "nativeSignedActions": 51,
-      "webRooms": 2,
-      "webSignedActions": 10,
-      "settlementReadOnlyCases": 6,
-      "currentAndPriorColdCases": 8,
-      "currentAndPriorColdOriginalActions": 71,
-      "legacyKhassarColdCases": 3,
-      "legacyKhassarOriginalActions": 9,
+      "nativeCases": 5,
+      "nativeSignedActions": 82,
+      "nativeFullRounds": 2,
+      "webRooms": 3,
+      "webSignedActions": 13,
+      "currentAndPriorColdCases": 7,
+      "currentAndPriorColdOriginalActions": 99,
+      "legacyColdCases": 2,
+      "legacyOriginalActions": 11,
+      "engineeringConversionCases": 2,
+      "engineeringConversionSignedActions": 2,
       "allConsumersVerified": false
     },
     "directAbilityDamageHostVerified": true,
@@ -2757,7 +2770,8 @@
     "overwatchHostVerified": true,
     "multipleWeaponSequenceVerified": true,
     "multipleOverwatchSourcesVerified": true,
-    "khassarDelegatedAttacksVerified": true
+    "khassarDelegatedAttacksVerified": true,
+    "targetAndDeclarationHostsVerified": true
   },
   "partialRuntimeVerificationByDefinition": [
     {
@@ -2863,7 +2877,18 @@
         "docs/development/wave4/evidence/detonation-khassar-current-cold.public.json",
         "docs/development/wave4/evidence/detonation-khassar-web.public.json",
         "docs/development/wave4/evidence/detonation-khassar-consumers.public.json",
-        "docs/development/wave4/evidence/detonation-khassar-harness.public.json"
+        "docs/development/wave4/evidence/detonation-khassar-harness.public.json",
+        "docs/development/wave4/evidence/detonation-declaration.public.json",
+        "docs/development/wave4/evidence/detonation-target.public.json",
+        "docs/development/wave4/evidence/detonation-declaration-web.public.json",
+        "docs/development/wave4/evidence/detonation-target-web.public.json",
+        "docs/development/wave4/evidence/detonation-declared-current-cold.public.json",
+        "docs/development/wave4/evidence/target-declaration-legacy-cold.public.json",
+        "docs/development/wave4/evidence/engineering-release-v2.public.json",
+        "docs/development/wave4/evidence/deployment-rebinding.public.json",
+        "docs/development/wave4/evidence/stukov-import-scope.public.json",
+        "docs/development/wave4/evidence/detonation-declared-target-consumers.public.json",
+        "docs/development/wave4/evidence/detonation-declared-target-harness.public.json"
       ],
       "meleeHostVerified": true,
       "automaticHitsHostVerified": true,
@@ -2886,7 +2911,10 @@
       "khassarFightNativeVerified": false,
       "khassarChargeNativeVerified": true,
       "khassarOriginalActorDeathNativeVerified": true,
-      "webKhassarSuccessorVerified": true
+      "webKhassarSuccessorVerified": true,
+      "declaredAttackNativeVerified": true,
+      "targetReactionNativeVerified": true,
+      "webDeclaredTargetSuccessorVerified": true
     },
     {
       "definitionId": "unit:infested_trooper/detonation-any-phase@1",
@@ -2982,7 +3010,18 @@
         "docs/development/wave4/evidence/detonation-khassar-current-cold.public.json",
         "docs/development/wave4/evidence/detonation-khassar-web.public.json",
         "docs/development/wave4/evidence/detonation-khassar-consumers.public.json",
-        "docs/development/wave4/evidence/detonation-khassar-harness.public.json"
+        "docs/development/wave4/evidence/detonation-khassar-harness.public.json",
+        "docs/development/wave4/evidence/detonation-declaration.public.json",
+        "docs/development/wave4/evidence/detonation-target.public.json",
+        "docs/development/wave4/evidence/detonation-declaration-web.public.json",
+        "docs/development/wave4/evidence/detonation-target-web.public.json",
+        "docs/development/wave4/evidence/detonation-declared-current-cold.public.json",
+        "docs/development/wave4/evidence/target-declaration-legacy-cold.public.json",
+        "docs/development/wave4/evidence/engineering-release-v2.public.json",
+        "docs/development/wave4/evidence/deployment-rebinding.public.json",
+        "docs/development/wave4/evidence/stukov-import-scope.public.json",
+        "docs/development/wave4/evidence/detonation-declared-target-consumers.public.json",
+        "docs/development/wave4/evidence/detonation-declared-target-harness.public.json"
       ],
       "meleeHostVerified": true,
       "automaticHitsHostVerified": true,
@@ -3003,7 +3042,10 @@
       "khassarFightNativeVerified": true,
       "khassarChargeNativeVerified": false,
       "khassarOriginalActorDeathNativeVerified": false,
-      "webKhassarSuccessorVerified": true
+      "webKhassarSuccessorVerified": true,
+      "declaredAttackNativeVerified": false,
+      "targetReactionNativeVerified": false,
+      "webDeclaredTargetSuccessorVerified": false
     }
   ],
   "stukovCombatGate": {
@@ -3092,5 +3134,43 @@
     "implementedCumulativeAtoms": 6,
     "remainingNonHeldAtoms": 10,
     "sourceHeldDefinitions": 39
+  },
+  "declaredTargetGate": {
+    "status": "passed_scoped",
+    "policyVersion": "1.5.0",
+    "rootRuntimeVersion": "3.236.0",
+    "nativeCases": 5,
+    "nativeSignedActions": 82,
+    "nativeFullRounds": 2,
+    "webRooms": 3,
+    "webSignedActions": 13,
+    "evidenceRefs": [
+      "docs/development/wave4/evidence/detonation-declaration.public.json",
+      "docs/development/wave4/evidence/detonation-target.public.json",
+      "docs/development/wave4/evidence/detonation-declaration-web.public.json",
+      "docs/development/wave4/evidence/detonation-target-web.public.json",
+      "docs/development/wave4/evidence/detonation-declared-current-cold.public.json",
+      "docs/development/wave4/evidence/target-declaration-legacy-cold.public.json",
+      "docs/development/wave4/evidence/engineering-release-v2.public.json",
+      "docs/development/wave4/evidence/deployment-rebinding.public.json",
+      "docs/development/wave4/evidence/stukov-import-scope.public.json",
+      "docs/development/wave4/evidence/detonation-declared-target-consumers.public.json",
+      "docs/development/wave4/evidence/detonation-declared-target-harness.public.json"
+    ],
+    "fullMatchAdmission": false,
+    "newGameAtomsImplemented": 0
+  },
+  "engineeringReleaseDependencyGate": {
+    "releaseId": "wave4-u98-c88-r50-stukov-units-engineering-v2",
+    "selectedRecords": 102,
+    "sourceHeldDefinitions": 39,
+    "conversionNativeCases": 2,
+    "conversionNativeActions": 2,
+    "evidenceRefs": [
+      "docs/development/wave4/evidence/engineering-release-v2.public.json",
+      "docs/development/wave4/evidence/deployment-rebinding.public.json",
+      "docs/development/wave4/evidence/stukov-import-scope.public.json"
+    ],
+    "fullMatchAdmission": false
   }
 }

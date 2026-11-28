@@ -1,0 +1,20 @@
+{
+  "schema": "starcraft_tmg_wave4_deployment_rebinding_verification_v1",
+  "status": "passed_scoped",
+  "reviewedRecordKeys": [
+    "faction_cards:EyCV5SmTPXTrpqS6iy3e",
+    "faction_cards:gWudxJ1dMPAF8vP6UghB"
+  ],
+  "positiveSourceAndGeometryPreserved": true,
+  "rejected": [
+    "changed_source_record",
+    "changed_evidence_bytes",
+    "changed_previous_geometry"
+  ],
+  "newBundleHash": "85599463d58bd1c1e587db460970e545bcded0dc7690511a427c2ddd9bc88dc7",
+  "sourceHeldDefinitions": 39,
+  "newGameAtomsImplemented": 0,
+  "fullMatchAdmission": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

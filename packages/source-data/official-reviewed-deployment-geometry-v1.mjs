@@ -1,9 +1,26 @@
 import { hashStarcraftTmgContract } from '../authoritative-engine/referee-crypto-v1.mjs';
+import {createHash} from 'node:crypto';
 
 const SCHEMA = 'starcraft_tmg_reviewed_deployment_geometry_v1';
 const SHA256 = /^[a-f0-9]{64}$/u;
 const scaleDimensions = { Skirmish: [36, 36], Standard: [54, 36] };
 const scaleMarkers = { Skirmish: [1, 2, 5], Standard: [1, 2, 3, 4, 5] };
+
+export function rebindOfficialUnchangedReviewedDeploymentGeometryV1({context,previousContext,previousBundle,sourceBytesByRef}){
+  readOfficialReviewedDeploymentGeometryV1({dataset:previousContext.dataset,releaseContext:previousContext});
+  if(hashStarcraftTmgContract(previousBundle)!==hashStarcraftTmgContract(previousContext.resources.deploymentCardGeometry))
+    fail('DEPLOYMENT_CARD_GEOMETRY_PREVIOUS_BUNDLE_MISMATCH');
+  for(const card of previousBundle.cards){
+    const prior=previousContext.dataset.recordsByKey[card.recordKey],current=context.dataset.recordsByKey[card.recordKey],bytes=sourceBytesByRef.get(card.evidence.sourceRef);
+    if(!prior||!current||current.sourceRecordHash!==prior.sourceRecordHash||current.payloadHash!==prior.payloadHash
+      ||card.sourceRecordHash!==prior.sourceRecordHash||card.payloadHash!==prior.payloadHash
+      ||!bytes||createHash('sha256').update(bytes).digest('hex')!==card.evidence.sourceContentHash)
+      fail('DEPLOYMENT_CARD_GEOMETRY_UNCHANGED_SOURCE_REQUIRED',card.recordKey);
+  }
+  const {bundleHash,...body}=previousBundle;
+  const rebound={...structuredClone(body),sourceSnapshotHash:context.dataset.sourceSnapshotHash,normalizedDatasetHash:context.dataset.datasetHash};
+  return{...rebound,bundleHash:hashStarcraftTmgContract(rebound)};
+}
 
 function fail(code, key = '') {
   throw Error(key ? code + ':' + key : code);

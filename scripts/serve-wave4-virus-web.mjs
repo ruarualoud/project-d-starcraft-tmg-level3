@@ -8,6 +8,7 @@ import { createRosterWorkspaceServerV1 } from './serve-ticket-27-slice-271-roste
 import { atomicWrite } from './lib/development-context.mjs';
 import { loadWave4VirusEffectsInputs } from './compile-wave4-virus-effects.mjs';
 import { loadWave4StukovUnitInputs } from './compile-wave4-stukov-units.mjs';
+import { loadWave4StukovUnitInputsV2 } from './compile-wave4-stukov-units-v2.mjs';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const read=async file=>JSON.parse(await fs.readFile(file,'utf8'));
@@ -18,9 +19,9 @@ const directory=path.resolve(process.argv[3]);
 assert.ok(directory.startsWith(path.join(root,'build/wave4-web')+path.sep));
 const webRoot=process.argv[4]?path.resolve(process.argv[4]):path.join(root,'apps/starcraft-tmg-expo/dist-product');
 if(process.argv[4])assert.ok(webRoot.startsWith(path.join(root,'build/wave4-web')+path.sep));
-const inputs=['starcraft_tmg_wave4_stukov_infestation_native_v1','starcraft_tmg_wave4_plagued_munitions_v1',
+const inputs=sourceResult.schema==='starcraft_tmg_wave4_detonation_target_v1'?await loadWave4StukovUnitInputsV2(root):['starcraft_tmg_wave4_stukov_infestation_native_v1','starcraft_tmg_wave4_plagued_munitions_v1',
    'starcraft_tmg_wave4_infested_infantry_base_wiring_v1','starcraft_tmg_wave4_detonation_ranged_host_v1','starcraft_tmg_wave4_detonation_nested_host_v1',
-   'starcraft_tmg_wave4_bio_kill_switch_v1','starcraft_tmg_wave4_corrode_web_source_v1','starcraft_tmg_wave4_detonation_template_v1','starcraft_tmg_wave4_detonation_outside_v1','starcraft_tmg_wave4_detonation_overwatch_v1','starcraft_tmg_wave4_overwatch_coexistence_v1','starcraft_tmg_wave4_detonation_khassar_web_source_v1'].includes(sourceResult.schema)?await loadWave4StukovUnitInputs(root)
+   'starcraft_tmg_wave4_bio_kill_switch_v1','starcraft_tmg_wave4_corrode_web_source_v1','starcraft_tmg_wave4_detonation_template_v1','starcraft_tmg_wave4_detonation_outside_v1','starcraft_tmg_wave4_detonation_overwatch_v1','starcraft_tmg_wave4_overwatch_coexistence_v1','starcraft_tmg_wave4_detonation_khassar_web_source_v1','starcraft_tmg_wave4_detonation_declaration_v1'].includes(sourceResult.schema)?await loadWave4StukovUnitInputs(root)
   :sourceResult.schema==='starcraft_tmg_wave4_virus_creep_native_v1'?await loadWave4VirusEffectsInputs(root):await loadWave4TurretInputs(root);
 const rooms=new Map();
 const service={liveEnabled:false,scope:'Wave4 source-bound Native successors; scoped local Web acceptance',rooms:[]};
@@ -71,7 +72,7 @@ for(const spec of specs) {  const proof=sourceResult.results.find(row=>row.id===
     const issued=await native.room.issueSeatRecovery({roomId,seatToken:credentials[side].seatToken});
     assert.equal(issued.ok,true);links[side]='/room/'+roomId+'#recovery='+encodeURIComponent(issued.recovery.recoveryToken);
   }
-  const originalResolutionHash=proof.originalResolutionHash||(['detonation-overwatch','detonation-khassar'].includes(spec.flow)?proof.frames?.[0]?.rows?.[0]?.attackResolutionHash:null);
+  const originalResolutionHash=proof.originalResolutionHash||(['detonation-overwatch','detonation-khassar','detonation-declaration','detonation-template','detonation-target'].includes(spec.flow)?proof.frames?.[0]?.rows?.[0]?.attackResolutionHash:null);
   service.rooms.push({...spec,kind:spec.id,roomId,links,sourcePrefixReceipts:prefixReceipts,
     ...(originalResolutionHash?{expectedOriginalResolutionHash:originalResolutionHash}:{}),
     sourceRoomId:proof.roomId,sourceStateHash:prefix.stateHash,sourceBindingHash:prefix.matchBindingHash});

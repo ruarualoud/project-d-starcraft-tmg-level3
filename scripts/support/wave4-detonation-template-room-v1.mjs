@@ -7,20 +7,21 @@ import {declareWave3EngineeringCoherencyV1} from './wave3-room-boundary-fixture-
 import {DETONATION_IDS} from './wave4-detonation-room-v1.mjs';
 import {OFFICIAL_TEMPLATE_ADAPTIVE_BATCH_ORDER_POLICY_V13} from '../../packages/rule-atoms/official-template-batch-order-policy-v13.mjs';
 import {OFFICIAL_FAQ_REACTION_POLICY_V13} from '../../packages/rule-atoms/official-faq-reaction-policy-v13.mjs';
-export async function createWave4DetonationTemplateScene(inputs,{root,woundedAttacker=true,spilloverFirst=false}={}){
+export async function createWave4DetonationTemplateScene(inputs,{root,woundedAttacker=true,spilloverFirst=false,declarationAbility=null,beforeCasualtyPolicyVersion='1.2.0'}={}){
  const template=createWave4StukovUnitScene(inputs,{phase:'assault',preactivateMarine:false});
  const characteristics=['unit:siege_tank/mode-transformation-movement-phase@1'];
- const weapon='unit:siege_tank/shock-cannon-assault-phase@1',sourceDefinitionIds=[...DETONATION_IDS,...characteristics,weapon];
+ const declarationId=declarationAbility?'unit:siege_tank/'+declarationAbility.toLowerCase().replaceAll(' ','-')+'-assault-phase@1':null;
+ const weapon='unit:siege_tank/shock-cannon-assault-phase@1',sourceDefinitionIds=[...DETONATION_IDS,...characteristics,weapon,...(declarationId?[declarationId]:[])];
  const {assetHash,...assetBody}=JSON.parse(await fs.readFile(path.join(root,'content/source-releases/wave3-20261113-blast-template-v1.json'),'utf8'));
  const body={...assetBody,sourceSnapshotHash:inputs.dataset.sourceSnapshotHash,normalizedDatasetHash:inputs.dataset.datasetHash};
  const asset={...body,assetHash:hash(body)};
  const unit=(id,key,upgrades=[])=>({unitInstanceId:id,recordKey:'army_units:'+key,compositionKind:'small',upgrades});
- const built=createOfficialReleaseRosterStateV2({context:inputs.context,sourceDefinitionIds,includeBeforeCasualtyBatch:true,beforeCasualtyPolicyVersion:'1.2.0',
-  reactionDefinitionIds:DETONATION_IDS,characteristicDefinitionIds:characteristics,
+ const built=createOfficialReleaseRosterStateV2({context:inputs.context,sourceDefinitionIds,includeBeforeCasualtyBatch:true,beforeCasualtyPolicyVersion,
+  reactionDefinitionIds:[...DETONATION_IDS,...(declarationId?[declarationId]:[])],characteristicDefinitionIds:characteristics,
   canonicalResourceTypes:true,includeAbilitySourcePhases:true,includeCharacteristicConsumers:true,includeMelee:true,
   blastTemplateGeometryAsset:asset,includeTemplateBatchOrder:true,templateBatchOrderPolicy:OFFICIAL_TEMPLATE_ADAPTIVE_BATCH_ORDER_POLICY_V13,
   candidatesBySide:{player1:{sideKey:'player1',scaleId:'Standard',mineralBudget:2000,factionRecordKey:'tactical_cards:terran_armed_forces',
-    tacticalCardRecordKeys:['tactical_cards:armory'],units:[unit('attacker','siege_tank',[{upgradeName:'Mode Transformation'}])]},
+    tacticalCardRecordKeys:['tactical_cards:armory'],units:[unit('attacker','siege_tank',[{upgradeName:'Mode Transformation'},...(declarationAbility?[{upgradeName:declarationAbility}]:[])])]},
    player2:{sideKey:'player2',scaleId:'Standard',mineralBudget:2000,factionRecordKey:'tactical_cards:stukov_s_forces',
     tacticalCardRecordKeys:['tactical_cards:healing_pathogen'],units:[unit('defender','infested_marine'),unit('spillover','infested_trooper')]}}});
  const keys=['round','phase','stage','activeSideKey','firstPlayerSideKey','phaseFirstActorByRound','firstPassSideByPhase',
@@ -42,6 +43,6 @@ export async function createWave4DetonationTemplateScene(inputs,{root,woundedAtt
    includePrecisionChoices:true,includeArmourChoices:true},
   templateParameters:{primaryTargetUnitId:'defender',primaryTargetModelId:defender.models[0].id,
    templateCenter:{xInches:x,yInches:11},batchOrderUnitIds:spilloverFirst?['spillover','defender','attacker']:['defender','spillover','attacker']},
-  scenario:{kind:'wave4_detonation_template',declaredSiegeMode:true,declaredPositionsAndNonLethalMarkers:true,
+  scenario:{kind:'wave4_detonation_template',declaredSiegeMode:true,declaredPositionsAndNonLethalMarkers:true,...(declarationAbility?{declarationAbility}:{}),
    templateGeometry:'existing_user_confirmed_5_inch_rebound_to_same_rules',estimatedUnitGeometry:true,fullMatchAdmission:false}};
 }

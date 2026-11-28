@@ -1,0 +1,111 @@
+{
+  "schema": "starcraft_tmg_wave4_virus_web_verification_v1",
+  "status": "passed_scoped",
+  "runRef": "build/wave4-web/stukov-units/detonation-declaration-web-v1",
+  "results": [
+    {
+      "kind": "head-shot",
+      "definitionId": "unit:infested_marine/detonation-any-phase@1",
+      "sourceRoomId": "wave4-detonation-declaration-head-shot-0",
+      "sourceStateHash": "c0e1e3f97f01db8472a87a2725932cbab296f945b27edeec5e0c678bd244e3c4",
+      "sourcePrefixReceipts": 4,
+      "trace": [
+        {
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:infested_marine/detonation-any-phase@1",
+          "sideKey": "player2",
+          "stateRevision": 1,
+          "stateHash": "22046e7b78d01b59ae0d4c49d58933b0daef2544ae05facd5dcb0e4c06faa9a7"
+        },
+        {
+          "actionType": "roll_automatic_hits_armour_pool",
+          "definitionId": null,
+          "sideKey": "player2",
+          "stateRevision": 2,
+          "stateHash": "415855f15da899ae0d9295af507572303d15a99f2b79aa1dc1342a3ae0576176"
+        },
+        {
+          "actionType": "resolve_automatic_hits_evade_pool",
+          "definitionId": null,
+          "sideKey": "player2",
+          "stateRevision": 3,
+          "stateHash": "8b3bc263c9091b9317cc7d15c9d1ae0095d61dc3b2fefe7e84e02e17d647e249"
+        }
+      ],
+      "signedActions": 3,
+      "twoSeatsVerified": true,
+      "explicitHumanConfirmation": true,
+      "previewReadOnly": true,
+      "replayMatchesCurrent": true,
+      "seatRecoveryReentryVerified": true,
+      "pageErrors": []
+    },
+    {
+      "kind": "shaped-blast",
+      "definitionId": "unit:infested_marine/detonation-any-phase@1",
+      "sourceRoomId": "wave4-detonation-declaration-shaped-blast-0",
+      "sourceStateHash": "946afa886375c818ee238838803db1f73c1c7e5e3ee7f53fa84ae2fd3aeb4f9b",
+      "sourcePrefixReceipts": 4,
+      "trace": [
+        {
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:infested_marine/detonation-any-phase@1",
+          "sideKey": "player2",
+          "stateRevision": 1,
+          "stateHash": "bd1c804f567f0c1f1b127a56a713198682150997c68f0a5e723aebe33aa9d843"
+        },
+        {
+          "actionType": "roll_automatic_hits_armour_pool",
+          "definitionId": null,
+          "sideKey": "player2",
+          "stateRevision": 2,
+          "stateHash": "b02aef7ddfd86c72aa5fa923baf5c3eb817665b5edc0a8267af6aa3e9b4ddac9"
+        },
+        {
+          "actionType": "resolve_automatic_hits_evade_pool",
+          "definitionId": null,
+          "sideKey": "player2",
+          "stateRevision": 3,
+          "stateHash": "e791e91c83f805ba7544dba9cbdfd42a1b81a04dcd73fc7d184f118cd0c88327"
+        },
+        {
+          "actionType": "resolve_blast_template_batch",
+          "definitionId": null,
+          "sideKey": "player1",
+          "stateRevision": 4,
+          "stateHash": "358cc5a1018ad5335a1043aacee537357c040c43c9e84b9d85885b5c2fc7e530"
+        },
+        {
+          "actionType": "resolve_blast_template_batch",
+          "definitionId": null,
+          "sideKey": "player1",
+          "stateRevision": 5,
+          "stateHash": "1168a455e341fe28158c5abff49dc717473a8bb20b1d0f9a38e316d3c233474b"
+        },
+        {
+          "actionType": "choose_blast_template_casualties",
+          "definitionId": null,
+          "sideKey": "player2",
+          "stateRevision": 6,
+          "stateHash": "eeee289162773b01ec3562501e25e8e338a600b680c6a9f30e5b9e04d0173d42"
+        }
+      ],
+      "signedActions": 6,
+      "twoSeatsVerified": true,
+      "explicitHumanConfirmation": true,
+      "previewReadOnly": true,
+      "replayMatchesCurrent": true,
+      "seatRecoveryReentryVerified": true,
+      "pageErrors": []
+    }
+  ],
+  "signedActions": 9,
+  "conditionalTurretGeometryInRestorationCaseOnly": false,
+  "sourceHeldDefinitions": 39,
+  "engineeringEstimatedUnitGeometry": true,
+  "fullWave4LobbyBuilderAdmission": false,
+  "fullMatchAdmission": false,
+  "wave3PlayerRoomsTouched": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

@@ -1,7 +1,7 @@
 import {isDeepStrictEqual} from 'node:util';
 import {hashStarcraftTmgContract as hash} from '../authoritative-engine/referee-crypto-v1.mjs';
 import {resolveOfficialArmourRollActivationIdV1} from '../rule-atoms/official-armour-roll-ordinal-v1.mjs';
-import {hasOfficialBeforeCasualtyBatchPolicyV1,hasOfficialExtendedBeforeCasualtyPolicyV1,hasOfficialTemplateBeforeCasualtyPolicyV1,hasOfficialOverwatchBeforeCasualtyPolicyV1,hasOfficialKhassarBeforeCasualtyPolicyV1,reserveOfficialBeforeCasualtyBatchV1,
+import {hasOfficialBeforeCasualtyBatchPolicyV1,hasOfficialExtendedBeforeCasualtyPolicyV1,hasOfficialTemplateBeforeCasualtyPolicyV1,hasOfficialOverwatchBeforeCasualtyPolicyV1,hasOfficialKhassarBeforeCasualtyPolicyV1,hasOfficialDeclaredAttackBeforeCasualtyPolicyV1,reserveOfficialBeforeCasualtyBatchV1,
  consumeOfficialBeforeCasualtyReservationV1} from '../rule-atoms/official-before-casualty-batch-v1.mjs';
 import {createOfficialReactionFamilyAdapterV1,openOfficialReactionFamilyWindowV1,
  consumeOfficialReactionFamilyResolutionV1} from './official-reaction-family-adapter-v1.mjs';
@@ -62,7 +62,8 @@ export function stageOfficialBeforeCasualtyContinuationV1({state:input,action,ho
   for(const slot of ['pendingAction','pendingOfficialAutomaticHits',...(hasOfficialTemplateBeforeCasualtyPolicyV1(input)
     ?['pendingOfficialBlastTemplateAttack','pendingOfficialRavenSeekerPhaseEnd']:[]),
     ...(hasOfficialOverwatchBeforeCasualtyPolicyV1(input)?['pendingOfficialAutoTurretOverwatch','pendingCurrentProductRangedSequence']:[]),
-    ...(hasOfficialKhassarBeforeCasualtyPolicyV1(input)?['pendingOfficialKhassarShot','pendingOfficialKhassarFight','pendingOfficialKhassarCharge','pendingOfficialMeleeSidearmSequence']:[])])
+    ...(hasOfficialKhassarBeforeCasualtyPolicyV1(input)?['pendingOfficialKhassarShot','pendingOfficialKhassarFight','pendingOfficialKhassarCharge','pendingOfficialMeleeSidearmSequence']:[]),
+    ...(hasOfficialDeclaredAttackBeforeCasualtyPolicyV1(input)?['pendingOfficialAttackTargetReaction','pendingOfficialRangedAttackDeclaration']:[])])
     if(next[slot]){frame.suspendedHostSlots[slot]=clone(next[slot]);delete next[slot];}
  }
  next[key]=[...(next[key]||[]),seal(frame,'frameHash')];next.activeSideKey=first;
@@ -73,7 +74,7 @@ export function stageOfficialBeforeCasualtyContinuationV1({state:input,action,ho
  return{ok:true,state:next,action:clone(action),events:[event],trainingTruth:false};
 }
 export function createOfficialBeforeCasualtyRuntimeV1({reactionBundle,policy}){
- const khassar=policy?.version==='1.4.0',overwatch=khassar||policy?.version==='1.3.0',template=overwatch||policy?.version==='1.2.0',extended=template||policy?.version==='1.1.0';
+ const declared=policy?.version==='1.5.0',khassar=declared||policy?.version==='1.4.0',overwatch=khassar||policy?.version==='1.3.0',template=overwatch||policy?.version==='1.2.0',extended=template||policy?.version==='1.1.0';
  const routes=reactionBundle.routes.filter(r=>r.effectKind==='before_casualty_detonation');
  if(!routes.length)throw Error('BEFORE_CASUALTY_DETONATION_SOURCE_REQUIRED');
  const pending=readOfficialBeforeCasualtyContinuationV1;
@@ -141,6 +142,6 @@ export function createOfficialBeforeCasualtyRuntimeV1({reactionBundle,policy}){
     &&isDeepStrictEqual(p.automaticHits,{hits:effect.automaticHits,damagePerHit:effect.damagePerHit,targetUnitIds:effect.detonationFacts.targetUnitIds}));},
   timingFor:p=>template?p.reactionTiming:'inside_activation',
   reactionContextFor:(state,p)=>(state[key]||[]).find(f=>f.continuationId===p.detonationContinuationId)?.activationContext};
- return{pending,bindRootAction,afterReaction,takeResume,startNextEffect,sourceAuthority,descriptor:{runtimeId:'official-before-casualty-runtime-v1',runtimeVersion:khassar?'1.4.0':overwatch?'1.3.0':template?'1.2.0':extended?'1.1.0':'1.0.0',
+ return{pending,bindRootAction,afterReaction,takeResume,startNextEffect,sourceAuthority,descriptor:{runtimeId:'official-before-casualty-runtime-v1',runtimeVersion:declared?'1.5.0':khassar?'1.4.0':overwatch?'1.3.0':template?'1.2.0':extended?'1.1.0':'1.0.0',
   sourceBundleHash:reactionBundle.bundleHash,hostKinds:template?policy.damageHosts:extended?['ranged','melee','automatic_hits']:['ranged'],multiTargetHostAdmission:extended,trainingTruth:false}};
 }

@@ -1,4 +1,5 @@
 import { alternateOfficialPhaseActivationV1 } from '../rule-atoms/official-phase-activation-availability-v1.mjs';
+import {hasOfficialDeclaredAttackBeforeCasualtyPolicyV1} from '../rule-atoms/official-before-casualty-batch-v1.mjs';
 import { readOfficialBeforeEvadeReactionModifierV1 } from './official-reaction-family-adapter-v1.mjs';
 import { resolveOfficialDodgeTransferCountsV1 } from '../rule-atoms/official-dodge-resolution-kernel-v1.mjs';
 import { hasOfficialNonLethalStandardDamagePolicyV1 } from '../rule-atoms/official-non-lethal-damage-policy-v1.mjs';
@@ -3131,14 +3132,16 @@ function advanceRangedBatch(state, action, piece, profile, modelIds, completedBa
     rulesTruth: 'official_current_product_sequential_ranged_batches', trainingTruth: false,
   }, 'sequenceHash');
   state.pendingCurrentProductRangedSequence = clone(sequence);
-  const remainingProfiles = profilesAllowedByPending(state, piece, activeProfilesFor(state, piece).profiles);
+  const deadCompletion=hasOfficialDeclaredAttackBeforeCasualtyPolicyV1(state)&&!activePiece(piece);
+  const remainingProfiles = deadCompletion?[]:profilesAllowedByPending(state, piece, activeProfilesFor(state, piece).profiles);
   const sequenceContinues = remainingProfiles.length > 0;
   piece.activatedPhases = { movement: false, assault: false, combat: false,
     ...(piece.activatedPhases || {}), assault: !sequenceContinues };
   if (sequenceContinues) state.activeSideKey = action.sideKey;
   else {
     delete state.pendingCurrentProductRangedSequence;
-    if (!openOfficialSelectedRosterAfterActionWindowV1(state, action.sideKey, piece.id, 'assault')) {
+    if(deadCompletion&&state.selectedRosterActivationWindow?.pieceId===piece.id)delete state.selectedRosterActivationWindow;
+    if (deadCompletion||!openOfficialSelectedRosterAfterActionWindowV1(state, action.sideKey, piece.id, 'assault')) {
       alternateOfficialPhaseActivationV1(state, action.sideKey, 'assault', sideHasAvailableAssaultActivation);
     }
   }

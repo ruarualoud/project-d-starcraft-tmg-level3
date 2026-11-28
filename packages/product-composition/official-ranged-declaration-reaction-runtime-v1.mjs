@@ -14,9 +14,9 @@ const parentKey = OFFICIAL_RANGED_DECLARATION_PARENT_KEY;
 const seal = (body, field) => ({ ...body, [field]: hash(body) });
 const clone = value => structuredClone(value);
 
-export function createOfficialRangedDeclarationReactionRuntimeV1({ state: initial, reactionAdapter, templateRuntime, rangedRuntime }) {
+export function createOfficialRangedDeclarationReactionRuntimeV1({ state: initial, reactionAdapter, templateRuntime, rangedRuntime,includeBeforeCasualtyCompletion=false }) {
   const numeric = initial.officialRangedDeclarationPolicy?.numericWeaponsSupported === true;
-  const version = numeric ? '1.1.0' : '1.0.0';
+  const version = includeBeforeCasualtyCompletion?'1.2.0':numeric ? '1.1.0' : '1.0.0';
   if (!hasOfficialRangedDeclarationPolicyV1(initial) || !reactionAdapter || !numeric && !templateRuntime
     || numeric && !rangedRuntime) {
     throw Error('RANGED_DECLARATION_CONSUMERS_REQUIRED');
@@ -32,6 +32,7 @@ export function createOfficialRangedDeclarationReactionRuntimeV1({ state: initia
   const descriptor = seal({ runtimeId, runtimeVersion: version, actions: [actionType],
     ruleAtomIds: [...initial.officialRangedDeclarationPolicy.ruleAtomIds],
     sourceBundleHash: initial.officialReactionFamilySourceBundle.bundleHash,
+    ...(includeBeforeCasualtyCompletion?{sealedDamageCompletion:true}:{}),
     controllerSelectsDeclarationReaction: true, targetSelectedInSuccessor: true,
     ...(numeric ? { numericWeaponsSupported: true, explicitPaymentSelection: true } : {}),
     mutationAuthority: true, fullMatchCoverage: false, trainingTruth: false }, 'runtimeHash');
@@ -173,8 +174,12 @@ export function createOfficialRangedDeclarationReactionRuntimeV1({ state: initia
       action.declarationPlan.canonicalParameters.reactionAbilityName, action.declarationPlan.canonicalParameters.paymentCardInstanceIds);
     return { ok: true, state: prepared.state, action, events: prepared.events, trainingTruth: false };
   }
-  function afterTransition(result) {
-    const parent = readOfficialRangedDeclarationV1(result.state);
+  function afterTransition(result,{sealedFrame,priorState}={}) {
+    const completedTemplateParent=includeBeforeCasualtyCompletion&&result.events.some(e=>e.type==='ranged_weapon_completed')
+      &&isDeepStrictEqual(result.state[parentKey],priorState?.[parentKey])?priorState?.pendingOfficialBlastTemplateAttack:null;
+    const parent = readOfficialRangedDeclarationV1(result.state,{
+      ...(includeBeforeCasualtyCompletion&&sealedFrame?.suspendedHostSlots?.[parentKey]?{sealedFrame}:{}),
+      ...(completedTemplateParent?{completedTemplateParent}:{})});
     if (!parent || !(result.events || []).some(event => event.pieceId === parent.pieceId
       && (event.type === 'ranged_weapon_completed' || numeric && event.type === 'ranged_attack'
         && event.stages?.declaration?.profileKey === parent.profileKey))) return result;

@@ -22,6 +22,12 @@ async function current(item) {
   const store=openWave3EngineeringStoreV1({directory:path.join(directory,'rooms',item.kind),filename:'room.sqlite',readOnly:true});
   try{return await store.loadRoom(item.roomId);}finally{store.close();}
 }
+async function signedEvents(item) {
+  const store=openWave3EngineeringStoreV1({directory:path.join(directory,'rooms',item.kind),filename:'room.sqlite',readOnly:true});
+  try {const bundle=await store.loadReplayBundle(item.roomId);
+    return bundle.privateJournal.filter(r=>r.payload.type==='accepted_transition').flatMap(r=>r.payload.payload.receipt.events);
+  } finally {store.close();}
+}
 async function legal(page) {
   await page.getByRole('button',{name:'行动',exact:true}).click();
   const [response]=await Promise.all([page.waitForResponse(r=>r.url().endsWith('/legal-space')&&r.request().method()==='POST'),
@@ -158,7 +164,8 @@ try {
           &&!state.pendingOfficialInfestationTransfer&&!state.pendingCurrentProductRangedCasualtyChoice&&!state.pendingOfficialAutomaticHits
            &&!state.pendingOfficialHitsPoolChoice&&!state.officialBeforeCasualtyContinuations?.length
            &&!state.pendingOfficialBlastTemplateAttack&&!state.pendingOfficialRavenSeekerPhaseEnd
-          &&(item.flow!=='detonation-khassar'||!state.selectedRosterActivationWindow))break;
+          &&!state.pendingOfficialAttackTargetReaction&&!state.pendingOfficialRangedAttackDeclaration
+          &&(!['detonation-khassar','detonation-declaration','detonation-target'].includes(item.flow)&&!item.declarationDefinitionId||!state.selectedRosterActivationWindow))break;
         const owner=state.activeSideKey;assert.ok(pages[owner]);
         const menu=await legal(pages[owner]);
         if(!primaryUsed&&item.id==='infected-ordinary-move'){assert.ok(!menu.parameterDomains.some(row=>['unit:stalker/blink-movement-phase@1','card:nexus/strategic-recall-any@1'].includes(row.definitionId)));}
@@ -171,11 +178,12 @@ try {
         }
         let choice;
         if(!primaryUsed)choice=menu.parameterDomains.find(row=>item.id==='infected-ordinary-move'?row.actionType==='move'&&row.pieceId==='enemy':item.id==='clean-blink'?row.definitionId==='unit:stalker/blink-movement-phase@1':item.id==='clean-recall'?row.definitionId==='card:nexus/strategic-recall-any@1':row.definitionId===item.definitionId);
-        else if(['detonation-nested','bio-kill-switch','detonation-template','detonation-outside','detonation-overwatch','detonation-khassar'].includes(item.flow))choice=menu.parameterDomains.find(row=>row.effectKind==='before_casualty_detonation');
+        else if(['detonation-nested','bio-kill-switch','detonation-template','detonation-outside','detonation-overwatch','detonation-khassar','detonation-declaration','detonation-target'].includes(item.flow))choice=menu.parameterDomains.find(row=>row.effectKind==='before_casualty_detonation');
         else if(item.flow==='corrode-restoration'&&!restorationUsed)choice=menu.parameterDomains.find(row=>row.definitionId==='unit:medic/restoration-any-phase@1');
         else if((item.kind==='ocular-use'||item.flow==='coexisting-ocular')&&!shotUsed)choice=menu.parameterDomains.find(row=>row.weaponName==='Firefly Missiles');
         else if((item.kind==='growing-restoration-exception'||item.flow==='carrier-restoration'||item.flow==='trooper-restoration')&&!restorationUsed)choice=menu.parameterDomains.find(row=>row.definitionId==='unit:medic/restoration-any-phase@1'||item.flow==='carrier-restoration'&&row.effectKind==='infestation_transfer');
-        choice ||= menu.parameterDomains.find(row=>row.actionType==='pass_reaction_family_window')||menu.parameterDomains[0];
+        choice ||= menu.parameterDomains.find(row=>row.actionType==='pass_reaction_family_window')
+          ||menu.parameterDomains.find(row=>row.actionType==='finish_activation')||menu.parameterDomains[0];
         const schema=choice?.sourceDomain?.parameterSchema||choice?.parameterSchema;
         let parameterized=Boolean(schema?.required?.length);
         if(!choice){choice=menu.finiteActions[0]?.action;parameterized=false;}
@@ -211,6 +219,13 @@ try {
         assert.equal(state.activeAbilityUseHistory.filter(h=>h.pieceId==='actor'&&h.routeId==='card:templar_caste/khassar-de-templari-any@1').length,1);
         const original=events.filter(e=>['ranged_attack','close_combat_attack'].includes(e.type)&&(e.attackResolutionHash||e.resolutionHash)===item.expectedOriginalResolutionHash);assert.equal(original.length,1);
         assert.equal(completed[0].damage.reason==='recipient_destroyed',state.pieces.find(p=>p.id==='recipient').isDestroyed);
+      } else if(['detonation-declaration','detonation-target'].includes(item.flow)){
+        const state=final.envelope.state,events=await signedEvents(item);
+        assert.ok(!state.pendingOfficialAttackTargetReaction&&!state.pendingOfficialRangedAttackDeclaration
+          &&!state.selectedRosterActivationWindow&&!state.officialBeforeCasualtyContinuations?.length&&!state.pendingOfficialAutomaticHits);
+        assert.equal(events.filter(e=>e.type==='ranged_attack'&&e.attackResolutionHash===item.expectedOriginalResolutionHash).length,1);
+        if(item.flow==='detonation-target')assert.equal(events.filter(e=>e.type==='attack_target_reaction_consumed').length,1);
+        else assert.equal(events.filter(e=>e.type==='ranged_declaration_completed').length,1);
       } else if(item.flow==='coexisting-ocular'){
         const state=final.envelope.state;assert.ok(!state.pendingOfficialAutoTurretOverwatch&&!state.pendingOfficialReactionWindow);
         assert.equal(state.officialOcularOverwatchHistory.length,1);assert.equal(state.officialOcularOverwatchHistory[0].outcome,'ranged_attack_completed');
@@ -227,6 +242,11 @@ try {
         assert.ok(!state.pieces.some(p=>p.officialBeforeCasualtyReservations?.length));
         assert.equal(events.filter(e=>e.type===(item.flow==='detonation-template'?'ranged_weapon_completed':'raven_seeker_missile_complete')).length,1);
         if(item.flow==='detonation-outside')assert.equal(state.officialRavenSeekerPhaseEndHistory.length,1);
+        if(item.declarationDefinitionId){
+          assert.ok(!state.pendingOfficialRangedAttackDeclaration&&!state.selectedRosterActivationWindow);
+          assert.equal((await signedEvents(item)).filter(e=>e.type==='ranged_declaration_completed').length,1);
+          assert.equal(state.officialReactionHistory.filter(h=>h.definitionId===item.declarationDefinitionId).length,1);
+        }
       } else if(item.flow==='detonation-nested'){
         const state=final.envelope.state;assert.equal(Boolean(state.officialBeforeCasualtyContinuations?.length),false);
         assert.equal(state.fightActionHistory.length,1);assert.ok(state.pieces.every(p=>p.isDestroyed));
@@ -288,7 +308,7 @@ try {
 const result={schema:'starcraft_tmg_wave4_virus_web_verification_v1',status:'passed_scoped',
   runRef:path.relative(root,directory),results,signedActions:results.reduce((sum,row)=>sum+row.signedActions,0),
   conditionalTurretGeometryInRestorationCaseOnly:service.rooms.some(item=>item.id==='growing-restoration-exception'||item.flow==='carrier-restoration'),sourceHeldDefinitions:39,
-   engineeringEstimatedUnitGeometry:service.rooms.some(item=>['admiral-exchange','trooper-restoration','stukov-spread','munitions-support','infantry-burrow','detonation-ranged','detonation-nested','bio-kill-switch','corrode-armour','corrode-restoration','detonation-template','detonation-outside','detonation-overwatch','coexisting-ocular','detonation-khassar'].includes(item.flow)),
+   engineeringEstimatedUnitGeometry:service.rooms.some(item=>['admiral-exchange','trooper-restoration','stukov-spread','munitions-support','infantry-burrow','detonation-ranged','detonation-nested','bio-kill-switch','corrode-armour','corrode-restoration','detonation-template','detonation-outside','detonation-overwatch','coexisting-ocular','detonation-khassar','detonation-declaration','detonation-target'].includes(item.flow)),
   fullWave4LobbyBuilderAdmission:false,fullMatchAdmission:false,wave3PlayerRoomsTouched:false,modelCalls:0,trainingTruth:false};
 await atomicWrite(path.join(directory,'web-result.public.json'),JSON.stringify(result,null,2)+'\n');
 await atomicWrite(path.join(root,'docs/development/wave4/evidence/'+(process.argv[3]||'virus-web.public.json')),JSON.stringify(result,null,2)+'\n');

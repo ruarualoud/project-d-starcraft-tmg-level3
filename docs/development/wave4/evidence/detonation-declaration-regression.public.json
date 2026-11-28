@@ -1,0 +1,14 @@
+{
+  "schema": "starcraft_tmg_wave4_detonation_declaration_prefix_regression_v1",
+  "status": "reproduced_not_qualified",
+  "runRef": "build/wave4-web/stukov-units/detonation-declaration-WpXbj3",
+  "caseId": "head-shot",
+  "roomId": "wave4-detonation-declaration-head-shot-0",
+  "signedActions": 8,
+  "failingBehavior": "destroyed_attacker_offered_and_accepted_finish_activation",
+  "offendingRevision": 8,
+  "earlierQualificationWithdrawn": true,
+  "passedCounts": 0,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

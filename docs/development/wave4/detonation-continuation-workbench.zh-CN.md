@@ -8,9 +8,11 @@
 
 政策1.3/Root3.233本批已验，见[Overwatch与多武器](detonation-overwatch-wiring.zh-CN.md)：5原生分支46动作、Web2房6确认及5房63动作冷读；两种步兵均执行激活外Auto射击，Marine另执行多武器攻击者阵亡/存活两分支。完整原子仍6/18。
 
-新核对：Firefly只Target Flying，不能直接射击Ground感染步兵，因此本批直接射击采用Target All的Auto-Turret；Khassar可作为敌方射击/近战的实际攻击所有者，仍需接。Queen Domineering Presence只有任务Supply效果，不是攻击委托。[Auto/Ocular同房](overwatch-coexistence-wiring.zh-CN.md)现已实际复现并修复：2原生分支21动作、Web2房5确认与4房29原动作冷读通过。双方各一类炮塔，进口Raven同方两类组合仍待。
+新核对：Firefly只Target Flying，不能直接射击Ground感染步兵，因此本批直接射击采用Target All的Auto-Turret；Khassar可作为敌方射击/近战的实际攻击所有者，政策1.4已验。Queen Domineering Presence只有任务Supply效果，不是攻击委托。[Auto/Ocular同房](overwatch-coexistence-wiring.zh-CN.md)现已实际复现并修复：2原生分支21动作、Web2房5确认与4房29原动作冷读通过。双方各一类炮塔。此前进口Raven同方组合待办有误：Raven无Ground，不符合Stukov准入，Builder反例已拒绝。
 
 政策1.4/Root3.235本批[Khassar](detonation-khassar-wiring.zh-CN.md)已验：6原生分支51动作、Web2房10确认、6房结算审计与当前/前批8房71动作、旧Khassar3房9动作冷读；尚未计完整原子。Target/声明、其他HITS和直接移除继续。
+
+政策1.5/Root3.236本批[Target与射击声明](detonation-declared-target-wiring.zh-CN.md)已验：5原生分支82动作、2完整回合、Web3房13确认、当前/前批7房99及旧2房11动作冷读通过。Head Shot死来源激活窗口回归已修，原失败run撤回通过；新run单独验收。工程发布V2重编Builder转换政策并严格重绑两张不变部署卡，进口Goliath/Tank各实付1BM。完整原子仍6/18，继续其他外部HITS和直接移除。
 
 接下来按实际消费者推进：
 
@@ -19,7 +21,7 @@
 2. Seeker阶段末Marine接受/拒绝及实际子HITS已验证activationId:null和FAQ1.3当前标记持有者优先权；Trooper未执行Seeker分支。其他Bile/Drone/Storm/Photon父节点继续；政策1.2对这些组合先在构造时拒绝，下一版本逐所有者接入。
 3. Disengage失败模型、Defiler Consume祭献、其他直接移除。Consume须先支付/保留其他成本，子反应不能花掉承诺的费用；原施法者被反应杀死后继续封存后继。离场后备模型不能开在场反应，设置回合能力锁仍生效。
 4. 覆盖无BM、每激活反应已用、严格2英寸、多目标同批双方效果队列、对应完整回合和Web入口。仅普通攻击/HITS嵌套不能计完整Detonation原子。
-5. 工程发布切换releaseId后，进口Terran的转换政策还引用原Builder发布；需在新的工程发布中重编建军组件并独立验收。保留旧工程输入供历史冷重放，不能放宽FACTION_UNIT_CONVERSION_RELEASE_MISMATCH。本批零伤亡行用合法Queen+Hatchery，Goliath转换问题仍列为后续整版接线事项。
+5. 工程发布V2已重编Builder及单位特征，进口Goliath/Tank实际BM付款与冷恢复通过；旧V1输入保留只读。FACTION_UNIT_CONVERSION_RELEASE_MISMATCH继续严格核对。部署卡仅在来源记录及官方证据字节完全不变时重绑，三类篡改反例拒绝。
 
 每个原损伤批次真正恢复后才发布其完成/伤亡/Supply事件；子HITS本身的实际伤亡仍走Carrier、Infestation、Friendly Loss等正常后继。逐房核对原结算哈希/伤亡顺序、Supply只记实际移除、无悬挂槽；原生签名+幂等+关闭重开冷恢复，再做双席真人确认。
 

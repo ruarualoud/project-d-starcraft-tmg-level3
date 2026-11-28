@@ -22,7 +22,7 @@ const seal = (body, field) => ({ ...body, [field]: hash(body) });
 export function createOfficialAttackTargetReactionRuntimeV1({ ranged, template = null, melee = null, reactionAdapter, reactionBundle,
   includeNestedChoices = false, afterReaction = result => result, preserveTemplateDeclaration = false,
   phaseBoundCombatCoexistence = false, includeMeleeDamageContinuation = false, includeRangedDamageContinuation = false,
-  includeRangedDeclarationHitDebuff = false, standRoute = null, includeRedirectSelection = false }) {
+  includeRangedDeclarationHitDebuff = false, standRoute = null, includeRedirectSelection = false, includeBeforeCasualtyCompletion=false }) {
   const targetTrigger = reactionBundle.routes.some(row => row.triggerKind === 'attack_target_selected');
   if ((!ranged && !melee) || !reactionAdapter || !targetTrigger && !includeRangedDeclarationHitDebuff && !standRoute
     || includeRangedDeclarationHitDebuff && (!ranged || !reactionBundle.routes.some(row => row.persistentRangedHitDebuff))) {
@@ -33,7 +33,7 @@ export function createOfficialAttackTargetReactionRuntimeV1({ ranged, template =
   if (phaseBoundCombatCoexistence && !melee) throw Error('ATTACK_TARGET_COMBAT_CONSUMER_REQUIRED');
   const meleeTarget = melee ? createOfficialMeleeTargetReactionRuntimeV1({ melee, reactionAdapter, reactionBundle,
     includeDamageContinuation: includeMeleeDamageContinuation }) : null;
-  const runtimeVersion = standRoute ? '9.0.0' : includeRangedDeclarationHitDebuff ? '8.0.0' : includeRangedDamageContinuation ? '7.0.0' : phaseBoundCombatCoexistence ? '6.0.0' : preserveTemplateDeclaration ? '5.0.0' : melee ? '4.0.0' : template ? '3.0.0' : includeNestedChoices ? '2.0.0' : '1.0.0';
+  const runtimeVersion = includeBeforeCasualtyCompletion ? '10.0.0' : standRoute ? '9.0.0' : includeRangedDeclarationHitDebuff ? '8.0.0' : includeRangedDamageContinuation ? '7.0.0' : phaseBoundCombatCoexistence ? '6.0.0' : preserveTemplateDeclaration ? '5.0.0' : melee ? '4.0.0' : template ? '3.0.0' : includeNestedChoices ? '2.0.0' : '1.0.0';
   const descriptor = Object.freeze(seal({ runtimeId, runtimeVersion,
     actions: [...(ranged ? [declareType] : []), ...(meleeTarget ? [meleeTarget.descriptor.actions[0]] : []),
       ...(includeRedirectSelection ? ['select_redirected_attack_target'] : []),
@@ -43,6 +43,7 @@ export function createOfficialAttackTargetReactionRuntimeV1({ ranged, template =
       : includeNestedChoices ? 'numeric_ranged_with_native_defender_choices' : 'single_numeric_ranged_batch',
     ...(standRoute ? {standSource:standRoute.routeHash} : {}),
     reactionBeforeAttackDice: true, semanticSelectionOnly: true,
+    ...(includeBeforeCasualtyCompletion?{beforeCasualtyCompletion:true}:{}),
     ...(includeRangedDeclarationHitDebuff ? { declarationHitDebuffBeforeTargetReaction: true } : {}),
     ...(preserveTemplateDeclaration ? { templateDeclarationSavedBeforeReaction: true } : {}),
     ...(phaseBoundCombatCoexistence ? { combatAndAssaultReactionPhasesRemainDistinct: true } : {}),
@@ -352,6 +353,7 @@ export function createOfficialAttackTargetReactionRuntimeV1({ ranged, template =
   return Object.freeze({ descriptor, pending, intercept, enumerate, instantiate, apply, readyAttack, assertReadyAttack,
     assertContinuation,
     completeAttack(result, parent) {
+      if(includeBeforeCasualtyCompletion&&result.state.officialBeforeCasualtyContinuations?.some(frame=>frame.suspendedHostSlots?.[parentKey]?.parentHash===parent.parentHash))return result;
       if (parent.attackKind === 'melee') return meleeTarget.completeAttack(result, parent);
       const damage = includeRangedDamageContinuation && result.state.pendingCurrentProductRangedDamageReaction;
       if (damage) {
