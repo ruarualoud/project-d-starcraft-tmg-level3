@@ -1,0 +1,12 @@
+{
+  "schema": "starcraft_tmg_wave4_tal_darim_typecheck_v1",
+  "status": "no_new_errors_existing_app_errors_remain",
+  "baselineRef": "docs/development/wave4/evidence/consume-typecheck.public.json",
+  "currentDiagnostics": 35,
+  "baselineComparableFileDiagnostics": 35,
+  "baselineEnvironmentOnlyDiagnostics": 2,
+  "comparison": "file and TS code multiplicity",
+  "newDiagnosticsByFileAndCode": [],
+  "fullAppTypecheckPassed": false,
+  "modelCalls": 0
+}

@@ -1,4 +1,6 @@
 import { OFFICIAL_ANCESTRAL_WISDOM_DEFINITION_ID } from './official-ancestral-wisdom-payment-v1.mjs';
+import {createOfficialFriendlyLostSupplyBaselineV1} from '../rule-atoms/official-friendly-lost-supply-threshold-v1.mjs';
+import {assertOfficialTalDarimThresholdStateV1} from './official-tal-darim-threshold-v1.mjs';
 import {createOfficialStukovContextualSupplyRoutesV1} from '../source-data/official-stukov-infestation-source-v1.mjs';
 import {OFFICIAL_REPEATED_ACTIVATION_IDENTITY_POLICY_V1} from '../rule-atoms/official-repeated-activation-identity-v1.mjs';
 import { OFFICIAL_OUR_MINDS_AS_ONE_DEFINITION_ID } from './official-our-minds-as-one-v1.mjs';
@@ -106,7 +108,7 @@ import { OFFICIAL_FEEDBACK_REACTION_TIMING_POLICY_V1 } from './official-feedback
 // produces reserves and source-bound instances. Deployment and match setup are
 // separate Native operations, owned by their respective product runtimes.
 export function createOfficialReleaseRosterStateV2({ context, candidatesBySide, legacyDisclosurePolicy, blastTemplateGeometryAsset,
-  sourceDefinitionIds,includeRepeatedActivationIdentity=false,includeBeforeCasualtyBatch=false,beforeCasualtyPolicyVersion='1.0.0',
+  sourceDefinitionIds,includeTalDarimThresholds=false,includeRepeatedActivationIdentity=false,includeBeforeCasualtyBatch=false,beforeCasualtyPolicyVersion='1.0.0',
   attackProfileRecordKeys,
   includeMelee = false, includeArmourOrdinals = false, armourRollOrdinalPolicyVersion='1.0.0', meleeModifierDefinitionIds, battlefieldModifierDefinitionIds,
   reactionDefinitionIds, characteristicDefinitionIds, canonicalResourceTypes = false, meleeWeaponDefinitionIds,
@@ -622,6 +624,15 @@ export function createOfficialReleaseRosterStateV2({ context, candidatesBySide, 
     for (const piece of state.pieces) {
       synchronizeOfficialEffectiveHitPointWoundsV1(state, piece, { includeUnmodifiedProfiles: true });
     }
+  }
+  if(includeTalDarimThresholds){
+    state.officialFriendlyLostSupplyBaseline=createOfficialFriendlyLostSupplyBaselineV1({state});
+    const policy={schema:'starcraft_tmg_official_tal_darim_threshold_policy_v1',version:'1.0.0',
+      sourceBundleHash:state.officialCharacteristicStatusFamilySourceBundle?.bundleHash,
+      baselineHash:state.officialFriendlyLostSupplyBaseline.baselineHash,
+      exclusiveWeaponBatchContinuation:true,trainingTruth:false};
+    state.officialTalDarimThresholdPolicy={...policy,policyHash:hash(policy)};
+    if(!assertOfficialTalDarimThresholdStateV1(state))throw Error('RELEASE_TAL_DARIM_THRESHOLD_SOURCE_REQUIRED');
   }
   return { state, sourceBinding: { releaseId: context.manifest.releaseId,
     manifestHash: context.manifest.manifestHash, normalizedDatasetHash: context.dataset.datasetHash,

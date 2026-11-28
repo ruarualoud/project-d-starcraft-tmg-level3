@@ -1,0 +1,1322 @@
+{
+  "schema": "starcraft_tmg_wave4_tal_darim_threshold_v1",
+  "status": "passed_scoped",
+  "directoryRef": "build/wave4-web/tal-darim/threshold-rO2IzE",
+  "results": [
+    {
+      "lostSupply": 3,
+      "kind": "ranged",
+      "group": "static",
+      "id": "ranged-3",
+      "attempt": 0,
+      "roomId": "wave4-tal-threshold-ranged-3",
+      "directoryRef": "build/wave4-web/tal-darim/threshold-rO2IzE/ranged-3",
+      "signedActions": 19,
+      "stateHash": "0f67f273955c7b13fcc97de92663282407fdb6c676d4e15bafb1a5db5a4502af",
+      "status": "passed_scoped",
+      "attackProof": {
+        "precision": 0,
+        "criticalHit": 0
+      },
+      "dynamicProof": null,
+      "roundResetProof": null,
+      "trace": [
+        {
+          "revision": 1,
+          "round": 1,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "pieceId": null
+        },
+        {
+          "revision": 2,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "choose_first_actor",
+          "pieceId": null
+        },
+        {
+          "revision": 3,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "pieceId": null
+        },
+        {
+          "revision": 4,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "pieceId": null
+        },
+        {
+          "revision": 5,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "choose_first_actor",
+          "pieceId": null
+        },
+        {
+          "revision": 6,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "ranged_attack",
+          "pieceId": "actor"
+        },
+        {
+          "revision": 7,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "finish_activation",
+          "pieceId": "actor"
+        },
+        {
+          "revision": 8,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "pieceId": null
+        },
+        {
+          "revision": 9,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "pieceId": null
+        },
+        {
+          "revision": 10,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "choose_first_actor",
+          "pieceId": null
+        },
+        {
+          "revision": 11,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "pieceId": null
+        },
+        {
+          "revision": 12,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "pieceId": null
+        },
+        {
+          "revision": 13,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "determine_current_product_mission_marker_control",
+          "pieceId": null
+        },
+        {
+          "revision": 14,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "score_mission",
+          "pieceId": null
+        },
+        {
+          "revision": 15,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "check_mission_end_game",
+          "pieceId": null
+        },
+        {
+          "revision": 16,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_end_of_round_effects",
+          "pieceId": null
+        },
+        {
+          "revision": 17,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_cleanup_refresh",
+          "pieceId": null
+        },
+        {
+          "revision": 18,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_next_round_initiative",
+          "pieceId": null
+        },
+        {
+          "revision": 19,
+          "round": 2,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "pieceId": null
+        }
+      ],
+      "fullNativeRound": true,
+      "idempotencyVerified": true,
+      "coldReplay": true,
+      "fullMatchAdmission": false
+    },
+    {
+      "lostSupply": 4,
+      "kind": "ranged",
+      "group": "static",
+      "id": "ranged-4",
+      "attempt": 0,
+      "roomId": "wave4-tal-threshold-ranged-4",
+      "directoryRef": "build/wave4-web/tal-darim/threshold-rO2IzE/ranged-4",
+      "signedActions": 21,
+      "stateHash": "d6fff60c574e722b71e1673247cee1e8a92fe4e026c6ea1e757af820a5970aac",
+      "status": "passed_scoped",
+      "attackProof": {
+        "precision": 1,
+        "criticalHit": 0
+      },
+      "dynamicProof": null,
+      "roundResetProof": null,
+      "trace": [
+        {
+          "revision": 1,
+          "round": 1,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "pieceId": null
+        },
+        {
+          "revision": 2,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "choose_first_actor",
+          "pieceId": null
+        },
+        {
+          "revision": 3,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "pieceId": null
+        },
+        {
+          "revision": 4,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "pieceId": null
+        },
+        {
+          "revision": 5,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "choose_first_actor",
+          "pieceId": null
+        },
+        {
+          "revision": 6,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "ranged_attack",
+          "pieceId": "actor"
+        },
+        {
+          "revision": 7,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "choose_ranged_precision_hits",
+          "pieceId": "actor"
+        },
+        {
+          "revision": 8,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "resolve_ranged_attack_defence_pool",
+          "pieceId": "actor"
+        },
+        {
+          "revision": 9,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "finish_activation",
+          "pieceId": "actor"
+        },
+        {
+          "revision": 10,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "pieceId": null
+        },
+        {
+          "revision": 11,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "pieceId": null
+        },
+        {
+          "revision": 12,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "choose_first_actor",
+          "pieceId": null
+        },
+        {
+          "revision": 13,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "pieceId": null
+        },
+        {
+          "revision": 14,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "pieceId": null
+        },
+        {
+          "revision": 15,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "determine_current_product_mission_marker_control",
+          "pieceId": null
+        },
+        {
+          "revision": 16,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "score_mission",
+          "pieceId": null
+        },
+        {
+          "revision": 17,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "check_mission_end_game",
+          "pieceId": null
+        },
+        {
+          "revision": 18,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_end_of_round_effects",
+          "pieceId": null
+        },
+        {
+          "revision": 19,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_cleanup_refresh",
+          "pieceId": null
+        },
+        {
+          "revision": 20,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_next_round_initiative",
+          "pieceId": null
+        },
+        {
+          "revision": 21,
+          "round": 2,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "pieceId": null
+        }
+      ],
+      "fullNativeRound": true,
+      "idempotencyVerified": true,
+      "coldReplay": true,
+      "fullMatchAdmission": false
+    },
+    {
+      "lostSupply": 5,
+      "kind": "ranged",
+      "group": "static",
+      "id": "ranged-5",
+      "attempt": 0,
+      "roomId": "wave4-tal-threshold-ranged-5",
+      "directoryRef": "build/wave4-web/tal-darim/threshold-rO2IzE/ranged-5",
+      "signedActions": 21,
+      "stateHash": "dad66169db8813f68b0bb059232e9348ddfd68b2afbe6f174415bb89b0c18ca3",
+      "status": "passed_scoped",
+      "attackProof": {
+        "precision": 1,
+        "criticalHit": 0
+      },
+      "dynamicProof": null,
+      "roundResetProof": null,
+      "trace": [
+        {
+          "revision": 1,
+          "round": 1,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "pieceId": null
+        },
+        {
+          "revision": 2,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "choose_first_actor",
+          "pieceId": null
+        },
+        {
+          "revision": 3,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "pieceId": null
+        },
+        {
+          "revision": 4,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "pieceId": null
+        },
+        {
+          "revision": 5,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "choose_first_actor",
+          "pieceId": null
+        },
+        {
+          "revision": 6,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "ranged_attack",
+          "pieceId": "actor"
+        },
+        {
+          "revision": 7,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "choose_ranged_precision_hits",
+          "pieceId": "actor"
+        },
+        {
+          "revision": 8,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "resolve_ranged_attack_defence_pool",
+          "pieceId": "actor"
+        },
+        {
+          "revision": 9,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "finish_activation",
+          "pieceId": "actor"
+        },
+        {
+          "revision": 10,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "pieceId": null
+        },
+        {
+          "revision": 11,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "pieceId": null
+        },
+        {
+          "revision": 12,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "choose_first_actor",
+          "pieceId": null
+        },
+        {
+          "revision": 13,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "pieceId": null
+        },
+        {
+          "revision": 14,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "pieceId": null
+        },
+        {
+          "revision": 15,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "determine_current_product_mission_marker_control",
+          "pieceId": null
+        },
+        {
+          "revision": 16,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "score_mission",
+          "pieceId": null
+        },
+        {
+          "revision": 17,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "check_mission_end_game",
+          "pieceId": null
+        },
+        {
+          "revision": 18,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_end_of_round_effects",
+          "pieceId": null
+        },
+        {
+          "revision": 19,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_cleanup_refresh",
+          "pieceId": null
+        },
+        {
+          "revision": 20,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_next_round_initiative",
+          "pieceId": null
+        },
+        {
+          "revision": 21,
+          "round": 2,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "pieceId": null
+        }
+      ],
+      "fullNativeRound": true,
+      "idempotencyVerified": true,
+      "coldReplay": true,
+      "fullMatchAdmission": false
+    },
+    {
+      "lostSupply": 6,
+      "kind": "ranged",
+      "group": "static",
+      "id": "ranged-6",
+      "attempt": 0,
+      "roomId": "wave4-tal-threshold-ranged-6",
+      "directoryRef": "build/wave4-web/tal-darim/threshold-rO2IzE/ranged-6",
+      "signedActions": 22,
+      "stateHash": "8bd0b17517e7251e752f8bb0ab76d1deac7dff73151f67cae9c550625480dfac",
+      "status": "passed_scoped",
+      "attackProof": {
+        "precision": 1,
+        "criticalHit": 1
+      },
+      "dynamicProof": null,
+      "roundResetProof": null,
+      "trace": [
+        {
+          "revision": 1,
+          "round": 1,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "pieceId": null
+        },
+        {
+          "revision": 2,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "choose_first_actor",
+          "pieceId": null
+        },
+        {
+          "revision": 3,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "pieceId": null
+        },
+        {
+          "revision": 4,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "pieceId": null
+        },
+        {
+          "revision": 5,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "choose_first_actor",
+          "pieceId": null
+        },
+        {
+          "revision": 6,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "ranged_attack",
+          "pieceId": "actor"
+        },
+        {
+          "revision": 7,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "choose_ranged_precision_hits",
+          "pieceId": "actor"
+        },
+        {
+          "revision": 8,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "resolve_ranged_attack_defence_pool",
+          "pieceId": "actor"
+        },
+        {
+          "revision": 9,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "finish_activation",
+          "pieceId": "actor"
+        },
+        {
+          "revision": 10,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "pieceId": null
+        },
+        {
+          "revision": 11,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "pieceId": null
+        },
+        {
+          "revision": 12,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "choose_first_actor",
+          "pieceId": null
+        },
+        {
+          "revision": 13,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "pieceId": null
+        },
+        {
+          "revision": 14,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "pieceId": null
+        },
+        {
+          "revision": 15,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "determine_current_product_mission_marker_control",
+          "pieceId": null
+        },
+        {
+          "revision": 16,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "score_mission",
+          "pieceId": null
+        },
+        {
+          "revision": 17,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "check_mission_end_game",
+          "pieceId": null
+        },
+        {
+          "revision": 18,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_end_of_round_effects",
+          "pieceId": null
+        },
+        {
+          "revision": 19,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_cleanup_refresh",
+          "pieceId": null
+        },
+        {
+          "revision": 20,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_next_round_initiative",
+          "pieceId": null
+        },
+        {
+          "revision": 21,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_next_round_initiative",
+          "pieceId": null
+        },
+        {
+          "revision": 22,
+          "round": 2,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "pieceId": null
+        }
+      ],
+      "fullNativeRound": true,
+      "idempotencyVerified": true,
+      "coldReplay": true,
+      "fullMatchAdmission": false
+    },
+    {
+      "lostSupply": 6,
+      "kind": "melee",
+      "group": "melee",
+      "id": "melee-6",
+      "attempt": 0,
+      "roomId": "wave4-tal-threshold-melee-6",
+      "directoryRef": "build/wave4-web/tal-darim/threshold-rO2IzE/melee-6",
+      "signedActions": 26,
+      "stateHash": "bb2bf573c847264ffed25831dbd31f670e784b0bc8a2c4b6b99cafbde894c8c4",
+      "status": "passed_scoped",
+      "attackProof": {
+        "precision": 1,
+        "criticalHit": 1
+      },
+      "dynamicProof": null,
+      "roundResetProof": null,
+      "trace": [
+        {
+          "revision": 1,
+          "round": 1,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "pieceId": null
+        },
+        {
+          "revision": 2,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "choose_first_actor",
+          "pieceId": null
+        },
+        {
+          "revision": 3,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "pieceId": null
+        },
+        {
+          "revision": 4,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "pieceId": null
+        },
+        {
+          "revision": 5,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "choose_first_actor",
+          "pieceId": null
+        },
+        {
+          "revision": 6,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "pieceId": null
+        },
+        {
+          "revision": 7,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "pieceId": null
+        },
+        {
+          "revision": 8,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "choose_first_actor",
+          "pieceId": null
+        },
+        {
+          "revision": 9,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "fight",
+          "pieceId": "actor"
+        },
+        {
+          "revision": 10,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "choose_melee_precision_hits",
+          "pieceId": "actor"
+        },
+        {
+          "revision": 11,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "roll_melee_attack_armour_pool",
+          "pieceId": "actor"
+        },
+        {
+          "revision": 12,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "resolve_melee_attack_evade_pool",
+          "pieceId": "actor"
+        },
+        {
+          "revision": 13,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "finish_activation",
+          "pieceId": "actor"
+        },
+        {
+          "revision": 14,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "fight",
+          "pieceId": "enemy"
+        },
+        {
+          "revision": 15,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "roll_melee_attack_armour_pool",
+          "pieceId": "enemy"
+        },
+        {
+          "revision": 16,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "resolve_melee_attack_evade_pool",
+          "pieceId": "enemy"
+        },
+        {
+          "revision": 17,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "finish_activation",
+          "pieceId": "enemy"
+        },
+        {
+          "revision": 18,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "pieceId": null
+        },
+        {
+          "revision": 19,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "pieceId": null
+        },
+        {
+          "revision": 20,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "determine_current_product_mission_marker_control",
+          "pieceId": null
+        },
+        {
+          "revision": 21,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "score_mission",
+          "pieceId": null
+        },
+        {
+          "revision": 22,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "check_mission_end_game",
+          "pieceId": null
+        },
+        {
+          "revision": 23,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_end_of_round_effects",
+          "pieceId": null
+        },
+        {
+          "revision": 24,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_cleanup_refresh",
+          "pieceId": null
+        },
+        {
+          "revision": 25,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_next_round_initiative",
+          "pieceId": null
+        },
+        {
+          "revision": 26,
+          "round": 2,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "pieceId": null
+        }
+      ],
+      "fullNativeRound": true,
+      "idempotencyVerified": true,
+      "coldReplay": true,
+      "fullMatchAdmission": false
+    },
+    {
+      "lostSupply": 3,
+      "kind": "ranged",
+      "dynamic": true,
+      "group": "dynamic",
+      "id": "dynamic-ranged-3",
+      "attempt": 0,
+      "roomId": "wave4-tal-threshold-dynamic-ranged-3",
+      "directoryRef": "build/wave4-web/tal-darim/threshold-rO2IzE/dynamic-ranged-3",
+      "signedActions": 22,
+      "stateHash": "451026331c2b73394af8137486cc47076f13aaeb8f8842e3f4f2dab52ac109dc",
+      "status": "passed_scoped",
+      "attackProof": {
+        "precision": 0,
+        "criticalHit": 0
+      },
+      "dynamicProof": {
+        "actualLostSupply": 4,
+        "thresholdCrossed": true,
+        "sameWeapon": {
+          "totalLostSupply": 4,
+          "baselineHash": "9cc8f37089e62daeda58e4e1235999171a45d80d0df21f19e38c633d23f23c4b",
+          "firstWeaponName": "particle disruptors",
+          "matchesFirstWeapon": true,
+          "precision": 1,
+          "criticalHit": 0,
+          "sourceDefinitionIds": [
+            "card:tal_darim/4-or-more-any@1"
+          ],
+          "includesReservesAndDestroyed": true,
+          "contextualSupplyUsed": false,
+          "killCreditUsed": false
+        },
+        "otherWeapon": {
+          "totalLostSupply": 4,
+          "baselineHash": "9cc8f37089e62daeda58e4e1235999171a45d80d0df21f19e38c633d23f23c4b",
+          "firstWeaponName": "particle disruptors",
+          "matchesFirstWeapon": false,
+          "precision": 0,
+          "criticalHit": 0,
+          "sourceDefinitionIds": [],
+          "includesReservesAndDestroyed": true,
+          "contextualSupplyUsed": false,
+          "killCreditUsed": false
+        },
+        "firstWeaponRecordedBeforeThresholdGain": true
+      },
+      "roundResetProof": {
+        "round": 2,
+        "oldBindingInactive": true,
+        "newFirstWeaponName": "stomp"
+      },
+      "trace": [
+        {
+          "revision": 1,
+          "actionType": "resolve_mission_start_of_round",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 2,
+          "actionType": "choose_first_actor",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 3,
+          "actionType": "pass",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 4,
+          "actionType": "pass",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 5,
+          "actionType": "choose_first_actor",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 6,
+          "actionType": "ranged_attack",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 7,
+          "actionType": "finish_activation",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 8,
+          "actionType": "ranged_attack",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 9,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "finish_ranged_attack_sequence",
+          "pieceId": "enemy"
+        },
+        {
+          "revision": 10,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "finish_activation",
+          "pieceId": "enemy"
+        },
+        {
+          "revision": 11,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "pieceId": null
+        },
+        {
+          "revision": 12,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "pieceId": null
+        },
+        {
+          "revision": 13,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "choose_first_actor",
+          "pieceId": null
+        },
+        {
+          "revision": 14,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "pieceId": null
+        },
+        {
+          "revision": 15,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "pieceId": null
+        },
+        {
+          "revision": 16,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "determine_current_product_mission_marker_control",
+          "pieceId": null
+        },
+        {
+          "revision": 17,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "score_mission",
+          "pieceId": null
+        },
+        {
+          "revision": 18,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "check_mission_end_game",
+          "pieceId": null
+        },
+        {
+          "revision": 19,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_end_of_round_effects",
+          "pieceId": null
+        },
+        {
+          "revision": 20,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_cleanup_refresh",
+          "pieceId": null
+        },
+        {
+          "revision": 21,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_next_round_initiative",
+          "pieceId": null
+        },
+        {
+          "revision": 22,
+          "round": 2,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "pieceId": null
+        }
+      ],
+      "fullNativeRound": true,
+      "idempotencyVerified": true,
+      "coldReplay": true,
+      "fullMatchAdmission": false
+    },
+    {
+      "lostSupply": 5,
+      "kind": "ranged",
+      "dynamic": true,
+      "group": "dynamic",
+      "id": "dynamic-ranged-5",
+      "attempt": 0,
+      "roomId": "wave4-tal-threshold-dynamic-ranged-5",
+      "directoryRef": "build/wave4-web/tal-darim/threshold-rO2IzE/dynamic-ranged-5",
+      "signedActions": 24,
+      "stateHash": "0888af2a3ecd6e94c03287deb75ba103bb14762f8d5d9394a357b213c798f0ce",
+      "status": "passed_scoped",
+      "attackProof": {
+        "precision": 1,
+        "criticalHit": 0
+      },
+      "dynamicProof": {
+        "actualLostSupply": 6,
+        "thresholdCrossed": true,
+        "sameWeapon": {
+          "totalLostSupply": 6,
+          "baselineHash": "9cc8f37089e62daeda58e4e1235999171a45d80d0df21f19e38c633d23f23c4b",
+          "firstWeaponName": "particle disruptors",
+          "matchesFirstWeapon": true,
+          "precision": 1,
+          "criticalHit": 1,
+          "sourceDefinitionIds": [
+            "card:tal_darim/4-or-more-any@1",
+            "card:tal_darim/6-or-more-any@1"
+          ],
+          "includesReservesAndDestroyed": true,
+          "contextualSupplyUsed": false,
+          "killCreditUsed": false
+        },
+        "otherWeapon": {
+          "totalLostSupply": 6,
+          "baselineHash": "9cc8f37089e62daeda58e4e1235999171a45d80d0df21f19e38c633d23f23c4b",
+          "firstWeaponName": "particle disruptors",
+          "matchesFirstWeapon": false,
+          "precision": 0,
+          "criticalHit": 0,
+          "sourceDefinitionIds": [],
+          "includesReservesAndDestroyed": true,
+          "contextualSupplyUsed": false,
+          "killCreditUsed": false
+        },
+        "firstWeaponRecordedBeforeThresholdGain": true
+      },
+      "roundResetProof": {
+        "round": 2,
+        "oldBindingInactive": true,
+        "newFirstWeaponName": "stomp"
+      },
+      "trace": [
+        {
+          "revision": 1,
+          "round": 1,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "pieceId": null
+        },
+        {
+          "revision": 2,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "choose_first_actor",
+          "pieceId": null
+        },
+        {
+          "revision": 3,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "pieceId": null
+        },
+        {
+          "revision": 4,
+          "round": 1,
+          "phase": "movement",
+          "actionType": "pass",
+          "pieceId": null
+        },
+        {
+          "revision": 5,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "choose_first_actor",
+          "pieceId": null
+        },
+        {
+          "revision": 6,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "ranged_attack",
+          "pieceId": "actor"
+        },
+        {
+          "revision": 7,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "choose_ranged_precision_hits",
+          "pieceId": "actor"
+        },
+        {
+          "revision": 8,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "resolve_ranged_attack_defence_pool",
+          "pieceId": "actor"
+        },
+        {
+          "revision": 9,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "finish_activation",
+          "pieceId": "actor"
+        },
+        {
+          "revision": 10,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "ranged_attack",
+          "pieceId": "enemy"
+        },
+        {
+          "revision": 11,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "finish_ranged_attack_sequence",
+          "pieceId": "enemy"
+        },
+        {
+          "revision": 12,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "finish_activation",
+          "pieceId": "enemy"
+        },
+        {
+          "revision": 13,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "pieceId": null
+        },
+        {
+          "revision": 14,
+          "round": 1,
+          "phase": "assault",
+          "actionType": "pass",
+          "pieceId": null
+        },
+        {
+          "revision": 15,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "choose_first_actor",
+          "pieceId": null
+        },
+        {
+          "revision": 16,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "pieceId": null
+        },
+        {
+          "revision": 17,
+          "round": 1,
+          "phase": "combat",
+          "actionType": "pass",
+          "pieceId": null
+        },
+        {
+          "revision": 18,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "determine_current_product_mission_marker_control",
+          "pieceId": null
+        },
+        {
+          "revision": 19,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "score_mission",
+          "pieceId": null
+        },
+        {
+          "revision": 20,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "check_mission_end_game",
+          "pieceId": null
+        },
+        {
+          "revision": 21,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_end_of_round_effects",
+          "pieceId": null
+        },
+        {
+          "revision": 22,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_cleanup_refresh",
+          "pieceId": null
+        },
+        {
+          "revision": 23,
+          "round": 1,
+          "phase": "cleanup",
+          "actionType": "resolve_current_product_next_round_initiative",
+          "pieceId": null
+        },
+        {
+          "revision": 24,
+          "round": 2,
+          "phase": "start_of_round",
+          "actionType": "resolve_mission_start_of_round",
+          "pieceId": null
+        }
+      ],
+      "fullNativeRound": true,
+      "idempotencyVerified": true,
+      "coldReplay": true,
+      "fullMatchAdmission": false
+    }
+  ],
+  "controls": [],
+  "implementedCumulativeAtoms": 6,
+  "newCompleteAtoms": 0,
+  "sourceHeldDefinitions": 39,
+  "fullFactionAdmission": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

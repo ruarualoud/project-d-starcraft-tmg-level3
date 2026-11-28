@@ -1,0 +1,20 @@
+{
+  "schema": "starcraft_tmg_wave4_staged_ranged_preview_v1",
+  "status": "passed_component",
+  "cases": [
+    "real Native precision hit-pool Preview matches its selected target/weapon/plan",
+    "existing direct action type remains accepted",
+    "unregistered staged action name rejected",
+    "changed source wrapper without matching seal rejected",
+    "changed selected target rejected",
+    "different weapon domain rejected",
+    "resealed forged parent target rejected",
+    "resealed changed attack plan rejected",
+    "zero-Precision staged plan rejected"
+  ],
+  "sourceRoomId": "wave4-tal-threshold-ranged-6",
+  "nativeRulesChanged": false,
+  "newSignedActions": 0,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

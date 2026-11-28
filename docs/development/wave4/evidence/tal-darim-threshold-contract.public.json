@@ -1,0 +1,29 @@
+{
+  "schema": "starcraft_tmg_wave4_tal_darim_threshold_contract_v1",
+  "status": "passed_component",
+  "cases": [
+    "only two inherited Passive classifications change; all definition IDs and source hashes remain",
+    "changed threshold clause rejected before inherited classification",
+    "reserves and destroyed army units both contribute actual Supply loss",
+    "cold caller cannot rebuild a lower initial baseline after attrition",
+    "enemy loss cannot increase friendly threshold",
+    "VP and kill ledger are not the loss counter",
+    "even a resealed baseline rejects an initial value contrary to the source composition",
+    "Passive threshold remains active when its source card is exhausted; query is read-only",
+    "no owning faction card means no threshold keyword"
+  ],
+  "reviewedInheritedDefinitionIds": [
+    "card:tal_darim/4-or-more-any@1",
+    "card:tal_darim/6-or-more-any@1"
+  ],
+  "originalIdentityCatalogueHash": "7abb0cd286550b799e20f775e612476e20d28a98767179f1e5e59aa44a2702c5",
+  "reviewedIdentityCatalogueHash": "d9c62d4f9dccfa035a9776dabaab58557491635298da530792ddeebd326181af",
+  "definitionIdsAndSourceFeatureHashesUnchanged": true,
+  "newSignedActions": 0,
+  "newCompleteAtoms": 0,
+  "implementedCumulativeAtoms": 6,
+  "sourceHeldDefinitions": 39,
+  "fullFactionAdmission": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

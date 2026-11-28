@@ -1,0 +1,156 @@
+{
+  "schema": "starcraft_tmg_wave4_tal_darim_threshold_consumers_v1",
+  "status": "passed_scoped",
+  "rootRuntimeVersion": "3.244.0",
+  "nativeCases": 7,
+  "nativeSignedActions": 155,
+  "nativeFullRounds": 7,
+  "contractCases": 9,
+  "webRooms": 3,
+  "webActualProducerRooms": 2,
+  "webChoiceSuccessorRooms": 1,
+  "webSignedActions": 33,
+  "independentColdCases": 15,
+  "independentColdOriginalActions": 310,
+  "newColdActions": 0,
+  "definitions": [
+    {
+      "definitionId": "card:tal_darim/chain-of-ascension-any@1",
+      "classification": "new_semantics",
+      "newAtomIds": [
+        "rule-atom:wave4/friendly-lost-supply-threshold@1"
+      ],
+      "reusedAtoms": [
+        "source-bound unit Supply",
+        "weapon PRECISION / CRITICAL HIT",
+        "round first-weapon binding",
+        "Native attack/defence/casualty/activation/scoring/replay"
+      ],
+      "actualConsumers": [
+        "initial roster baseline",
+        "reserves and destroyed units in friendly loss projection",
+        "actual 3→4 and 5→6 casualties"
+      ],
+      "allConsumersVerified": true
+    },
+    {
+      "definitionId": "card:tal_darim/4-or-more-any@1",
+      "classification": "new_semantics",
+      "newAtomIds": [
+        "rule-atom:wave4/friendly-lost-supply-threshold@1"
+      ],
+      "reusedAtoms": [
+        "source-bound unit Supply",
+        "weapon PRECISION / CRITICAL HIT",
+        "round first-weapon binding",
+        "Native attack/defence/casualty/activation/scoring/replay"
+      ],
+      "actualConsumers": [
+        "actual ranged chance plans",
+        "actual melee precision plan",
+        "same weapon after mid-round threshold gain",
+        "different weapon excluded until next round",
+        "actual two-seat Web attack"
+      ],
+      "allConsumersVerified": true
+    },
+    {
+      "definitionId": "card:tal_darim/6-or-more-any@1",
+      "classification": "new_semantics",
+      "newAtomIds": [
+        "rule-atom:wave4/friendly-lost-supply-threshold@1"
+      ],
+      "reusedAtoms": [
+        "source-bound unit Supply",
+        "weapon PRECISION / CRITICAL HIT",
+        "round first-weapon binding",
+        "Native attack/defence/casualty/activation/scoring/replay"
+      ],
+      "actualConsumers": [
+        "actual ranged chance plans",
+        "actual melee bypass-armour plan",
+        "same weapon after mid-round threshold gain",
+        "different weapon excluded until next round",
+        "actual two-seat Web attack"
+      ],
+      "allConsumersVerified": true
+    }
+  ],
+  "actualConsumerRefs": [
+    {
+      "file": "packages/rule-atoms/official-friendly-lost-supply-threshold-v1.mjs",
+      "exportName": "createOfficialFriendlyLostSupplyBaselineV1"
+    },
+    {
+      "file": "packages/rule-atoms/official-friendly-lost-supply-threshold-v1.mjs",
+      "exportName": "projectOfficialFriendlyLostSupplyV1"
+    },
+    {
+      "file": "packages/product-composition/official-release-roster-state-v2.mjs",
+      "exportName": "createOfficialReleaseRosterStateV2"
+    },
+    {
+      "file": "packages/product-composition/official-tal-darim-threshold-v1.mjs",
+      "exportName": "projectOfficialTalDarimThresholdWeaponsV1"
+    },
+    {
+      "file": "packages/product-composition/official-characteristic-status-family-adapter-v1.mjs",
+      "exportName": "projectOfficialCharacteristicStatusFamilyModifiersV1"
+    },
+    {
+      "file": "packages/product-composition/official-characteristic-status-family-adapter-v1.mjs",
+      "exportName": "consumeOfficialCharacteristicStatusFirstWeaponEffectsV1"
+    },
+    {
+      "file": "packages/product-composition/official-selected-roster-ranged-action-runtime-v1.mjs",
+      "exportName": "instantiateOfficialSelectedRosterRangedActionV1"
+    },
+    {
+      "file": "packages/product-composition/official-selected-roster-melee-action-runtime-v1.mjs",
+      "exportName": "instantiateOfficialSelectedRosterMeleeActionV1"
+    },
+    {
+      "file": "packages/product-composition/official-characteristic-status-component-runtime-v2.mjs",
+      "exportName": "createOfficialCharacteristicStatusComponentRuntimeV2"
+    },
+    {
+      "file": "packages/product-composition/official-current-product-match-runtime-v1.mjs",
+      "exportName": "createOfficialEngineeringScopedRoundRuntimeV1"
+    },
+    {
+      "file": "packages/client-domain/staged-ranged-preview-v1.mjs",
+      "exportName": "matchesStarcraftTmgParameterizedPreviewActionV1"
+    },
+    {
+      "file": "packages/client-domain/native-action-form-v1.mjs",
+      "exportName": "compileNativeActionFormValuesV1"
+    },
+    {
+      "file": "apps/starcraft-tmg-expo/components/battlefield/native-action-form.tsx",
+      "exportName": "NativeActionForm"
+    }
+  ],
+  "evidenceRefs": [
+    "docs/development/wave4/evidence/tal-darim-threshold.public.json",
+    "docs/development/wave4/evidence/tal-darim-threshold-contract.public.json",
+    "docs/development/wave4/evidence/tal-darim-threshold-web.public.json",
+    "docs/development/wave4/evidence/tal-darim-threshold-cold.public.json",
+    "docs/development/wave4/evidence/firebat-current-cold.public.json",
+    "docs/development/wave4/evidence/tal-darim-staged-preview.public.json",
+    "docs/development/wave4/evidence/tal-darim-typecheck.public.json",
+    "docs/development/wave4/evidence/tal-darim-web-build.public.json",
+    "docs/development/wave4/evidence/tal-darim-threshold-choice-web.public.json",
+    "docs/development/wave4/evidence/tal-darim-threshold-native-cold.public.json"
+  ],
+  "newCompleteAtoms": 1,
+  "implementedCumulativeAtoms": 7,
+  "mainBuilderRecordCount": 102,
+  "mainBuilderDenominator": 119,
+  "sourceHeldDefinitions": 39,
+  "fullAppTypecheckPassed": false,
+  "remainingBaselineFileDiagnostics": 35,
+  "fullFactionAdmission": false,
+  "fullMatchAdmission": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

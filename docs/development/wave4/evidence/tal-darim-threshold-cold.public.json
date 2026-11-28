@@ -1,0 +1,47 @@
+{
+  "schema": "starcraft_tmg_wave4_tal_darim_threshold_cold_v1",
+  "status": "passed_read_only",
+  "results": [
+    {
+      "id": "ranged-4",
+      "roomId": "product-wave4-web-ranged-4",
+      "sourceOpenedReadOnly": true,
+      "humanConfirmed": true,
+      "originalSignedActions": 15,
+      "newActions": 0,
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "baselineHash": "f7480642aa80de08a6ca51dcda0363fdfcf313f7cb8983c5f93d2f35f096fe36",
+      "totalLostSupply": 4
+    },
+    {
+      "id": "ranged-6",
+      "roomId": "product-wave4-web-ranged-6",
+      "sourceOpenedReadOnly": true,
+      "humanConfirmed": true,
+      "originalSignedActions": 15,
+      "newActions": 0,
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "baselineHash": "f7480642aa80de08a6ca51dcda0363fdfcf313f7cb8983c5f93d2f35f096fe36",
+      "totalLostSupply": 6
+    },
+    {
+      "id": "ranged-precision-choice",
+      "roomId": "product-wave4-web-ranged-precision-choice",
+      "sourceOpenedReadOnly": true,
+      "humanConfirmed": true,
+      "originalSignedActions": 3,
+      "newActions": 0,
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "baselineHash": "f7480642aa80de08a6ca51dcda0363fdfcf313f7cb8983c5f93d2f35f096fe36",
+      "totalLostSupply": 6
+    }
+  ],
+  "newActions": 0,
+  "sourceHeldDefinitions": 39,
+  "fullFactionAdmission": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

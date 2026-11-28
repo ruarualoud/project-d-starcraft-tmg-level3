@@ -1,0 +1,247 @@
+{
+  "schema": "starcraft_tmg_wave4_tal_darim_threshold_web_v1",
+  "status": "passed_scoped",
+  "runRef": "build/wave4-web/tal-darim/threshold-web-v1",
+  "results": [
+    {
+      "id": "ranged-4",
+      "kind": "ranged-4",
+      "roomId": "product-wave4-web-ranged-4",
+      "sourceRoomId": "wave4-tal-threshold-ranged-4",
+      "sourcePrefixReceipts": 5,
+      "sourceStateHash": "94119c99d297bbd08777edc36e2f320a027c20e2147e6b73de2d0c04ba0848fb",
+      "trace": [
+        {
+          "actionType": "roll_ranged_attack_hit_pool",
+          "sideKey": "player1",
+          "stateRevision": 1,
+          "stateHash": "0391e3284b5a907a4b59df782cc8dd6f2d421a600a1469f4cf33e8d0e0fc43cc",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "actionType": "resolve_ranged_attack_defence_pool",
+          "sideKey": "player1",
+          "stateRevision": 2,
+          "stateHash": "b77b5d4e7eef4223656d831ee4f4d6b5e8085939bcb5161974a5a062475462c1",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "actionType": "finish_activation",
+          "sideKey": "player1",
+          "stateRevision": 3,
+          "stateHash": "d17b0f576b935b33e769ffee8bd2ced8b030c53a74da472151719caa70a44bf6",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "actionType": "pass",
+          "sideKey": "player2",
+          "stateRevision": 4,
+          "stateHash": "709557eac62e7d7b4dbe46c061efb5d12532d221f8ec9ab60fd0a3564fc2b74a",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "actionType": "pass",
+          "sideKey": "player1",
+          "stateRevision": 5,
+          "stateHash": "8b6a0bc28c96cb6eb87c562e6065b42f321edb50782d18121acc5d88790cc542",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "actionType": "choose_first_actor",
+          "sideKey": "player2",
+          "stateRevision": 6,
+          "stateHash": "205436c0c8f365630b630ba90b4f782e9e4749c43ed912b402c39419fe50cf60",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "actionType": "pass",
+          "sideKey": "player1",
+          "stateRevision": 7,
+          "stateHash": "bca92e78482eb5cfea13c51b3dd4fb64ee878b034dbbc9973c13fe8b92e7fd56",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "actionType": "pass",
+          "sideKey": "player2",
+          "stateRevision": 8,
+          "stateHash": "07b5efb865e80f700eb1f0ae064e9968935df1afd3487d39601f4e624df6aef9",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "actionType": "determine_current_product_mission_marker_control",
+          "sideKey": "player2",
+          "stateRevision": 9,
+          "stateHash": "2d8b376a5d91eb5ddd3754fc30f3d728e07b263c395ec837324fe2ac0265b58f"
+        },
+        {
+          "actionType": "score_mission",
+          "sideKey": "player2",
+          "stateRevision": 10,
+          "stateHash": "e235726991141b0942aa9b7d397c853e51cb005bdf964d797807c007d3940f8e"
+        },
+        {
+          "actionType": "check_mission_end_game",
+          "sideKey": "player2",
+          "stateRevision": 11,
+          "stateHash": "7fe71fbbd1c4e12dd649c7f371d94168eb858be14aac0891b1a665b48a5e8589"
+        },
+        {
+          "actionType": "resolve_current_product_end_of_round_effects",
+          "sideKey": "player2",
+          "stateRevision": 12,
+          "stateHash": "9020513e3ef9ecdc315216d3923a40848e9bc67aad39efaf293f3ae0fbf7062d"
+        },
+        {
+          "actionType": "resolve_current_product_cleanup_refresh",
+          "sideKey": "player2",
+          "stateRevision": 13,
+          "stateHash": "a400cea2f3baf510f15f04d69420140c3540c4cbe435d8a56f4411e6e0ea6440"
+        },
+        {
+          "actionType": "resolve_current_product_next_round_initiative",
+          "sideKey": "player2",
+          "stateRevision": 14,
+          "stateHash": "c251c2d8a5725120e31925ee695a44d714bff0ce58cded90093bb4dfc2115d98"
+        },
+        {
+          "actionType": "resolve_mission_start_of_round",
+          "sideKey": "player2",
+          "stateRevision": 15,
+          "stateHash": "6f250cef0525b9a622485d146a79100123a08d73552bab6b42cd5bf5a4d92eb7"
+        }
+      ],
+      "signedActions": 15,
+      "stateHash": "6f250cef0525b9a622485d146a79100123a08d73552bab6b42cd5bf5a4d92eb7",
+      "actualPrecision": 1,
+      "actualCriticalHit": 0,
+      "fullNativeRound": true,
+      "webFromSignedPrefix": true,
+      "fullRoundViaWebAlone": false,
+      "twoSeatsVerified": true,
+      "explicitHumanConfirmation": true,
+      "previewReadOnly": true,
+      "replayMatchesCurrent": true,
+      "seatRecoveryReentryVerified": true,
+      "pageErrors": []
+    },
+    {
+      "id": "ranged-6",
+      "kind": "ranged-6",
+      "roomId": "product-wave4-web-ranged-6",
+      "sourceRoomId": "wave4-tal-threshold-ranged-6",
+      "sourcePrefixReceipts": 5,
+      "sourceStateHash": "de4c9b078bf72a637616f6f991801e4ea99d50fbfaabd1b7433da8255098e639",
+      "trace": [
+        {
+          "actionType": "ranged_attack",
+          "sideKey": "player1",
+          "stateRevision": 1,
+          "stateHash": "a2c2cd800aca1700d9e8370612634e24ee38a4a940346e06c605670b7950374f"
+        },
+        {
+          "actionType": "resolve_ranged_attack_defence_pool",
+          "sideKey": "player1",
+          "stateRevision": 2,
+          "stateHash": "ad11e93ceb76dd2769389907b0056d3259175a7dfc6c174bd70a527e0bdb5da8"
+        },
+        {
+          "actionType": "finish_activation",
+          "sideKey": "player1",
+          "stateRevision": 3,
+          "stateHash": "3c1b0722e477029d0c3daacc3982654a7078adaf1e782dfcb764d9b68ed9c49b"
+        },
+        {
+          "actionType": "pass",
+          "sideKey": "player2",
+          "stateRevision": 4,
+          "stateHash": "a187b9ab33c16ecf7a18b03ea0107d50eb6c0c63e39d89a08b7ae2af6e3dc9b6"
+        },
+        {
+          "actionType": "pass",
+          "sideKey": "player1",
+          "stateRevision": 5,
+          "stateHash": "a40ba298a649458ac17de363a545ff21de1e473bfdf9439dd6f538024103f658"
+        },
+        {
+          "actionType": "choose_first_actor",
+          "sideKey": "player2",
+          "stateRevision": 6,
+          "stateHash": "1b0f369e4d140b460b161f668c0fd747ffad51b8efa2b2c6314bf8c7fc3747a3"
+        },
+        {
+          "actionType": "pass",
+          "sideKey": "player1",
+          "stateRevision": 7,
+          "stateHash": "edccb0fe437fee5e5234fbb5c2a819ec7b4167599e9e3f5029472427496504ff"
+        },
+        {
+          "actionType": "pass",
+          "sideKey": "player2",
+          "stateRevision": 8,
+          "stateHash": "d1c56113817e12241c221a3f9d2de107b88ed9b1adf0d5ce68756e1f84abe138"
+        },
+        {
+          "actionType": "determine_current_product_mission_marker_control",
+          "sideKey": "player2",
+          "stateRevision": 9,
+          "stateHash": "81f051b5ce6455597da59a08d294f0edba421fe4d5ba379137bf03936e031d50"
+        },
+        {
+          "actionType": "score_mission",
+          "sideKey": "player2",
+          "stateRevision": 10,
+          "stateHash": "cf60b60a65bddfed517010442fdde9ac7cfe21aaf7629f124a3da008953259e8"
+        },
+        {
+          "actionType": "check_mission_end_game",
+          "sideKey": "player2",
+          "stateRevision": 11,
+          "stateHash": "3aa50a59060152a3d795757190ba985b391ab748f80a1de1a615760b6ce5a3a2"
+        },
+        {
+          "actionType": "resolve_current_product_end_of_round_effects",
+          "sideKey": "player2",
+          "stateRevision": 12,
+          "stateHash": "e99c0b649a6ec891c870271ae2e80fe34eb2680c4f80dd5f46691f54c57c38e2"
+        },
+        {
+          "actionType": "resolve_current_product_cleanup_refresh",
+          "sideKey": "player2",
+          "stateRevision": 13,
+          "stateHash": "2b6a5e89075633b0ddd718a3d72d9f2dd241a8393c05692826ee537d42845a6f"
+        },
+        {
+          "actionType": "resolve_current_product_next_round_initiative",
+          "sideKey": "player2",
+          "stateRevision": 14,
+          "stateHash": "d9a10102b63076facec11b1e4fd02cd952fc7a22971fa3cc666f930af6195497"
+        },
+        {
+          "actionType": "resolve_mission_start_of_round",
+          "sideKey": "player2",
+          "stateRevision": 15,
+          "stateHash": "e6f252bbab742f8dd421dde3677c2ec0e6e1bb6cb3e51aee7a6c3d96a0fe1a7e"
+        }
+      ],
+      "signedActions": 15,
+      "stateHash": "e6f252bbab742f8dd421dde3677c2ec0e6e1bb6cb3e51aee7a6c3d96a0fe1a7e",
+      "actualPrecision": 1,
+      "actualCriticalHit": 1,
+      "fullNativeRound": true,
+      "webFromSignedPrefix": true,
+      "fullRoundViaWebAlone": false,
+      "twoSeatsVerified": true,
+      "explicitHumanConfirmation": true,
+      "previewReadOnly": true,
+      "replayMatchesCurrent": true,
+      "seatRecoveryReentryVerified": true,
+      "pageErrors": []
+    }
+  ],
+  "signedActions": 30,
+  "sourceHeldDefinitions": 39,
+  "fullFactionAdmission": false,
+  "fullMatchAdmission": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

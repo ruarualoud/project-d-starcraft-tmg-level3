@@ -4,15 +4,15 @@
 
 当前执行 T28-W4-02。
 Ticket 23 / Slice 249；整体 33/36；剩余 248、249、250。
-状态日期：2026-11-28T06:30:23.830Z。本页由 coordination/current-development.json 生成，不追加历史。
+状态日期：2026-11-28T07:23:22.819Z。本页由 coordination/current-development.json 生成，不追加历史。
 
-Wave4人人长任务继续。Consume c91c2e3已推送；Firebat基础5完整原生回合122动作及独立5房122原动作冷验通过，FT选择仅组件、Fire Wall未接。完整原子仍6/18、主Builder102/119；接Tal’darim与余下新卡/新单位。
+Wave4人人长任务继续。Tal’darim阈值Root3.244：7完整原生回合155动作、Web3房33确认、15房310原动作冷验通过；新增1原子，累计7/18。主Builder102/119，继续新增卡牌、单位与整版出口，39来源及暂停保持。
 
 运行限制：本分支仅推进Wave4人人对战，按Wave3模式补齐数据、规则、建军、房间、媒体和Web双席；使用5484及build/wave4-web，按可验证成果提交推送。其他同步开发线不在本分支展开；付费模型、K3、AI对局、复盘与生产发布继续暂停。
 
 | 工作 | 实现 | 产品交接 | 真实产出 | 策略效果 |
 |---|---|---|---|---|
-| Wave4人人更新：6/18原子；Stukov9/9具名工程定义 | 部分完成 | 部分完成 | 不适用 | 不适用 |
+| Wave4人人更新：7/18原子；Tal’darim三阈值定义具名接线通过 | 部分完成 | 部分完成 | 不适用 | 不适用 |
 | Wave4 W4-01 候选与旧版兼容 | 已实现 | 已通过 | 已产出 | 不适用 |
 | 开发环境六项改进 | 已实现 | 已通过 | 不适用 | 不适用 |
 | WikiSkill | 已实现 | 部分完成 | 已产出 | 未能证明 |
@@ -23,11 +23,12 @@ Wave4人人长任务继续。Consume c91c2e3已推送；Firebat基础5完整原�
 | T27/S272 军表与 Plan／Teach，P0–P6 验收 3/7 | 部分完成 | 部分完成 | 部分完成 | 未测效果 |
 
 下一步：
-1. 接Tal’darim累计Supply损失、余下卡牌与新单位；完整原子仍6/18。
-2. Firebat FT形状／尺寸问题待答；模板替换与Fire Wall继续，整版发布／Builder／大厅／媒体及500/2000分Web继续。
+1. 继续Master of Robotics等新增卡牌的既有原子消费者与新组合。
+2. 继续Firebat FT/Fire Wall、Reaver/Scarabs/Slayer、Tal’darim Pylon及整版500/2000人人出口；FT尺寸待答。
 
 ## Navigation
 
+- 查看Tal’darim损失门槛、首武器、手机手选与冷验：[Tal’darim阈值接线](docs/development/wave4/tal-darim-threshold-wiring.zh-CN.md)
 - 查看Firebat官方底座、Stimpack/两武器实际原生消费者与模板待办：[Firebat基础接线](docs/development/wave4/firebat-foundation.zh-CN.md)
 - 查看Consume付款、原来源死亡、Dark Swarm及实际Web发起：[Detonation Consume接线](docs/development/wave4/detonation-consume-wiring.zh-CN.md)
 - 查看Disengage证明、末模型销毁与Web实际发起：[Detonation直接移除接线](docs/development/wave4/detonation-disengage-wiring.zh-CN.md)

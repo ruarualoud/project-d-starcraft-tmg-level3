@@ -39,7 +39,21 @@
         "docs/development/wave4/evidence/firebat-source.public.json",
         "docs/development/wave4/evidence/firebat-model-selection.public.json",
         "docs/development/wave4/evidence/firebat-current-cold.public.json",
-        "docs/development/wave4/evidence/firebat-foundation-consumers.public.json"
+        "docs/development/wave4/evidence/firebat-foundation-consumers.public.json",
+        "docs/development/wave4/tal-darim-threshold-wiring.zh-CN.md",
+        "docs/development/wave4/evidence/tal-darim-threshold.public.json",
+        "docs/development/wave4/evidence/tal-darim-threshold-contract.public.json",
+        "docs/development/wave4/evidence/tal-darim-threshold-web.public.json",
+        "docs/development/wave4/evidence/tal-darim-threshold-cold.public.json",
+        "docs/development/wave4/evidence/tal-darim-staged-preview.public.json",
+        "docs/development/wave4/evidence/tal-darim-typecheck.public.json",
+        "docs/development/wave4/evidence/tal-darim-web-build.public.json",
+        "docs/development/wave4/evidence/tal-darim-threshold-choice-web.public.json",
+        "docs/development/wave4/evidence/tal-darim-threshold-native-cold.public.json",
+        "docs/development/wave4/evidence/tal-darim-threshold-consumers.public.json",
+        "docs/development/wave4/evidence/tal-darim-threshold-harness.public.json",
+        "docs/development/wave4/evidence/tal-darim-precision-choice-390.png",
+        "docs/development/wave4/evidence/tal-darim-precision-preview-390.png"
       ],
       "exit": "Every admitted changed definition has source binding, actual consumer and Native successor/recovery evidence; source holds remain explicit."
     },
@@ -108,6 +122,6 @@
     "postgameReview": false,
     "productionPublish": false
   },
-  "next": "继续Tal’darim累积Supply与剩余新卡消费者；FT几何待确认，Firebat模板／Fire Wall、新单位与整版产品继续。",
-  "updatedAt": "2026-11-28T06:30:23.830Z"
+  "next": "继续新增卡牌的实际消费者，然后新增单位／势力、完整发布与500/2000分人人出口；FT尺寸待答，所有暂停保持。",
+  "updatedAt": "2026-11-28T07:23:22.819Z"
 }

@@ -3,6 +3,8 @@ import {OFFICIAL_CORRODE_ARMOUR_ID} from '../source-data/official-corrode-armour
 import {compileOfficialStukovInfestationSpecV1} from '../source-data/official-stukov-infestation-source-v1.mjs';
 import {compileOfficialInfestedInfantrySpecV1} from '../source-data/official-infested-infantry-source-v1.mjs';
 import {compileOfficialFirebatSpecV1,OFFICIAL_FIREBAT_STIMPACK_ID} from '../source-data/official-firebat-source-v1.mjs';
+import {compileOfficialTalDarimThresholdSpecV1} from '../source-data/official-tal-darim-threshold-source-v1.mjs';
+import {projectOfficialTalDarimThresholdWeaponsV1,recordOfficialTalDarimFirstWeaponV1} from './official-tal-darim-threshold-v1.mjs';
 import {inspectOfficialUnitCreepProximityV1} from './official-current-product-state-facts-v1.mjs';
 import {resolveOfficialInfestationActivationExchangeV1} from '../rule-atoms/official-infestation-activation-exchange-v1.mjs';
 import { compileOfficialInfestationRestrictionSpecV1 } from '../rule-atoms/official-infestation-restrictions-v1.mjs';
@@ -321,7 +323,8 @@ function compileRoute(definition, { explicitRelease = false } = {}) {
   const name = definition.definitionName;
   const text = definition.sourceText;
   const restrictionSpec = compileOfficialInfestationRestrictionSpecV1(definition) || compileOfficialUniversalCarrierSpecV1(definition)
-    || compileOfficialStukovInfestationSpecV1(definition) || compileOfficialInfestedInfantrySpecV1(definition);
+    || compileOfficialStukovInfestationSpecV1(definition) || compileOfficialInfestedInfantrySpecV1(definition)
+    || compileOfficialTalDarimThresholdSpecV1(definition);
   if (restrictionSpec) return seal(baseSpec(definition, restrictionSpec), 'routeHash');
   let spec = null;
   if (definition.definitionId === OFFICIAL_RAVEN_ANTI_ARMOUR_MISSILE_DEFINITION_ID
@@ -2630,6 +2633,7 @@ export function projectOfficialCharacteristicStatusFamilyModifiersV1(
     ? inspectOfficialArmourRollOrdinalsV1(state, { targetPieceId: piece.id, attackerPieceId: requestedContext.attackerPieceId }) : null;
   const context = ordinals ? { ...requestedContext, ...ordinals } : requestedContext;
   const weaponName = normalized(context.weaponName);
+  const talDarimThresholds=projectOfficialTalDarimThresholdWeaponsV1({bundle,state,piece,context});
   const passives = passiveRoutesForPiece(bundle, state, piece);
   const effects = activeEffects(piece);
   const farsight = activePiece(piece) && effects.some(entry => {
@@ -2677,6 +2681,7 @@ export function projectOfficialCharacteristicStatusFamilyModifiersV1(
       && entry.sourcePieceId === piece.id && entry.targetPieceId === piece.id
       && entry.roundApplied === Number(state.round))) : null;
   const precision = Math.max(
+    talDarimThresholds?.precision || 0,
     maximumKeyword(passiveWeapons, "precision", weaponName),
     scourgeQueen?.precision || 0,
     ...markedCurrentTarget.map(entry => entry.precision),
@@ -2767,9 +2772,11 @@ export function projectOfficialCharacteristicStatusFamilyModifiersV1(
       && entry.effectKind !== 'target_near_source_weapon_keyword').map((entry) => entry.definitionId),
       ...(turretShrapnel ? [turretShrapnel.definitionId] : []),
       ...applicableWeaponAuras.map(entry => entry.sourceDefinitionId),
+      ...(talDarimThresholds?.sourceDefinitionIds || []),
       ...effects.map((entry) => entry.sourceDefinitionId).filter(Boolean),
       ...(areaEffects || []).filter(entry => entry.applies).map(entry => entry.sourceDefinitionId)])].sort(),
     ...(conditionalWeaponChecks.length ? { conditionalWeaponChecks } : {}),
+    ...(talDarimThresholds ? {talDarimThresholds} : {}),
     ...(bundle.routes.some(route => route.effectKind === 'target_near_source_weapon_keyword') ? { weaponAuraChecks } : {}),
     ...(targetingRestrictions.length ? { rangedTargetingRestrictions: targetingRestrictions,
       prohibitsRangedTargetingEngagedEnemies: targetingRestrictions.some(row => row.active) } : {}),
@@ -2799,7 +2806,7 @@ export function projectOfficialCharacteristicStatusFamilyModifiersV1(
     precision: Math.max(precision, Number(stand?.value || 0)),
     antiEvade,
     ...(conditionalCriticalHitValues.length ? { conditionalCriticalHitValues } : {}),
-    criticalHit: Math.max(maximumKeyword(passiveWeapons, 'critical_hit', weaponName), ...firstWeapon.filter((entry) => (
+    criticalHit: Math.max(talDarimThresholds?.criticalHit || 0, maximumKeyword(passiveWeapons, 'critical_hit', weaponName), ...firstWeapon.filter((entry) => (
       entry.keyword === "critical_hit")).map((entry) => Number(entry.value || 0)),
       ...broodmotherEffects.map(entry => entry.criticalHit || 0),
       ...markedCurrentTarget.map(entry => entry.criticalHit),
@@ -2879,6 +2886,7 @@ export function consumeOfficialCharacteristicStatusFirstWeaponEffectsV1(
 ) {
   const piece = (state?.pieces || []).find((entry) => entry.id === pieceId);
   if (!piece) fail("CHARACTERISTIC_STATUS_CONSUMER_PIECE_UNKNOWN", String(pieceId || ""));
+  recordOfficialTalDarimFirstWeaponV1(state,piece,weaponName);
   const expectedKind = normalized(attackKind);
   const consumed = [];
   piece.officialAbilityEffects = (piece.officialAbilityEffects || []).filter((entry) => {

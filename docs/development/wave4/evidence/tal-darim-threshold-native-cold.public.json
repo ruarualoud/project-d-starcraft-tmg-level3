@@ -1,0 +1,95 @@
+{
+  "schema": "starcraft_tmg_wave4_tal_darim_threshold_cold_v1",
+  "status": "passed_read_only",
+  "results": [
+    {
+      "id": "ranged-3",
+      "roomId": "wave4-tal-threshold-ranged-3",
+      "sourceOpenedReadOnly": true,
+      "humanConfirmed": false,
+      "originalSignedActions": 19,
+      "newActions": 0,
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "baselineHash": "f7480642aa80de08a6ca51dcda0363fdfcf313f7cb8983c5f93d2f35f096fe36",
+      "totalLostSupply": 3
+    },
+    {
+      "id": "ranged-4",
+      "roomId": "wave4-tal-threshold-ranged-4",
+      "sourceOpenedReadOnly": true,
+      "humanConfirmed": false,
+      "originalSignedActions": 21,
+      "newActions": 0,
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "baselineHash": "f7480642aa80de08a6ca51dcda0363fdfcf313f7cb8983c5f93d2f35f096fe36",
+      "totalLostSupply": 4
+    },
+    {
+      "id": "ranged-5",
+      "roomId": "wave4-tal-threshold-ranged-5",
+      "sourceOpenedReadOnly": true,
+      "humanConfirmed": false,
+      "originalSignedActions": 21,
+      "newActions": 0,
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "baselineHash": "f7480642aa80de08a6ca51dcda0363fdfcf313f7cb8983c5f93d2f35f096fe36",
+      "totalLostSupply": 5
+    },
+    {
+      "id": "ranged-6",
+      "roomId": "wave4-tal-threshold-ranged-6",
+      "sourceOpenedReadOnly": true,
+      "humanConfirmed": false,
+      "originalSignedActions": 22,
+      "newActions": 0,
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "baselineHash": "f7480642aa80de08a6ca51dcda0363fdfcf313f7cb8983c5f93d2f35f096fe36",
+      "totalLostSupply": 6
+    },
+    {
+      "id": "melee-6",
+      "roomId": "wave4-tal-threshold-melee-6",
+      "sourceOpenedReadOnly": true,
+      "humanConfirmed": false,
+      "originalSignedActions": 26,
+      "newActions": 0,
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "baselineHash": "f7480642aa80de08a6ca51dcda0363fdfcf313f7cb8983c5f93d2f35f096fe36",
+      "totalLostSupply": 6
+    },
+    {
+      "id": "dynamic-ranged-3",
+      "roomId": "wave4-tal-threshold-dynamic-ranged-3",
+      "sourceOpenedReadOnly": true,
+      "humanConfirmed": false,
+      "originalSignedActions": 22,
+      "newActions": 0,
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "baselineHash": "9cc8f37089e62daeda58e4e1235999171a45d80d0df21f19e38c633d23f23c4b",
+      "totalLostSupply": 4
+    },
+    {
+      "id": "dynamic-ranged-5",
+      "roomId": "wave4-tal-threshold-dynamic-ranged-5",
+      "sourceOpenedReadOnly": true,
+      "humanConfirmed": false,
+      "originalSignedActions": 24,
+      "newActions": 0,
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "baselineHash": "9cc8f37089e62daeda58e4e1235999171a45d80d0df21f19e38c633d23f23c4b",
+      "totalLostSupply": 6
+    }
+  ],
+  "newActions": 0,
+  "sourceHeldDefinitions": 39,
+  "fullFactionAdmission": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

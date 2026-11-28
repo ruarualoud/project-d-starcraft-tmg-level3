@@ -1,0 +1,26 @@
+{
+  "schema": "starcraft_tmg_wave4_tal_darim_web_build_v1",
+  "status": "passed_local_build",
+  "bundleRef": "build/wave4-web/tal-darim/web-bundle-v2",
+  "entryRef": "build/wave4-web/tal-darim/web-bundle-v2/_expo/static/js/web/entry-3c7e3da927e6149b07ecd01c7b54020e.js",
+  "byteHash": "418cdc9a7ad988ffd68f789a664f07bc5b281ccaa1ecef280682b90fdaf2171f",
+  "bytes": 3829720,
+  "sourceFiles": [
+    {
+      "file": "packages/client-domain/client-domain-v1.mjs",
+      "byteHash": "4b49117bbfae5b234dacb18ebf2c9e1afee1992daa1d870385e407f9a67e5c28"
+    },
+    {
+      "file": "packages/client-domain/staged-ranged-preview-v1.mjs",
+      "byteHash": "163fe559327160bd24c77c06087a7fc4a7ec9c9a52f83309b32242abe52c8624"
+    },
+    {
+      "file": "apps/starcraft-tmg-expo/components/battlefield/native-action-form.tsx",
+      "byteHash": "e128c95e3b2c92b8e58739aac2649020f4af5a44370b10e5f13a4854d7fc1699"
+    }
+  ],
+  "nativeRulesChangedByClientRepair": false,
+  "productionPublished": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

@@ -11,9 +11,9 @@
 | 数据变化 | 31 | 新数值或武器档案；仍需新来源绑定 |
 | 已有原子 | 50 | 已有语义合同；须核对新 ID 与准入门 |
 | 已有原子新组合 | 34 | 已有合同的触发、目标、作用域或顺序新组合 |
-| 新增语义 | 41 | 至少依赖一个当前缺失的执行合同 |
+| 新增语义 | 41 | 至少依赖一个Wave3缺少的执行合同 |
 
-**新增原子需求为 18 个，当前已实现并通过组件验收 5 个。** 同一缺失执行合同跨多个来源 ID 只计一次；新武器名字、数值档案和既有合同的新组合不分别增加原子数。另有 3 个只属于 Archon 撤下记录的候选合同，单独保留，未计入这 18 个。该数值是本次冻结范围的工程分解，不是已实现能力数。
+**新增原子需求为 18 个，当前已实现并经具名消费者验收 7 个。** 同一缺失执行合同跨多个来源 ID 只计一次；新武器名字、数值档案和既有合同的新组合不分别增加原子数。另有 3 个只属于 Archon 撤下记录的候选合同，单独保留，未计入这 18 个。该数值是本次冻结范围的工程分解，不是已实现能力数。
 
 逐定义原件、源字段哈希、触发、选择权、结算、清除、消费者函数和未覆盖项见 [完整机器清单](../../../content/source-releases/wave4-20261127/abilities/ability-diff.json)；[身份登记表](../../../content/source-releases/wave4-20261127/abilities/feature-registry.json) 与 [来源别名目录](../../../content/source-releases/wave4-20261127/abilities/identity-catalogue.json) 可离线重建。
 
@@ -240,9 +240,9 @@
 | `card:stukov_s_forces/infestation-any@1` | 已有原子新组合 | builder | 0 | 必选Virus建军已验；完整房间待 |
 | `card:stukov_s_forces/hostile-incubation-any@1` | 新增语义 | lifecycle / characteristic | 1 | 工程几何下SET与两完整原生回合已验 |
 | `card:tal_darim/proxy-pylon-any@1` | 新增语义 | lifecycle / characteristic | 1 | 无源级阻断；接线待验 |
-| `card:tal_darim/chain-of-ascension-any@1` | 新增语义 | supply / characteristic | 1 | 无源级阻断；接线待验 |
-| `card:tal_darim/4-or-more-any@1` | 新增语义 | supply / characteristic | 1 | 无源级阻断；接线待验 |
-| `card:tal_darim/6-or-more-any@1` | 新增语义 | supply / characteristic | 1 | 无源级阻断；接线待验 |
+| `card:tal_darim/chain-of-ascension-any@1` | 新增语义 | supply / characteristic | 1 | 原生／Web阈值消费者已验；Proxy Pylon与整版待 |
+| `card:tal_darim/4-or-more-any@1` | 新增语义 | supply / characteristic | 1 | 原生／Web阈值消费者已验；Proxy Pylon与整版待 |
+| `card:tal_darim/6-or-more-any@1` | 新增语义 | supply / characteristic | 1 | 原生／Web阈值消费者已验；Proxy Pylon与整版待 |
 | `card:twilight_council/veil-of-shadows-any@2` | 已有原子 | reaction / reactionRuntime | 0 | 无源级阻断；接线待验 |
 | `card:vanadium_plating/crystalline-alloy-any@2` | 已有原子 | reaction / reactionRuntime | 0 | 无源级阻断；接线待验 |
 | `card:weighted_pustule/fetid-touch-any@1` | 新增语义 | relocation / lifecycle | 1 | 原生／Web实际消费者已验；整版待 |
@@ -267,3 +267,5 @@ node scripts/verify-wave4-wave3-cold-read.mjs build/wave4-web/host/run-qI3May
 11 条时点、三条 Creep 及 Stukov 跨种族建军／运行时转换已完成各自范围的消费者验收，见 [Stukov 记录](stukov-army-wiring.zh-CN.md)。18 个新合同当前实现 5；Hostile 设置与回合锁已在用户允许的截图估算几何下验过，见 [本批记录](hostile-incubation-wiring.zh-CN.md)。炮塔七条定义现已显式绑定，Firefly 解析、Infestation／Ocular 后继、两轮原生完整回合与三个 Web 后继通过；见[后继与回合记录](turret-combat-wiring.zh-CN.md)。本批新增原子 0，随后推进其余 13 个合同及新单位完整行为和几何。组件、正式房间与 Web 分别验收。付费模型、K3、AI 对局、复盘与生产发布继续暂停。
 
 两项 Virus 限制及新增原子见[当前批次记录](virus-restrictions-wiring.zh-CN.md)；长任务仅推进 Wave4 人人对战，见[执行清单](../../../coordination/wave4/implementation-plan.json)。
+
+Tal’darim三个门槛定义现共用一个新增损失投影原子，已完成原生7房155动作、Web3房33确认及15房310原动作冷验；累计7/18，见[本批消费者与边界](tal-darim-threshold-wiring.zh-CN.md)。整版准入、剩余新卡与单位继续。

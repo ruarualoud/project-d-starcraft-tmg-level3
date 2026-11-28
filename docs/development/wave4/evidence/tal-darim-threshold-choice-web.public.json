@@ -1,0 +1,56 @@
+{
+  "schema": "starcraft_tmg_wave4_tal_darim_threshold_web_v1",
+  "status": "passed_scoped",
+  "runRef": "build/wave4-web/tal-darim/threshold-choice-web-v1",
+  "results": [
+    {
+      "id": "ranged-precision-choice",
+      "kind": "ranged-precision-choice",
+      "roomId": "product-wave4-web-ranged-precision-choice",
+      "sourceRoomId": "wave4-tal-threshold-ranged-6",
+      "sourcePrefixReceipts": 6,
+      "sourceStateHash": "2d9ad6af46aff474ddd2a624f1683f1d308f5bb4c3d6b5a89ecea5ee8d05457d",
+      "trace": [
+        {
+          "actionType": "choose_ranged_precision_hits",
+          "sideKey": "player1",
+          "stateRevision": 1,
+          "stateHash": "406715dafd01efa8c6a2bc40466fae1123fbfa8efb3973f4116d03cdb9f4f85c"
+        },
+        {
+          "actionType": "resolve_ranged_attack_defence_pool",
+          "sideKey": "player1",
+          "stateRevision": 2,
+          "stateHash": "d1be4ee1aeb6031d4fe13b8e3e81ad792e3c951dab8d4306c7ba38c9fbeff2ed"
+        },
+        {
+          "actionType": "finish_activation",
+          "sideKey": "player1",
+          "stateRevision": 3,
+          "stateHash": "09a172a1c3d9da47be11c01bf8c2fc173d682cb36a39b3fbeea908f66d5c96c7"
+        }
+      ],
+      "signedActions": 3,
+      "stateHash": "09a172a1c3d9da47be11c01bf8c2fc173d682cb36a39b3fbeea908f66d5c96c7",
+      "actualPrecision": 1,
+      "actualCriticalHit": 1,
+      "fullNativeRound": false,
+      "webFromSignedPrefix": true,
+      "fullRoundViaWebAlone": false,
+      "actualProducerViaWeb": false,
+      "precisionChoiceCommitted": true,
+      "twoSeatsVerified": true,
+      "explicitHumanConfirmation": true,
+      "previewReadOnly": true,
+      "replayMatchesCurrent": true,
+      "seatRecoveryReentryVerified": true,
+      "pageErrors": []
+    }
+  ],
+  "signedActions": 3,
+  "sourceHeldDefinitions": 39,
+  "fullFactionAdmission": false,
+  "fullMatchAdmission": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

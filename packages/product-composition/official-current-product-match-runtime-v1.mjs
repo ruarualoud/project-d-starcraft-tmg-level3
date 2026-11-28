@@ -1603,6 +1603,7 @@ function createCurrentProductMatchRuntime(input, scale, releaseOpening) {
       },
     } : {}),
     ...(native && (rosterIncrement.includeNovaShared && state.officialReleaseDroneAssaultTiming
+      || input.engineeringRoundScope && state.officialTalDarimThresholdPolicy
       || rosterIncrement.includeZagaraArmyAbilities && state.officialZagaraPsionicLinkSource
       || rosterIncrement.includeOmegaWormDetection && state.officialDetectionHiddenLossPolicy
       || rosterIncrement.includeImmortal && state.pieces.some(piece => piece.officialUnitRecordKey === 'army_units:immortal')) ? {

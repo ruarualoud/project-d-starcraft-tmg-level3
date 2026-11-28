@@ -10,6 +10,7 @@ import { loadWave4VirusEffectsInputs } from './compile-wave4-virus-effects.mjs';
 import { loadWave4StukovUnitInputs } from './compile-wave4-stukov-units.mjs';
 import { loadWave4StukovUnitInputsV2 } from './compile-wave4-stukov-units-v2.mjs';
 import { loadWave4StukovUnitInputsV3 } from './compile-wave4-stukov-units-v3.mjs';
+import { loadWave4TalDarimThresholdInputs } from './compile-wave4-tal-darim-threshold.mjs';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const read=async file=>JSON.parse(await fs.readFile(file,'utf8'));
@@ -24,7 +25,8 @@ const delayedSource=['starcraft_tmg_wave4_detonation_delayed_v1','starcraft_tmg_
 const stormPhotonSource=['starcraft_tmg_wave4_detonation_storm_v1','starcraft_tmg_wave4_detonation_photon_v1'].includes(sourceResult.schema);
 const disengageSource=sourceResult.schema==='starcraft_tmg_wave4_detonation_disengage_v1';
 const consumeSource=sourceResult.schema==='starcraft_tmg_wave4_consume_web_source_v1';
-const baseInputs=stormPhotonSource||disengageSource||consumeSource?await loadWave4StukovUnitInputsV3(root):sourceResult.schema==='starcraft_tmg_wave4_detonation_target_v1'||delayedSource?await loadWave4StukovUnitInputsV2(root):['starcraft_tmg_wave4_stukov_infestation_native_v1','starcraft_tmg_wave4_plagued_munitions_v1',
+const talDarimSource=sourceResult.schema==='starcraft_tmg_wave4_tal_darim_threshold_v1';
+const baseInputs=talDarimSource?await loadWave4TalDarimThresholdInputs(root):stormPhotonSource||disengageSource||consumeSource?await loadWave4StukovUnitInputsV3(root):sourceResult.schema==='starcraft_tmg_wave4_detonation_target_v1'||delayedSource?await loadWave4StukovUnitInputsV2(root):['starcraft_tmg_wave4_stukov_infestation_native_v1','starcraft_tmg_wave4_plagued_munitions_v1',
    'starcraft_tmg_wave4_infested_infantry_base_wiring_v1','starcraft_tmg_wave4_detonation_ranged_host_v1','starcraft_tmg_wave4_detonation_nested_host_v1',
    'starcraft_tmg_wave4_bio_kill_switch_v1','starcraft_tmg_wave4_corrode_web_source_v1','starcraft_tmg_wave4_detonation_template_v1','starcraft_tmg_wave4_detonation_outside_v1','starcraft_tmg_wave4_detonation_overwatch_v1','starcraft_tmg_wave4_overwatch_coexistence_v1','starcraft_tmg_wave4_detonation_khassar_web_source_v1','starcraft_tmg_wave4_detonation_declaration_v1'].includes(sourceResult.schema)?await loadWave4StukovUnitInputs(root)
   :sourceResult.schema==='starcraft_tmg_wave4_virus_creep_native_v1'?await loadWave4VirusEffectsInputs(root):await loadWave4TurretInputs(root);
@@ -38,7 +40,7 @@ const specs=process.argv[5]?await read(path.resolve(process.argv[5])):[
   {id:'growing-restoration-exception',definitionId:'unit:infested_missile_turret/infestation-any-phase@1'},
 ];
 assert.ok(Array.isArray(specs)&&specs.length&&specs.every(spec=>typeof spec.id==='string'&&(spec.initial||typeof spec.definitionId==='string')));
-for(const spec of specs) {  const proof=sourceResult.results.find(row=>row.id===spec.id||row.definitionId==='card:'+spec.id+'/stukov-s-creep-any@1');
+for(const spec of specs) {  const proof=sourceResult.results.find(row=>row.id===(spec.sourceCaseId||spec.id)||row.definitionId==='card:'+spec.id+'/stukov-s-creep-any@1');
   assert.ok(proof?.coldReplay);
   const inputs=delayedSource&&proof.kind==='drone'
     ?(droneInputs ||= await loadWave4StukovUnitInputsV3(root)):baseInputs;
@@ -67,7 +69,7 @@ for(const spec of specs) {  const proof=sourceResult.results.find(row=>row.id===
       assert.equal(replay.ok,true);
       if((!spec.minimumContinuationDepth||(replay.envelope.state.officialBeforeCasualtyContinuations?.length||0)>=spec.minimumContinuationDepth)
        &&(spec.initial || (spec.requiredPendingKey?Boolean(replay.envelope.state[spec.requiredPendingKey]):
-        source.runtime.enumerate(replay.envelope.state).parameterDomains.some(row=>row.definitionId===spec.definitionId)))) {
+        source.runtime.enumerate(replay.envelope.state,{matchBinding:replay.envelope.matchBinding}).parameterDomains.some(row=>row.definitionId===spec.definitionId)))) {
         prefix=replay.envelope;prefixReceipts=count;break;
       }
     }

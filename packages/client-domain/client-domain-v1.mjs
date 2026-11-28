@@ -5,6 +5,7 @@ import {
 import { assertStarcraftTmgLifecyclePort } from "./lifecycle-adapters-v1.mjs";
 import { assertStarcraftTmgProjectionStorePort } from "./projection-store-adapters-v1.mjs";
 import { hashStarcraftTmgClientContract } from "./portable-contract-hash-v1.mjs";
+import {matchesStarcraftTmgParameterizedPreviewActionV1} from './staged-ranged-preview-v1.mjs';
 import {
   isExactStarcraftTmgViewerStateShapeV3,
   REQUIRED_PUBLIC_MATCH_BINDING_FIELDS,
@@ -1392,7 +1393,7 @@ function validPreviewResponse(preview, proposal, legalSpace, projection, roomId)
   return core.proposal.kind === "parameterized"
     && core.proposal.domainId === proposal.domainId
     && object(core.proposal.parameters)
-    && core.action.actionType === expectedEntry.actionType
+    && matchesStarcraftTmgParameterizedPreviewActionV1(core.action,expectedEntry,proposal.parameters)
     && core.action.sideKey === identity.sideKey
     && (expectedEntry.pieceId === undefined
       || core.action.pieceId === expectedEntry.pieceId)
