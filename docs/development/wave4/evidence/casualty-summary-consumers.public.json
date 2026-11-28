@@ -1,0 +1,36 @@
+{
+  "schema": "starcraft_tmg_wave4_casualty_summary_consumers_v1",
+  "status": "passed_scoped",
+  "nativeRuleChanges": 0,
+  "newGameAtomsImplemented": 0,
+  "implementedCumulativeAtoms": 6,
+  "webRooms": 1,
+  "webSignedActions": 5,
+  "sourcePrefixReceipts": 26,
+  "readableMobileChecks": 1,
+  "phoneFormWidth": 298,
+  "phoneFormScrollWidth": 298,
+  "resumeNewActions": 0,
+  "sourceFacts": "defender LegalSpace constraints.legalSelections",
+  "submittedIdentity": "unchanged casualtySelectionHash",
+  "consumerRefs": [
+    {
+      "file": "packages/client-domain/native-action-form-v1.mjs",
+      "exportName": "nativeCasualtyOptionLabelsV1"
+    },
+    {
+      "file": "apps/starcraft-tmg-expo/components/battlefield/native-action-form.tsx",
+      "exportName": "NativeActionForm"
+    }
+  ],
+  "evidenceRefs": [
+    "docs/development/wave4/evidence/casualty-summary-web.public.json",
+    "docs/development/wave4/evidence/casualty-summary-build.public.json",
+    "docs/development/wave4/evidence/casualty-summary-web-390.png"
+  ],
+  "scope": "readable enumerated casualty options only; duplicate Photon regression excluded from Detonation functional totals",
+  "fullMatchAdmission": false,
+  "sourceHeldDefinitions": 39,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

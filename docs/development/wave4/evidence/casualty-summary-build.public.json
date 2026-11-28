@@ -1,0 +1,27 @@
+{
+  "schema": "starcraft_tmg_wave4_casualty_summary_web_build_v1",
+  "status": "passed",
+  "offline": true,
+  "dependencyInstall": false,
+  "productionPublished": false,
+  "files": [
+    {
+      "ref": "build/wave4-web/stukov-units/web-bundle-v2/_expo/static/js/web/entry-6a8973d2b985ac331f7ef22a1bc6e922.js",
+      "byteHash": "8d7f123890de6535aa7d97f745f2000cddbf93d5d096a152619569eb98b0fdbc",
+      "bytes": 3825047
+    },
+    {
+      "ref": "apps/starcraft-tmg-expo/components/battlefield/native-action-form.tsx",
+      "byteHash": "3ee099fa68464a20249fa6f85cccef1037d51de2e6c635ac0983b468e7710918",
+      "bytes": 9541
+    },
+    {
+      "ref": "packages/client-domain/native-action-form-v1.mjs",
+      "byteHash": "4066c76880a56a190050cbed17d998c7bce70276c6c5e4901e4ada382e167ad4",
+      "bytes": 7542
+    }
+  ],
+  "webEvidenceRef": "docs/development/wave4/evidence/casualty-summary-web.public.json",
+  "modelCalls": 0,
+  "trainingTruth": false
+}

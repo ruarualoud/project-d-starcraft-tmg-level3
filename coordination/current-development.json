@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-11-28T03:21:09.839Z",
+  "updatedAt": "2026-11-28T03:54:43.418Z",
   "ticket": 23,
   "slice": 249,
   "completion": "33/36",
@@ -9,7 +9,7 @@
     249,
     250
   ],
-  "summary": "Wave4人人长任务继续，完整原子6/18。Storm/Photon本批4完整原生回合119动作、Web2房10确认、当前/前批6房177原动作冷读通过。合法运输入场及阶段外护甲身份已验；直接移除、新单位、13记录与整版产品继续，39来源和估算保持。",
+  "summary": "Wave4人人长任务继续，完整原子6/18。Storm/Photon本批4完整原生回合119动作、Web10确认和6房177原动作冷验已过；手机伤亡摘要另1房5确认、390px无横向溢出通过。直接移除、新单位、13记录及整版产品继续，39来源和估算保持。",
   "runPolicy": "本分支仅推进Wave4人人对战，按Wave3模式补齐数据、规则、建军、房间、媒体和Web双席；使用5484及build/wave4-web，按可验证成果提交推送。其他同步开发线不在本分支展开；付费模型、K3、AI对局、复盘与生产发布继续暂停。",
   "items": [
     {
@@ -17,7 +17,7 @@
       "title": "Wave4人人更新：6/18原子；Stukov9/9具名工程定义",
       "implementation": {
         "status": "partial",
-        "note": "政策1.7保存Storm/Photon父槽；Root3.240/护甲1.1保留阶段外null上下文；工程Round1.3承接真实运输入场。新增完整原子0，累计6/18。",
+        "note": "政策1.7/Root3.238–3.240的Storm/Photon已验；Web伤亡选项只投影公开模型顺序并保留原哈希提交。新增完整原子0，累计6/18。",
         "evidence": [
           "content/source-releases/wave4-20261127/abilities/ability-diff.json",
           "docs/development/wave4/evidence/ability-diff.public.json",
@@ -136,12 +136,18 @@
           "docs/development/wave4/evidence/photon-source-boundaries.public.json",
           "docs/development/wave4/evidence/card-armour-context.public.json",
           "docs/development/wave4/evidence/detonation-storm-photon-consumers.public.json",
-          "docs/development/wave4/evidence/detonation-storm-photon-harness.public.json"
+          "docs/development/wave4/evidence/detonation-storm-photon-harness.public.json",
+          "docs/development/wave4/casualty-summary-web.zh-CN.md",
+          "docs/development/wave4/evidence/casualty-summary-web.public.json",
+          "docs/development/wave4/evidence/casualty-summary-build.public.json",
+          "docs/development/wave4/evidence/casualty-summary-consumers.public.json",
+          "docs/development/wave4/evidence/casualty-summary-harness.public.json",
+          "docs/development/wave4/evidence/casualty-summary-web-390.png"
         ]
       },
       "productHandoff": {
         "status": "partial",
-        "note": "本批4完整原生回合119动作、Web2房10确认、6房177原动作冷验；从签名前缀接入，整版Builder/大厅与手机伤亡摘要仍待。",
+        "note": "Storm/Photon本批4完整回合119动作、Web10确认、6房177原动作冷验；手机摘要另5确认通过。完整Builder/大厅和Disengage发起表单仍待。",
         "evidence": [
           "docs/development/wave4/evidence/native-armour-timing.public.json",
           "docs/development/wave4/evidence/native-other-timing.public.json",
@@ -261,7 +267,13 @@
           "docs/development/wave4/evidence/photon-source-boundaries.public.json",
           "docs/development/wave4/evidence/card-armour-context.public.json",
           "docs/development/wave4/evidence/detonation-storm-photon-consumers.public.json",
-          "docs/development/wave4/evidence/detonation-storm-photon-harness.public.json"
+          "docs/development/wave4/evidence/detonation-storm-photon-harness.public.json",
+          "docs/development/wave4/casualty-summary-web.zh-CN.md",
+          "docs/development/wave4/evidence/casualty-summary-web.public.json",
+          "docs/development/wave4/evidence/casualty-summary-build.public.json",
+          "docs/development/wave4/evidence/casualty-summary-consumers.public.json",
+          "docs/development/wave4/evidence/casualty-summary-harness.public.json",
+          "docs/development/wave4/evidence/casualty-summary-web-390.png"
         ]
       },
       "liveOutput": {
@@ -879,6 +891,11 @@
     "剩余13个已审核记录和整版发布／Builder／大厅／媒体、500／2000分Web双席。"
   ],
   "navigation": [
+    {
+      "when": "查看390px伤亡顺序、原哈希提交及双席回归",
+      "title": "Web伤亡方案摘要",
+      "path": "docs/development/wave4/casualty-summary-web.zh-CN.md"
+    },
     {
       "when": "查看Storm/Photon、真实运输入场、阶段外护甲和Web",
       "title": "Detonation风暴与Photon接线",

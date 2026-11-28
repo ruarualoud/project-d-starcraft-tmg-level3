@@ -1,0 +1,30 @@
+{
+  "schema": "starcraft_tmg_wave4_casualty_summary_harness_v1",
+  "status": "passed_scoped",
+  "nativeDescriptorUnchanged": true,
+  "webRooms": 1,
+  "webSignedActions": 5,
+  "resumeNewActions": 0,
+  "tools": [
+    "defender-owned LegalSpace facts",
+    "readable ordered casualty option",
+    "unchanged hash submission",
+    "read-only preview",
+    "explicit human confirmation",
+    "two seats and 390px overflow check",
+    "recovery and replay"
+  ],
+  "beforeScreenshotRef": "build/wave4-web/stukov-units/detonation-photon-web-v1/photon-use-r4-form.png",
+  "afterScreenshotRef": "docs/development/wave4/evidence/casualty-summary-web-390.png",
+  "evidenceRefs": [
+    "docs/development/wave4/evidence/casualty-summary-consumers.public.json",
+    "docs/development/wave4/evidence/casualty-summary-build.public.json",
+    "docs/development/wave4/evidence/casualty-summary-web.public.json"
+  ],
+  "scope": "one UI usability criterion only; complete Wave4 admission remains pending",
+  "sourceHeldDefinitions": 39,
+  "newGameAtomsImplemented": 0,
+  "fullMatchAdmission": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

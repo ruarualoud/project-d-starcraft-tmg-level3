@@ -31,7 +31,19 @@
       ],
       "exit": "Same release selected by manual Builder/import/export, lobby/room factory, map/mission/player query; new IDs have reviewed media and clear unavailable-source labels.",
       "usabilityPending": [
-        "Replace opaque casualtySelectionHash options with readable model/casualty summaries in NativeActionForm"
+        "Expose Native-certified Disengage leading/other-model removal outcomes in the Web initiation form"
+      ],
+      "usabilityVerified": [
+        {
+          "criterion": "Readable enumerated casualty choices with original hash submission and no 390px form overflow",
+          "evidenceRefs": [
+            "docs/development/wave4/evidence/casualty-summary-web.public.json",
+            "docs/development/wave4/evidence/casualty-summary-build.public.json",
+            "docs/development/wave4/evidence/casualty-summary-consumers.public.json",
+            "docs/development/wave4/evidence/casualty-summary-harness.public.json",
+            "docs/development/wave4/evidence/casualty-summary-web-390.png"
+          ]
+        }
       ]
     },
     {
@@ -62,5 +74,5 @@
     "Complete release/Builder/lobby/media, including readable casualty options",
     "500/2000 Web human seats"
   ],
-  "updatedAt": "2026-11-28T03:21:09.815Z"
+  "updatedAt": "2026-11-28T03:54:43.393Z"
 }

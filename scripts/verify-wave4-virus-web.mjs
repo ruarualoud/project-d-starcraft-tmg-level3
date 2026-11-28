@@ -16,7 +16,7 @@ const resumeConfirmed=process.argv.includes('--resume-confirmed');
 assert.equal(service.origin,'http://127.0.0.1:5484');assert.equal(service.liveEnabled,false);
 const api=service.origin+'/starcraft-tmg-level3/api/v1/rooms/';
 const browser=await chromium.launch({headless:true,...(process.env.CHROME_BIN?{executablePath:process.env.CHROME_BIN}:{})});
-const results=[];
+const results=[],readableCasualtyChecks=[];
 const escape=text=>text.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
 async function current(item) {
   const store=openWave3EngineeringStoreV1({directory:path.join(directory,'rooms',item.kind),filename:'room.sqlite',readOnly:true});
@@ -51,8 +51,13 @@ async function operate(page,item,choice,parameterized) {
     const parameterSchema=choice.sourceDomain?.parameterSchema||choice.parameterSchema;
     if(item.flow==='coexisting-ocular'&&choice.weaponName==='Firefly Missiles')
       await form.getByText('目标单位',{exact:true}).locator('..').getByRole('button',{name:'creator',exact:true}).click();
-    if(parameterSchema?.required.includes('casualtySelectionHash'))
-      await form.getByRole('button',{name:parameterSchema.casualtySelectionHash.enum[0],exact:true}).click();
+    if(parameterSchema?.required.includes('casualtySelectionHash')){
+      const readable=form.getByTestId('native-choice-casualtySelectionHash-0');
+      if(process.argv.includes('--readable-casualties')){assert.ok(await readable.count());const label=await readable.innerText();assert.match(label,/方案 1.*剩余/);assert.ok(!label.includes(parameterSchema.casualtySelectionHash.enum[0]));
+        const dimensions=await form.evaluate(el=>({clientWidth:el.clientWidth,scrollWidth:el.scrollWidth}));assert.ok(dimensions.scrollWidth<=dimensions.clientWidth+1,'CASUALTY_FORM_HORIZONTAL_OVERFLOW');
+        readableCasualtyChecks.push({kind:item.kind,revision:before.stateRevision,selectionHash:parameterSchema.casualtySelectionHash.enum[0],label,viewportWidth:page.viewportSize().width,...dimensions});}
+      if(await readable.count())await readable.click();else await form.getByRole('button',{name:parameterSchema.casualtySelectionHash.enum[0],exact:true}).click();
+    }
     if(parameterSchema?.required.includes('casualtyModelIds')){
       const s=before.envelope.state,pending=s.pendingAction?.casualtyDomain?s.pendingAction:s.pendingOfficialAutomaticHits
        ||{targetPieceId:s.pendingOfficialBlastTemplateAttack?.currentAction.targetId,casualtyDomain:s.pendingOfficialBlastTemplateAttack?.currentChance.casualtyDomain};
@@ -129,7 +134,7 @@ try {
   for(const item of service.rooms) {
     const completedRef=path.join(directory,item.kind+'-result.public.json');
     const completed=await fs.readFile(completedRef,'utf8').then(JSON.parse).catch(error=>{if(error.code==='ENOENT')return null;throw error;});
-    if(completed){assert.equal((await current(item)).envelope.stateHash,completed.trace.at(-1).stateHash);results.push(completed);continue;}
+    if(completed){assert.equal((await current(item)).envelope.stateHash,completed.trace.at(-1).stateHash);if(process.argv.includes('--readable-casualties')){assert.ok(Array.isArray(completed.readableCasualtyChecks),'READABLE_CASUALTY_CHECKS_REQUIRED');readableCasualtyChecks.push(...completed.readableCasualtyChecks);}results.push(completed);continue;}
     const contexts=await Promise.all([browser.newContext({viewport:{width:1500,height:1000}}),
       browser.newContext({viewport:{width:390,height:844}})]);
     const pages={player1:await contexts[0].newPage(),player2:await contexts[1].newPage()};
@@ -317,14 +322,16 @@ try {
       assert.equal((await current(item)).envelope.stateHash,final.envelope.stateHash);
       results.push({kind:item.kind,definitionId:item.definitionId,sourceRoomId:item.sourceRoomId,sourceStateHash:item.sourceStateHash,
         sourcePrefixReceipts:item.sourcePrefixReceipts,...(['detonation-delayed','detonation-storm-photon'].includes(item.flow)?{originalSourceDeathVerified}:{}),trace,signedActions:trace.length,twoSeatsVerified:true,
-        explicitHumanConfirmation:true,previewReadOnly:true,replayMatchesCurrent:true,seatRecoveryReentryVerified:true,pageErrors:errors});
+        explicitHumanConfirmation:true,previewReadOnly:true,replayMatchesCurrent:true,seatRecoveryReentryVerified:true,pageErrors:errors,
+        ...(process.argv.includes('--readable-casualties')?{readableCasualtyChecks:readableCasualtyChecks.filter(r=>r.kind===item.kind)}:{})});
       await atomicWrite(completedRef,JSON.stringify(results.at(-1),null,2));
       console.log(JSON.stringify({case:item.kind,status:'passed',signedActions:trace.length}));
     } finally {await Promise.all(contexts.map(context=>context.close()));}
   }
 } finally {await browser.close();}
+if(process.argv.includes('--readable-casualties'))assert.ok(readableCasualtyChecks.some(r=>r.viewportWidth===390),'READABLE_MOBILE_CASUALTY_REQUIRED');
 const result={schema:'starcraft_tmg_wave4_virus_web_verification_v1',status:'passed_scoped',
-  runRef:path.relative(root,directory),results,signedActions:results.reduce((sum,row)=>sum+row.signedActions,0),
+  runRef:path.relative(root,directory),results,...(process.argv.includes('--readable-casualties')?{readableCasualtyChecks}:{}),signedActions:results.reduce((sum,row)=>sum+row.signedActions,0),
   conditionalTurretGeometryInRestorationCaseOnly:service.rooms.some(item=>item.id==='growing-restoration-exception'||item.flow==='carrier-restoration'),sourceHeldDefinitions:39,
    engineeringEstimatedUnitGeometry:service.rooms.some(item=>['admiral-exchange','trooper-restoration','stukov-spread','munitions-support','infantry-burrow','detonation-ranged','detonation-nested','bio-kill-switch','corrode-armour','corrode-restoration','detonation-template','detonation-outside','detonation-overwatch','coexisting-ocular','detonation-khassar','detonation-declaration','detonation-target','detonation-delayed','detonation-storm-photon'].includes(item.flow)),
   fullWave4LobbyBuilderAdmission:false,fullMatchAdmission:false,wave3PlayerRoomsTouched:false,modelCalls:0,trainingTruth:false};

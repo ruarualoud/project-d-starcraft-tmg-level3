@@ -61,10 +61,22 @@ export function describeNativeActionFormV1(outer, {modelIds = [], tokenIds = []}
   }
   return {
     domainId: outer?.domainId, required, fields: normalized, conditional, chargeFieldOutcomes,
+    casualtyOptions: Array.isArray(domain.constraints?.legalSelections)
+      ? domain.constraints.legalSelections.map(row => ({selectionHash: row.selectionHash,
+        casualtyModelIds: [...row.casualtyModelIds], remainingModelIds: [...row.remainingModelIds]})) : [],
     paymentsByChoice: payments || null,
     supported: Array.isArray(schema.required) && missing.length === 0,
     missing, rulesValidationRequired: true,
   };
+}
+
+// Display only the facts already published in this defender's LegalSpace.
+// The opaque selection hash remains the submitted authority identity.
+export function nativeCasualtyOptionLabelsV1(form, names = {}) {
+  const modelName = id => names[id] || (/model-([0-9]+)$/u.test(id)
+    ? `模型 ${id.match(/model-([0-9]+)$/u)[1]}` : id);
+  return Object.fromEntries((form.casualtyOptions || []).map((row, index) => [row.selectionHash,
+    `方案 ${index + 1} · ${row.casualtyModelIds.length ? '移除顺序：' + row.casualtyModelIds.map(modelName).join(' → ') : '不移除模型'} · 剩余 ${row.remainingModelIds.length} 模型`]));
 }
 
 export function nativeActionFormDefaultsV1(form) {

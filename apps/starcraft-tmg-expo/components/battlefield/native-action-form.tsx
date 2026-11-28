@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { describeNativeActionFormV1, nativeActionFormDefaultsV1,
-  compileNativeActionFormValuesV1 } from '../../../../packages/client-domain/native-action-form-v1.mjs';
+  compileNativeActionFormValuesV1, nativeCasualtyOptionLabelsV1 } from '../../../../packages/client-domain/native-action-form-v1.mjs';
 
 type Descriptor = { type?: string; const?: unknown; enum?: unknown[];
   properties?: Record<string, Descriptor>; required?: string[]; items?: Descriptor;
@@ -27,10 +27,10 @@ const choices: Record<string, string> = { top: '上边', bottom: '下边', left:
   skip: '跳过',
   success: '成功', failure: '失败', distance_shortfall: '距离不足', declared_target_spread: '已声明目标相距过远',
   decline: '不整队', move: '整队移动', true: '是', false: '否' };
-function Button({ text, onPress, active = false, disabled = false }: {
-  text: string; onPress: () => void; active?: boolean; disabled?: boolean;
+function Button({ text, onPress, active = false, disabled = false, testID }: {
+  text: string; onPress: () => void; active?: boolean; disabled?: boolean; testID?: string;
 }) {
-  return <Pressable accessibilityRole="button" disabled={disabled} onPress={onPress}
+  return <Pressable accessibilityRole="button" disabled={disabled} onPress={onPress} testID={testID}
     style={[styles.button, active && styles.active, disabled && { opacity: .4 }]}>
     <Text style={styles.text}>{text}</Text></Pressable>;
 }
@@ -46,7 +46,7 @@ function Field({ name, descriptor: d, value, onChange, names, pickPoint }: {
     : names[String(v)] || choices[String(v)] || String(v ?? '无');
   if (Object.hasOwn(d, 'const')) return <Text style={styles.hint}>{title}：{renderValue(d.const)}</Text>;
   if (d.enum) return <View style={styles.field}><Text style={styles.title}>{title}</Text>
-    <View style={styles.row}>{d.enum.map((v, i) => <Button key={i} text={renderValue(v)}
+    <View style={styles.row}>{d.enum.map((v, i) => <Button key={i} text={renderValue(v)} testID={`native-choice-${name}-${i}`}
       active={JSON.stringify(value) === JSON.stringify(v)} onPress={() => onChange(v)} />)}</View>
     {!d.enum.length && <Text style={styles.hint}>当前没有可选项</Text>}</View>;
   if (d.type === 'array') {
@@ -89,6 +89,7 @@ export function NativeActionForm({ domain, names, modelIds, tokenIds, disabled, 
   onPickPoint: (callback: (point: Point) => void) => void;
 }) {
   const form = useMemo(() => describeNativeActionFormV1(domain, {modelIds, tokenIds}), [domain, modelIds, tokenIds]);
+  const displayNames = useMemo(() => ({...names, ...nativeCasualtyOptionLabelsV1(form, names)}), [form, names]);
   const [values, setValues] = useState<Record<string, any>>(() => nativeActionFormDefaultsV1(form));
   const [optional, setOptional] = useState<string[]>([]);
   const required = [...new Set([...form.required, ...form.conditional.flatMap((row: any) =>
@@ -104,7 +105,7 @@ export function NativeActionForm({ domain, names, modelIds, tokenIds, disabled, 
         ? { enum: form.paymentsByChoice[values.choice ?? 'default'] || [] } : original as Descriptor;
       const enabled = required.includes(key) || Object.hasOwn(d, 'const') || optional.includes(key);
       return enabled ? <Field key={key} name={key} descriptor={d} value={values[key]}
-        names={names} pickPoint={onPickPoint} onChange={next => setValues(old => {
+        names={displayNames} pickPoint={onPickPoint} onChange={next => setValues(old => {
           const updated = { ...old, [key]: next };
           if (key === 'choice') delete updated.paymentCardInstanceIds;
           return updated;
@@ -119,9 +120,9 @@ export function NativeActionForm({ domain, names, modelIds, tokenIds, disabled, 
 const styles = StyleSheet.create({
   form: { gap: 12, padding: 12, backgroundColor: '#091b29', borderRadius: 10, borderWidth: 1, borderColor: '#27627a' },
   field: { gap: 7 }, nested: { gap: 8, marginVertical: 4, paddingLeft: 10, borderLeftWidth: 1, borderColor: '#244b61' },
-  title: { color: '#d9f3ff', fontSize: 12, fontWeight: '600' }, text: { color: '#c4e8f6', fontSize: 12 },
+  title: { color: '#d9f3ff', fontSize: 12, fontWeight: '600' }, text: { color: '#c4e8f6', fontSize: 12, flexShrink: 1 },
   hint: { color: '#91afbf', fontSize: 11, lineHeight: 17 }, row: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  button: { minHeight: 40, justifyContent: 'center', padding: 10, borderWidth: 1, borderColor: '#315366', borderRadius: 7, backgroundColor: '#102737' },
+  button: { maxWidth: '100%', flexShrink: 1, minHeight: 40, justifyContent: 'center', padding: 10, borderWidth: 1, borderColor: '#315366', borderRadius: 7, backgroundColor: '#102737' },
   active: { backgroundColor: '#16465b', borderColor: '#63bbd6' },
   input: { color: '#e1f5ff', backgroundColor: '#061420', borderWidth: 1, borderColor: '#315366', borderRadius: 6, padding: 10, minHeight: 42 },
 });

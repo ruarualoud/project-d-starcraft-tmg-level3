@@ -1,0 +1,90 @@
+{
+  "schema": "starcraft_tmg_wave4_virus_web_verification_v1",
+  "status": "passed_scoped",
+  "runRef": "build/wave4-web/stukov-units/casualty-summary-web-v1",
+  "results": [
+    {
+      "kind": "photon-use",
+      "definitionId": "unit:infested_trooper/detonation-any-phase@1",
+      "sourceRoomId": "wave4-detonation-photon-use-0",
+      "sourceStateHash": "7ae4244a0c00944869f58f444710889e2812f3d11ebc7e9a74f7be27d9390ae2",
+      "sourcePrefixReceipts": 26,
+      "originalSourceDeathVerified": true,
+      "trace": [
+        {
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:infested_trooper/detonation-any-phase@1",
+          "sideKey": "player1",
+          "stateRevision": 1,
+          "stateHash": "76392dc2132c560eb87b015ab581587ad8f39e4738f659279ac41070250590b7"
+        },
+        {
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null,
+          "sideKey": "player2",
+          "stateRevision": 2,
+          "stateHash": "98b8caa2c796b8c3eaaf4c208db9165763e6e06f1e7368527433f95d46c14660"
+        },
+        {
+          "actionType": "roll_automatic_hits_armour_pool",
+          "definitionId": null,
+          "sideKey": "player1",
+          "stateRevision": 3,
+          "stateHash": "216a7dcd87390b97dbf0b1e5a8f06d412edc7f9b4afb3453deea4d8742bf156a"
+        },
+        {
+          "actionType": "resolve_automatic_hits_evade_pool",
+          "definitionId": null,
+          "sideKey": "player1",
+          "stateRevision": 4,
+          "stateHash": "34861988323e92ea6c6649ab1d5e350bcbef46de74ba2d8ad6a26d938c5be4fd"
+        },
+        {
+          "actionType": "choose_automatic_hits_casualties",
+          "definitionId": null,
+          "sideKey": "player2",
+          "stateRevision": 5,
+          "stateHash": "aebed8a16b7cf9cf55bd9d3e37c249c8aa0bc9922535c399202a0948ab651557"
+        }
+      ],
+      "signedActions": 5,
+      "twoSeatsVerified": true,
+      "explicitHumanConfirmation": true,
+      "previewReadOnly": true,
+      "replayMatchesCurrent": true,
+      "seatRecoveryReentryVerified": true,
+      "pageErrors": [],
+      "readableCasualtyChecks": [
+        {
+          "kind": "photon-use",
+          "revision": 4,
+          "selectionHash": "e1b19298d75b1534091e392446c6e5b9a17cbd59477dac26613e97ab6513d132",
+          "label": "方案 1 · 移除顺序：Zealot 1 → Zealot 2 → Zealot 3 · 剩余 0 模型",
+          "viewportWidth": 390,
+          "clientWidth": 298,
+          "scrollWidth": 298
+        }
+      ]
+    }
+  ],
+  "readableCasualtyChecks": [
+    {
+      "kind": "photon-use",
+      "revision": 4,
+      "selectionHash": "e1b19298d75b1534091e392446c6e5b9a17cbd59477dac26613e97ab6513d132",
+      "label": "方案 1 · 移除顺序：Zealot 1 → Zealot 2 → Zealot 3 · 剩余 0 模型",
+      "viewportWidth": 390,
+      "clientWidth": 298,
+      "scrollWidth": 298
+    }
+  ],
+  "signedActions": 5,
+  "conditionalTurretGeometryInRestorationCaseOnly": false,
+  "sourceHeldDefinitions": 39,
+  "engineeringEstimatedUnitGeometry": true,
+  "fullWave4LobbyBuilderAdmission": false,
+  "fullMatchAdmission": false,
+  "wave3PlayerRoomsTouched": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

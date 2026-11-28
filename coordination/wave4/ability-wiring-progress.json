@@ -3391,5 +3391,26 @@
     ],
     "fullMatchAdmission": false,
     "newGameAtomsImplemented": 0
+  },
+  "casualtySummaryWebGate": {
+    "status": "passed_scoped",
+    "webRooms": 1,
+    "webSignedActions": 5,
+    "sourcePrefixReceipts": 26,
+    "phoneViewport": 390,
+    "formClientWidth": 298,
+    "formScrollWidth": 298,
+    "nativeDescriptorUnchanged": true,
+    "nativeRuleChanges": 0,
+    "newGameAtomsImplemented": 0,
+    "detonationFunctionalTotalsUnchanged": true,
+    "fullMatchAdmission": false,
+    "evidenceRefs": [
+      "docs/development/wave4/evidence/casualty-summary-web.public.json",
+      "docs/development/wave4/evidence/casualty-summary-build.public.json",
+      "docs/development/wave4/evidence/casualty-summary-consumers.public.json",
+      "docs/development/wave4/evidence/casualty-summary-harness.public.json",
+      "docs/development/wave4/evidence/casualty-summary-web-390.png"
+    ]
   }
 }
